@@ -5,6 +5,7 @@ export type NoteType = 'text' | 'audio' | 'image'
 export type MessageIntent =
   | 'save_note'
   | 'list_tags'
+  | 'list_notes'
   | 'tag_notes'
   | 'search'
   | 'delete'
@@ -22,6 +23,7 @@ export type ParsedMessage = {
   noteId?: string
   tagName?: string
   editContent?: string
+  notesFilter?: 'today' | 'yesterday' | 'week'
 }
 
 export type IncomingMessage = {

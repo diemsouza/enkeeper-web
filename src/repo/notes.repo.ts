@@ -69,6 +69,38 @@ export async function findNotesByTag(
   })
 }
 
+type NoteWithTags = {
+  id: string
+  content: string
+  noteType: NoteType
+  createdAt: Date
+  noteTagRelations: { tag: { name: string } }[]
+}
+
+export async function findNotesByDateRange(
+  userId: string,
+  from: Date,
+  to: Date,
+): Promise<NoteWithTags[]> {
+  return prisma.note.findMany({
+    where: {
+      userId,
+      deletedAt: null,
+      createdAt: { gte: from, lt: to },
+    },
+    select: {
+      id: true,
+      content: true,
+      noteType: true,
+      createdAt: true,
+      noteTagRelations: {
+        select: { tag: { select: { name: true } } },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
 export async function countTodayNotes(userId: string, date: Date): Promise<number> {
   const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
   const end = new Date(start)

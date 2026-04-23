@@ -4,6 +4,7 @@ import {
   formatCommandList,
   formatNoteDeleted,
   formatNoteEdited,
+  formatNotesList,
   formatNoteSaved,
   formatPauseStub,
   formatReferralMessage,
@@ -21,6 +22,7 @@ import {
 } from "../core/limits";
 import {
   createNote,
+  findNotesByDateRange,
   findNotesByTag,
   searchNotes,
   softDeleteNote,
@@ -152,7 +154,41 @@ export async function handleIncomingMessage(
     case "pause_reviews":
       return formatPauseStub();
 
+    case "list_notes": {
+      const filter = parsed.notesFilter ?? "today"
+      const { from, to } = notesDateRange(filter)
+      const raw = await findNotesByDateRange(user.id, from, to)
+      const notes = raw.map((n) => ({
+        content: n.content,
+        noteType: n.noteType as "text" | "audio" | "image",
+        createdAt: n.createdAt,
+        tags: n.noteTagRelations.map((r) => r.tag.name),
+      }))
+      return formatNotesList(notes, filter)
+    }
+
     case "referral":
       return formatReferralMessage(user.id);
   }
+}
+
+const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000
+
+function startOfDayBrazil(date: Date): Date {
+  const brazil = new Date(date.getTime() - BRAZIL_OFFSET_MS)
+  const midnight = new Date(
+    Date.UTC(brazil.getUTCFullYear(), brazil.getUTCMonth(), brazil.getUTCDate()),
+  )
+  return new Date(midnight.getTime() + BRAZIL_OFFSET_MS)
+}
+
+function notesDateRange(filter: "today" | "yesterday" | "week"): { from: Date; to: Date } {
+  const now = new Date()
+  const todayStart = startOfDayBrazil(now)
+  if (filter === "today") return { from: todayStart, to: now }
+  if (filter === "yesterday") {
+    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000)
+    return { from: yesterdayStart, to: todayStart }
+  }
+  return { from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), to: now }
 }

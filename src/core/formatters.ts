@@ -86,11 +86,60 @@ export function formatCommandList(): string {
     "• */buscar <termo>* — buscar notas",
     "• */apagar <id>* — apagar nota",
     "• */editar <id> <conteúdo>* — editar nota",
+    "• */notas* — ver notas de hoje",
+    "• */notas ontem* — ver notas de ontem",
+    "• */notas semana* — ver notas dos últimos 7 dias",
     "• */pausar* — pausar revisões",
     "• */indicar* — indicar amigos",
     "",
     "Para salvar uma nota, basta enviar o texto. Use _#tags_ para organizar!",
   ].join("\n");
+}
+
+export function formatNotesList(
+  notes: {
+    content: string
+    noteType: "text" | "audio" | "image"
+    createdAt: Date
+    tags: string[]
+  }[],
+  filter: "today" | "yesterday" | "week",
+): string {
+  const emptyMessages = {
+    today: "Nenhuma nota hoje.",
+    yesterday: "Nenhuma nota ontem.",
+    week: "Nenhuma nota nos últimos 7 dias.",
+  }
+  if (notes.length === 0) return emptyMessages[filter]
+
+  const headers = {
+    today: "📋 Notas de hoje:",
+    yesterday: "📋 Notas de ontem:",
+    week: "📋 Notas desta semana:",
+  }
+
+  const typeIcon: Record<"text" | "audio" | "image", string> = {
+    text: "",
+    audio: "🎵 ",
+    image: "🖼️ ",
+  }
+
+  const MAX = 20
+  const visible = notes.slice(0, MAX)
+  const overflow = notes.length - MAX
+
+  const lines = visible.map((n, i) => {
+    const icon = typeIcon[n.noteType]
+    const tagSuffix = n.tags.length > 0 ? ` [${n.tags.map((t) => `#${t}`).join(" ")}]` : ""
+    return `${i + 1}. ${icon}${n.content}${tagSuffix}`
+  })
+
+  const footer =
+    overflow > 0
+      ? `\n... e mais ${overflow} nota${overflow !== 1 ? "s" : ""}. Use */buscar* para encontrar notas específicas.`
+      : ""
+
+  return `*${headers[filter]}*\n${lines.join("\n")}${footer}`
 }
 
 export function formatReferralMessage(referralCode: string): string {

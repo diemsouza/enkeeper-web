@@ -1,7 +1,7 @@
 "use client";
 
 import { notFound } from "next/navigation";
-import { useState, useEffect, KeyboardEvent } from "react";
+import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import { WhatsAppChat } from "../../components/whatsapp-chat";
 import { useScrollToBottom } from "../../hooks/use-scroll-to-bottom";
 import { http } from "../../lib/http";
@@ -37,7 +37,12 @@ export default function SimulatorPage() {
     localStorage.setItem("simulator_channelId", channelId);
   }, [channelId]);
 
+  useEffect(() => {
+    if (!loading) inputRef.current?.focus();
+  }, [loading]);
+
   const { containerRef, endRef, scrollToBottom } = useScrollToBottom();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   async function sendMessage() {
     const text = input.trim();
@@ -122,6 +127,7 @@ export default function SimulatorPage() {
 
       <div className="flex items-center gap-2 w-full md:max-w-[480px]">
         <input
+          ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
