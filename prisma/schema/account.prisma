@@ -1,0 +1,69 @@
+enum UserStatus {
+    active
+    suspended
+    disabled
+}
+
+enum PlanCode {
+    free
+    pro
+}
+
+enum PlanStatus {
+    active
+    canceled
+    past_due
+}
+
+enum ChannelType {
+    whatsapp
+    simulator
+}
+
+model User {
+    id       String  @id @default(ulid()) @map("id")
+    name     String? @map("name")
+    email    String? @unique @map("email")
+    imageUrl String? @map("image_url")
+    locale   String? @map("locale")
+    currency String? @map("currency")
+
+    // plano — atualizado pelo webhook Stripe ou manualmente no MVP
+    planCode      PlanCode   @default(free) @map("plan_code")
+    planStatus    PlanStatus @default(active) @map("plan_status")
+    planExpiresAt DateTime?  @map("plan_expires_at")
+
+    status    UserStatus @default(active) @map("status")
+    createdAt DateTime   @default(now()) @map("created_at")
+    updatedAt DateTime   @updatedAt @map("updated_at")
+    deletedAt DateTime?  @map("deleted_at")
+
+    channels    UserChannel[]
+    notes       Note[]
+    tags        Tag[]
+    dailyUsages DailyUsage[]
+    // billings    Billing[]
+    // payments    Payment[]
+    llmUsages   LlmUsage[]
+
+    @@map("users")
+}
+
+model UserChannel {
+    id          String      @id @default(ulid()) @map("id")
+    userId      String      @map("user_id")
+    channelType ChannelType @map("channel_type")
+    channelId   String      @map("channel_id") // BSUID Meta, userId Telegram, etc
+    channelCode String?     @map("channel_code") // telefone, username — legível
+    name        String?     @map("name")
+    metadata    Json?       @map("metadata")
+    createdAt   DateTime    @default(now()) @map("created_at")
+    updatedAt   DateTime    @updatedAt @map("updated_at")
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([channelType, channelId])
+    @@unique([channelType, channelCode])
+    @@index([userId])
+    @@map("user_channels")
+}

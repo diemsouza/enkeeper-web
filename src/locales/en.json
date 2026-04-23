@@ -1,0 +1,164 @@
+{
+  "app": {
+    "brand": "Enkeeper",
+    "not_found": {
+      "code_404": "404",
+      "title_page_not_found": "Page not found",
+      "description_generic": "It looks like this page doesn't exist, was moved, or has been deleted.",
+      "cta_back_home": "Back to homepage"
+    },
+    "not_found_content": {
+      "title": "Oops!",
+      "message": "This resource doesn't exist, was moved, or is no longer available."
+    },
+    "paging_back": "Back",
+    "paging_next": "Next",
+    "paging_current": "Page {page}",
+    "country_code": "US",
+    "lang": "en",
+    "currency": "BRL",
+    "currency_symbol": "R$",
+    "locale": "en-US",
+    "datetime_format": "MM/dd/yyyy HH:mm"
+  },
+  "seo": {
+    "home": {
+      "title": "Enkeeper | Learn English without forgetting the words",
+      "description": "Save vocabulary, expressions and phrases directly on WhatsApp. Enkeeper organizes and sends them back at the right moment for review. Free to start.",
+      "keywords": "learn english whatsapp, english vocabulary, english notebook, english review, Enkeeper",
+      "ogImage": "/og/en-home.png"
+    }
+  },
+  "locales": {
+    "pt": "Portuguese",
+    "en": "English"
+  },
+  "home": {
+    "phrases": {
+      "0": "Just learned a new English word. <strong>Where do you write it down?</strong>",
+      "1": "Heard a new expression in a show. <strong>Gone with the episode.</strong>",
+      "2": "Sent a message to yourself. <strong>Again.</strong>",
+      "3": "Wrote it on paper. <strong>The paper disappeared.</strong>",
+      "4": "Ten new words this week. <strong>How many do you remember?</strong>",
+      "5": "Left class with three new expressions. <strong>Where are they now?</strong>"
+    },
+    "tagline": "Your notes on WhatsApp.",
+    "cta": "Get started",
+    "microcopy": "Opens on WhatsApp · Free · No sign-up",
+    "who": {
+      "title": "For those who study English for real.",
+      "subtitle": "No matter how you learn. Enkeeper fits the way you do it.",
+      "cards": {
+        "0": {
+          "title": "The self-taught learner",
+          "description": "Learns from YouTube, shows, podcasts. Has material everywhere and nothing organized. Enkeeper brings it all together."
+        },
+        "1": {
+          "title": "The course student",
+          "description": "Takes classes but never reviews outside them. Writes in the course notebook and never opens it again. With Enkeeper the note goes straight into the WhatsApp you already use."
+        },
+        "2": {
+          "title": "The professional",
+          "description": "Uses English at work but freezes on specific vocabulary. Save the terms from your context and find them when you need them."
+        },
+        "3": {
+          "title": "The binge-watcher",
+          "description": "Pauses, writes down the expression, keeps watching. The problem is the note disappears. Now it stays where you already are."
+        },
+        "4": {
+          "title": "The traveler",
+          "description": "About to travel or already abroad. Collecting everyday vocabulary, real situations and slang that no course ever teaches."
+        },
+        "5": {
+          "title": "The one who tried and quit",
+          "description": "Already tried Anki, Duolingo, Quizlet. Got tired of opening yet another app. Enkeeper works inside the WhatsApp you already open fifty times a day."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Start now, free and no sign-up needed.",
+      "subtitle": "Use for free and upgrade when you're ready.",
+      "description": "Free to start: up to 5 notes per day and 3 tags. On the Pro plan for R$14.90/month you get 30 daily notes, unlimited tags, transcribed audio and search across everything you've saved.",
+      "cta": "Start free"
+    },
+    "footer": {
+      "copyright": "Copyright © 2026 Enkeeper. All rights reserved.",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use"
+    },
+    "features_demo": {
+      "title": "That simple.",
+      "subtitle": "From new vocabulary to daily review. One message does it.",
+      "blocks": {
+        "0": {
+          "title": "Send anything. It's saved.",
+          "description": "Text or transcribed audio. Any message becomes a note with no extra steps.",
+          "chat": [
+            {
+              "from": "user",
+              "text": "shadow of a doubt - without any doubt #english",
+              "time": "10:30"
+            },
+            {
+              "from": "bot",
+              "text": "*Saved to* #english\n32 notes in this tag",
+              "time": "10:30"
+            },
+            {
+              "from": "user",
+              "text": "bite the bullet - face something difficult #english #idioms",
+              "time": "10:31"
+            },
+            {
+              "from": "bot",
+              "text": "*Saved to* #english #idioms",
+              "time": "now"
+            }
+          ]
+        },
+        "1": {
+          "title": "Use # to organize.",
+          "description": "Your notes organized by category. Send # to see all tags or #tag to list the notes inside.",
+          "chat": [
+            {
+              "from": "user",
+              "text": "#",
+              "time": "2:22 PM"
+            },
+            {
+              "from": "bot",
+              "text": "*Your tags:*\n#english - 47\n#phrasal - 18\n#idioms - 12\n#vocabulary - 9",
+              "time": "2:22 PM"
+            },
+            {
+              "from": "user",
+              "text": "#phrasal",
+              "time": "2:23 PM"
+            },
+            {
+              "from": "bot",
+              "text": "*#phrasal - 18 notes:*\n- run into - come across by chance\n- give up - stop trying\n- keep up - maintain the pace\n- and 15 more",
+              "time": "now"
+            }
+          ]
+        },
+        "2": {
+          "title": "Search by word. Results instantly.",
+          "description": "No need to remember the tag or when you saved it. Send /search and Enkeeper finds it across all your notes.",
+          "chat": [
+            {
+              "from": "user",
+              "text": "/search doubt",
+              "time": "9:14 AM"
+            },
+            {
+              "from": "bot",
+              "text": "*2 notes found:*\n- shadow of a doubt - without any doubt\n- beyond doubt - without question",
+              "time": "now"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

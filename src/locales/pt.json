@@ -1,0 +1,164 @@
+{
+  "app": {
+    "brand": "Enkeeper",
+    "not_found": {
+      "code_404": "404",
+      "title_page_not_found": "Página não encontrada",
+      "description_generic": "Parece que esta página não existe, foi movida ou excluída.",
+      "cta_back_home": "Voltar para o início"
+    },
+    "not_found_content": {
+      "title": "Ops!",
+      "message": "Este recurso não existe, foi removido ou não está mais disponível."
+    },
+    "paging_back": "Voltar",
+    "paging_next": "Próximo",
+    "paging_current": "Página {page}",
+    "country_code": "BR",
+    "lang": "pt",
+    "currency": "BRL",
+    "currency_symbol": "R$",
+    "locale": "pt-BR",
+    "datetime_format": "dd/MM/yyyy HH:mm"
+  },
+  "seo": {
+    "home": {
+      "title": "Enkeeper | Aprenda inglês sem esquecer as palavras",
+      "description": "Anote vocabulário, expressões e frases direto no WhatsApp. O Enkeeper organiza e devolve no momento certo para você revisar. Grátis para começar.",
+      "keywords": "aprender inglês whatsapp, vocabulário inglês, caderno de inglês, revisão de inglês, Enkeeper",
+      "ogImage": "/og/pt-home.png"
+    }
+  },
+  "locales": {
+    "pt": "Português",
+    "en": "Inglês"
+  },
+  "home": {
+    "phrases": {
+      "0": "Acabou de aprender uma palavra em inglês. <strong>Onde você anota?</strong>",
+      "1": "Ouviu uma expressão nova na série. <strong>Foi embora com o episódio.</strong>",
+      "2": "Mandou mensagem pra você mesmo. <strong>De novo.</strong>",
+      "3": "Anotou no papel. <strong>O papel sumiu.</strong>",
+      "4": "Dez palavras novas essa semana. <strong>Lembra de quantas?</strong>",
+      "5": "Saiu da aula com três expressões novas. <strong>Onde estão?</strong>"
+    },
+    "tagline": "Suas notas no WhatsApp.",
+    "cta": "Começar agora",
+    "microcopy": "Abre no WhatsApp · Grátis · Sem cadastro",
+    "who": {
+      "title": "Para quem estuda inglês de verdade.",
+      "subtitle": "Não importa como você aprende. O Enkeeper se encaixa no seu jeito.",
+      "cards": {
+        "0": {
+          "title": "O autodidata",
+          "description": "Aprende no YouTube, em séries, em podcasts. Tem material em todo lugar e nenhum lugar organizado. O Enkeeper centraliza tudo."
+        },
+        "1": {
+          "title": "O aluno de curso",
+          "description": "Tem aula mas não revisa fora dela. Anota no caderno da escola e nunca mais abre. Com o Enkeeper a nota entra no WhatsApp que você já usa."
+        },
+        "2": {
+          "title": "O profissional",
+          "description": "Usa inglês no trabalho mas trava em vocabulário específico. Guarda os termos do seu contexto e encontra quando precisar."
+        },
+        "3": {
+          "title": "O maratonista de série",
+          "description": "Pausa, anota a expressão, volta. O problema é que a anotação some. Agora ela fica onde você já está."
+        },
+        "4": {
+          "title": "O viajante",
+          "description": "Vai viajar ou está fora. Acumula vocabulário do dia a dia, situações reais e gírias que não aparecem em nenhum curso."
+        },
+        "5": {
+          "title": "O que tentou e desistiu",
+          "description": "Já usou Anki, Duolingo, Quizlet. Cansou de abrir mais um app. O Enkeeper funciona no WhatsApp que você já abre cinquenta vezes por dia."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Comece agora, grátis e sem cadastro.",
+      "subtitle": "Use de graça e evolua quando precisar.",
+      "description": "Grátis para começar: até 5 notas por dia e 3 tags. No Pro por R$14,90/mês você tem 30 notas diárias, tags ilimitadas, áudio transcrito e busca em tudo que salvou.",
+      "cta": "Começar grátis"
+    },
+    "footer": {
+      "copyright": "Copyright © 2026 Enkeeper. Todos os direitos reservados.",
+      "privacy": "Política de Privacidade",
+      "terms": "Termos de Uso"
+    },
+    "features_demo": {
+      "title": "Simples assim.",
+      "subtitle": "Do vocabulário novo à revisão do dia. Uma mensagem resolve.",
+      "blocks": {
+        "0": {
+          "title": "Manda qualquer coisa. Está salvo.",
+          "description": "Texto ou áudio transcrito. Qualquer mensagem vira uma nota sem nenhum passo extra.",
+          "chat": [
+            {
+              "from": "user",
+              "text": "shadow of a doubt - sem sombra de dúvida #ingles",
+              "time": "10:30"
+            },
+            {
+              "from": "bot",
+              "text": "*Salvo em* #ingles\n32 notas nessa tag",
+              "time": "10:30"
+            },
+            {
+              "from": "user",
+              "text": "bite the bullet - encarar algo difícil #ingles #expressoes",
+              "time": "10:31"
+            },
+            {
+              "from": "bot",
+              "text": "*Salvo em* #ingles #expressoes",
+              "time": "agora"
+            }
+          ]
+        },
+        "1": {
+          "title": "Use # para organizar.",
+          "description": "Suas notas organizadas por categoria. Mande # para ver todas as tags ou #tag para listar as notas.",
+          "chat": [
+            {
+              "from": "user",
+              "text": "#",
+              "time": "14:22"
+            },
+            {
+              "from": "bot",
+              "text": "*Suas tags:*\n#ingles - 47\n#phrasal - 18\n#expressoes - 12\n#vocabulario - 9",
+              "time": "14:22"
+            },
+            {
+              "from": "user",
+              "text": "#phrasal",
+              "time": "14:23"
+            },
+            {
+              "from": "bot",
+              "text": "*#phrasal - 18 notas:*\n- run into - encontrar por acaso\n- give up - desistir\n- keep up - manter o ritmo\n- e mais 15",
+              "time": "agora"
+            }
+          ]
+        },
+        "2": {
+          "title": "Busque por palavra. Resultado na hora.",
+          "description": "Não precisa lembrar a tag ou quando salvou. Mande /buscar e o Enkeeper encontra em todas as suas notas.",
+          "chat": [
+            {
+              "from": "user",
+              "text": "/buscar dúvida",
+              "time": "09:14"
+            },
+            {
+              "from": "bot",
+              "text": "*2 notas encontradas:*\n- shadow of a doubt - sem sombra de dúvida\n- beyond doubt - sem questionamento",
+              "time": "agora"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

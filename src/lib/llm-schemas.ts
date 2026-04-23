@@ -1,0 +1,47 @@
+import z from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
+export const schemaToJson = (schema: z.ZodType<any>) => {
+  const { $schema, additionalProperties, ...cleanSchema } = zodToJsonSchema(
+    schema,
+  ) as any;
+  return cleanSchema?.properties;
+};
+
+export const schemaToJsonLite = (schema: z.ZodType<any>): any => {
+  if (schema instanceof z.ZodString) return "";
+  if (schema instanceof z.ZodBoolean) return false;
+  if (schema instanceof z.ZodNumber) return 0;
+  if (schema instanceof z.ZodNull) return null;
+
+  if (schema instanceof z.ZodNullable) {
+    return schemaToJsonLite(schema.unwrap());
+  }
+
+  if (schema instanceof z.ZodObject) {
+    const shape = schema.shape;
+    return Object.fromEntries(
+      Object.entries(shape).map(([key, value]) => [
+        key,
+        schemaToJsonLite(value as z.ZodType<any>),
+      ]),
+    );
+  }
+
+  if (
+    schema instanceof z.ZodUnion ||
+    schema instanceof z.ZodDiscriminatedUnion
+  ) {
+    return schemaToJsonLite((schema.options as z.ZodType<any>[])[0]);
+  }
+
+  return null;
+};
+
+export const analysisSchema = z.object({
+  sentiment: z.number().nullable(),
+  intention: z.string().nullable(),
+  summary: z.string().nullable(),
+});
+
+export type AnalysisSchema = z.infer<typeof analysisSchema>;
