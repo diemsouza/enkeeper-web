@@ -8,7 +8,7 @@ export type MessageIntent =
   | 'list_notes'
   | 'tag_notes'
   | 'search'
-  | 'delete'
+  | 'delete_note'
   | 'edit'
   | 'list_commands'
   | 'pause_reviews'

@@ -51,9 +51,17 @@ export function parseMessage(text: string): ParsedMessage {
     return { intent: 'search', raw, searchQuery }
   }
 
-  if (trimmed.startsWith('/apagar ')) {
-    const noteId = trimmed.slice('/apagar '.length).trim()
-    return { intent: 'delete', raw, noteId }
+  if (trimmed === '/excluir') {
+    return { intent: 'delete_note', raw }
+  }
+
+  if (trimmed.startsWith('/excluir ')) {
+    const noteId = trimmed.slice('/excluir '.length).trim()
+    return { intent: 'delete_note', raw, noteId }
+  }
+
+  if (trimmed === '/editar') {
+    return { intent: 'edit', raw }
   }
 
   if (trimmed.startsWith('/editar ')) {

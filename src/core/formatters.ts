@@ -44,12 +44,20 @@ export function formatNoteSaved(
   return `*Salvo em ${tagList}!* ${countLabel}`;
 }
 
-export function formatNoteDeleted(): string {
-  return "Nota apagada com sucesso!";
+export function formatNoteDeleted(content: string): string {
+  return `Nota excluída: "${content}"`;
 }
 
-export function formatNoteEdited(): string {
-  return "Nota atualizada com sucesso!";
+export function formatNoteEdited(content: string): string {
+  return `Nota atualizada: "${content}"`;
+}
+
+export function formatDeleteHelp(): string {
+  return "Para excluir uma nota informe o número.\nExemplo: /excluir 5\n\n_Use /notas para ver suas notas com os números._";
+}
+
+export function formatEditHelp(): string {
+  return "Para editar uma nota informe o número e o novo texto.\nExemplo: /editar 4 novo texto #tag\n\n_Use /notas para ver suas notas com os números._";
 }
 
 export function formatUpgradePrompt(
@@ -84,8 +92,8 @@ export function formatCommandList(): string {
     "• *#* — suas tags",
     "• *#nome* — notas com essa tag",
     "• */buscar <termo>* — buscar notas",
-    "• */apagar <id>* — apagar nota",
-    "• */editar <id> <conteúdo>* — editar nota",
+    "• */excluir <número>* — excluir nota",
+    "• */editar <número> <conteúdo>* — editar nota",
     "• */notas* — ver notas de hoje",
     "• */notas ontem* — ver notas de ontem",
     "• */notas semana* — ver notas dos últimos 7 dias",
@@ -98,10 +106,10 @@ export function formatCommandList(): string {
 
 export function formatNotesList(
   notes: {
-    content: string
-    noteType: "text" | "audio" | "image"
-    createdAt: Date
-    tags: string[]
+    content: string;
+    noteType: "text" | "audio" | "image";
+    createdAt: Date;
+    tags: string[];
   }[],
   filter: "today" | "yesterday" | "week",
 ): string {
@@ -109,37 +117,38 @@ export function formatNotesList(
     today: "Nenhuma nota hoje.",
     yesterday: "Nenhuma nota ontem.",
     week: "Nenhuma nota nos últimos 7 dias.",
-  }
-  if (notes.length === 0) return emptyMessages[filter]
+  };
+  if (notes.length === 0) return emptyMessages[filter];
 
   const headers = {
     today: "📋 Notas de hoje:",
     yesterday: "📋 Notas de ontem:",
     week: "📋 Notas desta semana:",
-  }
+  };
 
   const typeIcon: Record<"text" | "audio" | "image", string> = {
     text: "",
     audio: "🎵 ",
     image: "🖼️ ",
-  }
+  };
 
-  const MAX = 20
-  const visible = notes.slice(0, MAX)
-  const overflow = notes.length - MAX
+  const MAX = 20;
+  const visible = notes.slice(0, MAX);
+  const overflow = notes.length - MAX;
 
   const lines = visible.map((n, i) => {
-    const icon = typeIcon[n.noteType]
-    const tagSuffix = n.tags.length > 0 ? ` [${n.tags.map((t) => `#${t}`).join(" ")}]` : ""
-    return `${i + 1}. ${icon}${n.content}${tagSuffix}`
-  })
+    const icon = typeIcon[n.noteType];
+    const tagSuffix =
+      n.tags.length > 0 ? ` [${n.tags.map((t) => `#${t}`).join(" ")}]` : "";
+    return `${i + 1}. ${icon}${n.content}${tagSuffix}`;
+  });
 
   const footer =
     overflow > 0
       ? `\n... e mais ${overflow} nota${overflow !== 1 ? "s" : ""}. Use */buscar* para encontrar notas específicas.`
-      : ""
+      : "";
 
-  return `*${headers[filter]}*\n${lines.join("\n")}${footer}`
+  return `*${headers[filter]}*\n${lines.join("\n")}${footer}`;
 }
 
 export function formatReferralMessage(referralCode: string): string {

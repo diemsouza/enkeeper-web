@@ -2,6 +2,8 @@ import { NoteType } from "@prisma/client";
 import { parseMessage } from "../core/parser";
 import {
   formatCommandList,
+  formatDeleteHelp,
+  formatEditHelp,
   formatNoteDeleted,
   formatNoteEdited,
   formatNotesList,
@@ -22,6 +24,7 @@ import {
 } from "../core/limits";
 import {
   createNote,
+  findNoteById,
   findNotesByDateRange,
   findNotesByTag,
   searchNotes,
@@ -41,6 +44,8 @@ import { findOrCreateUserByChannel } from "./user-service";
 import { transcribeAudio } from "../vendors/whisper.vendor";
 import { extractTextFromImage } from "../vendors/vision.vendor";
 import { IncomingMessage, PlanCode } from "../types/domain";
+
+const userNoteIndexMap = new Map<string, string[]>();
 
 export async function handleIncomingMessage(
   input: IncomingMessage,
@@ -123,29 +128,39 @@ export async function handleIncomingMessage(
       return formatSearchResults(notes, parsed.searchQuery ?? "");
     }
 
-    case "delete": {
-      if (!parsed.noteId) return "ID da nota não encontrado.";
-      await softDeleteNote(parsed.noteId, user.id);
-      return formatNoteDeleted();
+    case "delete_note": {
+      if (!parsed.noteId) return formatDeleteHelp();
+      const delIdx = parseInt(parsed.noteId, 10);
+      const delRealId = userNoteIndexMap.get(user.id)?.[delIdx - 1];
+      if (!delRealId) return "Número inválido. Use /notas para ver suas notas.";
+      const noteToDelete = await findNoteById(delRealId, user.id);
+      if (!noteToDelete) return "Nota não encontrada.";
+      await softDeleteNote(delRealId, user.id);
+      return formatNoteDeleted(noteToDelete.content);
     }
 
     case "edit": {
-      if (!parsed.noteId) return "ID da nota não encontrado.";
+      if (!parsed.noteId) return formatEditHelp();
+      const editIdx = parseInt(parsed.noteId, 10);
+      const editRealId = userNoteIndexMap.get(user.id)?.[editIdx - 1];
+      if (!editRealId)
+        return "Número inválido. Use /notas para ver suas notas.";
+      const noteToEdit = await findNoteById(editRealId, user.id);
+      if (!noteToEdit) return "Nota não encontrada.";
+      const editContent = parsed.editContent ?? "";
+      await updateNote(editRealId, user.id, { content: editContent });
+      await detachTagsFromNote(editRealId);
       const tags = parsed.tags ?? [];
-      await updateNote(parsed.noteId, user.id, {
-        content: parsed.editContent ?? "",
-      });
-      await detachTagsFromNote(parsed.noteId);
       if (tags.length > 0) {
         const tagRecords = await Promise.all(
           tags.map((name) => findOrCreateTag(user.id, name)),
         );
         await attachTagsToNote(
-          parsed.noteId,
+          editRealId,
           tagRecords.map((t) => t.id),
         );
       }
-      return formatNoteEdited();
+      return formatNoteEdited(editContent);
     }
 
     case "list_commands":
@@ -155,16 +170,20 @@ export async function handleIncomingMessage(
       return formatPauseStub();
 
     case "list_notes": {
-      const filter = parsed.notesFilter ?? "today"
-      const { from, to } = notesDateRange(filter)
-      const raw = await findNotesByDateRange(user.id, from, to)
+      const filter = parsed.notesFilter ?? "today";
+      const { from, to } = notesDateRange(filter);
+      const raw = await findNotesByDateRange(user.id, from, to);
+      userNoteIndexMap.set(
+        user.id,
+        raw.slice(0, 20).map((n) => n.id),
+      );
       const notes = raw.map((n) => ({
         content: n.content,
         noteType: n.noteType as "text" | "audio" | "image",
         createdAt: n.createdAt,
         tags: n.noteTagRelations.map((r) => r.tag.name),
-      }))
-      return formatNotesList(notes, filter)
+      }));
+      return formatNotesList(notes, filter);
     }
 
     case "referral":
@@ -172,23 +191,30 @@ export async function handleIncomingMessage(
   }
 }
 
-const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000
+const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000;
 
 function startOfDayBrazil(date: Date): Date {
-  const brazil = new Date(date.getTime() - BRAZIL_OFFSET_MS)
+  const brazil = new Date(date.getTime() - BRAZIL_OFFSET_MS);
   const midnight = new Date(
-    Date.UTC(brazil.getUTCFullYear(), brazil.getUTCMonth(), brazil.getUTCDate()),
-  )
-  return new Date(midnight.getTime() + BRAZIL_OFFSET_MS)
+    Date.UTC(
+      brazil.getUTCFullYear(),
+      brazil.getUTCMonth(),
+      brazil.getUTCDate(),
+    ),
+  );
+  return new Date(midnight.getTime() + BRAZIL_OFFSET_MS);
 }
 
-function notesDateRange(filter: "today" | "yesterday" | "week"): { from: Date; to: Date } {
-  const now = new Date()
-  const todayStart = startOfDayBrazil(now)
-  if (filter === "today") return { from: todayStart, to: now }
+function notesDateRange(filter: "today" | "yesterday" | "week"): {
+  from: Date;
+  to: Date;
+} {
+  const now = new Date();
+  const todayStart = startOfDayBrazil(now);
+  if (filter === "today") return { from: todayStart, to: now };
   if (filter === "yesterday") {
-    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000)
-    return { from: yesterdayStart, to: todayStart }
+    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+    return { from: yesterdayStart, to: todayStart };
   }
-  return { from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), to: now }
+  return { from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), to: now };
 }
