@@ -11,14 +11,14 @@ const STEP_ICONS = [MessageSquare, Bookmark, Search] as const;
 
 export default function HowItWorks() {
   const t = useTranslations("home.how");
-  const { ref, visible } = useInView();
+  const [ref, visible] = useInView();
 
   return (
     <section
       ref={ref as React.RefObject<HTMLDivElement>}
       className={cn(
         "section-dark py-24 px-6 transition-all duration-700",
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
       )}
     >
       <div className="max-w-5xl mx-auto">

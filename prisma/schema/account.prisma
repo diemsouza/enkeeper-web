@@ -17,7 +17,6 @@ enum PlanStatus {
 
 enum ChannelType {
     whatsapp
-    simulator
 }
 
 model User {

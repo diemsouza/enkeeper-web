@@ -1,6 +1,9 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## O que é o projeto
+
+WhatsApp-based spaced repetition note-taking product para o mercado brasileiro.
+Stack: Next.js App Router, Prisma, Supabase/PostgreSQL, TypeScript, Vercel.
 
 ## Commands
 
@@ -45,6 +48,18 @@ Enkeeper is a SaaS note-taking platform that receives content through multiple m
 - `src/i18n/` + `src/locales/` — next-intl config with `pt.json` and `en.json` translation files.
 - `prisma/schema/` — Split Prisma schema files per domain (account, billing, etc.).
 - `email-templates/` — Handlebars templates per locale (`en/`, `pt/`).
+- `src/core/` — lógica de domínio pura, zero I/O
+- `src/services/` — orquestração de negócio, chama repo + vendors + core
+- `src/repo/` — queries Prisma, sem regra de negócio
+- `src/vendors/` — clientes de APIs externas (OpenAI, Meta, S3)
+
+## Regras de arquitetura
+
+- `src/core/` nunca importa Prisma, fetch ou qualquer módulo Next.js
+- `src/repo/` nunca contém regra de negócio
+- Todo acesso ao banco passa por `src/repo/`
+- Route handlers são finos — parse request, chama service, retorna response
+- Vendors são stubs até implementação real — sempre com TODO comment
 
 ### Key Patterns
 
@@ -80,3 +95,48 @@ Billing models exist in `prisma/schema/billing.prisma` but are currently comment
 - **Storage:** Supabase (file uploads)
 - **Email:** Nodemailer with Handlebars templates
 - **Deployment:** Docker standalone build; GitHub Actions auto-releases on push to `main` using version from `package.json`
+
+## Code style
+
+### Geral
+
+- TypeScript strict — sem `any`, sem non-null assertion (`!`) sem comentário justificando
+- Return types explícitos em todas as funções exportadas
+- Named exports — sem default exports exceto route handlers do Next.js
+- Sem barrel files (index.ts re-exportando tudo) — importar direto do arquivo
+
+### Error handling
+
+- Usar padrão de erros tipados de `src/lib/custom-errors.ts`
+- Sem silent catches — todo catch deve rethrow ou retornar erro significativo
+- Route handlers sempre retornam response — sem unhandled promise rejections
+
+### Async
+
+- Sempre await em chamadas Prisma — sem floating promises
+- async/await — sem .then() chains
+
+### Nomenclatura
+
+- Arquivos: kebab-case (`notes.repo.ts`, `message-service.ts`)
+- Classes/tipos: PascalCase
+- Funções e variáveis: camelCase
+- Constantes de config: UPPER_SNAKE_CASE (`FREE_LIMITS`)
+- Booleanos e funções booleanas: prefixo `can`, `is`, `has`
+
+### Funções
+
+- Single responsibility — se precisa de comentário pra explicar o que faz, divide
+- Máximo ~30 linhas por função
+- Sem side effects em `src/core/` — mesma entrada sempre produz mesma saída
+
+### Prisma
+
+- Sem `$queryRaw` salvo necessidade absoluta
+- Sempre escopo por `userId` — nunca busca sem filtro de usuário
+- Usar `select` para buscar só os campos necessários
+
+### Comentários
+
+- Sem comentários explicando o que o código faz — código deve ser autoexplicativo
+- Comentários apenas para: TODOs, justificativa de regra de negócio não óbvia, quirks de API externa

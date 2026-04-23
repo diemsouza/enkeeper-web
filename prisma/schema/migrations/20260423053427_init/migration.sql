@@ -8,7 +8,7 @@ CREATE TYPE "PlanCode" AS ENUM ('free', 'pro');
 CREATE TYPE "PlanStatus" AS ENUM ('active', 'canceled', 'past_due');
 
 -- CreateEnum
-CREATE TYPE "ChannelType" AS ENUM ('whatsapp', 'simulator');
+CREATE TYPE "ChannelType" AS ENUM ('whatsapp');
 
 -- CreateEnum
 CREATE TYPE "NoteType" AS ENUM ('text', 'audio', 'image');

@@ -1,25 +1,16 @@
-import { prisma } from "../lib/prisma";
-import { User } from "@prisma/client";
+import { ChannelType as PrismaChannelType, User, UserChannel } from '@prisma/client'
+import { createUserWithChannel, findUserByChannel } from '../repo/users.repo'
+import { ChannelType } from '../types/domain'
 
-export class UserService {
-  constructor() {}
+type UserWithChannels = User & { channels: UserChannel[] }
 
-  async getUser(userId: string): Promise<User | null> {
-    const result = await prisma.user.findFirst({
-      where: {
-        id: userId,
-        deletedAt: null,
-      },
-    });
-
-    return result;
-  }
-
-  async updateLocale(id: string, locale: string): Promise<boolean> {
-    const result = await prisma.user.update({
-      where: { id },
-      data: { locale },
-    });
-    return result ? true : false;
-  }
+export async function findOrCreateUserByChannel(
+  channelType: ChannelType,
+  channelId: string,
+  channelCode?: string,
+): Promise<UserWithChannels> {
+  const prismaChannelType = channelType as PrismaChannelType
+  const existing = await findUserByChannel(prismaChannelType, channelId)
+  if (existing) return existing
+  return createUserWithChannel(prismaChannelType, channelId, channelCode)
 }

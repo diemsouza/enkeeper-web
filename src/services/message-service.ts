@@ -1,0 +1,136 @@
+import { NoteType } from '@prisma/client'
+import { parseMessage } from '../core/parser'
+import {
+  formatCommandList,
+  formatNoteDeleted,
+  formatNoteEdited,
+  formatNoteSaved,
+  formatPauseStub,
+  formatReferralMessage,
+  formatSearchResults,
+  formatTagList,
+  formatTagNotes,
+  formatUpgradePrompt,
+} from '../core/formatters'
+import {
+  canCreateTag,
+  canSaveNote,
+  canUseAudio,
+  canUseImage,
+  canUseSearch,
+} from '../core/limits'
+import { createNote, findNotesByTag, searchNotes, softDeleteNote, updateNote } from '../repo/notes.repo'
+import {
+  attachTagsToNote,
+  countUserTags,
+  detachTagsFromNote,
+  findOrCreateTag,
+  findTagsByUser,
+  incrementTagCount,
+} from '../repo/tags.repo'
+import { incrementDailyUsage, getTodayUsage } from '../repo/daily-usage.repo'
+import { findOrCreateUserByChannel } from './user-service'
+import { transcribeAudio } from '../vendors/whisper.vendor'
+import { extractTextFromImage } from '../vendors/vision.vendor'
+import { IncomingMessage, PlanCode } from '../types/domain'
+
+export async function handleIncomingMessage(input: IncomingMessage): Promise<string> {
+  const user = await findOrCreateUserByChannel(
+    input.channelType,
+    input.channelId,
+    input.channelCode,
+  )
+  const plan = user.planCode as PlanCode
+
+  let text = input.text ?? ''
+  let noteType: NoteType = 'text'
+
+  if (input.audioUrl) {
+    if (!canUseAudio(plan)) return formatUpgradePrompt('audio')
+    text = await transcribeAudio(input.audioUrl)
+    noteType = 'audio'
+  } else if (input.imageUrl) {
+    if (!canUseImage(plan)) return formatUpgradePrompt('image')
+    text = await extractTextFromImage(input.imageUrl)
+    noteType = 'image'
+  }
+
+  const parsed = parseMessage(text)
+
+  const today = new Date()
+  const usage = await getTodayUsage(user.id, today)
+  const todayCount = usage?.noteCount ?? 0
+
+  switch (parsed.intent) {
+    case 'save_note': {
+      if (!canSaveNote(plan, todayCount)) return formatUpgradePrompt('daily_limit')
+
+      const tags = parsed.tags ?? []
+      if (tags.length > 0) {
+        const tagCount = await countUserTags(user.id)
+        if (!canCreateTag(plan, tagCount)) return formatUpgradePrompt('tag_limit')
+      }
+
+      const note = await createNote({
+        userId: user.id,
+        noteType,
+        content: parsed.content ?? text,
+        rawContent: noteType !== 'text' ? text : undefined,
+        fileUrl: input.audioUrl ?? input.imageUrl,
+      })
+
+      if (tags.length > 0) {
+        const tagRecords = await Promise.all(tags.map(name => findOrCreateTag(user.id, name)))
+        await attachTagsToNote(note.id, tagRecords.map(t => t.id))
+        await Promise.all(tagRecords.map(t => incrementTagCount(t.id)))
+      }
+
+      await incrementDailyUsage(user.id, today)
+      return formatNoteSaved(tags, todayCount + 1)
+    }
+
+    case 'list_tags': {
+      const tags = await findTagsByUser(user.id)
+      return formatTagList(tags)
+    }
+
+    case 'tag_notes': {
+      const tagName = parsed.tagName ?? ''
+      const notes = await findNotesByTag(user.id, tagName)
+      return formatTagNotes(notes, tagName)
+    }
+
+    case 'search': {
+      if (!canUseSearch(plan)) return formatUpgradePrompt('search')
+      const notes = await searchNotes(user.id, parsed.searchQuery ?? '')
+      return formatSearchResults(notes, parsed.searchQuery ?? '')
+    }
+
+    case 'delete': {
+      if (!parsed.noteId) return 'ID da nota não encontrado.'
+      await softDeleteNote(parsed.noteId, user.id)
+      return formatNoteDeleted()
+    }
+
+    case 'edit': {
+      if (!parsed.noteId) return 'ID da nota não encontrado.'
+      const tags = parsed.tags ?? []
+      await updateNote(parsed.noteId, user.id, { content: parsed.editContent ?? '' })
+      await detachTagsFromNote(parsed.noteId)
+      if (tags.length > 0) {
+        const tagRecords = await Promise.all(tags.map(name => findOrCreateTag(user.id, name)))
+        await attachTagsToNote(parsed.noteId, tagRecords.map(t => t.id))
+      }
+      return formatNoteEdited()
+    }
+
+    case 'list_commands':
+      return formatCommandList()
+
+    case 'pause_reviews':
+      return formatPauseStub()
+
+    case 'referral':
+      return formatReferralMessage(user.id)
+  }
+}
