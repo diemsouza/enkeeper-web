@@ -52,12 +52,51 @@ export function formatNoteEdited(content: string): string {
   return `Nota atualizada: "${content}"`;
 }
 
-export function formatDeleteHelp(): string {
-  return "Para excluir uma nota informe o número.\nExemplo: /excluir 5\n\n_Use /notas para ver suas notas com os números._";
+export function formatDeleteNoteHelp(): string {
+  return "Para excluir uma nota informe o número.\nExemplo: */excluir nota* 3\n\nUse */notas* para ver suas notas numeradas.";
 }
 
-export function formatEditHelp(): string {
-  return "Para editar uma nota informe o número e o novo texto.\nExemplo: /editar 4 novo texto #tag\n\n_Use /notas para ver suas notas com os números._";
+export function formatEditNoteHelp(): string {
+  return "Para editar uma nota informe o número e o novo texto.\nExemplo: */editar nota* 3 *para* novo texto #tag\n\nTags devem vir no final. Use */notas* para ver suas notas numeradas.";
+}
+
+export function formatDeleteTagConfirm(
+  tagName: string,
+  noteCount: number,
+): string {
+  return `A tag #${tagName} está em ${noteCount} nota${noteCount !== 1 ? "s" : ""}. As notas não serão excluídas, apenas a tag será removida delas.\n\nDigite /confirmar para excluir ou qualquer outra mensagem para cancelar.`;
+}
+
+export function formatTagDeleted(tagName: string): string {
+  return `Tag #${tagName} excluída.`;
+}
+
+export function formatTagEdited(oldName: string, newName: string): string {
+  return `Tag #${oldName} renomeada para #${newName}.`;
+}
+
+export function formatEditTagHelp(): string {
+  return "Para renomear uma tag informe o nome atual e o novo nome.\nExemplos:\n*/editar tag* ingles *para* english\n*/editar tag* #ingles *para* #english";
+}
+
+export function formatConfirmNotFound(): string {
+  return "Nenhuma ação pendente de confirmação.";
+}
+
+export function formatNoteIndexNotFound(): string {
+  return "Número inválido. Use */notas* para ver suas notas numeradas.";
+}
+
+export function formatTagNotFound(tagName: string): string {
+  return `Tag #${tagName} não encontrada.`;
+}
+
+export function formatInvalidCommand(): string {
+  return "Comando inválido.\nDigite */* para ver os comandos disponíveis.";
+}
+
+export function formatInvalidTag(): string {
+  return "Tag não reconhecida.\nDigite *#* para ver suas tags.";
 }
 
 export function formatUpgradePrompt(
@@ -91,16 +130,19 @@ export function formatCommandList(): string {
     "• */* — lista de comandos",
     "• *#* — suas tags",
     "• *#nome* — notas com essa tag",
-    "• */buscar <termo>* — buscar notas",
-    "• */excluir <número>* — excluir nota",
-    "• */editar <número> <conteúdo>* — editar nota",
+    "• */buscar* <termo> — buscar notas",
+    "• */excluir nota* 3 — excluir nota pelo número",
+    "• */excluir tag* #nome — excluir uma tag",
+    "• */editar nota* 3 *para* novo texto — editar nota pelo número",
+    "• */editar tag* ingles *para* english — renomear uma tag",
     "• */notas* — ver notas de hoje",
     "• */notas ontem* — ver notas de ontem",
     "• */notas semana* — ver notas dos últimos 7 dias",
     "• */pausar* — pausar revisões",
-    "• */indicar* — indicar amigos",
+    //"• */indicar* — indicar amigos",
     "",
-    "Para salvar uma nota, basta enviar o texto. Use _#tags_ para organizar!",
+    "Para salvar uma nota, basta enviar o texto.",
+    "Tags devem sempre vir no final da mensagem. Ex: texto da nota #tag1 #tag2",
   ].join("\n");
 }
 
@@ -114,8 +156,8 @@ export function formatNotesList(
   filter: "today" | "yesterday" | "week",
 ): string {
   const emptyMessages = {
-    today: "Nenhuma nota hoje.",
-    yesterday: "Nenhuma nota ontem.",
+    today: "Nenhuma nota de hoje.",
+    yesterday: "Nenhuma nota de ontem.",
     week: "Nenhuma nota nos últimos 7 dias.",
   };
   if (notes.length === 0) return emptyMessages[filter];

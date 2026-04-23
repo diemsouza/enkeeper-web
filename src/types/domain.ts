@@ -1,6 +1,7 @@
 export type PlanCode = 'free' | 'pro'
 export type ChannelType = 'whatsapp'
 export type NoteType = 'text' | 'audio' | 'image'
+export type MessageRole = 'user' | 'assistant'
 
 export type MessageIntent =
   | 'save_note'
@@ -10,9 +11,14 @@ export type MessageIntent =
   | 'search'
   | 'delete_note'
   | 'edit'
+  | 'delete_tag'
+  | 'edit_tag'
+  | 'confirm'
   | 'list_commands'
   | 'pause_reviews'
   | 'referral'
+  | 'invalid_command'
+  | 'invalid_tag'
 
 export type ParsedMessage = {
   intent: MessageIntent
@@ -22,6 +28,7 @@ export type ParsedMessage = {
   searchQuery?: string
   noteId?: string
   tagName?: string
+  tagNewName?: string
   editContent?: string
   notesFilter?: 'today' | 'yesterday' | 'week'
 }

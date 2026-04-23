@@ -44,6 +44,7 @@ model User {
     // billings    Billing[]
     // payments    Payment[]
     llmUsages   LlmUsage[]
+    messages    Message[]
 
     @@map("users")
 }
@@ -59,7 +60,8 @@ model UserChannel {
     createdAt   DateTime    @default(now()) @map("created_at")
     updatedAt   DateTime    @updatedAt @map("updated_at")
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    messages Message[]
 
     @@unique([channelType, channelId])
     @@unique([channelType, channelCode])

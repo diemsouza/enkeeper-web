@@ -7,6 +7,7 @@ type CreateNoteData = {
   content: string
   rawContent?: string
   fileUrl?: string
+  messageId?: string
 }
 
 export async function createNote(data: CreateNoteData): Promise<Note> {
@@ -99,6 +100,36 @@ export async function findNotesByDateRange(
     },
     orderBy: { createdAt: 'desc' },
   })
+}
+
+const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000
+
+function filterToDateRange(filter: 'today' | 'yesterday' | 'week'): { from: Date; to: Date } {
+  const now = new Date()
+  const brazil = new Date(now.getTime() - BRAZIL_OFFSET_MS)
+  const midnight = new Date(Date.UTC(brazil.getUTCFullYear(), brazil.getUTCMonth(), brazil.getUTCDate()))
+  const todayStart = new Date(midnight.getTime() + BRAZIL_OFFSET_MS)
+  if (filter === 'today') return { from: todayStart, to: now }
+  if (filter === 'yesterday') {
+    const yesterdayStart = new Date(todayStart.getTime() - 86400000)
+    return { from: yesterdayStart, to: todayStart }
+  }
+  return { from: new Date(now.getTime() - 7 * 86400000), to: now }
+}
+
+export async function findNoteByUserIndex(
+  userId: string,
+  index: number,
+  filter: 'today' | 'yesterday' | 'week',
+): Promise<Note | null> {
+  const { from, to } = filterToDateRange(filter)
+  const results = await prisma.note.findMany({
+    where: { userId, deletedAt: null, createdAt: { gte: from, lt: to } },
+    orderBy: { createdAt: 'desc' },
+    skip: index - 1,
+    take: 1,
+  })
+  return results[0] ?? null
 }
 
 export async function countTodayNotes(userId: string, date: Date): Promise<number> {

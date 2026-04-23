@@ -4,6 +4,11 @@ enum NoteType {
     image
 }
 
+enum MessageRole {
+    user
+    assistant
+}
+
 model Note {
     id         String    @id @default(ulid()) @map("id")
     userId     String    @map("user_id")
@@ -11,11 +16,13 @@ model Note {
     content    String    @map("content") // texto final ou resumo IA
     rawContent String?   @map("raw_content") // transcrição/OCR bruto — null se texto direto
     fileUrl    String?   @map("file_url") // path no storage (R2/S3) — null se texto direto
+    messageId  String?   @map("message_id")
     createdAt  DateTime  @default(now()) @map("created_at")
     updatedAt  DateTime  @updatedAt @map("updated_at")
     deletedAt  DateTime? @map("deleted_at")
 
     user             User       @relation(fields: [userId], references: [id])
+    message          Message?   @relation(fields: [messageId], references: [id])
     noteTagRelations NoteTag[]
     llmUsages        LlmUsage[]
 
@@ -91,4 +98,23 @@ model LlmUsage {
     @@index([userId])
     @@index([noteId])
     @@map("llm_usages")
+}
+
+model Message {
+    id            String      @id @default(ulid()) @map("id")
+    userId        String      @map("user_id")
+    userChannelId String      @map("user_channel_id")
+    role          MessageRole @map("role")
+    content       String      @map("content")
+    intent        String?     @map("intent")
+    metadata      Json?       @map("metadata")
+    createdAt     DateTime    @default(now()) @map("created_at")
+
+    user        User        @relation(fields: [userId], references: [id])
+    userChannel UserChannel @relation(fields: [userChannelId], references: [id])
+    notes       Note[]
+
+    @@index([userId, createdAt])
+    @@index([userId, role, createdAt])
+    @@map("messages")
 }

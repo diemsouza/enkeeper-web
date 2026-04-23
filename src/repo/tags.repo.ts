@@ -44,3 +44,37 @@ export async function decrementTagCount(tagId: string): Promise<void> {
 export async function countUserTags(userId: string): Promise<number> {
   return prisma.tag.count({ where: { userId } })
 }
+
+export async function countNotesByTag(userId: string, tagName: string): Promise<number | null> {
+  const tag = await prisma.tag.findFirst({ where: { userId, name: tagName } })
+  if (!tag) return null
+  return tag.noteCount
+}
+
+export async function renameTag(userId: string, oldName: string, newName: string): Promise<Tag | null> {
+  const tag = await prisma.tag.findFirst({ where: { userId, name: oldName } })
+  if (!tag) return null
+  return prisma.tag.update({ where: { id: tag.id }, data: { name: newName } })
+}
+
+export async function findTagNamesByNote(noteId: string): Promise<string[]> {
+  const relations = await prisma.noteTag.findMany({
+    where: { noteId },
+    select: { tag: { select: { name: true } } },
+  })
+  return relations.map(r => r.tag.name)
+}
+
+export async function findTagsByNames(userId: string, names: string[]): Promise<Tag[]> {
+  if (names.length === 0) return []
+  return prisma.tag.findMany({ where: { userId, name: { in: names } } })
+}
+
+export async function deleteTag(userId: string, tagName: string): Promise<void> {
+  await prisma.$transaction(async tx => {
+    const tag = await tx.tag.findFirst({ where: { userId, name: tagName } })
+    if (!tag) return
+    await tx.noteTag.deleteMany({ where: { tagId: tag.id } })
+    await tx.tag.delete({ where: { id: tag.id } })
+  })
+}
