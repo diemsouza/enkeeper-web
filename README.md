@@ -24,3 +24,11 @@ npx @upstash/qstash-cli@latest dev -port=8081
 ```
 
 Set local .env QSTASH_URL=https://127.0.0.1:8081
+
+# Terminal 1: Next.js rodando
+
+npm run dev
+
+# Terminal 2: ngrok expondo a porta
+
+ngrok http 3000
