@@ -5,7 +5,7 @@ type CreateNoteData = {
   userId: string
   noteType: NoteType
   content: string
-  rawContent?: string
+  mediaType?: string
   fileUrl?: string
   messageId?: string
 }
@@ -30,7 +30,7 @@ export async function softDeleteNote(id: string, userId: string): Promise<void> 
 export async function updateNote(
   id: string,
   userId: string,
-  data: { content: string; rawContent?: string },
+  data: { content: string },
 ): Promise<void> {
   await prisma.note.updateMany({
     where: { id, userId, deletedAt: null },

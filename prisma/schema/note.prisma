@@ -10,13 +10,13 @@ enum MessageRole {
 }
 
 model Note {
-    id         String    @id @default(ulid()) @map("id")
-    userId     String    @map("user_id")
-    noteType   NoteType  @default(text) @map("note_type")
-    content    String    @map("content") // texto final ou resumo IA
-    rawContent String?   @map("raw_content") // transcrição/OCR bruto — null se texto direto
-    fileUrl    String?   @map("file_url") // path no storage (R2/S3) — null se texto direto
-    messageId  String?   @map("message_id")
+    id        String    @id @default(ulid()) @map("id")
+    userId    String    @map("user_id")
+    noteType  NoteType  @default(text) @map("note_type")
+    content   String    @map("content")
+    mediaType String?   @map("media_type")
+    fileUrl   String?   @map("file_url")
+    messageId String?   @map("message_id")
     createdAt  DateTime  @default(now()) @map("created_at")
     updatedAt  DateTime  @updatedAt @map("updated_at")
     deletedAt  DateTime? @map("deleted_at")
@@ -109,6 +109,8 @@ model Message {
     content       String      @map("content")
     intent        String?     @map("intent")
     externalId    String?     @map("external_id")
+    mediaType     String?     @map("media_type")
+    mediaId       String?     @map("media_id")
     metadata      Json?       @map("metadata")
     createdAt     DateTime    @default(now()) @map("created_at")
 

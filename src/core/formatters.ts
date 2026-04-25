@@ -44,6 +44,13 @@ export function formatNoteSaved(
   return `*Salvo em ${tagList}!* ${countLabel}`;
 }
 
+export function formatAudioNoteSaved(transcription: string): string {
+  const preview = transcription.length > 100
+    ? transcription.slice(0, 100) + "..."
+    : transcription;
+  return `Salvo! Transcrição: ${preview}`;
+}
+
 export function formatNoteDeleted(content: string): string {
   return `Nota excluída: "${content}"`;
 }
@@ -138,7 +145,7 @@ export function formatCommandList(): string {
     "• */notas* — ver notas de hoje",
     "• */notas ontem* — ver notas de ontem",
     "• */notas semana* — ver notas dos últimos 7 dias",
-    "• */pausar* — pausar revisões",
+    //"• */pausar* — pausar revisões",
     //"• */indicar* — indicar amigos",
     "",
     "Para salvar uma nota, basta enviar o texto.",

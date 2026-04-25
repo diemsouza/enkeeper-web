@@ -38,7 +38,9 @@ export type IncomingMessage = {
   channelCode?: string
   channelType: ChannelType
   text?: string
-  audioUrl?: string
   imageUrl?: string
   externalId?: string
+  mediaType?: string
+  mediaId?: string
+  mediaMetadata?: Record<string, string | number | null>
 }

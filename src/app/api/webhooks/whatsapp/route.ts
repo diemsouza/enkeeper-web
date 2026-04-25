@@ -2,22 +2,20 @@ import { after } from "next/server";
 import { NextRequest } from "next/server";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { handleIncomingMessage } from "../../../../services/message-service";
-import { sendMessage } from "../../../../services/whatsapp-service";
-import { IncomingMessage } from "../../../../types/domain";
+import { findOrCreateUserByChannel } from "../../../../services/user-service";
+import {
+  downloadMedia,
+  resolveMediaUrl,
+  sendWhatsAppMessage,
+} from "../../../../vendors/whatsapp.vendor";
+import { transcribeAudio } from "../../../../vendors/whisper.vendor";
+import { canUseAudio } from "../../../../core/limits";
+import { formatUpgradePrompt } from "../../../../core/formatters";
+import { IncomingMessage, PlanCode } from "../../../../types/domain";
 import {
   verifyMetaSignature,
   verifyWebhookToken,
 } from "@/src/lib/whatsapp-verify";
-
-async function resolveMediaUrl(mediaId: string): Promise<string> {
-  const res = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
-    headers: { Authorization: `Bearer ${process.env.WABA_TOKEN}` },
-  });
-  if (!res.ok)
-    throw new Error(`Failed to resolve media ${mediaId}: ${res.status}`);
-  const data = (await res.json()) as { url: string };
-  return data.url;
-}
 
 export async function GET(req: NextRequest): Promise<Response> {
   const { searchParams } = req.nextUrl;
@@ -66,30 +64,53 @@ export async function POST(req: NextRequest): Promise<Response> {
       if (!wa_id) return;
 
       const message = value.messages[0];
-      let input: IncomingMessage = {
+      const base: IncomingMessage = {
         channelId: wa_id,
         channelType: "whatsapp",
         externalId: message.id,
       };
 
+      if (message.type === "audio" && message.audio) {
+        const user = await findOrCreateUserByChannel("whatsapp", wa_id);
+        if (!canUseAudio(user.planCode as PlanCode)) {
+          await sendWhatsAppMessage(wa_id, formatUpgradePrompt("audio"));
+          return;
+        }
+        const { buffer, mimeType, fileSize, sha256 } = await downloadMedia(message.audio.id);
+        const transcription = await transcribeAudio(buffer, mimeType);
+        const input: IncomingMessage = {
+          ...base,
+          text: transcription,
+          mediaType: "audio",
+          mediaId: message.audio.id,
+          mediaMetadata: {
+            mimeType,
+            fileSize: fileSize ?? null,
+            sha256: sha256 ?? null,
+            mediaId: message.audio.id,
+          },
+        };
+        const reply = await handleIncomingMessage(input);
+        await sendWhatsAppMessage(wa_id, reply);
+        return;
+      }
+
+      let input: IncomingMessage = base;
       if (message.type === "text" && message.text) {
-        input = { ...input, text: message.text.body };
-      } else if (message.type === "audio" && message.audio) {
-        const audioUrl = await resolveMediaUrl(message.audio.id);
-        input = { ...input, audioUrl };
+        input = { ...base, text: message.text.body };
       } else if (message.type === "image" && message.image) {
         const imageUrl = await resolveMediaUrl(message.image.id);
-        input = { ...input, imageUrl };
+        input = { ...base, imageUrl };
       } else {
         return;
       }
 
       const reply = await handleIncomingMessage(input);
-      await sendMessage(wa_id, reply);
+      await sendWhatsAppMessage(wa_id, reply);
     } catch (err) {
       if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
-        const input = body as { entry?: Array<{ changes?: Array<{ value?: { messages?: Array<{ id?: string }> } }> }> };
-        const externalId = input?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id ?? "unknown";
+        const raw = body as { entry?: Array<{ changes?: Array<{ value?: { messages?: Array<{ id?: string }> } }> }> };
+        const externalId = raw?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id ?? "unknown";
         console.log(`[WEBHOOK] duplicate message ignored ${externalId}`);
         return;
       }

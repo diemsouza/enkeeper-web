@@ -9,9 +9,9 @@ const bodySchema = z.object({
   channelCode: z.string().optional().nullable(),
   channelType: z.enum(['whatsapp']),
   text: z.string().optional().nullable(),
-  audioUrl: z.string().url().optional().nullable(),
   imageUrl: z.string().url().optional().nullable(),
   externalId: z.string().optional().nullable(),
+  mediaType: z.string().optional().nullable(),
 })
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: parsed.error.message }, { status: 400 })
   }
 
-  const { channelId, channelCode, channelType, text, audioUrl, imageUrl, externalId } = parsed.data
+  const { channelId, channelCode, channelType, text, imageUrl, externalId, mediaType } = parsed.data
 
   try {
     const reply = await handleIncomingMessage({
@@ -40,9 +40,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       channelCode: channelCode ?? undefined,
       channelType: channelType as ChannelType,
       text: text ?? undefined,
-      audioUrl: audioUrl ?? undefined,
       imageUrl: imageUrl ?? undefined,
       externalId: externalId ?? undefined,
+      mediaType: mediaType ?? undefined,
     })
     return NextResponse.json({ reply })
   } catch (err) {

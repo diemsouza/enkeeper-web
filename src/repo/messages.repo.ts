@@ -8,7 +8,9 @@ type SaveMessageData = {
   content: string
   intent?: string
   externalId?: string
-  metadata?: { [key: string]: string | null }
+  mediaType?: string
+  mediaId?: string
+  metadata?: Record<string, string | number | null>
 }
 
 export async function saveMessage(data: SaveMessageData): Promise<Message> {
@@ -20,6 +22,8 @@ export async function saveMessage(data: SaveMessageData): Promise<Message> {
       content: data.content,
       intent: data.intent,
       externalId: data.externalId,
+      mediaType: data.mediaType,
+      mediaId: data.mediaId,
       metadata: data.metadata !== undefined
         ? (data.metadata as Prisma.InputJsonObject)
         : undefined,

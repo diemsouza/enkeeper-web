@@ -32,3 +32,5 @@ npm run dev
 # Terminal 2: ngrok expondo a porta
 
 ngrok http 3000
+
+Example url: https://1bb0-187-56-243-58.ngrok-free.app

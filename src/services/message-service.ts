@@ -1,6 +1,7 @@
 import { NoteType } from "@prisma/client";
 import { parseMessage } from "../core/parser";
 import {
+  formatAudioNoteSaved,
   formatCommandList,
   formatConfirmNotFound,
   formatDeleteNoteHelp,
@@ -57,7 +58,6 @@ import {
 import { incrementDailyUsage, getTodayUsage } from "../repo/daily-usage.repo";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import { findOrCreateUserByChannel } from "./user-service";
-import { transcribeAudio } from "../vendors/whisper.vendor";
 import { extractTextFromImage } from "../vendors/vision.vendor";
 import { IncomingMessage, PlanCode } from "../types/domain";
 
@@ -78,13 +78,12 @@ export async function handleIncomingMessage(
   let text = input.text ?? "";
   let noteType: NoteType = "text";
 
-  if (input.audioUrl) {
+  if (input.mediaType === "audio") {
     if (!canUseAudio(plan)) {
       const reply = formatUpgradePrompt("audio");
       await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "assistant", content: reply });
       return reply;
     }
-    text = await transcribeAudio(input.audioUrl);
     noteType = "audio";
   } else if (input.imageUrl) {
     if (!canUseImage(plan)) {
@@ -98,15 +97,16 @@ export async function handleIncomingMessage(
 
   const parsed = parseMessage(text);
 
-  const hasMedia = !!(input.audioUrl || input.imageUrl);
   const savedMessage = await saveMessage({
     userId: user.id,
     userChannelId: userChannel.id,
     role: "user",
-    content: input.text ?? "",
+    content: text,
     intent: parsed.intent,
     externalId: input.externalId,
-    metadata: hasMedia ? { audioUrl: input.audioUrl ?? null, imageUrl: input.imageUrl ?? null } : undefined,
+    mediaType: input.mediaType,
+    mediaId: input.mediaId,
+    metadata: input.mediaMetadata ?? (input.imageUrl ? { imageUrl: input.imageUrl } : undefined),
   });
 
   const today = new Date();
@@ -135,8 +135,8 @@ export async function handleIncomingMessage(
         userId: user.id,
         noteType,
         content: parsed.content ?? text,
-        rawContent: noteType !== "text" ? text : undefined,
-        fileUrl: input.audioUrl ?? input.imageUrl,
+        mediaType: input.mediaType,
+        fileUrl: input.imageUrl,
         messageId: savedMessage.id,
       });
 
@@ -149,7 +149,9 @@ export async function handleIncomingMessage(
       }
 
       await incrementDailyUsage(user.id, today);
-      reply = formatNoteSaved(tags, todayCount + 1);
+      reply = noteType === "audio"
+        ? formatAudioNoteSaved(text)
+        : formatNoteSaved(tags, todayCount + 1);
       break;
     }
 
