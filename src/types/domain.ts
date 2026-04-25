@@ -40,4 +40,5 @@ export type IncomingMessage = {
   text?: string
   audioUrl?: string
   imageUrl?: string
+  externalId?: string
 }

@@ -7,6 +7,7 @@ type SaveMessageData = {
   role: MessageRole
   content: string
   intent?: string
+  externalId?: string
   metadata?: { [key: string]: string | null }
 }
 
@@ -18,6 +19,7 @@ export async function saveMessage(data: SaveMessageData): Promise<Message> {
       role: data.role,
       content: data.content,
       intent: data.intent,
+      externalId: data.externalId,
       metadata: data.metadata !== undefined
         ? (data.metadata as Prisma.InputJsonObject)
         : undefined,

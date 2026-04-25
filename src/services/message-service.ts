@@ -105,6 +105,7 @@ export async function handleIncomingMessage(
     role: "user",
     content: input.text ?? "",
     intent: parsed.intent,
+    externalId: input.externalId,
     metadata: hasMedia ? { audioUrl: input.audioUrl ?? null, imageUrl: input.imageUrl ?? null } : undefined,
   });
 

@@ -32,12 +32,13 @@ model Note {
 }
 
 model Tag {
-    id        String   @id @default(ulid()) @map("id")
-    userId    String   @map("user_id")
-    name      String   @map("name") // "ingles", "phrasal", "trabalho"
-    noteCount Int      @default(0) @map("note_count") // counter cache
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
+    id        String    @id @default(ulid()) @map("id")
+    userId    String    @map("user_id")
+    name      String    @map("name") // "ingles", "phrasal", "trabalho"
+    noteCount Int       @default(0) @map("note_count") // counter cache
+    createdAt DateTime  @default(now()) @map("created_at")
+    updatedAt DateTime  @updatedAt @map("updated_at")
+    deletedAt DateTime? @map("deleted_at")
 
     user     User      @relation(fields: [userId], references: [id])
     noteTags NoteTag[]
@@ -107,6 +108,7 @@ model Message {
     role          MessageRole @map("role")
     content       String      @map("content")
     intent        String?     @map("intent")
+    externalId    String?     @map("external_id")
     metadata      Json?       @map("metadata")
     createdAt     DateTime    @default(now()) @map("created_at")
 
@@ -114,6 +116,7 @@ model Message {
     userChannel UserChannel @relation(fields: [userChannelId], references: [id])
     notes       Note[]
 
+    @@unique([userChannelId, externalId])
     @@index([userId, createdAt])
     @@index([userId, role, createdAt])
     @@map("messages")

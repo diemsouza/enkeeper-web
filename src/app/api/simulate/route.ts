@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { handleIncomingMessage } from '../../../services/message-service'
 import { ChannelType } from '../../../types/domain'
 
@@ -10,6 +11,7 @@ const bodySchema = z.object({
   text: z.string().optional().nullable(),
   audioUrl: z.string().url().optional().nullable(),
   imageUrl: z.string().url().optional().nullable(),
+  externalId: z.string().optional().nullable(),
 })
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: parsed.error.message }, { status: 400 })
   }
 
-  const { channelId, channelCode, channelType, text, audioUrl, imageUrl } = parsed.data
+  const { channelId, channelCode, channelType, text, audioUrl, imageUrl, externalId } = parsed.data
 
   try {
     const reply = await handleIncomingMessage({
@@ -40,9 +42,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       text: text ?? undefined,
       audioUrl: audioUrl ?? undefined,
       imageUrl: imageUrl ?? undefined,
+      externalId: externalId ?? undefined,
     })
     return NextResponse.json({ reply })
   } catch (err) {
+    if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+      console.log(`[SIMULATE] duplicate message ignored ${externalId}`)
+      return NextResponse.json({ reply: null })
+    }
     const message = err instanceof Error ? err.message : 'Erro interno'
     return NextResponse.json({ error: message }, { status: 500 })
   }

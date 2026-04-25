@@ -41,8 +41,6 @@ model User {
     notes       Note[]
     tags        Tag[]
     dailyUsages DailyUsage[]
-    // billings    Billing[]
-    // payments    Payment[]
     llmUsages   LlmUsage[]
     messages    Message[]
 

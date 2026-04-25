@@ -1,5 +1,6 @@
 import { after } from "next/server";
 import { NextRequest } from "next/server";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { handleIncomingMessage } from "../../../../services/message-service";
 import { sendMessage } from "../../../../services/whatsapp-service";
 import { IncomingMessage } from "../../../../types/domain";
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest): Promise<Response> {
           changes?: Array<{
             value?: {
               messages?: Array<{
+                id: string;
                 type: string;
                 text?: { body: string };
                 audio?: { id: string };
@@ -67,6 +69,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       let input: IncomingMessage = {
         channelId: wa_id,
         channelType: "whatsapp",
+        externalId: message.id,
       };
 
       if (message.type === "text" && message.text) {
@@ -84,6 +87,12 @@ export async function POST(req: NextRequest): Promise<Response> {
       const reply = await handleIncomingMessage(input);
       await sendMessage(wa_id, reply);
     } catch (err) {
+      if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
+        const input = body as { entry?: Array<{ changes?: Array<{ value?: { messages?: Array<{ id?: string }> } }> }> };
+        const externalId = input?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id ?? "unknown";
+        console.log(`[WEBHOOK] duplicate message ignored ${externalId}`);
+        return;
+      }
       console.error("[WA WEBHOOK] processing error", err);
     }
   });
