@@ -1,24 +1,27 @@
 import { NoteType } from "@prisma/client";
-import { parseMessage } from "../core/parser";
+import { extractTrailingTags, parseMessage } from "../core/parser";
 import {
   formatAudioNoteSaved,
   formatCommandList,
   formatConfirmNotFound,
   formatDeleteNoteHelp,
+  formatDeleteNotePrompt,
   formatDeleteTagConfirm,
   formatEditNoteHelp,
-  formatEditTagHelp,
+  formatEditNotePrompt,
+  formatEditTagPrompt,
   formatInvalidCommand,
   formatInvalidTag,
-  formatNoteDeleted,
   formatNoteEdited,
   formatNoteIndexNotFound,
   formatNotesList,
   formatNoteSaved,
+  formatOnboardingMessage,
   formatPauseStub,
   formatReferralMessage,
   formatSearchResults,
-  formatTagDeleted,
+  formatSupportReceived,
+  formatSupportRequest,
   formatTagEdited,
   formatTagList,
   formatTagNotFound,
@@ -37,6 +40,7 @@ import {
   findNoteByUserIndex,
   findNotesByDateRange,
   findNotesByTag,
+  hasAnyNotes,
   searchNotes,
   softDeleteNote,
   updateNote,
@@ -59,11 +63,13 @@ import { incrementDailyUsage, getTodayUsage } from "../repo/daily-usage.repo";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import { findOrCreateUserByChannel } from "./user-service";
 import { extractTextFromImage } from "../vendors/vision.vendor";
+import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
+import { sanitizeNoteContent } from "../core/sanitizer";
 import { IncomingMessage, PlanCode } from "../types/domain";
 
 export async function handleIncomingMessage(
   input: IncomingMessage,
-): Promise<string> {
+): Promise<string[]> {
   const user = await findOrCreateUserByChannel(
     input.channelType,
     input.channelId,
@@ -72,7 +78,7 @@ export async function handleIncomingMessage(
   const plan = user.planCode as PlanCode;
   const userChannel = user.channels.find(c => c.channelId === input.channelId)!;
 
-  // Fetch before saving inbound so confirm handler sees the previous message
+  // Fetch before saving inbound so state lookup sees the previous message
   const lastUserMessage = await findLastUserMessage(user.id);
 
   let text = input.text ?? "";
@@ -82,18 +88,127 @@ export async function handleIncomingMessage(
     if (!canUseAudio(plan)) {
       const reply = formatUpgradePrompt("audio");
       await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "assistant", content: reply });
-      return reply;
+      return [reply];
     }
     noteType = "audio";
   } else if (input.imageUrl) {
     if (!canUseImage(plan)) {
       const reply = formatUpgradePrompt("image");
       await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "assistant", content: reply });
-      return reply;
+      return [reply];
     }
     text = await extractTextFromImage(input.imageUrl);
     noteType = "image";
   }
+
+  // --- State machine: check pending state from last user message ---
+  const pendingIntent = lastUserMessage?.intent;
+  const inDeleteState = pendingIntent === "delete_note" || pendingIntent === "delete_tag";
+  const inEditNoteState = pendingIntent === "edit_note_prompt";
+  const inEditTagState = pendingIntent === "edit_tag_prompt";
+  const inSupportState = pendingIntent === "support";
+  const hasActiveState = inDeleteState || inEditNoteState || inEditTagState || inSupportState;
+
+  let prefixCancel = false;
+
+  if (hasActiveState) {
+    const trimmed = text.trim();
+
+    if (trimmed === "/cancelar") {
+      await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "user", content: text, intent: "cancel", externalId: input.externalId });
+      const reply = "Cancelado.";
+      await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "assistant", content: reply });
+      return [reply];
+    }
+
+    if (inDeleteState) {
+      if (trimmed === "/confirmar") {
+        await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "user", content: text, intent: "confirm", externalId: input.externalId });
+        let reply: string;
+        if (pendingIntent === "delete_note") {
+          const prevParsed = parseMessage(lastUserMessage!.content);
+          const idx = parseInt(prevParsed.noteId ?? "0", 10);
+          const note = await findNoteByUserIndex(user.id, idx, "today");
+          if (note) {
+            await softDeleteNote(note.id, user.id);
+            reply = "✅ Nota excluída.";
+          } else {
+            reply = formatNoteIndexNotFound();
+          }
+        } else {
+          const prevParsed = parseMessage(lastUserMessage!.content);
+          const tagName = prevParsed.tagName ?? "";
+          await deleteTag(user.id, tagName);
+          reply = "✅ Tag excluída.";
+        }
+        await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "assistant", content: reply });
+        return [reply];
+      }
+      // Any other message: implicit cancel, fall through to normal processing
+      prefixCancel = true;
+    }
+
+    if (inEditNoteState) {
+      const prevParsed = parseMessage(lastUserMessage!.content);
+      const idx = parseInt(prevParsed.noteId ?? "0", 10);
+      const note = await findNoteByUserIndex(user.id, idx, "today");
+      await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "user", content: text, externalId: input.externalId });
+      if (!note) {
+        const reply = formatNoteIndexNotFound();
+        await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "assistant", content: reply });
+        return [reply];
+      }
+      const { content: rawContent, tags: editTags } = extractTrailingTags(text);
+      const sanitizedContent = sanitizeNoteContent(rawContent);
+
+      await updateNote(note.id, user.id, { content: sanitizedContent });
+
+      const oldTagNames = await findTagNamesByNote(note.id);
+      await detachTagsFromNote(note.id);
+      const oldSet = new Set(oldTagNames);
+      const addedNames = editTags.filter(n => !oldSet.has(n));
+      const removedNames = oldTagNames.filter(n => !new Set(editTags).has(n));
+
+      if (editTags.length > 0) {
+        const tagRecords = await Promise.all(editTags.map(name => findOrCreateTag(user.id, name)));
+        await attachTagsToNote(note.id, tagRecords.map(t => t.id));
+        const addedRecords = tagRecords.filter(t => addedNames.includes(t.name));
+        if (addedRecords.length > 0) await Promise.all(addedRecords.map(t => incrementTagCount(t.id)));
+      }
+      if (removedNames.length > 0) {
+        const removedRecords = await findTagsByNames(user.id, removedNames);
+        await Promise.all(removedRecords.map(t => decrementTagCount(t.id)));
+      }
+
+      const reply = "✅ Nota atualizada.";
+      await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "assistant", content: reply });
+      return [reply];
+    }
+
+    if (inEditTagState) {
+      const prevParsed = parseMessage(lastUserMessage!.content);
+      const tagName = prevParsed.tagName ?? "";
+      const newName = text.trim().replace(/^#/, "");
+      await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "user", content: text, externalId: input.externalId });
+      const renamed = await renameTag(user.id, tagName, newName);
+      const reply = renamed ? "✅ Tag atualizada." : formatTagNotFound(tagName);
+      await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "assistant", content: reply });
+      return [reply];
+    }
+
+    if (inSupportState) {
+      const channelCode = userChannel.channelCode ?? userChannel.channelId;
+      const planLabel = user.planCode === "pro" ? "Pro" : "Free";
+      const supportMsg = `📩 Suporte\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`;
+      const supportNumber = process.env.WA_SUPPORT;
+      if (supportNumber) await sendWhatsAppMessage(supportNumber, supportMsg);
+      await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "user", content: text, externalId: input.externalId });
+      const reply = formatSupportReceived();
+      await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "assistant", content: reply });
+      return [reply];
+    }
+  }
+  // --- End state machine ---
 
   const parsed = parseMessage(text);
 
@@ -131,10 +246,13 @@ export async function handleIncomingMessage(
         }
       }
 
+      const isFirstNote = !(await hasAnyNotes(user.id));
+      const sanitizedContent = sanitizeNoteContent(parsed.content ?? text);
+
       const note = await createNote({
         userId: user.id,
         noteType,
-        content: parsed.content ?? text,
+        content: sanitizedContent,
         mediaType: input.mediaType,
         fileUrl: input.imageUrl,
         messageId: savedMessage.id,
@@ -149,9 +267,20 @@ export async function handleIncomingMessage(
       }
 
       await incrementDailyUsage(user.id, today);
-      reply = noteType === "audio"
+      const confirmation = noteType === "audio"
         ? formatAudioNoteSaved(text)
         : formatNoteSaved(tags, todayCount + 1);
+      reply = confirmation;
+
+      if (isFirstNote) {
+        await saveMessage({
+          userId: user.id,
+          userChannelId: userChannel.id,
+          role: "assistant",
+          content: confirmation,
+        });
+        return [formatOnboardingMessage(), confirmation];
+      }
       break;
     }
 
@@ -189,8 +318,22 @@ export async function handleIncomingMessage(
         reply = formatNoteIndexNotFound();
         break;
       }
-      await softDeleteNote(note.id, user.id);
-      reply = formatNoteDeleted(note.content);
+      reply = formatDeleteNotePrompt(note.content);
+      break;
+    }
+
+    case "edit_note_prompt": {
+      if (!parsed.noteId) {
+        reply = formatEditNoteHelp();
+        break;
+      }
+      const idx = parseInt(parsed.noteId, 10);
+      const note = await findNoteByUserIndex(user.id, idx, "today");
+      if (!note) {
+        reply = formatNoteIndexNotFound();
+        break;
+      }
+      reply = formatEditNotePrompt(note.content);
       break;
     }
 
@@ -205,7 +348,7 @@ export async function handleIncomingMessage(
         reply = formatNoteIndexNotFound();
         break;
       }
-      const editContent = parsed.editContent ?? "";
+      const editContent = sanitizeNoteContent(parsed.editContent ?? "");
       await updateNote(note.id, user.id, { content: editContent });
 
       const oldTagNames = await findTagNamesByNote(note.id);
@@ -246,11 +389,22 @@ export async function handleIncomingMessage(
       break;
     }
 
+    case "edit_tag_prompt": {
+      const tagName = parsed.tagName ?? "";
+      const count = await countNotesByTag(user.id, tagName);
+      if (count === null) {
+        reply = formatTagNotFound(tagName);
+        break;
+      }
+      reply = formatEditTagPrompt(tagName);
+      break;
+    }
+
     case "edit_tag": {
       const tagName = parsed.tagName ?? "";
       const tagNewName = parsed.tagNewName;
       if (!tagNewName) {
-        reply = formatEditTagHelp();
+        reply = formatEditTagPrompt(tagName);
         break;
       }
       const renamed = await renameTag(user.id, tagName, tagNewName);
@@ -263,14 +417,17 @@ export async function handleIncomingMessage(
     }
 
     case "confirm": {
-      if (lastUserMessage?.intent === "delete_tag") {
-        const prevParsed = parseMessage(lastUserMessage.content);
-        const tagName = prevParsed.tagName ?? "";
-        await deleteTag(user.id, tagName);
-        reply = formatTagDeleted(tagName);
-      } else {
-        reply = formatConfirmNotFound();
-      }
+      reply = formatConfirmNotFound();
+      break;
+    }
+
+    case "cancel": {
+      reply = "Nenhuma ação pendente de cancelamento.";
+      break;
+    }
+
+    case "support": {
+      reply = formatSupportRequest();
       break;
     }
 
@@ -316,7 +473,8 @@ export async function handleIncomingMessage(
     content: reply,
   });
 
-  return reply;
+  if (prefixCancel) return ["Cancelado.", reply];
+  return [reply];
 }
 
 const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000;

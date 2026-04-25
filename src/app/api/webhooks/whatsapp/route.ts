@@ -90,8 +90,8 @@ export async function POST(req: NextRequest): Promise<Response> {
             mediaId: message.audio.id,
           },
         };
-        const reply = await handleIncomingMessage(input);
-        await sendWhatsAppMessage(wa_id, reply);
+        const replies = await handleIncomingMessage(input);
+        for (const r of replies) await sendWhatsAppMessage(wa_id, r);
         return;
       }
 
@@ -105,8 +105,8 @@ export async function POST(req: NextRequest): Promise<Response> {
         return;
       }
 
-      const reply = await handleIncomingMessage(input);
-      await sendWhatsAppMessage(wa_id, reply);
+      const replies = await handleIncomingMessage(input);
+      for (const r of replies) await sendWhatsAppMessage(wa_id, r);
     } catch (err) {
       if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
         const raw = body as { entry?: Array<{ changes?: Array<{ value?: { messages?: Array<{ id?: string }> } }> }> };

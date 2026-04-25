@@ -1,6 +1,6 @@
 import { ParsedMessage } from '../types/domain'
 
-function extractTrailingTags(text: string): { content: string; tags: string[] } {
+export function extractTrailingTags(text: string): { content: string; tags: string[] } {
   const tokens = text.trim().split(/\s+/)
   let tagStart = tokens.length
   for (let i = tokens.length - 1; i >= 0; i--) {
@@ -28,6 +28,8 @@ export function parseMessage(text: string): ParsedMessage {
   if (trimmed === '/pausar') return { intent: 'pause_reviews', raw }
   if (trimmed === '/indicar') return { intent: 'referral', raw }
   if (trimmed === '/confirmar') return { intent: 'confirm', raw }
+  if (trimmed === '/cancelar') return { intent: 'cancel', raw }
+  if (trimmed === '/suporte') return { intent: 'support', raw }
 
   if (trimmed.startsWith('/buscar ')) {
     const searchQuery = trimmed.slice('/buscar '.length).trim()
@@ -52,7 +54,7 @@ export function parseMessage(text: string): ParsedMessage {
     const rest = trimmed.slice('/editar nota '.length).trim()
     const paraIdx = rest.indexOf(' para ')
     if (paraIdx === -1) {
-      return { intent: 'edit', raw, noteId: rest, editContent: '', tags: [] }
+      return { intent: 'edit_note_prompt', raw, noteId: rest }
     }
     const noteId = rest.slice(0, paraIdx).trim()
     const body = rest.slice(paraIdx + ' para '.length)
@@ -65,7 +67,7 @@ export function parseMessage(text: string): ParsedMessage {
     const paraIdx = rest.indexOf(' para ')
     if (paraIdx === -1) {
       const tagName = rest.replace(/^#/, '')
-      return { intent: 'edit_tag', raw, tagName }
+      return { intent: 'edit_tag_prompt', raw, tagName }
     }
     const tagName = rest.slice(0, paraIdx).trim().replace(/^#/, '')
     const tagNewName = rest.slice(paraIdx + ' para '.length).trim().replace(/^#/, '')

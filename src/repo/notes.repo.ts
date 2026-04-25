@@ -132,6 +132,14 @@ export async function findNoteByUserIndex(
   return results[0] ?? null
 }
 
+export async function hasAnyNotes(userId: string): Promise<boolean> {
+  const note = await prisma.note.findFirst({
+    where: { userId, deletedAt: null },
+    select: { id: true },
+  });
+  return note !== null;
+}
+
 export async function countTodayNotes(userId: string, date: Date): Promise<number> {
   const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
   const end = new Date(start)

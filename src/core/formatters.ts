@@ -71,7 +71,27 @@ export function formatDeleteTagConfirm(
   tagName: string,
   noteCount: number,
 ): string {
-  return `A tag #${tagName} está em ${noteCount} nota${noteCount !== 1 ? "s" : ""}. As notas não serão excluídas, apenas a tag será removida delas.\n\nDigite /confirmar para excluir ou qualquer outra mensagem para cancelar.`;
+  return `A tag #${tagName} está em ${noteCount} nota${noteCount !== 1 ? "s" : ""}. As notas não serão excluídas, apenas a tag será removida delas.\n\nDigite /confirmar para excluir ou /cancelar para cancelar.`;
+}
+
+export function formatDeleteNotePrompt(content: string): string {
+  return `Nota: "${content}"\n\nDigite /confirmar para excluir ou /cancelar para cancelar.`;
+}
+
+export function formatEditNotePrompt(content: string): string {
+  return `Nota atual: "${content}"\n\nEscreva a nova nota e tags em uma única mensagem ou /cancelar para cancelar.`;
+}
+
+export function formatEditTagPrompt(tagName: string): string {
+  return `Tag atual: #${tagName}\n\nEscreva o novo nome da tag ou /cancelar para cancelar.`;
+}
+
+export function formatSupportRequest(): string {
+  return "Me conta o que você precisa em uma mensagem: upgrade, dúvida, problema ou sugestão.";
+}
+
+export function formatSupportReceived(): string {
+  return "Recebido! Sua solicitação foi enviada para um especialista e em breve entraremos em contato.";
 }
 
 export function formatTagDeleted(tagName: string): string {
@@ -206,4 +226,14 @@ export function formatReferralMessage(referralCode: string): string {
 
 export function formatPauseStub(): string {
   return "Em breve você poderá pausar suas revisões. Aguarde!";
+}
+
+export function formatOnboardingMessage(): string {
+  return [
+    "Oi! Aqui é onde você anota seu inglês pra reforçar seu aprendizado e não esquecer mesmo.",
+    "Manda qualquer palavra ou frase e eu salvo pra você revisar depois.",
+    "Use # pra organizar: welcome #ingles",
+    "Em breve, todo dia às 19h eu te mando 5 notas pra revisar.",
+    "Digite / pra ver todos os comandos.",
+  ].join("\n");
 }
