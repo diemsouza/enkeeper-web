@@ -5,11 +5,11 @@ import { handleIncomingMessage } from "../../../../services/message-service";
 import { findOrCreateUserByChannel } from "../../../../services/user-service";
 import {
   downloadMedia,
-  resolveMediaUrl,
   sendWhatsAppMessage,
 } from "../../../../vendors/whatsapp.vendor";
 import { transcribeAudio } from "../../../../vendors/whisper.vendor";
-import { canUseAudio } from "../../../../core/limits";
+import { extractTextFromImage } from "../../../../vendors/vision.vendor";
+import { canUseAudio, canUseImage } from "../../../../core/limits";
 import { formatUpgradePrompt } from "../../../../core/formatters";
 import { IncomingMessage, PlanCode } from "../../../../types/domain";
 import {
@@ -76,18 +76,44 @@ export async function POST(req: NextRequest): Promise<Response> {
           await sendWhatsAppMessage(wa_id, formatUpgradePrompt("audio"));
           return;
         }
-        const { buffer, mimeType, fileSize, sha256 } = await downloadMedia(message.audio.id);
-        const transcription = await transcribeAudio(buffer, mimeType);
+        const { buffer, mimeType, fileSize } = await downloadMedia(message.audio.id);
+        const { text: transcription, duration, format } = await transcribeAudio(buffer, mimeType);
         const input: IncomingMessage = {
           ...base,
           text: transcription,
           mediaType: "audio",
           mediaId: message.audio.id,
           mediaMetadata: {
-            mimeType,
-            fileSize: fileSize ?? null,
-            sha256: sha256 ?? null,
-            mediaId: message.audio.id,
+            media_type: "audio",
+            size_bytes: fileSize ?? null,
+            duration: duration ?? null,
+            format,
+          },
+        };
+        const replies = await handleIncomingMessage(input);
+        for (const r of replies) await sendWhatsAppMessage(wa_id, r);
+        return;
+      }
+
+      if (message.type === "image" && message.image) {
+        const user = await findOrCreateUserByChannel("whatsapp", wa_id);
+        if (!canUseImage(user.planCode as PlanCode)) {
+          await sendWhatsAppMessage(wa_id, formatUpgradePrompt("image"));
+          return;
+        }
+        const { buffer, mimeType, fileSize } = await downloadMedia(message.image.id);
+        const visionResult = await extractTextFromImage(buffer);
+        const format = mimeType.split("/")[1]?.split(";")[0] ?? "jpeg";
+        const input: IncomingMessage = {
+          ...base,
+          text: visionResult.content,
+          mediaType: "image",
+          mediaId: message.image.id,
+          mediaMetadata: {
+            media_type: "image",
+            transcription_type: visionResult.transcription_type,
+            size_bytes: fileSize ?? null,
+            format,
           },
         };
         const replies = await handleIncomingMessage(input);
@@ -98,9 +124,6 @@ export async function POST(req: NextRequest): Promise<Response> {
       let input: IncomingMessage = base;
       if (message.type === "text" && message.text) {
         input = { ...base, text: message.text.body };
-      } else if (message.type === "image" && message.image) {
-        const imageUrl = await resolveMediaUrl(message.image.id);
-        input = { ...base, imageUrl };
       } else {
         return;
       }

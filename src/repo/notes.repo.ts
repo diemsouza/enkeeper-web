@@ -41,14 +41,14 @@ export async function updateNote(
 export async function searchNotes(
   userId: string,
   query: string,
-): Promise<Pick<Note, 'id' | 'content' | 'createdAt'>[]> {
+): Promise<Pick<Note, 'id' | 'content' | 'noteType' | 'createdAt'>[]> {
   return prisma.note.findMany({
     where: {
       userId,
       deletedAt: null,
       content: { contains: query, mode: 'insensitive' },
     },
-    select: { id: true, content: true, createdAt: true },
+    select: { id: true, content: true, noteType: true, createdAt: true },
     orderBy: { createdAt: 'desc' },
   })
 }
@@ -56,7 +56,7 @@ export async function searchNotes(
 export async function findNotesByTag(
   userId: string,
   tagName: string,
-): Promise<Pick<Note, 'id' | 'content' | 'createdAt'>[]> {
+): Promise<Pick<Note, 'id' | 'content' | 'noteType' | 'createdAt'>[]> {
   return prisma.note.findMany({
     where: {
       userId,
@@ -65,7 +65,7 @@ export async function findNotesByTag(
         some: { tag: { name: tagName, userId } },
       },
     },
-    select: { id: true, content: true, createdAt: true },
+    select: { id: true, content: true, noteType: true, createdAt: true },
     orderBy: { createdAt: 'desc' },
   })
 }

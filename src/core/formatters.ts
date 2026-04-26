@@ -11,25 +11,31 @@ export function formatTagList(
 }
 
 export function formatTagNotes(
-  notes: { content: string; createdAt: Date }[],
+  notes: { content: string; noteType: "text" | "audio" | "image"; createdAt: Date }[],
   tagName: string,
 ): string {
   if (notes.length === 0) {
     return `Nenhuma nota encontrada com _#${tagName}_.`;
   }
-  const lines = notes.map((n, i) => `${i + 1}. ${n.content}`);
+  const lines = notes.map((n, i) => `${i + 1}. ${n.content}${originSuffix(n.noteType)}`);
   return `*Notas #${tagName}:*\n${lines.join("\n")}`;
 }
 
 export function formatSearchResults(
-  notes: { content: string }[],
+  notes: { content: string; noteType: "text" | "audio" | "image" }[],
   query: string,
 ): string {
   if (notes.length === 0) {
     return `Nenhuma nota encontrada para "${query}".`;
   }
-  const lines = notes.map((n, i) => `${i + 1}. ${n.content}`);
+  const lines = notes.map((n, i) => `${i + 1}. ${n.content}${originSuffix(n.noteType)}`);
   return `*Resultados para "${query}":*\n${lines.join("\n")}`;
+}
+
+function originSuffix(noteType: "text" | "audio" | "image"): string {
+  if (noteType === "audio") return " (via áudio)";
+  if (noteType === "image") return " (via imagem)";
+  return "";
 }
 
 export function formatNoteSaved(
@@ -44,11 +50,14 @@ export function formatNoteSaved(
   return `*Salvo em ${tagList}!* ${countLabel}`;
 }
 
-export function formatAudioNoteSaved(transcription: string): string {
-  const preview = transcription.length > 100
-    ? transcription.slice(0, 100) + "..."
-    : transcription;
-  return `Salvo! Transcrição: ${preview}`;
+export function formatAudioNoteSaved(totalDailyCount: number): string {
+  const countLabel = `(${totalDailyCount} nota${totalDailyCount !== 1 ? "s" : ""} hoje)`;
+  return `✅ Nota salva via transcrição de áudio! ${countLabel}`;
+}
+
+export function formatImageNoteSaved(totalDailyCount: number): string {
+  const countLabel = `(${totalDailyCount} nota${totalDailyCount !== 1 ? "s" : ""} hoje)`;
+  return `✅ Nota salva via transcrição de imagem! ${countLabel}`;
 }
 
 export function formatNoteDeleted(content: string): string {
@@ -137,9 +146,9 @@ export function formatUpgradePrompt(
 ): string {
   const messages: Record<typeof reason, string> = {
     audio:
-      "Transcrição de áudio é um recurso Pro. Faça upgrade para desbloquear! 🎙️",
+      "Envio de áudio é exclusivo do plano Pro. Digite /suporte para saber mais.",
     image:
-      "Extração de texto de imagens é um recurso Pro. Faça upgrade para desbloquear! 🖼️",
+      "Envio de imagem é exclusivo do plano Pro. Digite /suporte para saber mais.",
     tag_limit:
       "Você atingiu o limite de tags do plano gratuito. Faça upgrade para adicionar mais! 🏷️",
     search: "Busca é um recurso Pro. Faça upgrade para desbloquear! 🔍",
@@ -200,21 +209,14 @@ export function formatNotesList(
     all: "📋 Últimas notas:",
   };
 
-  const imageIcon: Record<"text" | "audio" | "image", string> = {
-    text: "",
-    audio: "",
-    image: "🖼️ ",
-  };
-
   const MAX = 20;
   const visible = notes.slice(0, MAX);
   const overflow = notes.length - MAX;
 
   const lines = visible.map((n, i) => {
-    const icon = imageIcon[n.noteType];
     const tagSuffix =
       n.tags.length > 0 ? ` ${n.tags.map((t) => `#${t}`).join(" ")}` : "";
-    return `${i + 1}. ${icon}${n.content}${tagSuffix}`;
+    return `${i + 1}. ${n.content}${originSuffix(n.noteType)}${tagSuffix}`;
   });
 
   const footer =

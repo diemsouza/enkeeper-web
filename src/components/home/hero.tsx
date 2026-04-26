@@ -1,10 +1,11 @@
 "use client";
 
 import { Button } from "@/src/components/ui/button";
+import { WHATSAPP_NUMBER } from "@/src/lib/constants";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const WA_LINK = "https://wa.me/5519982794433";
+const WA_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
 const PHRASE_COUNT = 6;
 const TYPE_SPEED = 85;
 const DELETE_SPEED = 30;
@@ -63,8 +64,12 @@ function WhatsAppIcon({ className }: { className?: string }) {
 export default function Hero() {
   const t = useTranslations("home");
 
-  const phrases: Segment[][] = Array.from({ length: PHRASE_COUNT }, (_, i) =>
-    parsePhrase(t.raw(`phrases.${i}`) as string),
+  const phrases = useMemo(
+    () =>
+      Array.from({ length: PHRASE_COUNT }, (_, i) =>
+        parsePhrase(t.raw(`phrases.${i}`) as string),
+      ),
+    [t],
   );
 
   const totalChars = (phrase: Segment[]) =>
@@ -74,16 +79,16 @@ export default function Hero() {
   const [charIndex, setCharIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const reducedMotion = useRef(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
-    reducedMotion.current = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    setReducedMotion(
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    );
   }, []);
 
   useEffect(() => {
-    if (reducedMotion.current) return;
+    if (reducedMotion) return;
 
     if (isPaused) {
       const timer = setTimeout(() => {
@@ -114,11 +119,10 @@ export default function Hero() {
         setPhraseIndex((p) => (p + 1) % PHRASE_COUNT);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [charIndex, isDeleting, isPaused, phraseIndex]);
+  }, [charIndex, isDeleting, isPaused, phraseIndex, reducedMotion]);
 
   const currentPhrase = phrases[phraseIndex];
-  const displayedTotal = reducedMotion.current
+  const displayedTotal = reducedMotion
     ? totalChars(currentPhrase)
     : charIndex;
 

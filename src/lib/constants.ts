@@ -2,6 +2,7 @@ export const LOCALE_COOKIE_NAME = "zn_locale";
 export const LOCALES = ["pt-BR", "en-US"];
 export const DEFAULT_LOCALE = "pt-BR";
 export const DEFAULT_CURRENCY = "BRL";
+export const WHATSAPP_NUMBER = "551153069000";
 
 const PLANS = [
   {

@@ -45,3 +45,10 @@ export const analysisSchema = z.object({
 });
 
 export type AnalysisSchema = z.infer<typeof analysisSchema>;
+
+export const visionSchema = z.object({
+  transcription_type: z.enum(['text', 'description']),
+  content: z.string(),
+});
+
+export type VisionResult = z.infer<typeof visionSchema>;

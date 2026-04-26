@@ -2,6 +2,7 @@ import { NoteType } from "@prisma/client";
 import { extractTrailingTags, parseMessage } from "../core/parser";
 import {
   formatAudioNoteSaved,
+  formatImageNoteSaved,
   formatCommandList,
   formatConfirmNotFound,
   formatDeleteNoteHelp,
@@ -64,7 +65,6 @@ import { incrementDailyUsage, getTodayUsage } from "../repo/daily-usage.repo";
 import { saveMessage, findLastUserMessage, findLastOutboundMessageWithNoteIds } from "../repo/messages.repo";
 import { markUserOnboarded } from "../repo/users.repo";
 import { findOrCreateUserByChannel } from "./user-service";
-import { extractTextFromImage } from "../vendors/vision.vendor";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import { sanitizeNoteContent } from "../core/sanitizer";
 import { IncomingMessage, PlanCode } from "../types/domain";
@@ -93,13 +93,12 @@ export async function handleIncomingMessage(
       return [reply];
     }
     noteType = "audio";
-  } else if (input.imageUrl) {
+  } else if (input.mediaType === "image") {
     if (!canUseImage(plan)) {
       const reply = formatUpgradePrompt("image");
       await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "assistant", content: reply });
       return [reply];
     }
-    text = await extractTextFromImage(input.imageUrl);
     noteType = "image";
   }
 
@@ -228,7 +227,7 @@ export async function handleIncomingMessage(
     externalId: input.externalId,
     mediaType: input.mediaType,
     mediaId: input.mediaId,
-    metadata: input.mediaMetadata ?? (input.imageUrl ? { imageUrl: input.imageUrl } : undefined),
+    metadata: input.mediaMetadata,
   });
 
   const today = new Date();
@@ -262,7 +261,6 @@ export async function handleIncomingMessage(
         noteType,
         content: sanitizedContent,
         mediaType: input.mediaType,
-        fileUrl: input.imageUrl,
         messageId: savedMessage.id,
       });
 
@@ -275,9 +273,10 @@ export async function handleIncomingMessage(
       }
 
       await incrementDailyUsage(user.id, today);
-      const confirmation = noteType === "audio"
-        ? formatAudioNoteSaved(text)
-        : formatNoteSaved(tags, todayCount + 1);
+      const confirmation =
+        noteType === "audio" ? formatAudioNoteSaved(todayCount + 1) :
+        noteType === "image" ? formatImageNoteSaved(todayCount + 1) :
+        formatNoteSaved(tags, todayCount + 1);
       reply = confirmation;
 
       if (needsOnboarding) {
@@ -311,8 +310,9 @@ export async function handleIncomingMessage(
         reply = formatUpgradePrompt("search");
         break;
       }
-      const notes = await searchNotes(user.id, parsed.searchQuery ?? "");
-      reply = formatSearchResults(notes, parsed.searchQuery ?? "");
+      const searchResults = await searchNotes(user.id, parsed.searchQuery ?? "");
+      listNoteIds = searchResults.map(n => n.id);
+      reply = formatSearchResults(searchResults, parsed.searchQuery ?? "");
       break;
     }
 
