@@ -14,6 +14,13 @@ export async function findUserByChannel(
   return channel?.user ?? null
 }
 
+export async function markUserOnboarded(userId: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { onboardedAt: new Date() },
+  })
+}
+
 export async function createUserWithChannel(
   channelType: ChannelType,
   channelId: string,

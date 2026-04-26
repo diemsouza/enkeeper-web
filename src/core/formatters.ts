@@ -161,9 +161,8 @@ export function formatCommandList(): string {
     "",
     "*/buscar* welcome — buscar notas",
     "*/nota* 1 — ver nota completa",
-    "*/notas* — notas de hoje",
-    "*/notas* ontem — notas de ontem",
-    "*/notas* semana — últimos 7 dias",
+    "*/notas* — últimas notas",
+    "*/notas* (hoje, ontem ou semana) — notas por período",
     "",
     "*/editar nota* 1 — editar nota",
     "*/editar tag* #ingles — renomear tag",
@@ -184,12 +183,13 @@ export function formatNotesList(
     createdAt: Date;
     tags: string[];
   }[],
-  filter: "today" | "yesterday" | "week",
+  filter: "today" | "yesterday" | "week" | "all",
 ): string {
   const emptyMessages = {
     today: "Nenhuma nota de hoje.",
     yesterday: "Nenhuma nota de ontem.",
     week: "Nenhuma nota nos últimos 7 dias.",
+    all: "Nenhuma nota salva ainda.",
   };
   if (notes.length === 0) return emptyMessages[filter];
 
@@ -197,6 +197,7 @@ export function formatNotesList(
     today: "📋 Notas de hoje:",
     yesterday: "📋 Notas de ontem:",
     week: "📋 Notas desta semana:",
+    all: "📋 Últimas notas:",
   };
 
   const imageIcon: Record<"text" | "audio" | "image", string> = {
@@ -240,6 +241,6 @@ export function formatOnboardingMessage(): string {
     "",
     "Envie qualquer palavra, frase, áudio ou imagem com texto que eu salvo pra você revisar depois.",
     "",
-    "*Use #tags* no final das notas pra organizar por categoria ou *digite /* para ver todos os comandos disponíveis.",
+    "_Qualquer texto vira nota e qualquer palavra no final com # vira tag._",
   ].join("\n");
 }

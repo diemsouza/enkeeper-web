@@ -11,6 +11,7 @@ type SaveMessageData = {
   mediaType?: string
   mediaId?: string
   metadata?: Record<string, string | number | null>
+  noteIds?: string[]
 }
 
 export async function saveMessage(data: SaveMessageData): Promise<Message> {
@@ -27,6 +28,7 @@ export async function saveMessage(data: SaveMessageData): Promise<Message> {
       metadata: data.metadata !== undefined
         ? (data.metadata as Prisma.InputJsonObject)
         : undefined,
+      noteIds: data.noteIds,
     },
   })
 }
@@ -37,3 +39,11 @@ export async function findLastUserMessage(userId: string): Promise<Message | nul
     orderBy: { createdAt: 'desc' },
   })
 }
+
+export async function findLastOutboundMessageWithNoteIds(userId: string): Promise<Message | null> {
+  return prisma.message.findFirst({
+    where: { userId, role: 'assistant', noteIds: { isEmpty: false } },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+

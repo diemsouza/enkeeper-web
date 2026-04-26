@@ -22,7 +22,7 @@ export function parseMessage(text: string): ParsedMessage {
 
   if (trimmed === '/') return { intent: 'list_commands', raw }
   if (trimmed === '#') return { intent: 'list_tags', raw }
-  if (trimmed === '/notas') return { intent: 'list_notes', raw, notesFilter: 'today' }
+  if (trimmed === '/notas') return { intent: 'list_notes', raw, notesFilter: 'all' }
   if (trimmed === '/notas ontem') return { intent: 'list_notes', raw, notesFilter: 'yesterday' }
   if (trimmed === '/notas semana') return { intent: 'list_notes', raw, notesFilter: 'week' }
   if (trimmed === '/pausar') return { intent: 'pause_reviews', raw }

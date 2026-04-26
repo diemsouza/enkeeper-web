@@ -34,7 +34,7 @@ export type ParsedMessage = {
   tagName?: string
   tagNewName?: string
   editContent?: string
-  notesFilter?: 'today' | 'yesterday' | 'week'
+  notesFilter?: 'today' | 'yesterday' | 'week' | 'all'
 }
 
 export type IncomingMessage = {

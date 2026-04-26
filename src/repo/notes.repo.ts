@@ -102,6 +102,23 @@ export async function findNotesByDateRange(
   })
 }
 
+export async function findRecentNotes(userId: string, limit: number): Promise<NoteWithTags[]> {
+  return prisma.note.findMany({
+    where: { userId, deletedAt: null },
+    select: {
+      id: true,
+      content: true,
+      noteType: true,
+      createdAt: true,
+      noteTagRelations: {
+        select: { tag: { select: { name: true } } },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  })
+}
+
 const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000
 
 function filterToDateRange(filter: 'today' | 'yesterday' | 'week'): { from: Date; to: Date } {

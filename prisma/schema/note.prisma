@@ -112,6 +112,7 @@ model Message {
     mediaType     String?     @map("media_type")
     mediaId       String?     @map("media_id")
     metadata      Json?       @map("metadata")
+    noteIds       String[]    @map("note_ids")
     createdAt     DateTime    @default(now()) @map("created_at")
 
     user        User        @relation(fields: [userId], references: [id])

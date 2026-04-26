@@ -37,10 +37,11 @@ import {
 } from "../core/limits";
 import {
   createNote,
+  findNoteById,
   findNoteByUserIndex,
   findNotesByDateRange,
   findNotesByTag,
-  hasAnyNotes,
+  findRecentNotes,
   searchNotes,
   softDeleteNote,
   updateNote,
@@ -60,7 +61,8 @@ import {
   renameTag,
 } from "../repo/tags.repo";
 import { incrementDailyUsage, getTodayUsage } from "../repo/daily-usage.repo";
-import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
+import { saveMessage, findLastUserMessage, findLastOutboundMessageWithNoteIds } from "../repo/messages.repo";
+import { markUserOnboarded } from "../repo/users.repo";
 import { findOrCreateUserByChannel } from "./user-service";
 import { extractTextFromImage } from "../vendors/vision.vendor";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
@@ -101,6 +103,13 @@ export async function handleIncomingMessage(
     noteType = "image";
   }
 
+  // Parse early to determine whether this message starts a new flow
+  const parsed = parseMessage(text);
+
+  // Commands that initiate a new flow bypass the state machine entirely.
+  // /cancelar stays inside the state machine so it can reply "Cancelado." explicitly.
+  const isFlowStartingCommand = parsed.intent !== "save_note" && parsed.intent !== "confirm";
+
   // --- State machine: check pending state from last user message ---
   const pendingIntent = lastUserMessage?.intent;
   const inDeleteState = pendingIntent === "delete_note" || pendingIntent === "delete_tag";
@@ -111,7 +120,7 @@ export async function handleIncomingMessage(
 
   let prefixCancel = false;
 
-  if (hasActiveState) {
+  if (hasActiveState && !isFlowStartingCommand) {
     const trimmed = text.trim();
 
     if (trimmed === "/cancelar") {
@@ -128,7 +137,7 @@ export async function handleIncomingMessage(
         if (pendingIntent === "delete_note") {
           const prevParsed = parseMessage(lastUserMessage!.content);
           const idx = parseInt(prevParsed.noteId ?? "0", 10);
-          const note = await findNoteByUserIndex(user.id, idx, "today");
+          const note = await resolveNoteByIndex(user.id, idx);
           if (note) {
             await softDeleteNote(note.id, user.id);
             reply = "✅ Nota excluída.";
@@ -151,7 +160,7 @@ export async function handleIncomingMessage(
     if (inEditNoteState) {
       const prevParsed = parseMessage(lastUserMessage!.content);
       const idx = parseInt(prevParsed.noteId ?? "0", 10);
-      const note = await findNoteByUserIndex(user.id, idx, "today");
+      const note = await resolveNoteByIndex(user.id, idx);
       await saveMessage({ userId: user.id, userChannelId: userChannel.id, role: "user", content: text, externalId: input.externalId });
       if (!note) {
         const reply = formatNoteIndexNotFound();
@@ -210,8 +219,6 @@ export async function handleIncomingMessage(
   }
   // --- End state machine ---
 
-  const parsed = parseMessage(text);
-
   const savedMessage = await saveMessage({
     userId: user.id,
     userChannelId: userChannel.id,
@@ -229,6 +236,7 @@ export async function handleIncomingMessage(
   const todayCount = usage?.noteCount ?? 0;
 
   let reply: string;
+  let listNoteIds: string[] = [];
 
   switch (parsed.intent) {
     case "save_note": {
@@ -246,7 +254,7 @@ export async function handleIncomingMessage(
         }
       }
 
-      const isFirstNote = !(await hasAnyNotes(user.id));
+      const needsOnboarding = !user.onboardedAt;
       const sanitizedContent = sanitizeNoteContent(parsed.content ?? text);
 
       const note = await createNote({
@@ -272,7 +280,8 @@ export async function handleIncomingMessage(
         : formatNoteSaved(tags, todayCount + 1);
       reply = confirmation;
 
-      if (isFirstNote) {
+      if (needsOnboarding) {
+        await markUserOnboarded(user.id);
         await saveMessage({
           userId: user.id,
           userChannelId: userChannel.id,
@@ -313,7 +322,7 @@ export async function handleIncomingMessage(
         break;
       }
       const idx = parseInt(parsed.noteId, 10);
-      const note = await findNoteByUserIndex(user.id, idx, "today");
+      const note = await resolveNoteByIndex(user.id, idx);
       if (!note) {
         reply = formatNoteIndexNotFound();
         break;
@@ -328,7 +337,7 @@ export async function handleIncomingMessage(
         break;
       }
       const idx = parseInt(parsed.noteId, 10);
-      const note = await findNoteByUserIndex(user.id, idx, "today");
+      const note = await resolveNoteByIndex(user.id, idx);
       if (!note) {
         reply = formatNoteIndexNotFound();
         break;
@@ -343,7 +352,7 @@ export async function handleIncomingMessage(
         break;
       }
       const idx = parseInt(parsed.noteId, 10);
-      const note = await findNoteByUserIndex(user.id, idx, "today");
+      const note = await resolveNoteByIndex(user.id, idx);
       if (!note) {
         reply = formatNoteIndexNotFound();
         break;
@@ -452,9 +461,15 @@ export async function handleIncomingMessage(
       break;
 
     case "list_notes": {
-      const filter = parsed.notesFilter ?? "today";
-      const { from, to } = notesDateRange(filter);
-      const raw = await findNotesByDateRange(user.id, from, to);
+      const filter = parsed.notesFilter ?? "all";
+      let raw;
+      if (filter === "all") {
+        raw = await findRecentNotes(user.id, 10);
+      } else {
+        const { from, to } = notesDateRange(filter);
+        raw = await findNotesByDateRange(user.id, from, to);
+      }
+      listNoteIds = raw.slice(0, 20).map((n) => n.id);
       const notes = raw.map((n) => ({
         content: n.content,
         noteType: n.noteType as "text" | "audio" | "image",
@@ -471,10 +486,18 @@ export async function handleIncomingMessage(
     userChannelId: userChannel.id,
     role: "assistant",
     content: reply,
+    noteIds: listNoteIds,
   });
 
   if (prefixCancel) return ["Cancelado.", reply];
   return [reply];
+}
+
+async function resolveNoteByIndex(userId: string, idx: number) {
+  const msg = await findLastOutboundMessageWithNoteIds(userId);
+  const noteId = msg?.noteIds?.[idx - 1];
+  if (noteId) return findNoteById(noteId, userId);
+  return findNoteByUserIndex(userId, idx, "today");
 }
 
 const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000;
