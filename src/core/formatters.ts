@@ -79,19 +79,19 @@ export function formatDeleteNotePrompt(content: string): string {
 }
 
 export function formatEditNotePrompt(content: string): string {
-  return `Nota atual: "${content}"\n\nEscreva a nova nota e tags em uma única mensagem ou /cancelar para cancelar.`;
+  return `Nota atual: "${content}"\n\nEscreva a nova nota com tags no final em uma única mensagem ou /cancelar para sair.`;
 }
 
 export function formatEditTagPrompt(tagName: string): string {
-  return `Tag atual: #${tagName}\n\nEscreva o novo nome da tag ou /cancelar para cancelar.`;
+  return `Tag atual: #${tagName}\n\nEscreva o novo nome da tag em uma única mensagem ou /cancelar para sair.`;
 }
 
 export function formatSupportRequest(): string {
-  return "Me conta o que você precisa em uma mensagem: upgrade, dúvida, problema ou sugestão.";
+  return "Escreva em uma única mensagem como podemos ajudar, ex. Tenho uma dúvida sobre... ou Quero contratar plano Pro ou /cancelar para sair.";
 }
 
 export function formatSupportReceived(): string {
-  return "Recebido! Sua solicitação foi enviada para um especialista e em breve entraremos em contato.";
+  return "Sua mensagem foi enviada para um especialista que entrará em contato assim que possível!";
 }
 
 export function formatTagDeleted(tagName: string): string {
@@ -153,23 +153,27 @@ export function formatUpgradePrompt(
 
 export function formatCommandList(): string {
   return [
-    "*Comandos disponíveis:*",
-    "• */* — lista de comandos",
-    "• *#* — suas tags",
-    "• *#nome* — notas com essa tag",
-    "• */buscar* <termo> — buscar notas",
-    "• */excluir nota* 3 — excluir nota pelo número",
-    "• */excluir tag* #nome — excluir uma tag",
-    "• */editar nota* 3 *para* novo texto — editar nota pelo número",
-    "• */editar tag* ingles *para* english — renomear uma tag",
-    "• */notas* — ver notas de hoje",
-    "• */notas ontem* — ver notas de ontem",
-    "• */notas semana* — ver notas dos últimos 7 dias",
-    //"• */pausar* — pausar revisões",
-    //"• */indicar* — indicar amigos",
+    "Comandos disponíveis:",
     "",
-    "Para salvar uma nota, basta enviar o texto.",
-    "Tags devem sempre vir no final da mensagem. Ex: texto da nota #tag1 #tag2",
+    "*/* — ver comandos",
+    "*#* — suas tags",
+    "*#ingles* — notas da tag",
+    "",
+    "*/buscar* welcome — buscar notas",
+    "*/nota* 1 — ver nota completa",
+    "*/notas* — notas de hoje",
+    "*/notas* ontem — notas de ontem",
+    "*/notas* semana — últimos 7 dias",
+    "",
+    "*/editar nota* 1 — editar nota",
+    "*/editar tag* #ingles — renomear tag",
+    "*/excluir nota* 1 — excluir nota",
+    "*/excluir tag* #ingles — excluir tag",
+    "",
+    "*/suporte* — falar com a gente",
+    "",
+    "Qualquer outro texto vira nota.",
+    "_Tags no final: welcome #ingles_",
   ].join("\n");
 }
 
@@ -195,9 +199,9 @@ export function formatNotesList(
     week: "📋 Notas desta semana:",
   };
 
-  const typeIcon: Record<"text" | "audio" | "image", string> = {
+  const imageIcon: Record<"text" | "audio" | "image", string> = {
     text: "",
-    audio: "🎵 ",
+    audio: "",
     image: "🖼️ ",
   };
 
@@ -206,9 +210,9 @@ export function formatNotesList(
   const overflow = notes.length - MAX;
 
   const lines = visible.map((n, i) => {
-    const icon = typeIcon[n.noteType];
+    const icon = imageIcon[n.noteType];
     const tagSuffix =
-      n.tags.length > 0 ? ` [${n.tags.map((t) => `#${t}`).join(" ")}]` : "";
+      n.tags.length > 0 ? ` ${n.tags.map((t) => `#${t}`).join(" ")}` : "";
     return `${i + 1}. ${icon}${n.content}${tagSuffix}`;
   });
 
@@ -230,10 +234,12 @@ export function formatPauseStub(): string {
 
 export function formatOnboardingMessage(): string {
   return [
-    "Oi! Aqui é onde você anota seu inglês pra reforçar seu aprendizado e não esquecer mesmo.",
-    "Manda qualquer palavra ou frase e eu salvo pra você revisar depois.",
-    "Use # pra organizar: welcome #ingles",
-    "Em breve, todo dia às 19h eu te mando 5 notas pra revisar.",
-    "Digite / pra ver todos os comandos.",
+    "*Oi! Bem-vindo ao Enkeeper.*",
+    "",
+    "Aqui você anota tudo que é importante, precisa lembrar ou revisar depois.",
+    "",
+    "Envie qualquer palavra, frase, áudio ou imagem com texto que eu salvo pra você revisar depois.",
+    "",
+    "*Use #tags* no final das notas pra organizar por categoria ou *digite /* para ver todos os comandos disponíveis.",
   ].join("\n");
 }
