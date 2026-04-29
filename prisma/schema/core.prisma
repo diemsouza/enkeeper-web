@@ -62,6 +62,7 @@ model Activity {
     nextMessageAt   DateTime?      @map("next_message_at")
     intervalMinutes Int            @default(60) @map("interval_minutes")
     lastUserReply   String?        @map("last_user_reply") @db.Text
+    waitingUser     Boolean        @default(false) @map("waiting_user")
     status          ActivityStatus @default(active) @map("status")
     pausedAt        DateTime?      @map("paused_at")
     completedAt     DateTime?      @map("completed_at")

@@ -23,9 +23,9 @@
   },
   "seo": {
     "home": {
-      "title": "Dropuz | Seu conteúdo de estudo, ativo o dia inteiro no WhatsApp",
-      "description": "Mande o material que está estudando — texto, áudio, imagem ou PDF. O Dropuz pratica com você durante o dia, no WhatsApp. Grátis para começar.",
-      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, agente de estudos, prática contínua, Dropuz",
+      "title": "Dropuz | Seu estudo não para quando você fecha o caderno",
+      "description": "Mande o material que está estudando. O Dropuz pratica com você durante o dia, no WhatsApp. Experimente grátis.",
+      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, agente de estudos, prática contínua, flashcards, Dropuz",
       "ogImage": "/og/pt-home.png"
     }
   },
@@ -35,130 +35,153 @@
   },
   "home": {
     "phrases": {
-      "0": "Acabou de aprender uma palavra em inglês. <strong>Onde você anota?</strong>",
-      "1": "Ouviu uma expressão nova na série. <strong>Foi embora com o episódio.</strong>",
-      "2": "Mandou mensagem pra você mesmo. <strong>De novo.</strong>",
-      "3": "Anotou no papel. <strong>O papel sumiu.</strong>",
-      "4": "Dez palavras novas essa semana. <strong>Lembra de quantas?</strong>",
-      "5": "Saiu da aula com três expressões novas. <strong>Onde estão?</strong>"
+      "0": "A aula de Inglês foi boa. O resto do dia foi em português. <strong>De novo.</strong>",
+      "1": "Sua aula acabou faz uma hora. <strong>Você lembra o que aprendeu?</strong>",
+      "2": "Leu o capítulo inteiro. <strong>Não consegue explicar pra ninguém.</strong>",
+      "3": "Estudou duas horas. A rotina voltou. <strong>O conteúdo foi junto.</strong>",
+      "4": "Fez o resumo, fechou o caderno. <strong>Acabou ai.</strong>",
+      "5": "Você não esquece por falta de esforço. <strong>Esquece por falta de prática.</strong>"
     },
-    "tagline": "Suas notas no WhatsApp.",
-    "cta": "Começar agora",
-    "microcopy": "Abre no WhatsApp · Grátis · Sem cadastro",
+    "tagline": "Seu estudo não para quando você fecha o caderno.",
+    "cta": "Experimentar grátis",
+    "microcopy": "Abre no WhatsApp · 1 dia grátis · Sem cadastro",
     "who": {
-      "title": "Para quem estuda inglês de verdade.",
-      "subtitle": "Não importa como você aprende. O Dropuz se encaixa no seu jeito.",
+      "title": "Para quem estuda todo dia e perde o conteúdo no resto da rotina.",
+      "subtitle": "Não importa o que você estuda. O Dropuz trabalha em cima do que faz sentido pra você.",
       "cards": {
         "0": {
-          "title": "O autodidata",
-          "description": "Aprende no YouTube, em séries, em podcasts. Tem material em todo lugar e nenhum lugar organizado. O Dropuz pratica com você em cima do que você já tem."
+          "title": "Estudante de inglês",
+          "description": "Sua aula tem 50 minutos. O resto do dia é em português. Manda o material da aula e o Dropuz pratica com você durante o dia no WhatsApp."
         },
         "1": {
-          "title": "O aluno de curso",
-          "description": "Tem aula mas não revisa fora dela. Manda o material da aula e o Dropuz pratica com você o dia inteiro no WhatsApp que você já usa."
+          "title": "Vestibulando",
+          "description": "Estudou duas horas de história, fez o resumo, fechou o caderno. O Dropuz retoma aquele conteúdo ao longo do dia pra fixar de verdade."
         },
         "2": {
-          "title": "O profissional",
-          "description": "Usa inglês no trabalho mas trava em vocabulário específico. Manda o conteúdo do seu contexto e pratique durante o dia."
+          "title": "Concurseiro",
+          "description": "Muito conteúdo, pouco tempo pra revisar. Manda o material e receba perguntas no seu ritmo durante o dia, sem abrir mais um app."
         },
         "3": {
-          "title": "O maratonista de série",
-          "description": "Pausa, anota a expressão, volta. O Dropuz transforma o que você anotou em prática ao longo do dia."
+          "title": "Leitor",
+          "description": "Terminou o capítulo mas uma semana depois não consegue explicar o que leu. O Dropuz discute o conteúdo com você antes de ir embora."
         },
         "4": {
-          "title": "O viajante",
-          "description": "Vai viajar ou está fora. Manda vocabulário do dia a dia, situações reais e gírias — e pratica antes de precisar."
+          "title": "Autodidata",
+          "description": "Aprende em podcast, vídeo, artigo. O conteúdo está em todo lugar. Manda o trecho que te interessou e o Dropuz pratica em cima disso."
         },
         "5": {
-          "title": "O que tentou e desistiu",
-          "description": "Já usou Anki, Duolingo, Quizlet. Cansou de abrir mais um app. O Dropuz funciona no WhatsApp que você já abre cinquenta vezes por dia."
+          "title": "Quem tentou e parou",
+          "description": "Já usou Anki, Duolingo, Quizlet. Cansou de abrir mais um app. O Dropuz funciona no WhatsApp que você já usa o dia inteiro."
+        }
+      }
+    },
+    "how": {
+      "title": "Como funciona.",
+      "subtitle": "Três passos. Sem configuração.",
+      "steps": {
+        "0": {
+          "title": "Manda o material",
+          "description": "Texto, áudio, foto ou PDF. Pode ser a aula de inglês, o resumo da matéria, o capítulo do livro, a lista de questões."
+        },
+        "1": {
+          "title": "O Dropuz processa",
+          "description": "Identifica o conteúdo, extrai os pontos centrais e monta a prática do dia em cima do que você mandou."
+        },
+        "2": {
+          "title": "As perguntas chegam",
+          "description": "Ao longo do dia, no seu ritmo, o Dropuz manda perguntas e estímulos sobre aquele conteúdo direto no WhatsApp. Você responde quando puder."
         }
       }
     },
     "pricing": {
-      "title": "Comece agora, grátis e sem cadastro.",
-      "subtitle": "Use de graça e evolua quando precisar.",
-      "description": "Grátis para começar: até 5 notas por dia e 3 tags. No Pro por R$14,90/mês você tem 30 notas diárias, tags ilimitadas, áudio transcrito e busca em tudo que salvou.",
-      "cta": "Começar grátis"
+      "title": "Comece grátis. Depois R$19,90/mês.",
+      "subtitle": "Experimente com tudo liberado. Decida depois.",
+      "description": "O trial dá acesso completo ao produto por 1 dia: materiais ilimitados, prática completa, texto, áudio, imagem e PDF. Se fizer sentido, você continua por R$19,90/mês",
+      "cta": "Experimentar grátis"
+    },
+    "features_demo": {
+      "title": "Na prática.",
+      "subtitle": "Você manda o material. O Dropuz cuida do resto.",
+      "blocks": {
+        "0": {
+          "title": "Manda o material. O Dropuz processa.",
+          "description": "Texto, áudio, foto ou PDF. Qualquer coisa que você está estudando vira prática durante o dia.",
+          "chat": [
+            {
+              "from": "user",
+              "text": "Greeting and small talk: How are you? / I'm doing well, thanks. / What have you been up to? / Not much, just keeping busy.",
+              "time": "08:10"
+            },
+            {
+              "from": "bot",
+              "text": "Recebi! Estou preparando seu conteúdo. Em breve começo a prática.",
+              "time": "08:10"
+            },
+            {
+              "from": "bot",
+              "text": "E aí, lembra de algum cumprimento que você já usou numa conversa em inglês?",
+              "time": "09:15"
+            },
+            {
+              "from": "user",
+              "text": "How are you, acho que esse é o mais básico",
+              "time": "09:22"
+            },
+            {
+              "from": "bot",
+              "text": "Isso. E se alguém te perguntar 'what have you been up to?' numa conversa informal, o que você responderia?",
+              "time": "09:22"
+            }
+          ]
+        },
+        "1": {
+          "title": "Prática no seu ritmo.",
+          "description": "As perguntas chegam espaçadas ao longo do dia. Você responde quando puder. Se sumir, o Dropuz espera.",
+          "chat": [
+            {
+              "from": "bot",
+              "text": "Vamos praticar uma situação: você chegou numa reunião e quer quebrar o gelo. Como começa?",
+              "time": "11:30"
+            },
+            {
+              "from": "user",
+              "text": "How are you doing?",
+              "time": "14:45"
+            },
+            {
+              "from": "bot",
+              "text": "Boa. E se quiser soar mais natural, 'how have you been?' funciona bem pra quem você já conhece. Qual das duas você usaria com um cliente novo?",
+              "time": "14:45"
+            }
+          ]
+        },
+        "2": {
+          "title": "Qualquer material. Qualquer assunto.",
+          "description": "Inglês, vestibular, concurso, livro. O Dropuz identifica o tipo de conteúdo e adapta a prática.",
+          "chat": [
+            {
+              "from": "user",
+              "text": "[PDF] Resumo - Revolução Francesa.pdf",
+              "time": "07:30"
+            },
+            {
+              "from": "bot",
+              "text": "Recebi! Estou preparando seu conteúdo.",
+              "time": "07:30"
+            },
+            {
+              "from": "bot",
+              "text": "Qual foi o principal motivo econômico que levou ao início da Revolução Francesa?",
+              "time": "08:35"
+            }
+          ]
+        }
+      }
     },
     "footer": {
       "copyright": "Copyright © 2026 Dropuz. Todos os direitos reservados.",
       "privacy": "Política de Privacidade",
       "terms": "Termos de Uso"
-    },
-    "features_demo": {
-      "title": "Simples assim.",
-      "subtitle": "Do vocabulário novo à revisão do dia. Uma mensagem resolve.",
-      "blocks": {
-        "0": {
-          "title": "Manda qualquer coisa. Está salvo.",
-          "description": "Texto ou áudio transcrito. Qualquer mensagem vira uma nota sem nenhum passo extra.",
-          "chat": [
-            {
-              "from": "user",
-              "text": "shadow of a doubt - sem sombra de dúvida #ingles",
-              "time": "10:30"
-            },
-            {
-              "from": "bot",
-              "text": "*Salvo em* #ingles\n32 notas nessa tag",
-              "time": "10:30"
-            },
-            {
-              "from": "user",
-              "text": "bite the bullet - encarar algo difícil #ingles #expressoes",
-              "time": "10:31"
-            },
-            {
-              "from": "bot",
-              "text": "*Salvo em* #ingles #expressoes",
-              "time": "agora"
-            }
-          ]
-        },
-        "1": {
-          "title": "Use # para organizar.",
-          "description": "Suas notas organizadas por categoria. Mande # para ver todas as tags ou #tag para listar as notas.",
-          "chat": [
-            {
-              "from": "user",
-              "text": "#",
-              "time": "14:22"
-            },
-            {
-              "from": "bot",
-              "text": "*Suas tags:*\n#ingles - 47\n#phrasal - 18\n#expressoes - 12\n#vocabulario - 9",
-              "time": "14:22"
-            },
-            {
-              "from": "user",
-              "text": "#phrasal",
-              "time": "14:23"
-            },
-            {
-              "from": "bot",
-              "text": "*#phrasal - 18 notas:*\n- run into - encontrar por acaso\n- give up - desistir\n- keep up - manter o ritmo\n- e mais 15",
-              "time": "agora"
-            }
-          ]
-        },
-        "2": {
-          "title": "Busque por palavra. Resultado na hora.",
-          "description": "Não precisa lembrar a tag ou quando salvou. Mande /buscar e o Dropuz encontra em todas as suas notas.",
-          "chat": [
-            {
-              "from": "user",
-              "text": "/buscar dúvida",
-              "time": "09:14"
-            },
-            {
-              "from": "bot",
-              "text": "*2 notas encontradas:*\n- shadow of a doubt - sem sombra de dúvida\n- beyond doubt - sem questionamento",
-              "time": "agora"
-            }
-          ]
-        }
-      }
     }
   }
 }

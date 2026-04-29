@@ -55,3 +55,10 @@ export async function findLastAssistantMessage(userId: string): Promise<Message 
   })
 }
 
+export async function findLastActivityMessage(activityId: string): Promise<Message | null> {
+  return prisma.message.findFirst({
+    where: { activityId },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+

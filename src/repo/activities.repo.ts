@@ -16,6 +16,7 @@ type UpdateActivityData = {
   nextMessageAt?: Date | null
   intervalMinutes?: number
   lastUserReply?: string
+  waitingUser?: boolean
   status?: ActivityStatus
   pausedAt?: Date | null
   completedAt?: Date | null

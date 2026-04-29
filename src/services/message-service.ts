@@ -37,6 +37,7 @@ import {
   pauseActivitiesByDoc,
   resumeActivitiesByDoc,
   softDeleteActivitiesByDoc,
+  updateActivity,
   updateActivityLastReply,
 } from '../repo/activities.repo'
 import { getTodayUsage, incrementDailyDocCount, incrementUserMessageCount, incrementAgentMessageCount } from '../repo/daily-usage.repo'
@@ -78,6 +79,7 @@ export async function handleIncomingMessage(input: IncomingMessage): Promise<str
     const lastAssistantMsg = await findLastAssistantMessage(user.id)
     if (lastAssistantMsg?.activityId) {
       await updateActivityLastReply(lastAssistantMsg.activityId, text)
+      await updateActivity(lastAssistantMsg.activityId, user.id, { waitingUser: false })
     }
   }
 
@@ -112,13 +114,11 @@ export async function handleIncomingMessage(input: IncomingMessage): Promise<str
     return [welcome, trial]
   }
 
-  // ─── Mídia (stub) ─────────────────────────────────────────────────────────
+  // ─── Mídia → cria Doc ──────────────────────────────────────────────────────
 
-  if (input.mediaType === 'audio' || input.mediaType === 'image') {
-    await saveUserMsg(user.id, userChannel.id, text, 'free_text', input, today)
-    const reply = 'Recebi! O processamento de áudio e imagem estará disponível em breve.'
-    await saveBotReply(user.id, userChannel.id, reply, today)
-    return [reply]
+  if (input.mediaType === 'audio' || input.mediaType === 'image' || input.mediaType === 'pdf') {
+    const docType = input.mediaType as DocType
+    return checkAndCreateDoc(user.id, userChannel.id, text, today, input, docType)
   }
 
   // ─── Estado pendente ──────────────────────────────────────────────────────
@@ -161,7 +161,10 @@ export async function handleIncomingMessage(input: IncomingMessage): Promise<str
           await updateDoc(doc.id, user.id, { status: 'archived' })
           await softDeleteActivitiesByDoc(doc.id, user.id)
         }
-        return createDocFlow(user.id, userChannel.id, lastUserMessage!.content, 'text', today)
+        const mt = lastUserMessage!.mediaType
+        const originalDocType: DocType =
+          mt === 'audio' || mt === 'image' || mt === 'pdf' ? (mt as DocType) : 'text'
+        return createDocFlow(user.id, userChannel.id, lastUserMessage!.content, originalDocType, today)
       }
       await saveUserMsg(user.id, userChannel.id, text, 'cancel', input, today)
       const reply = 'Ok, mantive o conteúdo atual.'
@@ -404,6 +407,7 @@ async function checkAndCreateDoc(
   content: string,
   today: Date,
   input?: Pick<IncomingMessage, 'externalId' | 'mediaType' | 'mediaId' | 'mediaMetadata'>,
+  docType: DocType = 'text',
 ): Promise<string[]> {
   const todayUsage = await getTodayUsage(userId, today)
   if (!canUploadDoc(todayUsage?.docCount ?? 0)) {
@@ -422,7 +426,7 @@ async function checkAndCreateDoc(
   }
 
   if (input) await saveUserMsg(userId, userChannelId, content, 'free_text', input, today)
-  return createDocFlow(userId, userChannelId, content, 'text', today)
+  return createDocFlow(userId, userChannelId, content, docType, today)
 }
 
 async function createDocFlow(

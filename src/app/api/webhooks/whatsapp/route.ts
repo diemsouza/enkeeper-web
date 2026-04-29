@@ -8,7 +8,7 @@ import {
   sendWhatsAppMessage,
 } from "../../../../vendors/whatsapp.vendor";
 import { transcribeAudio } from "../../../../vendors/whisper.vendor";
-import { extractTextFromImage } from "../../../../vendors/llm.vendor";
+import { extractTextFromImage, extractTextFromPdf } from "../../../../vendors/llm.vendor";
 import { canUseAudio, canUseImage } from "../../../../core/limits";
 import { formatUpgradePrompt } from "../../../../core/formatters";
 import { IncomingMessage } from "../../../../types/domain";
@@ -50,6 +50,7 @@ export async function POST(req: NextRequest): Promise<Response> {
                 text?: { body: string };
                 audio?: { id: string };
                 image?: { id: string };
+                document?: { id: string; mime_type?: string };
               }>;
               contacts?: Array<{ wa_id: string; profile?: { name?: string } }>;
             };
@@ -117,6 +118,25 @@ export async function POST(req: NextRequest): Promise<Response> {
             size_bytes: fileSize ?? null,
             format,
           },
+        };
+        const replies = await handleIncomingMessage(input);
+        for (const r of replies) await sendWhatsAppMessage(wa_id, r);
+        return;
+      }
+
+      if (
+        message.type === "document" &&
+        message.document &&
+        message.document.mime_type === "application/pdf"
+      ) {
+        const { buffer, fileSize } = await downloadMedia(message.document.id);
+        const text = await extractTextFromPdf(buffer);
+        const input: IncomingMessage = {
+          ...base,
+          text,
+          mediaType: "pdf",
+          mediaId: message.document.id,
+          mediaMetadata: { media_type: "pdf", size_bytes: fileSize ?? null },
         };
         const replies = await handleIncomingMessage(input);
         for (const r of replies) await sendWhatsAppMessage(wa_id, r);

@@ -132,11 +132,15 @@ export function formatSupportReceived(): string {
 }
 
 export function formatShortTextWithDocs(): string {
-  return "No momento programado te chamo para conversarmos sobre seu conteúdo. Ou digite */* para ver os comandos disponíveis.";
+  return "Já recebi seu conteúdo. Te chamo em breve pra praticar. Ou digite */* para ver os comandos disponíveis.";
 }
 
 export function formatShortTextNoDocs(): string {
   return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, áudio, imagem ou PDF. Ou digite */* para ver todos os comandos.";
+}
+
+export function formatPracticeNudge(): string {
+  return "Oi! Vi que não respondeu a última. Sem pressão, quando quiser continuar é só responder ou subir um novo conteúdo.";
 }
 
 export function formatUpgradePrompt(reason: "audio" | "image"): string {

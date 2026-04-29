@@ -1,5 +1,6 @@
 import { generateText, NoObjectGeneratedError, Output } from 'ai'
 import { openai } from '@ai-sdk/openai'
+import { extractText } from 'unpdf'
 import { docProcessingSchema, DocProcessingResult, visionSchema, VisionResult } from '../lib/llm-schemas'
 import { parseJsonWithFallback } from '../lib/json-utils'
 
@@ -54,11 +55,20 @@ export async function generateDocTopics(params: {
 // ─── Practice message generation ─────────────────────────────────────────────
 
 const PRACTICE_SYSTEM = `Você é um parceiro de prática de estudos via WhatsApp.
-Seu tom é casual, direto, primeira pessoa do plural ("vamos", "que tal").
-Nunca use linguagem de professor ou exercício formal.
-Gere UMA mensagem curta (máximo 3 linhas) que estimule o usuário a pensar ou responder sobre o tópico.
-Pode ser uma pergunta, uma provocação, um "e aí, lembra como funciona X?".
-Não corrija o usuário explicitamente — só estimule.`
+Tom: casual, direto, primeira pessoa do plural. Nunca didático ou formal.
+Máximo 3 linhas por mensagem.
+
+Varie o formato a cada mensagem — nunca repita o mesmo estilo consecutivo:
+- Pergunta direta em português sobre o tópico
+- Pergunta direta no idioma do material (se for inglês, pergunta em inglês)
+- Fill-in-the-blank: "Como você completaria: ___ ?"
+- Role-play curto: "Imagina que você está em X situação. Como diria Y?"
+- Provocação: "Aposto que você não lembra como se diz X. Tenta aí."
+- Exemplo + pergunta: dá um exemplo e pergunta se o usuário usaria diferente
+
+Se lastUserReply existir, reaja brevemente à resposta antes de ir pro próximo tópico.
+Nunca corrija explicitamente — só estimule.
+Se o material for em inglês, alterne perguntas em português e inglês.`
 
 export async function generatePracticeMessage(params: {
   topic: string
@@ -71,6 +81,7 @@ export async function generatePracticeMessage(params: {
 
   const userPrompt = [
     `Tópico atual (${topicIndex + 1}/${totalTopics}): ${topic}`,
+    `Use um formato diferente dos anteriores (tópico ${topicIndex + 1} de ${totalTopics}).`,
     lastUserReply ? `Última resposta do usuário: "${lastUserReply}"` : null,
     `\nTrecho do material:\n${docContent.slice(0, 1500)}`,
   ]
@@ -85,6 +96,13 @@ export async function generatePracticeMessage(params: {
   })
 
   return result.text.trim()
+}
+
+// ─── PDF extraction ───────────────────────────────────────────────────────────
+
+export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
+  const { text } = await extractText(new Uint8Array(buffer))
+  return Array.isArray(text) ? text.join('\n') : text
 }
 
 // ─── Image transcription ──────────────────────────────────────────────────────

@@ -1,10 +1,11 @@
 import { findEligibleActivities, completeActivity, updateActivity } from '../repo/activities.repo'
 import { findDocById } from '../repo/docs.repo'
-import { saveMessage } from '../repo/messages.repo'
+import { saveMessage, findLastActivityMessage } from '../repo/messages.repo'
 import { findUserChannelByUserId } from '../repo/users.repo'
 import { incrementAgentMessageCount } from '../repo/daily-usage.repo'
 import { generatePracticeMessage } from '../vendors/llm.vendor'
 import { sendWhatsAppMessage } from '../vendors/whatsapp.vendor'
+import { formatPracticeNudge } from '../core/formatters'
 import { NEXT_MESSAGE_INTERVAL_MIN } from '../lib/constants'
 
 type CronResult = {
@@ -28,11 +29,41 @@ export async function processActivityCron(): Promise<CronResult> {
         continue
       }
 
+      if (activity.waitingUser) {
+        skipped++
+        continue
+      }
+
       const topics = doc.topicsData as string[]
 
       if (activity.topicIndex >= topics.length) {
         await completeActivity(activity.id, activity.userId)
         skipped++
+        continue
+      }
+
+      const lastMsg = await findLastActivityMessage(activity.id)
+      if (lastMsg && lastMsg.role === 'assistant' && lastMsg.intent === 'practice_message') {
+        const userChannel = await findUserChannelByUserId(activity.userId)
+        if (!userChannel) {
+          skipped++
+          continue
+        }
+        const nudge = formatPracticeNudge()
+        await sendWhatsAppMessage(userChannel.channelId, nudge)
+        await saveMessage({
+          userId: activity.userId,
+          userChannelId: userChannel.id,
+          activityId: activity.id,
+          role: 'assistant',
+          content: nudge,
+          intent: 'practice_nudge',
+        })
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        await incrementAgentMessageCount(activity.userId, today)
+        await updateActivity(activity.id, activity.userId, { waitingUser: true })
+        processed++
         continue
       }
 

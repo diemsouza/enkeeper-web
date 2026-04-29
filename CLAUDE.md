@@ -12,8 +12,8 @@ Stack: Next.js App Router, Prisma, Supabase/PostgreSQL, TypeScript, Vercel.
 ## Regras de banco de dados
 
 - Nunca acessar o banco diretamente (psql, db execute, SQL raw)
-- Toda mudança de schema vai em `prisma/schema/account.prisma` ou `prisma/schema/core.prisma`
-- Rodar `npx prisma@6.10.1 migrate dev --name <name>` para aplicar (comando interativo — pedir ao usuário via `!` se o ambiente não tiver TTY)
+- Toda mudança de schema vai em `prisma/schema/*`
+- Rodar `npx prisma@6.10.1 migrate dev --name <name>` para aplicar e se tiver muita alteracao, estiver muito complexo ou tiver um risco algo, pedir para o usuário. (comando interativo — pedir ao usuário via `!` se o ambiente não tiver TTY)
 - Nunca criar migration SQL manualmente salvo revisão explícita do dev
 
 ## Commands
@@ -62,7 +62,7 @@ Dropuz is a SaaS study practice platform that receives content through WhatsApp,
 - `src/core/` — lógica de domínio pura, zero I/O
 - `src/services/` — orquestração de negócio, chama repo + vendors + core
 - `src/repo/` — queries Prisma, sem regra de negócio
-- `src/vendors/` — clientes de APIs externas (OpenAI, Meta, S3)
+- `src/vendors/` — clientes de APIs externas (OpenAI, Meta, S3, etc...)
 
 ## Regras de arquitetura
 
@@ -82,21 +82,21 @@ Dropuz is a SaaS study practice platform that receives content through WhatsApp,
 
 **i18n:** next-intl with PT-BR and EN-US. All user-facing strings go in `src/locales/pt.json` and `en.json`. Add translations to both files when adding new UI.
 
-**Plan limits:** `User.planCode` (free/pro) and `User.planStatus` gate features — check `src/lib/constants.ts` for plan limits. Free plan = 1 material forever; Pro = unlimited materials with invisible caps.
+**Plan limits:** `User.planCode` (trial/pro) and `User.planStatus` gate features — check `src/lib/constants.ts` for plan limits. Trial plan is the same of Pro but it has expiration date like 1 - 7 days; Pro = 5 docs per days.
 
 **Forms:** React Hook Form + Zod validation. Use the `safeCall()` utility from `src/lib/utils.ts` for error-safe async calls that return `[result, error]` tuples.
 
 ### Data Models
 
-| Model           | Purpose                                                                              |
-| --------------- | ------------------------------------------------------------------------------------ |
-| `User`          | Core account; holds `planCode`, `planStatus`, `locale`, `currency`                   |
-| `UserChannel`   | One row per connected channel (whatsapp)                                             |
-| `Doc`           | Uploaded study material; holds `rawContent`, processed `content`, `topicsData` (JSON), `docType`, `status` |
-| `Activity`      | One practice session per `[userId, docId, date]`; tracks `topicIndex`, `nextMessageAt`, cadence |
-| `WeeklyReport`  | Weekly evolution summary sent to user every Sunday                                   |
-| `Message`       | WhatsApp message history; linked to `Activity` via `activityId`                     |
-| `LlmUsage`      | Per-call token accounting linked to user and optionally to a `Doc`                  |
+| Model          | Purpose                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------- |
+| `User`         | Core account; holds `planCode`, `planStatus`, `locale`, `currency`                                         |
+| `UserChannel`  | One row per connected channel (whatsapp)                                                                   |
+| `Doc`          | Uploaded study material; holds `rawContent`, processed `content`, `topicsData` (JSON), `docType`, `status` |
+| `Activity`     | One practice session per `[userId, docId, date]`; tracks `topicIndex`, `nextMessageAt`, cadence            |
+| `WeeklyReport` | Weekly evolution summary sent to user every Sunday                                                         |
+| `Message`      | WhatsApp message history; linked to `Activity` via `activityId`                                            |
+| `LlmUsage`     | Per-call token accounting linked to user and optionally to a `Doc`                                         |
 
 ### Infrastructure
 
@@ -150,3 +150,5 @@ Dropuz is a SaaS study practice platform that receives content through WhatsApp,
 
 - Sem comentários explicando o que o código faz — código deve ser autoexplicativo
 - Comentários apenas para: TODOs, justificativa de regra de negócio não óbvia, quirks de API externa
+- Código precisa seguir o padrão, clean, aspas duplas e ponto e virgula no final.
+- Sempre rode npm run build no final e ajuste o que tiver quebrado.
