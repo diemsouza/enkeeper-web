@@ -1,7 +1,7 @@
 import { findDocById, updateDoc } from "../repo/docs.repo";
 import { createActivity } from "../repo/activities.repo";
 import { llmUsageService } from "./llm-usage-service";
-import { extractDocContent } from "../vendors/llm.vendor";
+import { generateDocTopics } from "../vendors/llm.vendor";
 import { NEXT_MESSAGE_INTERVAL_MIN } from "../lib/constants";
 
 export async function processDoc(docId: string, userId: string): Promise<void> {
@@ -11,7 +11,10 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     return;
   }
 
-  const { result, inputTokens, outputTokens } = await extractDocContent(doc.rawContent);
+  const { result, inputTokens, outputTokens } = await generateDocTopics({
+    rawContent: doc.rawContent,
+    docType: doc.docType,
+  });
 
   if (!result) {
     console.error(`[process-doc] AI failed for doc ${docId}`);

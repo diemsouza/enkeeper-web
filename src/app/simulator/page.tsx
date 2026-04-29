@@ -34,6 +34,8 @@ export default function SimulatorPage() {
   const [input, setInput] = useState("");
   const [channelId, setChannelId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [cronResult, setCronResult] = useState<{ processed: number; skipped: number; errors: number } | null>(null);
+  const [cronLoading, setCronLoading] = useState(false);
 
   const { containerRef, endRef, scrollToBottom } = useScrollToBottom();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -106,6 +108,21 @@ export default function SimulatorPage() {
   );
 
   useEffect(() => () => stopPolling(), [stopPolling]);
+
+  async function fireCron() {
+    setCronLoading(true);
+    setCronResult(null);
+    try {
+      const res = await fetch("/api/cron/develop-activity");
+      const data = await res.json();
+      setCronResult(data);
+      if (data.processed > 0) startPolling(isoNow(), new Set());
+    } catch {
+      setCronResult({ processed: 0, skipped: 0, errors: 1 });
+    } finally {
+      setCronLoading(false);
+    }
+  }
 
   async function sendMessage() {
     const text = input.trim();
@@ -196,6 +213,21 @@ export default function SimulatorPage() {
       )}
 
       {loading && <p className="text-xs text-gray-400 -mt-1">digitando...</p>}
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={fireCron}
+          disabled={cronLoading}
+          className="text-xs bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 text-gray-600 rounded-full px-3 py-1 transition-colors"
+        >
+          {cronLoading ? "disparando..." : "⚡ Disparar cron"}
+        </button>
+        {cronResult && (
+          <span className="text-xs text-gray-500">
+            {cronResult.processed} enviadas · {cronResult.skipped} puladas · {cronResult.errors} erros
+          </span>
+        )}
+      </div>
 
       <div className="flex items-center gap-2 w-full md:max-w-[480px]">
         <input

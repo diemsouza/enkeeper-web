@@ -48,7 +48,7 @@ export async function findActiveActivitiesByUser(userId: string): Promise<Activi
   })
 }
 
-export async function findActivitiesDueNow(): Promise<Activity[]> {
+export async function findEligibleActivities(limit = 100): Promise<Activity[]> {
   return prisma.activity.findMany({
     where: {
       status: 'active',
@@ -56,6 +56,7 @@ export async function findActivitiesDueNow(): Promise<Activity[]> {
       nextMessageAt: { lte: new Date() },
     },
     orderBy: { nextMessageAt: 'asc' },
+    take: limit,
   })
 }
 
@@ -102,5 +103,19 @@ export async function resumeActivitiesByDoc(docId: string, userId: string): Prom
   await prisma.activity.updateMany({
     where: { docId, userId, status: 'paused', deletedAt: null },
     data: { status: 'active', pausedAt: null },
+  })
+}
+
+export async function completeActivity(id: string, userId: string): Promise<void> {
+  await prisma.activity.updateMany({
+    where: { id, userId, deletedAt: null },
+    data: { status: 'completed', completedAt: new Date(), nextMessageAt: null },
+  })
+}
+
+export async function updateActivityLastReply(activityId: string, reply: string): Promise<void> {
+  await prisma.activity.updateMany({
+    where: { id: activityId, deletedAt: null },
+    data: { lastUserReply: reply },
   })
 }

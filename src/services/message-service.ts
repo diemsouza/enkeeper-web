@@ -24,7 +24,7 @@ import {
   formatSupportReceived,
   formatDailyLimitReached,
 } from '../core/formatters'
-import { saveMessage, findLastUserMessage } from '../repo/messages.repo'
+import { saveMessage, findLastUserMessage, findLastAssistantMessage } from '../repo/messages.repo'
 import { markUserOnboarded, updateUserPlanStatus, updateUserName } from '../repo/users.repo'
 import { findOrCreateUserByChannel } from './user-service'
 import {
@@ -37,6 +37,7 @@ import {
   pauseActivitiesByDoc,
   resumeActivitiesByDoc,
   softDeleteActivitiesByDoc,
+  updateActivityLastReply,
 } from '../repo/activities.repo'
 import { getTodayUsage, incrementDailyDocCount, incrementUserMessageCount, incrementAgentMessageCount } from '../repo/daily-usage.repo'
 import { publishDocProcessing } from '../lib/qstash'
@@ -70,6 +71,14 @@ export async function handleIncomingMessage(input: IncomingMessage): Promise<str
   // Atualiza nome do usuário se veio pelo canal e ainda não está salvo
   if (input.contactName && !user.name) {
     await updateUserName(user.id, input.contactName)
+  }
+
+  // Registra resposta do usuário à última mensagem de prática
+  if (text) {
+    const lastAssistantMsg = await findLastAssistantMessage(user.id)
+    if (lastAssistantMsg?.activityId) {
+      await updateActivityLastReply(lastAssistantMsg.activityId, text)
+    }
   }
 
   // ─── Verificação de acesso ────────────────────────────────────────────────

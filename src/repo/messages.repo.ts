@@ -48,3 +48,10 @@ export async function findMessagesSince(userId: string, since: Date): Promise<Me
   })
 }
 
+export async function findLastAssistantMessage(userId: string): Promise<Message | null> {
+  return prisma.message.findFirst({
+    where: { userId, role: 'assistant' },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+

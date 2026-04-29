@@ -8,7 +8,7 @@ import {
   sendWhatsAppMessage,
 } from "../../../../vendors/whatsapp.vendor";
 import { transcribeAudio } from "../../../../vendors/whisper.vendor";
-import { extractTextFromImage } from "../../../../vendors/vision.vendor";
+import { extractTextFromImage } from "../../../../vendors/llm.vendor";
 import { canUseAudio, canUseImage } from "../../../../core/limits";
 import { formatUpgradePrompt } from "../../../../core/formatters";
 import { IncomingMessage } from "../../../../types/domain";

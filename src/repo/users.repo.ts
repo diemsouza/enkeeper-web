@@ -35,6 +35,15 @@ export async function updateUserPlanStatus(userId: string, planStatus: PlanStatu
   })
 }
 
+export async function findUserChannelByUserId(
+  userId: string,
+  channelType: ChannelType = 'whatsapp',
+): Promise<UserChannel | null> {
+  return prisma.userChannel.findFirst({
+    where: { userId, channelType },
+  })
+}
+
 export async function createUserWithChannel(
   channelType: ChannelType,
   channelId: string,
