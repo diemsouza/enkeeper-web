@@ -1,7 +1,7 @@
 "use client";
 
 import { notFound } from "next/navigation";
-import { useState, useEffect, useRef, KeyboardEvent } from "react";
+import { useState, useEffect, useRef, useCallback, KeyboardEvent } from "react";
 import { WhatsAppChat } from "../../components/whatsapp-chat";
 import { useScrollToBottom } from "../../hooks/use-scroll-to-bottom";
 import { http } from "../../lib/http";
@@ -20,6 +20,13 @@ function nowTime(): string {
   });
 }
 
+function isoNow(): string {
+  return new Date().toISOString();
+}
+
+const POLL_INTERVAL_MS = 1500;
+const POLL_DURATION_MS = 12000;
+
 export default function SimulatorPage() {
   if (process.env.NODE_ENV !== "development") notFound();
 
@@ -28,30 +35,88 @@ export default function SimulatorPage() {
   const [channelId, setChannelId] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const { containerRef, endRef, scrollToBottom } = useScrollToBottom();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
     const saved = localStorage.getItem("simulator_channelId");
-    if (saved) setChannelId(saved);
+    if (saved) {
+      setChannelId(saved);
+    } else {
+      const generated = `sim_${Date.now()}`;
+      setChannelId(generated);
+    }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("simulator_channelId", channelId);
+    if (channelId) localStorage.setItem("simulator_channelId", channelId);
   }, [channelId]);
 
   useEffect(() => {
     if (!loading) inputRef.current?.focus();
   }, [loading]);
 
-  const { containerRef, endRef, scrollToBottom } = useScrollToBottom();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  const startPolling = useCallback(
+    (since: string, seenContents: Set<string>) => {
+      stopPolling();
+
+      let elapsed = 0;
+      pollRef.current = setInterval(async () => {
+        elapsed += POLL_INTERVAL_MS;
+        if (elapsed >= POLL_DURATION_MS) {
+          stopPolling();
+          return;
+        }
+
+        try {
+          const res = (await http(
+            `/api/simulate?channelId=${encodeURIComponent(channelId)}&since=${encodeURIComponent(since)}`,
+            {
+              headers: { "x-simulate-secret": process.env.NEXT_PUBLIC_SIMULATE_SECRET ?? "" },
+            }
+          )) as { messages: { role: string; content: string; createdAt: string }[] };
+
+          const newBotMsgs = res.messages.filter(
+            (m) => m.role === "assistant" && !seenContents.has(m.content)
+          );
+
+          if (newBotMsgs.length > 0) {
+            const time = nowTime();
+            newBotMsgs.forEach((m) => seenContents.add(m.content));
+            setMessages((prev) => [
+              ...prev,
+              ...newBotMsgs.map((m) => ({ from: "bot" as const, text: m.content, time })),
+            ]);
+            scrollToBottom("smooth");
+          }
+        } catch {
+          // silently ignore poll errors
+        }
+      }, POLL_INTERVAL_MS);
+    },
+    [channelId, stopPolling, scrollToBottom]
+  );
+
+  useEffect(() => () => stopPolling(), [stopPolling]);
 
   async function sendMessage() {
     const text = input.trim();
     if (!text || loading) return;
 
     setInput("");
+    const sentAt = isoNow();
     setMessages((prev) => [...prev, { from: "user", text, time: nowTime() }]);
     scrollToBottom("smooth");
     setLoading(true);
+    stopPolling();
 
     try {
       const res = (await http("/api/simulate", {
@@ -67,11 +132,20 @@ export default function SimulatorPage() {
         headers: {
           "x-simulate-secret": process.env.NEXT_PUBLIC_SIMULATE_SECRET ?? "",
         },
-      })) as { reply: string };
+      })) as { reply: string[] };
+
+      const replies = Array.isArray(res.reply) ? res.reply : [res.reply];
+      const time = nowTime();
+      const seenContents = new Set(replies.filter(Boolean));
+
       setMessages((prev) => [
         ...prev,
-        { from: "bot", text: res.reply, time: nowTime() },
+        ...replies.filter(Boolean).map((r) => ({ from: "bot" as const, text: r, time })),
       ]);
+      scrollToBottom("smooth");
+
+      // Polling para mensagens que chegam fora do response (ex: background jobs futuros)
+      startPolling(sentAt, seenContents);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido";
       setMessages((prev) => [
@@ -98,9 +172,7 @@ export default function SimulatorPage() {
       <div className="flex items-center gap-4 text-sm text-gray-600">
         <span className="flex items-center gap-1.5 font-medium">
           Canal
-          <code className="bg-gray-200 px-2 py-1 rounded text-xs">
-            whatsapp
-          </code>
+          <code className="bg-gray-200 px-2 py-1 rounded text-xs">whatsapp</code>
         </span>
         <label className="flex items-center gap-1.5 font-medium">
           ID

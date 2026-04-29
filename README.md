@@ -4,7 +4,7 @@
 
 rm -rf prisma@6.10.1/migrations
 npx prisma@6.10.1 migrate reset
-npx prisma@6.10.1 migrate dev --name name
+npx prisma@6.10.1 migrate dev --name init
 npx prisma@6.10.1 migrate dev --name name --create-only
 npx prisma@6.10.1 db seed
 

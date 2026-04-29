@@ -5,7 +5,7 @@ enum UserStatus {
 }
 
 enum PlanCode {
-    free
+    trial
     pro
 }
 
@@ -13,6 +13,7 @@ enum PlanStatus {
     active
     canceled
     past_due
+    expired
 }
 
 enum ChannelType {
@@ -28,7 +29,7 @@ model User {
     currency String? @map("currency")
 
     // plano — atualizado pelo webhook Stripe ou manualmente no MVP
-    planCode      PlanCode   @default(free) @map("plan_code")
+    planCode      PlanCode   @default(trial) @map("plan_code")
     planStatus    PlanStatus @default(active) @map("plan_status")
     planExpiresAt DateTime?  @map("plan_expires_at")
 
@@ -38,14 +39,32 @@ model User {
     updatedAt DateTime   @updatedAt @map("updated_at")
     deletedAt DateTime?  @map("deleted_at")
 
-    channels    UserChannel[]
-    notes       Note[]
-    tags        Tag[]
-    dailyUsages DailyUsage[]
-    llmUsages   LlmUsage[]
-    messages    Message[]
+    channels      UserChannel[]
+    docs          Doc[]
+    activities    Activity[]
+    weeklyReports WeeklyReport[]
+    llmUsages     LlmUsage[]
+    messages      Message[]
+    dailyUsages   DailyUsage[]
 
     @@map("users")
+}
+
+model DailyUsage {
+    id               String   @id @default(ulid()) @map("id")
+    userId           String   @map("user_id")
+    date             DateTime @map("date") @db.Date
+    docCount          Int      @default(0) @map("doc_count")
+    userMessageCount  Int      @default(0) @map("user_message_count")
+    agentMessageCount Int      @default(0) @map("agent_message_count")
+    messagesCount     Int      @default(0) @map("messages_count")
+    createdAt        DateTime @default(now()) @map("created_at")
+    updatedAt        DateTime @updatedAt @map("updated_at")
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@unique([userId, date])
+    @@map("daily_usages")
 }
 
 model UserChannel {
@@ -54,7 +73,6 @@ model UserChannel {
     channelType ChannelType @map("channel_type")
     channelId   String      @map("channel_id") // BSUID Meta, userId Telegram, etc
     channelCode String?     @map("channel_code") // telefone, username — legível
-    name        String?     @map("name")
     metadata    Json?       @map("metadata")
     createdAt   DateTime    @default(now()) @map("created_at")
     updatedAt   DateTime    @updatedAt @map("updated_at")

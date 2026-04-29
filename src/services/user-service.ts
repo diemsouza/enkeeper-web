@@ -1,6 +1,7 @@
 import { ChannelType as PrismaChannelType, User, UserChannel } from '@prisma/client'
 import { createUserWithChannel, findUserByChannel } from '../repo/users.repo'
 import { ChannelType } from '../types/domain'
+import { TRIAL_DAYS } from '../lib/constants'
 
 type UserWithChannels = User & { channels: UserChannel[] }
 
@@ -12,5 +13,6 @@ export async function findOrCreateUserByChannel(
   const prismaChannelType = channelType as PrismaChannelType
   const existing = await findUserByChannel(prismaChannelType, channelId)
   if (existing) return existing
-  return createUserWithChannel(prismaChannelType, channelId, channelCode)
+  const planExpiresAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000)
+  return createUserWithChannel(prismaChannelType, channelId, channelCode, planExpiresAt)
 }

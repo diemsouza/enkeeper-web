@@ -38,17 +38,17 @@ export const schemaToJsonLite = (schema: z.ZodType<any>): any => {
   return null;
 };
 
-export const analysisSchema = z.object({
-  sentiment: z.number().nullable(),
-  intention: z.string().nullable(),
-  summary: z.string().nullable(),
-});
-
-export type AnalysisSchema = z.infer<typeof analysisSchema>;
-
 export const visionSchema = z.object({
   transcription_type: z.enum(['text', 'description']),
   content: z.string(),
 });
 
 export type VisionResult = z.infer<typeof visionSchema>;
+
+export const docProcessingSchema = z.object({
+  title: z.string(),
+  topics: z.array(z.string()),
+  content: z.string(),
+});
+
+export type DocProcessingResult = z.infer<typeof docProcessingSchema>;

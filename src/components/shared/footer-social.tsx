@@ -6,7 +6,7 @@ export function FooterSocial() {
   return (
     <div className="flex items-center justify-center gap-6 py-4 opacity-80 hover:opacity-100 transition">
       <a
-        href="https://instagram.com/enkeeper"
+        href="https://instagram.com/dropuz"
         target="_blank"
         rel="noreferrer"
         aria-label="Instagram"
@@ -16,7 +16,7 @@ export function FooterSocial() {
       </a>
 
       <a
-        href="https://linkedin.com/company/enkeeper"
+        href="https://linkedin.com/company/dropuz"
         target="_blank"
         rel="noreferrer"
         aria-label="LinkedIn"
@@ -26,7 +26,7 @@ export function FooterSocial() {
       </a>
 
       <a
-        href="https://twitter.com/enkeeper"
+        href="https://twitter.com/dropuz"
         target="_blank"
         rel="noreferrer"
         aria-label="X / Twitter"
@@ -36,7 +36,7 @@ export function FooterSocial() {
       </a>
 
       <a
-        href="https://facebook.com/enkeeper"
+        href="https://facebook.com/dropuz"
         target="_blank"
         rel="noreferrer"
         aria-label="Facebook"

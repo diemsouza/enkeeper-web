@@ -30,10 +30,10 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: t("keywords"),
     robots: "index, nofollow, noimageindex",
     alternates: {
-      canonical: "https://enkeeper.com",
+      canonical: "https://dropuz.com.br",
       languages: {
-        "x-default": "https://enkeeper.com",
-        "pt-BR": "https://enkeeper.com/?lang=pt",
+        "x-default": "https://dropuz.com.br",
+        "pt-BR": "https://dropuz.com.br/?lang=pt",
       },
     },
   };
@@ -56,7 +56,7 @@ export default async function RootLayout({
           sizes="180x180"
           href="/apple-touch-icon.png"
         />
-        <meta name="apple-mobile-web-app-title" content="enkeeper" />
+        <meta name="apple-mobile-web-app-title" content="dropuz" />
         <link rel="manifest" href="/site.webmanifest" />
         {process.env.NEXT_PUBLIC_GTM_ID && (
           <Script

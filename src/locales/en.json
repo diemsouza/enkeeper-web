@@ -1,6 +1,6 @@
 {
   "app": {
-    "brand": "Enkeeper",
+    "brand": "Dropuz",
     "not_found": {
       "code_404": "404",
       "title_page_not_found": "Page not found",
@@ -23,9 +23,9 @@
   },
   "seo": {
     "home": {
-      "title": "Enkeeper | Learn English without forgetting the words",
-      "description": "Save vocabulary, expressions and phrases directly on WhatsApp. Enkeeper organizes and sends them back at the right moment for review. Free to start.",
-      "keywords": "learn english whatsapp, english vocabulary, english notebook, english review, Enkeeper",
+      "title": "Dropuz | Your study content, active all day on WhatsApp",
+      "description": "Send the material you're studying — text, audio, image or PDF. Dropuz practices with you throughout the day, on WhatsApp. Free to start.",
+      "keywords": "english practice whatsapp, study english whatsapp, study agent, continuous practice, Dropuz",
       "ogImage": "/og/en-home.png"
     }
   },
@@ -47,31 +47,31 @@
     "microcopy": "Opens on WhatsApp · Free · No sign-up",
     "who": {
       "title": "For those who study English for real.",
-      "subtitle": "No matter how you learn. Enkeeper fits the way you do it.",
+      "subtitle": "No matter how you learn. Dropuz fits the way you do it.",
       "cards": {
         "0": {
           "title": "The self-taught learner",
-          "description": "Learns from YouTube, shows, podcasts. Has material everywhere and nothing organized. Enkeeper brings it all together."
+          "description": "Learns from YouTube, shows, podcasts. Has material everywhere and nothing organized. Dropuz practices with you based on what you already have."
         },
         "1": {
           "title": "The course student",
-          "description": "Takes classes but never reviews outside them. Writes in the course notebook and never opens it again. With Enkeeper the note goes straight into the WhatsApp you already use."
+          "description": "Takes classes but never reviews outside them. Send the class material and Dropuz practices with you all day on the WhatsApp you already use."
         },
         "2": {
           "title": "The professional",
-          "description": "Uses English at work but freezes on specific vocabulary. Save the terms from your context and find them when you need them."
+          "description": "Uses English at work but freezes on specific vocabulary. Send content from your context and practice throughout the day."
         },
         "3": {
           "title": "The binge-watcher",
-          "description": "Pauses, writes down the expression, keeps watching. The problem is the note disappears. Now it stays where you already are."
+          "description": "Pauses, writes down the expression, keeps watching. Dropuz turns what you captured into practice throughout the day."
         },
         "4": {
           "title": "The traveler",
-          "description": "About to travel or already abroad. Collecting everyday vocabulary, real situations and slang that no course ever teaches."
+          "description": "About to travel or already abroad. Send everyday vocabulary, real situations and slang — and practice before you need it."
         },
         "5": {
           "title": "The one who tried and quit",
-          "description": "Already tried Anki, Duolingo, Quizlet. Got tired of opening yet another app. Enkeeper works inside the WhatsApp you already open fifty times a day."
+          "description": "Already tried Anki, Duolingo, Quizlet. Got tired of opening yet another app. Dropuz works inside the WhatsApp you already open fifty times a day."
         }
       }
     },
@@ -82,7 +82,7 @@
       "cta": "Start free"
     },
     "footer": {
-      "copyright": "Copyright © 2026 Enkeeper. All rights reserved.",
+      "copyright": "Copyright © 2026 Dropuz. All rights reserved.",
       "privacy": "Privacy Policy",
       "terms": "Terms of Use"
     },
@@ -144,7 +144,7 @@
         },
         "2": {
           "title": "Search by word. Results instantly.",
-          "description": "No need to remember the tag or when you saved it. Send /search and Enkeeper finds it across all your notes.",
+          "description": "No need to remember the tag or when you saved it. Send /search and Dropuz finds it across all your notes.",
           "chat": [
             {
               "from": "user",

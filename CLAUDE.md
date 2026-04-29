@@ -2,8 +2,19 @@
 
 ## O que é o projeto
 
-WhatsApp-based spaced repetition note-taking product para o mercado brasileiro.
+**Dropuz** — agente de prática contínua de estudos via WhatsApp para o mercado brasileiro.
+O usuário manda o material que está estudando (texto, áudio, imagem ou PDF) e recebe perguntas e diálogos sobre aquele conteúdo durante o dia, no WhatsApp.
+
+Fonte de verdade do produto: `docs/Product-Brief-v7.md`
+
 Stack: Next.js App Router, Prisma, Supabase/PostgreSQL, TypeScript, Vercel.
+
+## Regras de banco de dados
+
+- Nunca acessar o banco diretamente (psql, db execute, SQL raw)
+- Toda mudança de schema vai em `prisma/schema/account.prisma` ou `prisma/schema/core.prisma`
+- Rodar `npx prisma@6.10.1 migrate dev --name <name>` para aplicar (comando interativo — pedir ao usuário via `!` se o ambiente não tiver TTY)
+- Nunca criar migration SQL manualmente salvo revisão explícita do dev
 
 ## Commands
 
@@ -36,7 +47,7 @@ No test suite is configured.
 
 ## Architecture Overview
 
-Enkeeper is a SaaS note-taking platform that receives content through multiple messaging channels (WhatsApp, Telegram, Slack, Discord, SMS) and processes it with AI (transcription, OCR, summarization). Built with Next.js 15 App Router, TypeScript strict mode, and PostgreSQL + pgvector.
+Dropuz is a SaaS study practice platform that receives content through WhatsApp, processes it with AI (transcription, OCR, topic extraction) and sends conversational practice messages back throughout the day. Built with Next.js 15 App Router, TypeScript strict mode, and PostgreSQL.
 
 ### Directory Structure
 
@@ -46,7 +57,7 @@ Enkeeper is a SaaS note-taking platform that receives content through multiple m
 - `src/services/` — Business logic: `ai-service.ts` (OpenAI via Vercel AI SDK), `llm-usage-service.ts` (token tracking), `user-service.ts`, `whatsapp-service.ts`.
 - `src/hooks/` — Custom React hooks.
 - `src/i18n/` + `src/locales/` — next-intl config with `pt.json` and `en.json` translation files.
-- `prisma/schema/` — Split Prisma schema files per domain (account, billing, etc.).
+- `prisma/schema/` — Split Prisma schema files per domain (`account.prisma`, `core.prisma`).
 - `email-templates/` — Handlebars templates per locale (`en/`, `pt/`).
 - `src/core/` — lógica de domínio pura, zero I/O
 - `src/services/` — orquestração de negócio, chama repo + vendors + core
@@ -71,26 +82,25 @@ Enkeeper is a SaaS note-taking platform that receives content through multiple m
 
 **i18n:** next-intl with PT-BR and EN-US. All user-facing strings go in `src/locales/pt.json` and `en.json`. Add translations to both files when adding new UI.
 
-**Usage limits:** `DailyUsage` tracks note counts per user per day. `User.planCode` (free/pro) and `User.planStatus` gate features — check `src/lib/constants.ts` for plan limits.
+**Plan limits:** `User.planCode` (free/pro) and `User.planStatus` gate features — check `src/lib/constants.ts` for plan limits. Free plan = 1 material forever; Pro = unlimited materials with invisible caps.
 
 **Forms:** React Hook Form + Zod validation. Use the `safeCall()` utility from `src/lib/utils.ts` for error-safe async calls that return `[result, error]` tuples.
 
 ### Data Models
 
-| Model             | Purpose                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| `User`            | Core account; holds `planCode`, `planStatus`, `locale`, `currency`               |
-| `UserChannel`     | One row per connected channel (whatsapp/telegram/slack/discord/sms)              |
-| `Note`            | Stored note with `content` (processed), `rawContent` (transcript/OCR), `fileUrl` |
-| `Tag` / `NoteTag` | User-defined tags; `Tag.noteCount` is a cached counter                           |
-| `DailyUsage`      | Unique per `[userId, date]`; tracks daily note count                             |
-| `LlmUsage`        | Per-call token accounting linked to user and optionally to a note                |
-
-Billing models exist in `prisma/schema/billing.prisma` but are currently commented out.
+| Model           | Purpose                                                                              |
+| --------------- | ------------------------------------------------------------------------------------ |
+| `User`          | Core account; holds `planCode`, `planStatus`, `locale`, `currency`                   |
+| `UserChannel`   | One row per connected channel (whatsapp)                                             |
+| `Doc`           | Uploaded study material; holds `rawContent`, processed `content`, `topicsData` (JSON), `docType`, `status` |
+| `Activity`      | One practice session per `[userId, docId, date]`; tracks `topicIndex`, `nextMessageAt`, cadence |
+| `WeeklyReport`  | Weekly evolution summary sent to user every Sunday                                   |
+| `Message`       | WhatsApp message history; linked to `Activity` via `activityId`                     |
+| `LlmUsage`      | Per-call token accounting linked to user and optionally to a `Doc`                  |
 
 ### Infrastructure
 
-- **Database:** PostgreSQL 16 with pgvector (`docker-compose.yml` for local dev)
+- **Database:** PostgreSQL with pgvector (`docker-compose.yml` for local dev)
 - **Queue:** Upstash QStash for background job processing
 - **Storage:** Supabase (file uploads)
 - **Email:** Nodemailer with Handlebars templates
@@ -118,7 +128,7 @@ Billing models exist in `prisma/schema/billing.prisma` but are currently comment
 
 ### Nomenclatura
 
-- Arquivos: kebab-case (`notes.repo.ts`, `message-service.ts`)
+- Arquivos: kebab-case (`docs.repo.ts`, `message-service.ts`)
 - Classes/tipos: PascalCase
 - Funções e variáveis: camelCase
 - Constantes de config: UPPER_SNAKE_CASE (`FREE_LIMITS`)

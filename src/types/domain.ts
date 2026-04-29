@@ -1,46 +1,37 @@
-export type PlanCode = 'free' | 'pro'
+export type PlanCode = 'trial' | 'pro'
 export type ChannelType = 'whatsapp'
-export type NoteType = 'text' | 'audio' | 'image'
 export type MessageRole = 'user' | 'assistant'
 
 export type MessageIntent =
-  | 'save_note'
-  | 'list_tags'
-  | 'list_notes'
-  | 'tag_notes'
-  | 'search'
-  | 'delete_note'
-  | 'edit'
-  | 'edit_note_prompt'
-  | 'delete_tag'
-  | 'edit_tag'
-  | 'edit_tag_prompt'
+  | 'list_commands'
+  | 'list_docs'
+  | 'pause_doc'
+  | 'resume_doc'
+  | 'text_input'
+  | 'support'
   | 'confirm'
   | 'cancel'
-  | 'support'
-  | 'list_commands'
-  | 'pause_reviews'
-  | 'referral'
-  | 'invalid_command'
-  | 'invalid_tag'
+  | 'cancel_no'
+  | 'awaiting_doc_confirm'
+  | 'awaiting_doc_replace'
+  | 'awaiting_text_input'
+  | 'awaiting_pause_select'
+  | 'awaiting_resume_select'
+  | 'free_text'
+  | 'unknown_command'
 
 export type ParsedMessage = {
   intent: MessageIntent
   raw: string
   content?: string
-  tags?: string[]
-  searchQuery?: string
-  noteId?: string
-  tagName?: string
-  tagNewName?: string
-  editContent?: string
-  notesFilter?: 'today' | 'yesterday' | 'week' | 'all'
+  docIndex?: number
 }
 
 export type IncomingMessage = {
   channelId: string
   channelCode?: string
   channelType: ChannelType
+  contactName?: string
   text?: string
   imageUrl?: string
   externalId?: string

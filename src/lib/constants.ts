@@ -1,4 +1,6 @@
 export const LOCALE_COOKIE_NAME = "zn_locale";
+export const MIN_DOC_CHARS = 500;
+export const NEXT_MESSAGE_INTERVAL_MIN = 60;
 export const LOCALES = ["pt-BR", "en-US"];
 export const DEFAULT_LOCALE = "pt-BR";
 export const DEFAULT_CURRENCY = "BRL";
@@ -110,8 +112,5 @@ export function getPlanByCode(code: string, currency = DEFAULT_CURRENCY) {
   return getPlans(currency).find((a) => a.code === code);
 }
 
-export const TRIAL_DAYS: Record<string, number> = {
-  "7s": 7,
-  "14f": 14,
-  "30t": 30,
-};
+export const TRIAL_DAYS = 1;
+export const MAX_DOCS_PER_DAY = 5;

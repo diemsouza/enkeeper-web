@@ -11,7 +11,7 @@ import { transcribeAudio } from "../../../../vendors/whisper.vendor";
 import { extractTextFromImage } from "../../../../vendors/vision.vendor";
 import { canUseAudio, canUseImage } from "../../../../core/limits";
 import { formatUpgradePrompt } from "../../../../core/formatters";
-import { IncomingMessage, PlanCode } from "../../../../types/domain";
+import { IncomingMessage } from "../../../../types/domain";
 import {
   verifyMetaSignature,
   verifyWebhookToken,
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest): Promise<Response> {
                 audio?: { id: string };
                 image?: { id: string };
               }>;
-              contacts?: Array<{ wa_id: string }>;
+              contacts?: Array<{ wa_id: string; profile?: { name?: string } }>;
             };
           }>;
         }>;
@@ -63,16 +63,18 @@ export async function POST(req: NextRequest): Promise<Response> {
       const wa_id = value.contacts?.[0]?.wa_id;
       if (!wa_id) return;
 
+      const contactName = value.contacts?.[0]?.profile?.name;
       const message = value.messages[0];
       const base: IncomingMessage = {
         channelId: wa_id,
         channelType: "whatsapp",
         externalId: message.id,
+        contactName,
       };
 
       if (message.type === "audio" && message.audio) {
         const user = await findOrCreateUserByChannel("whatsapp", wa_id);
-        if (!canUseAudio(user.planCode as PlanCode)) {
+        if (!canUseAudio(user)) {
           await sendWhatsAppMessage(wa_id, formatUpgradePrompt("audio"));
           return;
         }
@@ -97,7 +99,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
       if (message.type === "image" && message.image) {
         const user = await findOrCreateUserByChannel("whatsapp", wa_id);
-        if (!canUseImage(user.planCode as PlanCode)) {
+        if (!canUseImage(user)) {
           await sendWhatsAppMessage(wa_id, formatUpgradePrompt("image"));
           return;
         }

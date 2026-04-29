@@ -1,4 +1,4 @@
-import { ChannelType, User, UserChannel } from '@prisma/client'
+import { ChannelType, PlanStatus, User, UserChannel } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 
 type UserWithChannels = User & { channels: UserChannel[] }
@@ -21,13 +21,30 @@ export async function markUserOnboarded(userId: string): Promise<void> {
   })
 }
 
+export async function updateUserName(userId: string, name: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { name },
+  })
+}
+
+export async function updateUserPlanStatus(userId: string, planStatus: PlanStatus): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { planStatus },
+  })
+}
+
 export async function createUserWithChannel(
   channelType: ChannelType,
   channelId: string,
   channelCode?: string,
+  planExpiresAt?: Date,
 ): Promise<UserWithChannels> {
   return prisma.$transaction(async tx => {
-    const user = await tx.user.create({ data: {} })
+    const user = await tx.user.create({
+      data: { planCode: 'trial', planStatus: 'active', planExpiresAt },
+    })
     await tx.userChannel.create({
       data: { userId: user.id, channelType, channelId, channelCode },
     })

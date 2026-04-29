@@ -6,7 +6,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center space-x-2">
           <span className="text-sm text-muted-foreground">
-            © 2025 Enkeeper. Todos os direitos reservados.
+            © 2026 Dropuz. Todos os direitos reservados.
           </span>
         </div>
         <div className="flex items-center space-x-4 text-sm text-muted-foreground">

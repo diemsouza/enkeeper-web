@@ -148,7 +148,7 @@ export default function Hero() {
         {/* Tagline */}
         <p className="text-[18px] font-normal text-muted-foreground text-center">
           <strong className="font-normal text-black dark:text-white">
-            Enkeeper
+            Dropuz
           </strong>
           . {t("tagline")}
         </p>

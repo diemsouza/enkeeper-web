@@ -1,21 +1,30 @@
 import { DailyUsage } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 
-function toDateOnly(d: Date): Date {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+export async function getTodayUsage(userId: string, date: Date): Promise<DailyUsage | null> {
+  return prisma.dailyUsage.findFirst({ where: { userId, date } })
 }
 
-export async function getTodayUsage(userId: string, date: Date): Promise<DailyUsage | null> {
-  return prisma.dailyUsage.findUnique({
-    where: { userId_date: { userId, date: toDateOnly(date) } },
+export async function incrementDailyDocCount(userId: string, date: Date): Promise<void> {
+  await prisma.dailyUsage.upsert({
+    where: { userId_date: { userId, date } },
+    update: { docCount: { increment: 1 } },
+    create: { userId, date, docCount: 1 },
   })
 }
 
-export async function incrementDailyUsage(userId: string, date: Date): Promise<DailyUsage> {
-  const normalizedDate = toDateOnly(date)
-  return prisma.dailyUsage.upsert({
-    where: { userId_date: { userId, date: normalizedDate } },
-    create: { userId, date: normalizedDate, noteCount: 1 },
-    update: { noteCount: { increment: 1 } },
+export async function incrementUserMessageCount(userId: string, date: Date): Promise<void> {
+  await prisma.dailyUsage.upsert({
+    where: { userId_date: { userId, date } },
+    update: { userMessageCount: { increment: 1 }, messagesCount: { increment: 1 } },
+    create: { userId, date, userMessageCount: 1, messagesCount: 1 },
+  })
+}
+
+export async function incrementAgentMessageCount(userId: string, date: Date): Promise<void> {
+  await prisma.dailyUsage.upsert({
+    where: { userId_date: { userId, date } },
+    update: { agentMessageCount: { increment: 1 }, messagesCount: { increment: 1 } },
+    create: { userId, date, agentMessageCount: 1, messagesCount: 1 },
   })
 }

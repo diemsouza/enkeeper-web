@@ -11,7 +11,8 @@ type SaveMessageData = {
   mediaType?: string
   mediaId?: string
   metadata?: Record<string, string | number | null>
-  noteIds?: string[]
+  activityId?: string
+  // TODO: refactory after run — noteIds removed, replaced by activityId relation
 }
 
 export async function saveMessage(data: SaveMessageData): Promise<Message> {
@@ -28,7 +29,7 @@ export async function saveMessage(data: SaveMessageData): Promise<Message> {
       metadata: data.metadata !== undefined
         ? (data.metadata as Prisma.InputJsonObject)
         : undefined,
-      noteIds: data.noteIds,
+      activityId: data.activityId,
     },
   })
 }
@@ -40,10 +41,10 @@ export async function findLastUserMessage(userId: string): Promise<Message | nul
   })
 }
 
-export async function findLastOutboundMessageWithNoteIds(userId: string): Promise<Message | null> {
-  return prisma.message.findFirst({
-    where: { userId, role: 'assistant', noteIds: { isEmpty: false } },
-    orderBy: { createdAt: 'desc' },
+export async function findMessagesSince(userId: string, since: Date): Promise<Message[]> {
+  return prisma.message.findMany({
+    where: { userId, createdAt: { gt: since } },
+    orderBy: { createdAt: 'asc' },
   })
 }
 

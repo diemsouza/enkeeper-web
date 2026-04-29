@@ -46,7 +46,7 @@ export function Header({
               height={128}
               className="h-8 w-8 rounded-lg me-1"
             />
-            <span className="font-bold text-lg">Enkeeper</span>
+            <span className="font-bold text-lg">Dropuz</span>
           </Link>
         )}
         <div className="flex items-center space-x-4">
