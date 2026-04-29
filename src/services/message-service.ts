@@ -447,6 +447,8 @@ export async function handleIncomingMessage(
             userReply: text,
             topic: topics[topicIdx] ?? "",
             docContent: practiceDoc.content,
+            userId: user.id,
+            docId: practiceDoc.id,
           });
           await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
           await saveMessage({

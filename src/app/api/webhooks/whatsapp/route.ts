@@ -105,7 +105,7 @@ export async function POST(req: NextRequest): Promise<Response> {
           return;
         }
         const { buffer, mimeType, fileSize } = await downloadMedia(message.image.id);
-        const visionResult = await extractTextFromImage(buffer);
+        const visionResult = await extractTextFromImage(buffer, user.id);
         const format = mimeType.split("/")[1]?.split(";")[0] ?? "jpeg";
         const input: IncomingMessage = {
           ...base,

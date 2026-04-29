@@ -99,6 +99,8 @@ export async function processActivityCron(): Promise<CronResult> {
         docContent: doc.content,
         topicIndex: activity.topicIndex,
         totalTopics: topics.length,
+        userId: activity.userId,
+        docId: activity.docId,
       })
 
       const userChannel = await findUserChannelByUserId(activity.userId)

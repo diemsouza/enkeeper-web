@@ -8,6 +8,7 @@ import {
   VisionResult,
 } from "../lib/llm-schemas";
 import { parseJsonWithFallback } from "../lib/json-utils";
+import { llmUsageService } from "../services/llm-usage-service";
 
 const MODEL = "gpt-4.1-mini";
 
@@ -26,39 +27,48 @@ ${rawContent}`;
 export async function generateDocTopics(params: {
   rawContent: string;
   docType: string;
-}): Promise<{
-  result: DocProcessingResult | null;
-  inputTokens: number;
-  outputTokens: number;
-}> {
+  userId: string;
+  docId: string;
+}): Promise<DocProcessingResult | null> {
+  const { rawContent, userId, docId } = params;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cachedTokens = 0;
+  let result: DocProcessingResult | null = null;
+
   try {
     const llmResult = await generateText({
       model: openai(MODEL),
       output: Output.object({ schema: docProcessingSchema }),
       temperature: 0.2,
-      prompt: buildDocPrompt(params.rawContent),
+      prompt: buildDocPrompt(rawContent),
     });
-    return {
-      result: llmResult.output,
-      inputTokens: llmResult.usage?.inputTokens ?? 0,
-      outputTokens: llmResult.usage?.outputTokens ?? 0,
-    };
+    inputTokens += llmResult.usage?.inputTokens ?? 0;
+    outputTokens += llmResult.usage?.outputTokens ?? 0;
+    cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+    result = llmResult.output;
   } catch (err) {
     if (NoObjectGeneratedError.isInstance(err) && err.text) {
       try {
-        return {
-          result: docProcessingSchema.parse(
-            parseJsonWithFallback(err.text.trim()),
-          ),
-          inputTokens: 0,
-          outputTokens: 0,
-        };
+        result = docProcessingSchema.parse(parseJsonWithFallback(err.text.trim()));
       } catch {
         // structured parse failed after NoObjectGeneratedError
       }
     }
-    return { result: null, inputTokens: 0, outputTokens: 0 };
   }
+
+  await llmUsageService.registerUsage({
+    userId,
+    docId,
+    usageType: "topic_extraction",
+    provider: "openai",
+    model: MODEL,
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+  });
+
+  return result;
 }
 
 // ─── Practice message generation ─────────────────────────────────────────────
@@ -85,8 +95,10 @@ export async function generatePracticeMessage(params: {
   docContent: string;
   topicIndex: number;
   totalTopics: number;
+  userId: string;
+  docId: string;
 }): Promise<string> {
-  const { topic, lastUserReply, docContent, topicIndex, totalTopics } = params;
+  const { topic, lastUserReply, docContent, topicIndex, totalTopics, userId, docId } = params;
 
   const userPrompt = [
     `Tópico atual (${topicIndex + 1}/${totalTopics}): ${topic}`,
@@ -97,14 +109,25 @@ export async function generatePracticeMessage(params: {
     .filter(Boolean)
     .join("\n");
 
-  const result = await generateText({
+  const llmResult = await generateText({
     model: openai(MODEL),
     system: PRACTICE_SYSTEM,
     prompt: userPrompt,
     temperature: 0.7,
   });
 
-  return result.text.trim();
+  await llmUsageService.registerUsage({
+    userId,
+    docId,
+    usageType: "practice_generation",
+    provider: "openai",
+    model: MODEL,
+    inputTokens: llmResult.usage?.inputTokens ?? 0,
+    outputTokens: llmResult.usage?.outputTokens ?? 0,
+    cachedTokens: llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0,
+  });
+
+  return llmResult.text.trim();
 }
 
 // ─── Practice feedback ───────────────────────────────────────────────────────
@@ -118,31 +141,44 @@ Regras:
 - Errado: não diz "errado" — explica o correto de forma natural.
 - Nunca diga: "você acertou", "muito bem", "parabéns", "ótimo".
 - Nunca repita a pergunta nem seja longo.
-- Se o material for em inglês, responda no idioma da resposta do usuário.`
+- Se o material for em inglês, responda no idioma da resposta do usuário.`;
 
 export async function generatePracticeFeedback(params: {
-  question: string
-  userReply: string
-  topic: string
-  docContent: string
+  question: string;
+  userReply: string;
+  topic: string;
+  docContent: string;
+  userId: string;
+  docId: string;
 }): Promise<string> {
-  const { question, userReply, topic, docContent } = params
+  const { question, userReply, topic, docContent, userId, docId } = params;
 
   const prompt = [
     `Tópico: ${topic}`,
     `Pergunta feita: "${question}"`,
     `Resposta do usuário: "${userReply}"`,
     `\nContexto do material:\n${docContent.slice(0, 1000)}`,
-  ].join('\n')
+  ].join("\n");
 
-  const result = await generateText({
+  const llmResult = await generateText({
     model: openai(MODEL),
     system: FEEDBACK_SYSTEM,
     prompt,
     temperature: 0.5,
-  })
+  });
 
-  return result.text.trim()
+  await llmUsageService.registerUsage({
+    userId,
+    docId,
+    usageType: "practice_feedback",
+    provider: "openai",
+    model: MODEL,
+    inputTokens: llmResult.usage?.inputTokens ?? 0,
+    outputTokens: llmResult.usage?.outputTokens ?? 0,
+    cachedTokens: llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0,
+  });
+
+  return llmResult.text.trim();
 }
 
 // ─── PDF extraction ───────────────────────────────────────────────────────────
@@ -156,6 +192,7 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
 
 export async function extractTextFromImage(
   buffer: Buffer,
+  userId: string,
 ): Promise<VisionResult> {
   const llmResult = await generateText({
     model: openai("gpt-4o-mini"),
@@ -172,6 +209,17 @@ export async function extractTextFromImage(
         ],
       },
     ],
+  });
+
+  await llmUsageService.registerUsage({
+    userId,
+    docId: null,
+    usageType: "ocr",
+    provider: "openai",
+    model: "gpt-4o-mini",
+    inputTokens: llmResult.usage?.inputTokens ?? 0,
+    outputTokens: llmResult.usage?.outputTokens ?? 0,
+    cachedTokens: llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0,
   });
 
   return llmResult.output as VisionResult;

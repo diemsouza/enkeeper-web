@@ -23,48 +23,20 @@ class LlmUsageService {
     inputTokens,
     outputTokens,
     cachedTokens,
-  }: RegisterLlmUsageInput) {
-    // TODO: fix
-    // if (noteId) {
-    //   await prisma.llmUsage.upsert({
-    //     where: {
-    //       noteId: noteId,
-    //     },
-    //     update: {
-    //       inputTokens: { increment: inputTokens },
-    //       outputTokens: { increment: outputTokens },
-    //       cachedTokens: { increment: cachedTokens },
-    //       totalTokens: { increment: inputTokens + outputTokens },
-    //       provider,
-    //       model,
-    //     },
-    //     create: {
-    //       userId,
-    //       noteId,
-    //       usageType,
-    //       provider,
-    //       model,
-    //       inputTokens,
-    //       outputTokens,
-    //       cachedTokens,
-    //       totalTokens: inputTokens + outputTokens,
-    //     },
-    //   });
-    // } else {
-    //   await prisma.llmUsage.create({
-    //     data: {
-    //       userId,
-    //       noteId: null,
-    //       usageType,
-    //       provider,
-    //       model,
-    //       inputTokens,
-    //       outputTokens,
-    //       cachedTokens,
-    //       totalTokens: inputTokens + outputTokens,
-    //     },
-    //   });
-    // }
+  }: RegisterLlmUsageInput): Promise<void> {
+    await prisma.llmUsage.create({
+      data: {
+        userId,
+        docId: docId ?? null,
+        usageType,
+        provider,
+        model,
+        inputTokens,
+        outputTokens,
+        cachedTokens,
+        totalTokens: inputTokens + outputTokens,
+      },
+    });
   }
 }
 

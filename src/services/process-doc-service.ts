@@ -1,6 +1,5 @@
 import { findDocById, findActiveDocsByUser, updateDoc } from "../repo/docs.repo";
 import { createActivity, softDeleteActivitiesByDoc } from "../repo/activities.repo";
-import { llmUsageService } from "./llm-usage-service";
 import { generateDocTopics } from "../vendors/llm.vendor";
 import { NEXT_MESSAGE_INTERVAL_MIN } from "../lib/constants";
 
@@ -11,9 +10,11 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     return;
   }
 
-  const { result, inputTokens, outputTokens } = await generateDocTopics({
+  const result = await generateDocTopics({
     rawContent: doc.rawContent,
     docType: doc.docType,
+    userId,
+    docId,
   });
 
   if (!result) {
@@ -21,17 +22,6 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     await updateDoc(docId, userId, { status: "failed" });
     return;
   }
-
-  await llmUsageService.registerUsage({
-    userId,
-    docId,
-    usageType: "topic_extraction",
-    provider: "openai",
-    model: "gpt-4.1-mini",
-    inputTokens,
-    outputTokens,
-    cachedTokens: 0,
-  });
 
   await updateDoc(docId, userId, {
     title: result.title,
