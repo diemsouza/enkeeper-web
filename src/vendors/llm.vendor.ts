@@ -1,28 +1,35 @@
-import { generateText, NoObjectGeneratedError, Output } from 'ai'
-import { openai } from '@ai-sdk/openai'
-import { extractText } from 'unpdf'
-import { docProcessingSchema, DocProcessingResult, visionSchema, VisionResult } from '../lib/llm-schemas'
-import { parseJsonWithFallback } from '../lib/json-utils'
+import { generateText, NoObjectGeneratedError, Output } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { extractText } from "unpdf";
+import {
+  docProcessingSchema,
+  DocProcessingResult,
+  visionSchema,
+  VisionResult,
+} from "../lib/llm-schemas";
+import { parseJsonWithFallback } from "../lib/json-utils";
 
-const MODEL = 'gpt-4.1-mini'
+const MODEL = "gpt-4.1-mini";
 
 // ─── Doc extraction ───────────────────────────────────────────────────────────
 
-const buildDocPrompt = (rawContent: string) => `Você recebeu um conteúdo de estudo. Extraia:
+const buildDocPrompt = (
+  rawContent: string,
+) => `Você recebeu um conteúdo de estudo. Extraia:
 - title: título curto (máx 8 palavras) que resuma o tema
 - topics: lista de 8 a 12 tópicos principais para praticar (strings curtas)
 - content: reescreva o conteúdo de forma clara e objetiva, mantendo todas as informações importantes para estudo espaçado
 
 Conteúdo:
-${rawContent}`
+${rawContent}`;
 
 export async function generateDocTopics(params: {
-  rawContent: string
-  docType: string
+  rawContent: string;
+  docType: string;
 }): Promise<{
-  result: DocProcessingResult | null
-  inputTokens: number
-  outputTokens: number
+  result: DocProcessingResult | null;
+  inputTokens: number;
+  outputTokens: number;
 }> {
   try {
     const llmResult = await generateText({
@@ -30,25 +37,27 @@ export async function generateDocTopics(params: {
       output: Output.object({ schema: docProcessingSchema }),
       temperature: 0.2,
       prompt: buildDocPrompt(params.rawContent),
-    })
+    });
     return {
       result: llmResult.output,
       inputTokens: llmResult.usage?.inputTokens ?? 0,
       outputTokens: llmResult.usage?.outputTokens ?? 0,
-    }
+    };
   } catch (err) {
     if (NoObjectGeneratedError.isInstance(err) && err.text) {
       try {
         return {
-          result: docProcessingSchema.parse(parseJsonWithFallback(err.text.trim())),
+          result: docProcessingSchema.parse(
+            parseJsonWithFallback(err.text.trim()),
+          ),
           inputTokens: 0,
           outputTokens: 0,
-        }
+        };
       } catch {
         // structured parse failed after NoObjectGeneratedError
       }
     }
-    return { result: null, inputTokens: 0, outputTokens: 0 }
+    return { result: null, inputTokens: 0, outputTokens: 0 };
   }
 }
 
@@ -58,7 +67,7 @@ const PRACTICE_SYSTEM = `Você é um parceiro de prática de estudos via WhatsAp
 Tom: casual, direto, primeira pessoa do plural. Nunca didático ou formal.
 Máximo 3 linhas por mensagem.
 
-Varie o formato a cada mensagem — nunca repita o mesmo estilo consecutivo:
+Varie o formato a cada mensagem - nunca repita o mesmo estilo consecutivo:
 - Pergunta direta em português sobre o tópico
 - Pergunta direta no idioma do material (se for inglês, pergunta em inglês)
 - Fill-in-the-blank: "Como você completaria: ___ ?"
@@ -67,17 +76,17 @@ Varie o formato a cada mensagem — nunca repita o mesmo estilo consecutivo:
 - Exemplo + pergunta: dá um exemplo e pergunta se o usuário usaria diferente
 
 Se lastUserReply existir, reaja brevemente à resposta antes de ir pro próximo tópico.
-Nunca corrija explicitamente — só estimule.
-Se o material for em inglês, alterne perguntas em português e inglês.`
+Nunca corrija explicitamente - só estimule.
+Se o material for em inglês, alterne perguntas em português e inglês.`;
 
 export async function generatePracticeMessage(params: {
-  topic: string
-  lastUserReply: string | null
-  docContent: string
-  topicIndex: number
-  totalTopics: number
+  topic: string;
+  lastUserReply: string | null;
+  docContent: string;
+  topicIndex: number;
+  totalTopics: number;
 }): Promise<string> {
-  const { topic, lastUserReply, docContent, topicIndex, totalTopics } = params
+  const { topic, lastUserReply, docContent, topicIndex, totalTopics } = params;
 
   const userPrompt = [
     `Tópico atual (${topicIndex + 1}/${totalTopics}): ${topic}`,
@@ -86,13 +95,51 @@ export async function generatePracticeMessage(params: {
     `\nTrecho do material:\n${docContent.slice(0, 1500)}`,
   ]
     .filter(Boolean)
-    .join('\n')
+    .join("\n");
 
   const result = await generateText({
     model: openai(MODEL),
     system: PRACTICE_SYSTEM,
     prompt: userPrompt,
     temperature: 0.7,
+  });
+
+  return result.text.trim();
+}
+
+// ─── Practice feedback ───────────────────────────────────────────────────────
+
+const FEEDBACK_SYSTEM = `Você é um parceiro de prática de estudos via WhatsApp. Seu papel é dar feedback sobre a resposta do usuário.
+Tom: casual, direto. Máximo 3 linhas.
+
+Regras:
+- Correto: confirma brevemente de forma natural. Pode adicionar observação curta se enriquecer.
+- Parcialmente correto: reconhece o que está certo, complementa o que faltou.
+- Errado: não diz "errado" — explica o correto de forma natural.
+- Nunca diga: "você acertou", "muito bem", "parabéns", "ótimo".
+- Nunca repita a pergunta nem seja longo.
+- Se o material for em inglês, responda no idioma da resposta do usuário.`
+
+export async function generatePracticeFeedback(params: {
+  question: string
+  userReply: string
+  topic: string
+  docContent: string
+}): Promise<string> {
+  const { question, userReply, topic, docContent } = params
+
+  const prompt = [
+    `Tópico: ${topic}`,
+    `Pergunta feita: "${question}"`,
+    `Resposta do usuário: "${userReply}"`,
+    `\nContexto do material:\n${docContent.slice(0, 1000)}`,
+  ].join('\n')
+
+  const result = await generateText({
+    model: openai(MODEL),
+    system: FEEDBACK_SYSTEM,
+    prompt,
+    temperature: 0.5,
   })
 
   return result.text.trim()
@@ -101,29 +148,31 @@ export async function generatePracticeMessage(params: {
 // ─── PDF extraction ───────────────────────────────────────────────────────────
 
 export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const { text } = await extractText(new Uint8Array(buffer))
-  return Array.isArray(text) ? text.join('\n') : text
+  const { text } = await extractText(new Uint8Array(buffer));
+  return Array.isArray(text) ? text.join("\n") : text;
 }
 
 // ─── Image transcription ──────────────────────────────────────────────────────
 
-export async function extractTextFromImage(buffer: Buffer): Promise<VisionResult> {
+export async function extractTextFromImage(
+  buffer: Buffer,
+): Promise<VisionResult> {
   const llmResult = await generateText({
-    model: openai('gpt-4o-mini'),
+    model: openai("gpt-4o-mini"),
     output: Output.object({ schema: visionSchema }),
     messages: [
       {
-        role: 'user',
+        role: "user",
         content: [
-          { type: 'image', image: buffer },
+          { type: "image", image: buffer },
           {
-            type: 'text',
+            type: "text",
             text: 'Se a imagem contiver texto legível, extraia o texto exatamente como está. Caso contrário, descreva de forma concisa o que a imagem mostra. Defina transcription_type como "text" se havia texto legível ou "description" se foi gerada uma descrição.',
           },
         ],
       },
     ],
-  })
+  });
 
-  return llmResult.output as VisionResult
+  return llmResult.output as VisionResult;
 }

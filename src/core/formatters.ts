@@ -46,13 +46,31 @@ export function formatCommandList(): string {
 export function formatDocsList(
   docs: Pick<Doc, "id" | "title" | "status">[],
 ): string {
-  const visible = docs.filter((d) => d.status !== "archived");
-  if (visible.length === 0) return formatNoDocs();
-  const lines = visible.map(
-    (d, i) =>
-      `${i + 1}. ${d.title || "(processando...)"} — ${d.status === "active" ? "ativo" : "pausado"}`,
-  );
-  return `*Seus conteúdos:*\n\n${lines.join("\n")}\n\n_Digite */pausar* ou */retomar* para gerenciar._`;
+  const current = docs.filter((d) => d.status === "active" || d.status === "paused");
+  const archived = docs.filter((d) => d.status === "archived").slice(0, 3);
+
+  if (current.length === 0 && archived.length === 0) return formatNoDocs();
+
+  const lines: string[] = [];
+
+  if (current.length > 0) {
+    lines.push("*Conteúdo atual:*", "");
+    current.forEach((d) => {
+      lines.push(
+        `• ${d.title || "(processando...)"} — ${d.status === "active" ? "ativo" : "pausado"}`,
+      );
+    });
+  }
+
+  if (archived.length > 0) {
+    if (lines.length > 0) lines.push("");
+    lines.push("*Anteriores:*", "");
+    archived.forEach((d) => lines.push(`• ${d.title || "(sem título)"}`));
+  }
+
+  lines.push("", "_Digite */pausar* ou */retomar* para gerenciar._");
+
+  return lines.join("\n");
 }
 
 export function formatNoDocs(): string {
@@ -136,11 +154,11 @@ export function formatShortTextWithDocs(): string {
 }
 
 export function formatShortTextNoDocs(): string {
-  return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, áudio, imagem ou PDF. Ou digite */* para ver todos os comandos.";
+  return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, áudio, imagem ou PDF.\n\n_Digite */* para ver todos os comandos._";
 }
 
 export function formatPracticeNudge(): string {
-  return "Oi! Vi que não respondeu a última. Sem pressão, quando quiser continuar é só responder ou subir um novo conteúdo.";
+  return "Oi! Vi que não respondeu a última mensagem. Sem pressão, quando quiser continuar é só responder ou subir um novo conteúdo.";
 }
 
 export function formatUpgradePrompt(reason: "audio" | "image"): string {

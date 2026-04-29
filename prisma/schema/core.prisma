@@ -10,6 +10,7 @@ enum DocStatus {
     active
     paused
     archived
+    failed
 }
 
 enum ActivityStatus {

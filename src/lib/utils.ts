@@ -62,7 +62,7 @@ export function fmtMoney(
   currency = "BRL",
   locale = "pt-BR",
 ) {
-  if (cents == null) return "—";
+  if (cents == null) return "-";
   return (cents / 100).toLocaleString(locale, {
     style: "currency",
     currency,
@@ -74,7 +74,7 @@ export function fmtCents(
   currency = "BRL",
   locale = "pt-BR",
 ) {
-  if (cents == null) return "—";
+  if (cents == null) return "-";
   return (cents / 100).toLocaleString(locale, {
     style: "currency",
     currency,
@@ -82,7 +82,7 @@ export function fmtCents(
 }
 
 export function fmtBRDate(d?: Date | null) {
-  if (!d) return "—";
+  if (!d) return "-";
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(d);
 }
 

@@ -1,12 +1,12 @@
 import { findEligibleActivities, completeActivity, updateActivity } from '../repo/activities.repo'
-import { findDocById } from '../repo/docs.repo'
+import { findDocById, updateDoc } from '../repo/docs.repo'
 import { saveMessage, findLastActivityMessage } from '../repo/messages.repo'
 import { findUserChannelByUserId } from '../repo/users.repo'
 import { incrementAgentMessageCount } from '../repo/daily-usage.repo'
 import { generatePracticeMessage } from '../vendors/llm.vendor'
 import { sendWhatsAppMessage } from '../vendors/whatsapp.vendor'
 import { formatPracticeNudge } from '../core/formatters'
-import { NEXT_MESSAGE_INTERVAL_MIN } from '../lib/constants'
+import { NEXT_MESSAGE_INTERVAL_MIN, DOC_PROCESSING_TIMEOUT_MS } from '../lib/constants'
 
 type CronResult = {
   processed: number
@@ -25,6 +25,30 @@ export async function processActivityCron(): Promise<CronResult> {
     try {
       const doc = await findDocById(activity.docId, activity.userId)
       if (!doc) {
+        skipped++
+        continue
+      }
+
+      if (doc.status === 'processing') {
+        const ageMs = Date.now() - doc.createdAt.getTime()
+        if (ageMs > DOC_PROCESSING_TIMEOUT_MS) {
+          await updateDoc(doc.id, activity.userId, { status: 'failed' })
+          const userChannel = await findUserChannelByUserId(activity.userId)
+          if (userChannel) {
+            const msg = 'Não consegui processar seu conteúdo. Tenta mandar de novo.'
+            await sendWhatsAppMessage(userChannel.channelId, msg)
+            await saveMessage({
+              userId: activity.userId,
+              userChannelId: userChannel.id,
+              role: 'assistant',
+              content: msg,
+              intent: 'system_error',
+            })
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+            await incrementAgentMessageCount(activity.userId, today)
+          }
+        }
         skipped++
         continue
       }

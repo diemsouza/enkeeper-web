@@ -1,5 +1,5 @@
-import { findDocById, updateDoc } from "../repo/docs.repo";
-import { createActivity } from "../repo/activities.repo";
+import { findDocById, findActiveDocsByUser, updateDoc } from "../repo/docs.repo";
+import { createActivity, softDeleteActivitiesByDoc } from "../repo/activities.repo";
 import { llmUsageService } from "./llm-usage-service";
 import { generateDocTopics } from "../vendors/llm.vendor";
 import { NEXT_MESSAGE_INTERVAL_MIN } from "../lib/constants";
@@ -18,7 +18,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
 
   if (!result) {
     console.error(`[process-doc] AI failed for doc ${docId}`);
-    await updateDoc(docId, userId, { status: "archived" });
+    await updateDoc(docId, userId, { status: "failed" });
     return;
   }
 
@@ -39,6 +39,15 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     topicsData: result.topics,
     status: "active",
   });
+
+  // Arquiva docs ativos anteriores agora que o novo está pronto
+  const otherActiveDocs = await findActiveDocsByUser(userId);
+  for (const doc of otherActiveDocs) {
+    if (doc.id !== docId) {
+      await updateDoc(doc.id, userId, { status: "archived" });
+      await softDeleteActivitiesByDoc(doc.id, userId);
+    }
+  }
 
   const now = new Date();
   const nextMessageAt = new Date(now.getTime() + NEXT_MESSAGE_INTERVAL_MIN * 60 * 1000);

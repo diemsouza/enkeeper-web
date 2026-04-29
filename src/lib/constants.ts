@@ -114,3 +114,4 @@ export function getPlanByCode(code: string, currency = DEFAULT_CURRENCY) {
 
 export const TRIAL_DAYS = 1;
 export const MAX_DOCS_PER_DAY = 5;
+export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;

@@ -28,7 +28,7 @@ model User {
     locale   String? @map("locale")
     currency String? @map("currency")
 
-    // plano — atualizado pelo webhook Stripe ou manualmente no MVP
+    // plano - atualizado pelo webhook Stripe ou manualmente no MVP
     planCode      PlanCode   @default(trial) @map("plan_code")
     planStatus    PlanStatus @default(active) @map("plan_status")
     planExpiresAt DateTime?  @map("plan_expires_at")
@@ -36,8 +36,8 @@ model User {
     onboardedAt DateTime?  @map("onboarded_at")
     status      UserStatus @default(active) @map("status")
     createdAt   DateTime   @default(now()) @map("created_at")
-    updatedAt DateTime   @updatedAt @map("updated_at")
-    deletedAt DateTime?  @map("deleted_at")
+    updatedAt   DateTime   @updatedAt @map("updated_at")
+    deletedAt   DateTime?  @map("deleted_at")
 
     channels      UserChannel[]
     docs          Doc[]
@@ -51,15 +51,15 @@ model User {
 }
 
 model DailyUsage {
-    id               String   @id @default(ulid()) @map("id")
-    userId           String   @map("user_id")
-    date             DateTime @map("date") @db.Date
+    id                String   @id @default(ulid()) @map("id")
+    userId            String   @map("user_id")
+    date              DateTime @map("date") @db.Date
     docCount          Int      @default(0) @map("doc_count")
     userMessageCount  Int      @default(0) @map("user_message_count")
     agentMessageCount Int      @default(0) @map("agent_message_count")
     messagesCount     Int      @default(0) @map("messages_count")
-    createdAt        DateTime @default(now()) @map("created_at")
-    updatedAt        DateTime @updatedAt @map("updated_at")
+    createdAt         DateTime @default(now()) @map("created_at")
+    updatedAt         DateTime @updatedAt @map("updated_at")
 
     user User @relation(fields: [userId], references: [id])
 
@@ -72,7 +72,7 @@ model UserChannel {
     userId      String      @map("user_id")
     channelType ChannelType @map("channel_type")
     channelId   String      @map("channel_id") // BSUID Meta, userId Telegram, etc
-    channelCode String?     @map("channel_code") // telefone, username — legível
+    channelCode String?     @map("channel_code") // telefone, username - legível
     metadata    Json?       @map("metadata")
     createdAt   DateTime    @default(now()) @map("created_at")
     updatedAt   DateTime    @updatedAt @map("updated_at")
