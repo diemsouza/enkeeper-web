@@ -8,7 +8,6 @@ import {
   formatDocConfirmPrompt,
   formatDocReplacePrompt,
   formatDocReceived,
-  formatTextInputPrompt,
   formatPausePrompt,
   formatPauseSuccess,
   formatNoPausableDocs,
@@ -50,7 +49,6 @@ import {
   resumeActivitiesByDoc,
   softDeleteActivitiesByDoc,
   updateActivity,
-  updateActivityLastReply,
 } from "../repo/activities.repo";
 import {
   getTodayUsage,
@@ -61,6 +59,7 @@ import {
 import { publishDocProcessing } from "../lib/qstash";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import { generatePracticeFeedback } from "../vendors/llm.vendor";
+import { validateContent } from "../core/validate-content";
 import { MIN_DOC_CHARS } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 
@@ -69,7 +68,6 @@ type UserWithChannels = User & { channels: UserChannel[] };
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
   "list_docs",
-  "text_input",
   "support",
   "pause_doc",
   "resume_doc",
@@ -91,13 +89,14 @@ export async function handleIncomingMessage(
   const text = input.text ?? "";
   const today = todayDate();
 
-  // Carrega última mensagem do assistente — usada para reset de waitingUser e feedback de prática
+  // Carrega última mensagem do assistente - usada para reset de waitingUser e feedback de prática
   const lastAssistantMsg = await findLastAssistantMessage(user.id);
 
   // Zera waitingUser imediatamente ao receber qualquer mensagem do usuário
   if (text && lastAssistantMsg?.activityId) {
-    await updateActivityLastReply(lastAssistantMsg.activityId, text);
-    await updateActivity(lastAssistantMsg.activityId, user.id, { waitingUser: false });
+    await updateActivity(lastAssistantMsg.activityId, user.id, {
+      waitingUser: false,
+    });
   }
 
   // Atualiza nome do usuário se veio pelo canal e ainda não está salvo
@@ -117,11 +116,67 @@ export async function handleIncomingMessage(
     user.planStatus = "expired";
   }
 
+  const parsed = parseMessage(text);
+  const lastUserMessage = await findLastUserMessage(user.id);
+  const pendingIntent = lastUserMessage?.intent as MessageIntent | undefined;
+
+  // ─── Verificação de plano expirado ───────────────────────────────────────
+
   if (!canPractice(user)) {
+    if (
+      pendingIntent === "support" &&
+      parsed.intent !== "cancel" &&
+      parsed.intent !== "cancel_no"
+    ) {
+      const channelCode = userChannel.channelCode ?? userChannel.channelId;
+      const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
+      const supportMsg = `*Suporte*\n\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`;
+      if (process.env.WA_SUPPORT)
+        await sendWhatsAppMessage(process.env.WA_SUPPORT, supportMsg);
+      await saveUserMsg(
+        user.id,
+        userChannel.id,
+        text,
+        "free_text",
+        input,
+        today,
+      );
+      const supportReply = formatSupportReceived();
+      await saveBotReply(user.id, userChannel.id, supportReply, today);
+      return [supportReply];
+    }
+    if (
+      parsed.intent === "list_commands" ||
+      parsed.intent === "unknown_command"
+    ) {
+      await saveUserMsg(
+        user.id,
+        userChannel.id,
+        text,
+        "list_commands",
+        input,
+        today,
+      );
+      const cmdReply = formatCommandList();
+      await saveBotReply(user.id, userChannel.id, cmdReply, today);
+      return [cmdReply];
+    }
+    if (parsed.intent === "support") {
+      await saveUserMsg(user.id, userChannel.id, text, "support", input, today);
+      const supportPrompt = formatSupportRequest();
+      await saveBotReply(user.id, userChannel.id, supportPrompt, today);
+      return [supportPrompt];
+    }
+    if (parsed.intent === "cancel" || parsed.intent === "cancel_no") {
+      await saveUserMsg(user.id, userChannel.id, text, "cancel", input, today);
+      const cancelReply = "Cancelado.";
+      await saveBotReply(user.id, userChannel.id, cancelReply, today);
+      return [cancelReply];
+    }
     await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
-    const reply = formatPlanExpired();
-    await saveBotReply(user.id, userChannel.id, reply, today);
-    return [reply];
+    const expiredReply = formatPlanExpired();
+    await saveBotReply(user.id, userChannel.id, expiredReply, today);
+    return [expiredReply];
   }
 
   // ─── Onboarding ──────────────────────────────────────────────────────────
@@ -156,30 +211,9 @@ export async function handleIncomingMessage(
 
   // ─── Estado pendente ──────────────────────────────────────────────────────
 
-  const parsed = parseMessage(text);
-  const lastUserMessage = await findLastUserMessage(user.id);
-  const pendingIntent = lastUserMessage?.intent as MessageIntent | undefined;
   const isOverriding = OVERRIDING_INTENTS.includes(parsed.intent);
 
   if (pendingIntent && !isOverriding) {
-    // Aguardando conteúdo de texto após /texto
-    if (pendingIntent === "awaiting_text_input") {
-      if (parsed.intent === "cancel" || parsed.intent === "cancel_no") {
-        await saveUserMsg(
-          user.id,
-          userChannel.id,
-          text,
-          "cancel",
-          input,
-          today,
-        );
-        const reply = "Cancelado.";
-        await saveBotReply(user.id, userChannel.id, reply, today);
-        return [reply];
-      }
-      return checkAndCreateDoc(user.id, userChannel.id, text, today, input);
-    }
-
     // Aguardando /sim ou /não após texto longo
     if (pendingIntent === "awaiting_doc_confirm") {
       if (parsed.intent === "confirm") {
@@ -304,7 +338,7 @@ export async function handleIncomingMessage(
     if (pendingIntent === "support") {
       const channelCode = userChannel.channelCode ?? userChannel.channelId;
       const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
-      const supportMsg = `📩 Suporte\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`;
+      const supportMsg = `*Suporte*\n\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`;
       const supportNumber = process.env.WA_SUPPORT;
       if (supportNumber) await sendWhatsAppMessage(supportNumber, supportMsg);
       await saveUserMsg(
@@ -336,12 +370,6 @@ export async function handleIncomingMessage(
     case "list_docs": {
       const docs = await findDocsByUser(user.id);
       reply = formatDocsList(docs);
-      break;
-    }
-
-    case "text_input": {
-      reply = formatTextInputPrompt();
-      messageIntent = "awaiting_text_input";
       break;
     }
 
@@ -439,6 +467,16 @@ export async function handleIncomingMessage(
 
     case "free_text": {
       if (text.length >= MIN_DOC_CHARS) {
+        const validation = validateContent(text);
+        if (!validation.isValid) {
+          const activeDocs = await findActiveDocsByUser(user.id);
+          reply =
+            activeDocs.length > 0
+              ? formatShortTextWithDocs()
+              : formatShortTextNoDocs();
+          messageIntent = "free_text";
+          break;
+        }
         const todayUsage = await getTodayUsage(user.id, today);
         if (!canUploadDoc(todayUsage?.docCount ?? 0)) {
           reply = formatDailyLimitReached();
@@ -457,9 +495,19 @@ export async function handleIncomingMessage(
       }
 
       // Feedback de resposta de prática
-      const PRACTICE_RESPONSE_INTENTS = ["practice_message", "practice_feedback", "practice_nudge"];
-      if (lastAssistantMsg?.activityId && PRACTICE_RESPONSE_INTENTS.includes(lastAssistantMsg.intent ?? "")) {
-        const practiceActivity = await findActivityById(lastAssistantMsg.activityId, user.id);
+      const PRACTICE_RESPONSE_INTENTS = [
+        "practice_message",
+        "practice_feedback",
+        "practice_nudge",
+      ];
+      if (
+        lastAssistantMsg?.activityId &&
+        PRACTICE_RESPONSE_INTENTS.includes(lastAssistantMsg.intent ?? "")
+      ) {
+        const practiceActivity = await findActivityById(
+          lastAssistantMsg.activityId,
+          user.id,
+        );
         const practiceDoc = practiceActivity
           ? await findDocById(practiceActivity.docId, user.id)
           : null;
@@ -469,7 +517,10 @@ export async function handleIncomingMessage(
 
           let question = lastAssistantMsg.content;
           if (lastAssistantMsg.intent !== "practice_message") {
-            const lastPracticeMsg = await findLastMessageByIntent(lastAssistantMsg.activityId, "practice_message");
+            const lastPracticeMsg = await findLastMessageByIntent(
+              lastAssistantMsg.activityId,
+              "practice_message",
+            );
             question = lastPracticeMsg?.content ?? lastAssistantMsg.content;
           }
 
@@ -480,8 +531,16 @@ export async function handleIncomingMessage(
             docContent: practiceDoc.content,
             userId: user.id,
             docId: practiceDoc.id,
+            activityMode: practiceActivity!.activityMode,
           });
-          await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "free_text",
+            input,
+            today,
+          );
           await saveMessage({
             userId: user.id,
             userChannelId: userChannel.id,

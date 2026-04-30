@@ -13,19 +13,31 @@ interface Message {
   time: string;
 }
 
+type ApiMessage = { role: string; content: string; createdAt: string };
+
+function todayMidnight(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
 function nowTime(): string {
-  return new Date().toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
-function isoNow(): string {
-  return new Date().toISOString();
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
-const POLL_INTERVAL_MS = 1500;
-const POLL_DURATION_MS = 12000;
+function mapApiMessages(raw: ApiMessage[]): Message[] {
+  return raw.map((m) => ({
+    from: m.role === "user" ? "user" : "bot",
+    text: m.content,
+    time: formatTime(m.createdAt),
+  }));
+}
+
+const POLL_INTERVAL_MS = 3000;
 
 export default function SimulatorPage() {
   if (process.env.NODE_ENV !== "development") notFound();
@@ -34,7 +46,11 @@ export default function SimulatorPage() {
   const [input, setInput] = useState("");
   const [channelId, setChannelId] = useState("");
   const [loading, setLoading] = useState(false);
-  const [cronResult, setCronResult] = useState<{ processed: number; skipped: number; errors: number } | null>(null);
+  const [cronResult, setCronResult] = useState<{
+    processed: number;
+    skipped: number;
+    errors: number;
+  } | null>(null);
   const [cronLoading, setCronLoading] = useState(false);
 
   const { containerRef, endRef, scrollToBottom } = useScrollToBottom();
@@ -43,12 +59,7 @@ export default function SimulatorPage() {
 
   useEffect(() => {
     const saved = localStorage.getItem("simulator_channelId");
-    if (saved) {
-      setChannelId(saved);
-    } else {
-      const generated = `sim_${Date.now()}`;
-      setChannelId(generated);
-    }
+    setChannelId(saved ?? `sim_${Date.now()}`);
   }, []);
 
   useEffect(() => {
@@ -59,55 +70,29 @@ export default function SimulatorPage() {
     if (!loading) inputRef.current?.focus();
   }, [loading]);
 
-  const stopPolling = useCallback(() => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
+  const fetchAll = useCallback(async (): Promise<void> => {
+    if (!channelId) return;
+    try {
+      const res = (await http(
+        `/api/dev/messages?channelId=${encodeURIComponent(channelId)}&after=${encodeURIComponent(todayMidnight())}`,
+      )) as { messages: ApiMessage[] };
+      const mapped = mapApiMessages(res.messages);
+      setMessages(mapped);
+      scrollToBottom("instant");
+    } catch {
+      // ignore
     }
-  }, []);
+  }, [channelId, scrollToBottom]);
 
-  const startPolling = useCallback(
-    (since: string, seenContents: Set<string>) => {
-      stopPolling();
-
-      let elapsed = 0;
-      pollRef.current = setInterval(async () => {
-        elapsed += POLL_INTERVAL_MS;
-        if (elapsed >= POLL_DURATION_MS) {
-          stopPolling();
-          return;
-        }
-
-        try {
-          const res = (await http(
-            `/api/simulate?channelId=${encodeURIComponent(channelId)}&since=${encodeURIComponent(since)}`,
-            {
-              headers: { "x-simulate-secret": process.env.NEXT_PUBLIC_SIMULATE_SECRET ?? "" },
-            }
-          )) as { messages: { role: string; content: string; createdAt: string }[] };
-
-          const newBotMsgs = res.messages.filter(
-            (m) => m.role === "assistant" && !seenContents.has(m.content)
-          );
-
-          if (newBotMsgs.length > 0) {
-            const time = nowTime();
-            newBotMsgs.forEach((m) => seenContents.add(m.content));
-            setMessages((prev) => [
-              ...prev,
-              ...newBotMsgs.map((m) => ({ from: "bot" as const, text: m.content, time })),
-            ]);
-            scrollToBottom("smooth");
-          }
-        } catch {
-          // silently ignore poll errors
-        }
-      }, POLL_INTERVAL_MS);
-    },
-    [channelId, stopPolling, scrollToBottom]
-  );
-
-  useEffect(() => () => stopPolling(), [stopPolling]);
+  // Inicia poll assim que channelId estiver disponível
+  useEffect(() => {
+    if (!channelId) return;
+    fetchAll();
+    pollRef.current = setInterval(fetchAll, POLL_INTERVAL_MS);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [channelId, fetchAll]);
 
   async function fireCron() {
     setCronLoading(true);
@@ -116,7 +101,6 @@ export default function SimulatorPage() {
       const res = await fetch("/api/cron/develop-activity");
       const data = await res.json();
       setCronResult(data);
-      if (data.processed > 0) startPolling(isoNow(), new Set());
     } catch {
       setCronResult({ processed: 0, skipped: 0, errors: 1 });
     } finally {
@@ -129,14 +113,12 @@ export default function SimulatorPage() {
     if (!text || loading) return;
 
     setInput("");
-    const sentAt = isoNow();
     setMessages((prev) => [...prev, { from: "user", text, time: nowTime() }]);
     scrollToBottom("smooth");
     setLoading(true);
-    stopPolling();
 
     try {
-      const res = (await http("/api/simulate", {
+      await http("/api/simulate", {
         method: "POST",
         body: JSON.stringify({
           channelId,
@@ -149,26 +131,11 @@ export default function SimulatorPage() {
         headers: {
           "x-simulate-secret": process.env.NEXT_PUBLIC_SIMULATE_SECRET ?? "",
         },
-      })) as { reply: string[] };
-
-      const replies = Array.isArray(res.reply) ? res.reply : [res.reply];
-      const time = nowTime();
-      const seenContents = new Set(replies.filter(Boolean));
-
-      setMessages((prev) => [
-        ...prev,
-        ...replies.filter(Boolean).map((r) => ({ from: "bot" as const, text: r, time })),
-      ]);
-      scrollToBottom("smooth");
-
-      // Polling para mensagens que chegam fora do response (ex: background jobs futuros)
-      startPolling(sentAt, seenContents);
+      });
+      await fetchAll();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido";
-      setMessages((prev) => [
-        ...prev,
-        { from: "bot", text: `⚠️ ${msg}`, time: nowTime() },
-      ]);
+      setMessages((prev) => [...prev, { from: "bot", text: `⚠️ ${msg}`, time: nowTime() }]);
     } finally {
       setLoading(false);
       scrollToBottom("smooth");
@@ -203,10 +170,7 @@ export default function SimulatorPage() {
       </div>
 
       {!!messages.length && (
-        <div
-          ref={containerRef}
-          className="overflow-y-auto max-h-[80vh] w-full md:w-[480px]"
-        >
+        <div ref={containerRef} className="overflow-y-auto max-h-[80vh] w-full md:w-[480px]">
           <WhatsAppChat messages={messages} />
           <div ref={endRef} />
         </div>

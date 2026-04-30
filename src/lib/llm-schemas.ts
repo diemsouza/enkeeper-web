@@ -49,6 +49,9 @@ export const docProcessingSchema = z.object({
   title: z.string(),
   topics: z.array(z.string()),
   content: z.string(),
+  activityMode: z.enum(["flashcard", "qa", "chat", "mixed"]),
+  isValid: z.boolean(),
+  invalidReason: z.string().nullable(),
 });
 
 export type DocProcessingResult = z.infer<typeof docProcessingSchema>;

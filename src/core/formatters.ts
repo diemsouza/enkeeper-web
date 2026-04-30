@@ -15,14 +15,14 @@ export function formatOnboardingMessage(): string {
 }
 
 export function formatTrialWelcome(): string {
-  return "Você tem acesso completo ao *Dropuz Pro* por 24 horas. Aproveite para mandar seu primeiro conteúdo e sentir na prática.";
+  return "Você tem acesso completo ao *Dropuz* por 24 horas. Aproveite para mandar seu primeiro conteúdo e sentir na prática.";
 }
 
 export function formatPlanExpired(): string {
   return [
     "Seu período de teste encerrou. 🔒",
     "",
-    "Para continuar praticando, assine o Dropuz Pro por R$19,90/mês.",
+    "Para continuar praticando, assine o Dropuz por R$19,90/mês.",
     "",
     "_Digite */suporte* para falar com a gente e ativar sua conta._",
   ].join("\n");
@@ -36,7 +36,6 @@ export function formatCommandList(): string {
     "*/conteudo* - seu conteúdo atual",
     "*/pausar* - pausar prática",
     "*/retomar* - retomar prática pausada",
-    "*/texto* - adicionar conteúdo de texto",
     "*/suporte* - falar com suporte",
     "",
     "_Mande um texto, áudio, imagem ou PDF para começar uma prática sem usar os comandos._",
@@ -46,7 +45,9 @@ export function formatCommandList(): string {
 export function formatDocsList(
   docs: Pick<Doc, "id" | "title" | "status">[],
 ): string {
-  const current = docs.filter((d) => d.status === "active" || d.status === "paused");
+  const current = docs.filter(
+    (d) => d.status === "active" || d.status === "paused",
+  );
   const archived = docs.filter((d) => d.status === "archived").slice(0, 3);
 
   if (current.length === 0 && archived.length === 0) return formatNoDocs();
@@ -57,7 +58,7 @@ export function formatDocsList(
     lines.push("*Conteúdo atual:*", "");
     current.forEach((d) => {
       lines.push(
-        `• ${d.title || "(processando...)"} — ${d.status === "active" ? "ativo" : "pausado"}`,
+        `• ${d.title || "(processando...)"} - ${d.status === "active" ? "ativo" : "pausado"}`,
       );
     });
   }
@@ -96,14 +97,6 @@ export function formatDocReplacePrompt(title: string): string {
     "Quer substituir pela nova prática? O conteúdo atual será arquivado.",
     "",
     "_Digite */sim* para substituir ou */não* para manter o atual._",
-  ].join("\n");
-}
-
-export function formatTextInputPrompt(): string {
-  return [
-    "Cole o conteúdo que quer praticar. Pode ser trecho de aula, artigo, resumo, qualquer coisa que esteja estudando.",
-    "",
-    "_Digite */cancelar* para desistir._",
   ].join("\n");
 }
 

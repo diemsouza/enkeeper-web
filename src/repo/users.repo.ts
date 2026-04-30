@@ -3,6 +3,10 @@ import { prisma } from '../lib/prisma'
 
 type UserWithChannels = User & { channels: UserChannel[] }
 
+export async function findUserById(id: string): Promise<User | null> {
+  return prisma.user.findUnique({ where: { id } });
+}
+
 export async function findUserByChannel(
   channelType: ChannelType,
   channelId: string,

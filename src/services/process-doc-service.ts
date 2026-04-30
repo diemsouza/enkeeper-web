@@ -1,6 +1,9 @@
 import { findDocById, findActiveOrPausedDocsByUser, updateDoc } from "../repo/docs.repo";
 import { createActivity, softDeleteActivitiesByDoc } from "../repo/activities.repo";
 import { generateDocTopics } from "../vendors/llm.vendor";
+import { findUserChannelByUserId } from "../repo/users.repo";
+import { saveMessage } from "../repo/messages.repo";
+import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import { NEXT_MESSAGE_INTERVAL_MIN } from "../lib/constants";
 
 export async function processDoc(docId: string, userId: string): Promise<void> {
@@ -20,6 +23,24 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
   if (!result) {
     console.error(`[process-doc] AI failed for doc ${docId}`);
     await updateDoc(docId, userId, { status: "failed" });
+    return;
+  }
+
+  if (!result.isValid) {
+    await updateDoc(docId, userId, { status: "failed" });
+    const userChannel = await findUserChannelByUserId(userId);
+    if (userChannel) {
+      const msg =
+        "Não consegui identificar conteúdo suficiente para criar uma prática. Tenta mandar um texto mais completo.";
+      await sendWhatsAppMessage(userChannel.channelId, msg);
+      await saveMessage({
+        userId,
+        userChannelId: userChannel.id,
+        role: "assistant",
+        content: msg,
+        intent: "system_error",
+      });
+    }
     return;
   }
 
@@ -49,5 +70,6 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     nextMessageAt,
     intervalMinutes: NEXT_MESSAGE_INTERVAL_MIN,
     status: "active",
+    activityMode: result.activityMode,
   });
 }

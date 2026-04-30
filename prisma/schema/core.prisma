@@ -19,6 +19,13 @@ enum ActivityStatus {
     completed
 }
 
+enum ActivityMode {
+    flashcard
+    qa
+    chat
+    mixed
+}
+
 enum MessageRole {
     user
     assistant
@@ -61,9 +68,10 @@ model Activity {
     date            DateTime       @map("date") @db.Date
     topicIndex      Int            @default(0) @map("topic_index")
     nextMessageAt   DateTime?      @map("next_message_at")
-    intervalMinutes Int            @default(60) @map("interval_minutes")
-    lastUserReply   String?        @map("last_user_reply") @db.Text
-    waitingUser     Boolean        @default(false) @map("waiting_user")
+    intervalMinutes Int          @default(60)           @map("interval_minutes")
+    executionCount  Int          @default(0)            @map("execution_count")
+    activityMode    ActivityMode @default(chat) @map("activity_mode")
+    waitingUser     Boolean      @default(false)        @map("waiting_user")
     status          ActivityStatus @default(active) @map("status")
     pausedAt        DateTime?      @map("paused_at")
     completedAt     DateTime?      @map("completed_at")

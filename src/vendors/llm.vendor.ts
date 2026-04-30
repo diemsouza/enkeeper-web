@@ -20,6 +20,14 @@ const buildDocPrompt = (
 - title: título curto (máx 8 palavras) que resuma o tema
 - topics: lista de 8 a 12 tópicos principais para praticar (strings curtas)
 - content: reescreva o conteúdo de forma clara e objetiva, mantendo todas as informações importantes para estudo espaçado
+- activityMode: classifique o melhor modo de prática para este material:
+  - "flashcard" - lista de palavras, vocabulário, traduções
+  - "qa" - questões, exercícios, provas
+  - "chat" - texto corrido, aula, artigo, capítulo, resumo
+  - "mixed" - material com vocabulário e texto junto
+  Se não tiver certeza, use "chat".
+- isValid: true se o conteúdo tem substância suficiente para gerar prática; false se é muito curto, vago ou sem sentido pedagógico
+- invalidReason: null se válido; caso contrário, breve explicação em português (ex: "conteúdo muito curto", "sem estrutura de estudo")
 
 Conteúdo:
 ${rawContent}`;
@@ -50,7 +58,9 @@ export async function generateDocTopics(params: {
   } catch (err) {
     if (NoObjectGeneratedError.isInstance(err) && err.text) {
       try {
-        result = docProcessingSchema.parse(parseJsonWithFallback(err.text.trim()));
+        result = docProcessingSchema.parse(
+          parseJsonWithFallback(err.text.trim()),
+        );
       } catch {
         // structured parse failed after NoObjectGeneratedError
       }
@@ -73,21 +83,28 @@ export async function generateDocTopics(params: {
 
 // ─── Practice message generation ─────────────────────────────────────────────
 
-const PRACTICE_SYSTEM = `Você é um parceiro de prática de estudos via WhatsApp.
-Tom: casual, direto, primeira pessoa do plural. Nunca didático ou formal.
-Máximo 3 linhas por mensagem.
+const PRACTICE_PROMPTS: Record<string, string> = {
+  flashcard: `Parceiro de prática via WhatsApp. Uma pergunta por mensagem, nunca lista.
+Tom: direto. Máximo 2 linhas.
+Formatos (varie, nunca repita consecutivo): "Como se diz X?", "Qual o oposto de Y?", "Use Z numa frase.", "Complete: ___ significa ___?", provocação direta.
+Se o usuário respondeu algo, reaja em uma linha antes de ir pro próximo.`,
 
-Varie o formato a cada mensagem - nunca repita o mesmo estilo consecutivo:
-- Pergunta direta em português sobre o tópico
-- Pergunta direta no idioma do material (se for inglês, pergunta em inglês)
-- Fill-in-the-blank: "Como você completaria: ___ ?"
-- Role-play curto: "Imagina que você está em X situação. Como diria Y?"
-- Provocação: "Aposto que você não lembra como se diz X. Tenta aí."
-- Exemplo + pergunta: dá um exemplo e pergunta se o usuário usaria diferente
+  qa: `Parceiro de prática via WhatsApp. Uma pergunta por mensagem, nunca lista numerada.
+Tom: direto. Máximo 2 linhas.
+Formatos: pergunta direta sobre o conceito, fill-in-the-blank com uma lacuna só, "por que X e não Y?", aplicação prática do conceito.
+Se o usuário respondeu algo, reaja em uma linha antes de continuar.`,
 
-Se lastUserReply existir, reaja brevemente à resposta antes de ir pro próximo tópico.
-Nunca corrija explicitamente - só estimule.
-Se o material for em inglês, alterne perguntas em português e inglês.`;
+  chat: `Parceiro de prática via WhatsApp. Uma pergunta por mensagem, nunca lista.
+Tom: casual, curioso. Máximo 3 linhas.
+Formatos (varie): pergunta aberta sobre o tema, "como você explicaria X?", conexão com situação real, role-play se for inglês.
+Se material for inglês, alterne PT e EN. Se o usuário respondeu, reaja brevemente antes de avançar.
+Sem resposta certa — objetivo é fazer pensar.`,
+
+  mixed: `Parceiro de prática via WhatsApp. Uma pergunta por mensagem, nunca lista.
+Tom: adaptável. Máximo 3 linhas.
+Vocabulário: pergunta objetiva sobre o termo. Conceito: pergunta contextual ou aplicação.
+Se o usuário respondeu algo, reaja em uma linha antes de continuar.`,
+};
 
 export async function generatePracticeMessage(params: {
   topic: string;
@@ -97,12 +114,22 @@ export async function generatePracticeMessage(params: {
   totalTopics: number;
   userId: string;
   docId: string;
+  activityMode: string;
 }): Promise<string> {
-  const { topic, lastUserReply, docContent, topicIndex, totalTopics, userId, docId } = params;
+  const {
+    topic,
+    lastUserReply,
+    docContent,
+    topicIndex,
+    totalTopics,
+    userId,
+    docId,
+    activityMode,
+  } = params;
 
   const userPrompt = [
     `Tópico atual (${topicIndex + 1}/${totalTopics}): ${topic}`,
-    `Use um formato diferente dos anteriores (tópico ${topicIndex + 1} de ${totalTopics}).`,
+    `Use um formato diferente dos anteriores.`,
     lastUserReply ? `Última resposta do usuário: "${lastUserReply}"` : null,
     `\nTrecho do material:\n${docContent.slice(0, 1500)}`,
   ]
@@ -111,7 +138,7 @@ export async function generatePracticeMessage(params: {
 
   const llmResult = await generateText({
     model: openai(MODEL),
-    system: PRACTICE_SYSTEM,
+    system: PRACTICE_PROMPTS[activityMode] ?? PRACTICE_PROMPTS.chat,
     prompt: userPrompt,
     temperature: 0.7,
   });
@@ -132,16 +159,28 @@ export async function generatePracticeMessage(params: {
 
 // ─── Practice feedback ───────────────────────────────────────────────────────
 
-const FEEDBACK_SYSTEM = `Você é um parceiro de prática de estudos via WhatsApp. Seu papel é dar feedback sobre a resposta do usuário.
-Tom: casual, direto. Máximo 3 linhas.
+const FEEDBACK_PROMPTS: Record<string, string> = {
+  flashcard: `Você é um parceiro de prática de estudos via WhatsApp.
+Tom: direto. Máximo 2 linhas.
+Correto: confirma brevemente, pode adicionar variação ou exemplo. Parcialmente: reconhece o que acertou, completa o que faltou. Errado: diz o correto de forma natural.
+Nunca: "você acertou", "muito bem", "parabéns", "ótimo". Nunca repita a pergunta.`,
 
-Regras:
-- Correto: confirma brevemente de forma natural. Pode adicionar observação curta se enriquecer.
-- Parcialmente correto: reconhece o que está certo, complementa o que faltou.
-- Errado: não diz "errado" — explica o correto de forma natural.
-- Nunca diga: "você acertou", "muito bem", "parabéns", "ótimo".
-- Nunca repita a pergunta nem seja longo.
-- Se o material for em inglês, responda no idioma da resposta do usuário.`;
+  qa: `Você é um parceiro de prática de estudos via WhatsApp.
+Tom: direto, preciso. Máximo 3 linhas.
+Correto: confirma, pode reforçar o conceito ou dar contraexemplo. Parcialmente: aponta o que faltou. Errado: explica o correto.
+Nunca: "você acertou", "muito bem", "parabéns", "ótimo". Nunca repita a pergunta.`,
+
+  chat: `Você é um parceiro de prática de estudos via WhatsApp.
+Tom: casual, engajado. Máximo 3 linhas.
+Não avalie certo/errado - essa conversa não tem resposta certa.
+Enriqueça o que o usuário disse: adicione contexto, perspectiva ou exemplo. Faça a conversa avançar.`,
+
+  mixed: `Você é um parceiro de prática de estudos via WhatsApp.
+Tom: adaptável. Máximo 3 linhas.
+Se a pergunta foi sobre vocabulário/termo: avalie objetivamente sem usar "errado" ou "certo".
+Se foi conceitual/discussão: enriqueça a resposta, adicione contexto, faça avançar.
+Nunca: "você acertou", "muito bem", "parabéns", "ótimo".`,
+};
 
 export async function generatePracticeFeedback(params: {
   question: string;
@@ -150,8 +189,17 @@ export async function generatePracticeFeedback(params: {
   docContent: string;
   userId: string;
   docId: string;
+  activityMode: string;
 }): Promise<string> {
-  const { question, userReply, topic, docContent, userId, docId } = params;
+  const {
+    question,
+    userReply,
+    topic,
+    docContent,
+    userId,
+    docId,
+    activityMode,
+  } = params;
 
   const prompt = [
     `Tópico: ${topic}`,
@@ -162,7 +210,7 @@ export async function generatePracticeFeedback(params: {
 
   const llmResult = await generateText({
     model: openai(MODEL),
-    system: FEEDBACK_SYSTEM,
+    system: FEEDBACK_PROMPTS[activityMode] ?? FEEDBACK_PROMPTS.chat,
     prompt,
     temperature: 0.5,
   });

@@ -1,11 +1,12 @@
-import { findEligibleActivities, completeActivity, updateActivity } from '../repo/activities.repo'
+import { findEligibleActivities, updateActivity, createActivity } from '../repo/activities.repo'
 import { findDocById, updateDoc } from '../repo/docs.repo'
-import { saveMessage, findLastActivityMessage } from '../repo/messages.repo'
-import { findUserChannelByUserId } from '../repo/users.repo'
+import { saveMessage, findLastActivityMessage, findLastUserMessageByActivity } from '../repo/messages.repo'
+import { findUserChannelByUserId, findUserById } from '../repo/users.repo'
 import { incrementAgentMessageCount } from '../repo/daily-usage.repo'
 import { generatePracticeMessage } from '../vendors/llm.vendor'
 import { sendWhatsAppMessage } from '../vendors/whatsapp.vendor'
 import { formatPracticeNudge } from '../core/formatters'
+import { canPractice } from '../core/access'
 import { NEXT_MESSAGE_INTERVAL_MIN, DOC_PROCESSING_TIMEOUT_MS } from '../lib/constants'
 
 type CronResult = {
@@ -23,6 +24,12 @@ export async function processActivityCron(): Promise<CronResult> {
 
   for (const activity of activities) {
     try {
+      const user = await findUserById(activity.userId)
+      if (!user || !canPractice(user)) {
+        skipped++
+        continue
+      }
+
       const doc = await findDocById(activity.docId, activity.userId)
       if (!doc) {
         skipped++
@@ -58,10 +65,40 @@ export async function processActivityCron(): Promise<CronResult> {
         continue
       }
 
+      const ACTIVITY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+      if (Date.now() - activity.createdAt.getTime() > ACTIVITY_MAX_AGE_MS) {
+        await updateActivity(activity.id, activity.userId, { status: "completed" });
+        const now = new Date();
+        const nextMessageAt = new Date(now.getTime() + NEXT_MESSAGE_INTERVAL_MIN * 60 * 1000);
+        const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        try {
+          await createActivity({
+            userId: activity.userId,
+            docId: activity.docId,
+            date,
+            nextMessageAt,
+            intervalMinutes: NEXT_MESSAGE_INTERVAL_MIN,
+            status: "active",
+            activityMode: activity.activityMode,
+          });
+        } catch (err: unknown) {
+          const isPrismaUnique =
+            err instanceof Error &&
+            "code" in err &&
+            (err as { code: string }).code === "P2002";
+          if (!isPrismaUnique) throw err;
+        }
+        skipped++;
+        continue;
+      }
+
       const topics = doc.topicsData as string[]
 
       if (activity.topicIndex >= topics.length) {
-        await completeActivity(activity.id, activity.userId)
+        await updateActivity(activity.id, activity.userId, {
+          topicIndex: 0,
+          nextMessageAt: new Date(Date.now() + NEXT_MESSAGE_INTERVAL_MIN * 60 * 1000),
+        })
         skipped++
         continue
       }
@@ -93,14 +130,17 @@ export async function processActivityCron(): Promise<CronResult> {
 
       const topic = topics[activity.topicIndex]
 
+      const lastUserMsg = await findLastUserMessageByActivity(activity.id)
+
       const message = await generatePracticeMessage({
         topic,
-        lastUserReply: activity.lastUserReply,
+        lastUserReply: lastUserMsg?.content ?? null,
         docContent: doc.content,
         topicIndex: activity.topicIndex,
         totalTopics: topics.length,
         userId: activity.userId,
         docId: activity.docId,
+        activityMode: activity.activityMode,
       })
 
       const userChannel = await findUserChannelByUserId(activity.userId)
@@ -126,6 +166,7 @@ export async function processActivityCron(): Promise<CronResult> {
 
       await updateActivity(activity.id, activity.userId, {
         topicIndex: activity.topicIndex + 1,
+        executionCount: activity.executionCount + 1,
         nextMessageAt: new Date(Date.now() + NEXT_MESSAGE_INTERVAL_MIN * 60 * 1000),
       })
 

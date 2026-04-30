@@ -12,7 +12,6 @@ export function parseMessage(text: string): ParsedMessage {
 
   if (n === '/') return { intent: 'list_commands', raw };
   if (n === '/conteudo') return { intent: 'list_docs', raw };
-  if (n === '/texto') return { intent: 'text_input', raw };
   if (n === '/suporte') return { intent: 'support', raw };
 
   if (n === '/sim') return { intent: 'confirm', raw };

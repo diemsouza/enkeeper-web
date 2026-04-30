@@ -1,4 +1,4 @@
-import { Activity, ActivityStatus } from '@prisma/client'
+import { Activity, ActivityMode, ActivityStatus } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 
 type CreateActivityData = {
@@ -9,13 +9,15 @@ type CreateActivityData = {
   nextMessageAt?: Date
   intervalMinutes?: number
   status?: ActivityStatus
+  activityMode?: ActivityMode
 }
 
 type UpdateActivityData = {
   topicIndex?: number
   nextMessageAt?: Date | null
   intervalMinutes?: number
-  lastUserReply?: string
+  executionCount?: number
+  activityMode?: ActivityMode
   waitingUser?: boolean
   status?: ActivityStatus
   pausedAt?: Date | null
@@ -114,9 +116,3 @@ export async function completeActivity(id: string, userId: string): Promise<void
   })
 }
 
-export async function updateActivityLastReply(activityId: string, reply: string): Promise<void> {
-  await prisma.activity.updateMany({
-    where: { id: activityId, deletedAt: null },
-    data: { lastUserReply: reply },
-  })
-}

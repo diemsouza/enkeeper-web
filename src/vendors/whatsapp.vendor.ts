@@ -5,9 +5,14 @@ type MediaDownloadResult = {
   sha256?: string;
 };
 
-export async function sendWhatsAppMessage(to: string, text: string): Promise<void> {
+export async function sendWhatsAppMessage(
+  to: string,
+  text: string,
+): Promise<void> {
   const token = process.env.WABA_TOKEN;
   const phoneNumberId = process.env.WABA_PHONE_ID;
+
+  if (process.env.SIMULATOR_MODE === "true") return;
 
   const res = await fetch(
     `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
@@ -32,14 +37,18 @@ export async function sendWhatsAppMessage(to: string, text: string): Promise<voi
   }
 }
 
-export async function downloadMedia(mediaId: string): Promise<MediaDownloadResult> {
+export async function downloadMedia(
+  mediaId: string,
+): Promise<MediaDownloadResult> {
   const token = process.env.WABA_TOKEN;
 
   const metaRes = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!metaRes.ok) {
-    throw new Error(`Failed to fetch media metadata ${mediaId}: ${metaRes.status}`);
+    throw new Error(
+      `Failed to fetch media metadata ${mediaId}: ${metaRes.status}`,
+    );
   }
 
   const meta = (await metaRes.json()) as {

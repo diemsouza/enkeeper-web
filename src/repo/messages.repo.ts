@@ -81,3 +81,10 @@ export async function findLastMessageByIntent(
     orderBy: { createdAt: "desc" },
   });
 }
+
+export async function findLastUserMessageByActivity(activityId: string): Promise<Message | null> {
+  return prisma.message.findFirst({
+    where: { activityId, role: "user" },
+    orderBy: { createdAt: "desc" },
+  });
+}
