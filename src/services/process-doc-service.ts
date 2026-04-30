@@ -1,4 +1,4 @@
-import { findDocById, findActiveDocsByUser, updateDoc } from "../repo/docs.repo";
+import { findDocById, findActiveOrPausedDocsByUser, updateDoc } from "../repo/docs.repo";
 import { createActivity, softDeleteActivitiesByDoc } from "../repo/activities.repo";
 import { generateDocTopics } from "../vendors/llm.vendor";
 import { NEXT_MESSAGE_INTERVAL_MIN } from "../lib/constants";
@@ -30,12 +30,11 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     status: "active",
   });
 
-  // Arquiva docs ativos anteriores agora que o novo está pronto
-  const otherActiveDocs = await findActiveDocsByUser(userId);
-  for (const doc of otherActiveDocs) {
-    if (doc.id !== docId) {
-      await updateDoc(doc.id, userId, { status: "archived" });
-      await softDeleteActivitiesByDoc(doc.id, userId);
+  const otherDocs = await findActiveOrPausedDocsByUser(userId);
+  for (const other of otherDocs) {
+    if (other.id !== docId) {
+      await updateDoc(other.id, userId, { status: "archived" });
+      await softDeleteActivitiesByDoc(other.id, userId);
     }
   }
 

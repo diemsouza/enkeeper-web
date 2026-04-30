@@ -1,6 +1,6 @@
 export const LOCALE_COOKIE_NAME = "zn_locale";
 export const MIN_DOC_CHARS = 300;
-export const NEXT_MESSAGE_INTERVAL_MIN = 15;
+export const NEXT_MESSAGE_INTERVAL_MIN = 30;
 export const LOCALES = ["pt-BR", "en-US"];
 export const DEFAULT_LOCALE = "pt-BR";
 export const DEFAULT_CURRENCY = "BRL";

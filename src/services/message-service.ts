@@ -41,6 +41,7 @@ import {
   findDocById,
   findDocsByUser,
   findActiveDocsByUser,
+  findActiveOrPausedDocsByUser,
   updateDoc,
 } from "../repo/docs.repo";
 import {
@@ -285,6 +286,13 @@ export async function handleIncomingMessage(
         ? await (async () => {
             await updateDoc(doc.id, user.id, { status: "active" });
             await resumeActivitiesByDoc(doc.id, user.id);
+            const others = await findActiveOrPausedDocsByUser(user.id);
+            for (const other of others) {
+              if (other.id !== doc.id) {
+                await updateDoc(other.id, user.id, { status: "archived" });
+                await softDeleteActivitiesByDoc(other.id, user.id);
+              }
+            }
             return formatResumeSuccess();
           })()
         : "Número inválido. Use /retomar para ver seus conteúdos pausados.";
@@ -390,6 +398,13 @@ export async function handleIncomingMessage(
         } else {
           await updateDoc(doc.id, user.id, { status: "active" });
           await resumeActivitiesByDoc(doc.id, user.id);
+          const others = await findActiveOrPausedDocsByUser(user.id);
+          for (const other of others) {
+            if (other.id !== doc.id) {
+              await updateDoc(other.id, user.id, { status: "archived" });
+              await softDeleteActivitiesByDoc(other.id, user.id);
+            }
+          }
           reply = formatResumeSuccess();
         }
         messageIntent = "free_text";
@@ -398,6 +413,13 @@ export async function handleIncomingMessage(
       if (pausedDocs.length === 1) {
         await updateDoc(pausedDocs[0].id, user.id, { status: "active" });
         await resumeActivitiesByDoc(pausedDocs[0].id, user.id);
+        const others = await findActiveOrPausedDocsByUser(user.id);
+        for (const other of others) {
+          if (other.id !== pausedDocs[0].id) {
+            await updateDoc(other.id, user.id, { status: "archived" });
+            await softDeleteActivitiesByDoc(other.id, user.id);
+          }
+        }
         reply = formatResumeSuccess();
         messageIntent = "free_text";
         break;

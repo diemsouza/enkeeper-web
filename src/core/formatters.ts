@@ -33,7 +33,7 @@ export function formatCommandList(): string {
     "*Comandos disponíveis:*",
     "",
     "*/* - ver essa lista de comandos",
-    "*/docs* - seus conteúdos",
+    "*/conteudo* - seu conteúdo atual",
     "*/pausar* - pausar prática",
     "*/retomar* - retomar prática pausada",
     "*/texto* - adicionar conteúdo de texto",
@@ -64,7 +64,7 @@ export function formatDocsList(
 
   if (archived.length > 0) {
     if (lines.length > 0) lines.push("");
-    lines.push("*Anteriores:*", "");
+    lines.push("*Arquivados:*", "");
     archived.forEach((d) => lines.push(`• ${d.title || "(sem título)"}`));
   }
 
