@@ -28,6 +28,7 @@ import {
   saveMessage,
   findLastUserMessage,
   findLastAssistantMessage,
+  findLastMessageByIntent,
 } from "../repo/messages.repo";
 import {
   markUserOnboarded,
@@ -434,7 +435,8 @@ export async function handleIncomingMessage(
       }
 
       // Feedback de resposta de prática
-      if (lastAssistantMsg?.activityId && lastAssistantMsg.intent === "practice_message") {
+      const PRACTICE_RESPONSE_INTENTS = ["practice_message", "practice_feedback", "practice_nudge"];
+      if (lastAssistantMsg?.activityId && PRACTICE_RESPONSE_INTENTS.includes(lastAssistantMsg.intent ?? "")) {
         const practiceActivity = await findActivityById(lastAssistantMsg.activityId, user.id);
         const practiceDoc = practiceActivity
           ? await findDocById(practiceActivity.docId, user.id)
@@ -442,8 +444,15 @@ export async function handleIncomingMessage(
         if (practiceDoc) {
           const topics = practiceDoc.topicsData as string[];
           const topicIdx = Math.max(0, practiceActivity!.topicIndex - 1);
+
+          let question = lastAssistantMsg.content;
+          if (lastAssistantMsg.intent !== "practice_message") {
+            const lastPracticeMsg = await findLastMessageByIntent(lastAssistantMsg.activityId, "practice_message");
+            question = lastPracticeMsg?.content ?? lastAssistantMsg.content;
+          }
+
           const feedback = await generatePracticeFeedback({
-            question: lastAssistantMsg.content,
+            question,
             userReply: text,
             topic: topics[topicIdx] ?? "",
             docContent: practiceDoc.content,
