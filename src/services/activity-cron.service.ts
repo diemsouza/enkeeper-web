@@ -7,6 +7,7 @@ import { generatePracticeMessage } from '../vendors/llm.vendor'
 import { sendWhatsAppMessage } from '../vendors/whatsapp.vendor'
 import { formatPracticeNudge } from '../core/formatters'
 import { canPractice } from '../core/access'
+import { getEffectiveApproach } from '../core/approach'
 import { NEXT_MESSAGE_INTERVAL_MIN, DOC_PROCESSING_TIMEOUT_MS } from '../lib/constants'
 
 type CronResult = {
@@ -79,7 +80,9 @@ export async function processActivityCron(): Promise<CronResult> {
             nextMessageAt,
             intervalMinutes: NEXT_MESSAGE_INTERVAL_MIN,
             status: "active",
-            activityMode: activity.activityMode,
+            approach: activity.approach,
+            approachConfidence: activity.approachConfidence,
+            approachOverride: activity.approachOverride ?? undefined,
           });
         } catch (err: unknown) {
           const isPrismaUnique =
@@ -135,12 +138,12 @@ export async function processActivityCron(): Promise<CronResult> {
       const message = await generatePracticeMessage({
         topic,
         lastUserReply: lastUserMsg?.content ?? null,
-        docContent: doc.content,
+        doc,
         topicIndex: activity.topicIndex,
         totalTopics: topics.length,
         userId: activity.userId,
         docId: activity.docId,
-        activityMode: activity.activityMode,
+        approach: getEffectiveApproach(activity),
       })
 
       const userChannel = await findUserChannelByUserId(activity.userId)

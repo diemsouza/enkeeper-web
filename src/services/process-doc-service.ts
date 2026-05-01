@@ -70,6 +70,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     nextMessageAt,
     intervalMinutes: NEXT_MESSAGE_INTERVAL_MIN,
     status: "active",
-    activityMode: result.activityMode,
+    approach: result.approach,
+    approachConfidence: result.approachConfidence,
   });
 }

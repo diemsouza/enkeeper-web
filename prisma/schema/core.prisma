@@ -19,11 +19,18 @@ enum ActivityStatus {
     completed
 }
 
-enum ActivityMode {
-    flashcard
-    qa
-    chat
-    mixed
+enum Approach {
+    memorize
+    understand
+    practice
+    discuss
+    reflect
+}
+
+enum ApproachConfidence {
+    high
+    medium
+    low
 }
 
 enum MessageRole {
@@ -70,7 +77,9 @@ model Activity {
     nextMessageAt   DateTime?      @map("next_message_at")
     intervalMinutes Int          @default(60)           @map("interval_minutes")
     executionCount  Int          @default(0)            @map("execution_count")
-    activityMode    ActivityMode @default(chat) @map("activity_mode")
+    approach            Approach           @default(discuss) @map("approach")
+    approachConfidence  ApproachConfidence @default(medium)  @map("approach_confidence")
+    approachOverride    Approach?                            @map("approach_override")
     waitingUser     Boolean      @default(false)        @map("waiting_user")
     status          ActivityStatus @default(active) @map("status")
     pausedAt        DateTime?      @map("paused_at")

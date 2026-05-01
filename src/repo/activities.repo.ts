@@ -1,4 +1,4 @@
-import { Activity, ActivityMode, ActivityStatus } from '@prisma/client'
+import { Activity, Approach, ApproachConfidence, ActivityStatus } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 
 type CreateActivityData = {
@@ -9,7 +9,9 @@ type CreateActivityData = {
   nextMessageAt?: Date
   intervalMinutes?: number
   status?: ActivityStatus
-  activityMode?: ActivityMode
+  approach?: Approach
+  approachConfidence?: ApproachConfidence
+  approachOverride?: Approach
 }
 
 type UpdateActivityData = {
@@ -17,7 +19,9 @@ type UpdateActivityData = {
   nextMessageAt?: Date | null
   intervalMinutes?: number
   executionCount?: number
-  activityMode?: ActivityMode
+  approach?: Approach
+  approachConfidence?: ApproachConfidence
+  approachOverride?: Approach
   waitingUser?: boolean
   status?: ActivityStatus
   pausedAt?: Date | null

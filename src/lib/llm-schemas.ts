@@ -49,7 +49,8 @@ export const docProcessingSchema = z.object({
   title: z.string(),
   topics: z.array(z.string()),
   content: z.string(),
-  activityMode: z.enum(["flashcard", "qa", "chat", "mixed"]),
+  approach: z.enum(["memorize", "understand", "practice", "discuss", "reflect"]),
+  approachConfidence: z.enum(["high", "medium", "low"]),
   isValid: z.boolean(),
   invalidReason: z.string().nullable(),
 });

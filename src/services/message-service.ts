@@ -45,11 +45,13 @@ import {
 } from "../repo/docs.repo";
 import {
   findActivityById,
+  findActiveActivitiesByUser,
   pauseActivitiesByDoc,
   resumeActivitiesByDoc,
   softDeleteActivitiesByDoc,
   updateActivity,
 } from "../repo/activities.repo";
+import { getEffectiveApproach } from "../core/approach";
 import {
   getTodayUsage,
   incrementDailyDocCount,
@@ -531,7 +533,7 @@ export async function handleIncomingMessage(
             docContent: practiceDoc.content,
             userId: user.id,
             docId: practiceDoc.id,
-            activityMode: practiceActivity!.activityMode,
+            approach: getEffectiveApproach(practiceActivity!),
           });
           await saveUserMsg(
             user.id,
@@ -545,6 +547,51 @@ export async function handleIncomingMessage(
             userId: user.id,
             userChannelId: userChannel.id,
             activityId: lastAssistantMsg.activityId,
+            role: "assistant",
+            content: feedback,
+            intent: "practice_feedback",
+          });
+          await incrementAgentMessageCount(user.id, today);
+          return [feedback];
+        }
+      }
+
+      // Fallback: se há atividade ativa mas lastAssistantMsg não era de prática,
+      // busca a última mensagem de prática dessa atividade e gera feedback
+      const activeActivities = await findActiveActivitiesByUser(user.id);
+      if (activeActivities.length > 0) {
+        const activeActivity = activeActivities[0];
+        const lastPracticeMsg = await findLastMessageByIntent(
+          activeActivity.id,
+          "practice_message",
+        );
+        const practiceDoc = lastPracticeMsg
+          ? await findDocById(activeActivity.docId, user.id)
+          : null;
+        if (practiceDoc) {
+          const topics = practiceDoc.topicsData as string[];
+          const topicIdx = Math.max(0, activeActivity.topicIndex - 1);
+          const feedback = await generatePracticeFeedback({
+            question: lastPracticeMsg!.content,
+            userReply: text,
+            topic: topics[topicIdx] ?? "",
+            docContent: practiceDoc.content,
+            userId: user.id,
+            docId: practiceDoc.id,
+            approach: getEffectiveApproach(activeActivity),
+          });
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "free_text",
+            input,
+            today,
+          );
+          await saveMessage({
+            userId: user.id,
+            userChannelId: userChannel.id,
+            activityId: activeActivity.id,
             role: "assistant",
             content: feedback,
             intent: "practice_feedback",
