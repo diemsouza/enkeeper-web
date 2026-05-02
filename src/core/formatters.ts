@@ -1,4 +1,4 @@
-import { Doc } from "@prisma/client";
+import { Doc, ActivityStatus } from "@prisma/client";
 
 export function formatOnboardingMessage(): string {
   return [
@@ -42,13 +42,14 @@ export function formatCommandList(): string {
   ].join("\n");
 }
 
-export function formatDocsList(
-  docs: Pick<Doc, "id" | "title" | "status">[],
-): string {
-  const current = docs.filter(
-    (d) => d.status === "active" || d.status === "paused",
-  );
-  const archived = docs.filter((d) => d.status === "archived").slice(0, 3);
+type ActivityDocItem = {
+  status: ActivityStatus;
+  doc: Pick<Doc, "id" | "title" | "status">;
+};
+
+export function formatDocsList(activities: ActivityDocItem[]): string {
+  const current = activities.filter((a) => a.status === "active");
+  const archived = activities.filter((a) => a.status === "archived").slice(0, 3);
 
   if (current.length === 0 && archived.length === 0) return formatNoDocs();
 
@@ -56,17 +57,16 @@ export function formatDocsList(
 
   if (current.length > 0) {
     lines.push("*Conteúdo atual:*", "");
-    current.forEach((d) => {
-      lines.push(
-        `• ${d.title || "(processando...)"} - ${d.status === "active" ? "ativo" : "pausado"}`,
-      );
+    current.forEach((a) => {
+      const label = a.doc.status === "paused" ? "pausado" : "ativo";
+      lines.push(`• ${a.doc.title || "(processando...)"} - ${label}`);
     });
   }
 
   if (archived.length > 0) {
     if (lines.length > 0) lines.push("");
     lines.push("*Arquivados:*", "");
-    archived.forEach((d) => lines.push(`• ${d.title || "(sem título)"}`));
+    archived.forEach((a) => lines.push(`• ${a.doc.title || "(sem título)"}`));
   }
 
   lines.push("", "_Use */pausar* ou */retomar* para gerenciar._");

@@ -3,10 +3,8 @@ import {
   findActiveOrPausedDocsByUser,
   updateDoc,
 } from "../repo/docs.repo";
-import {
-  createActivity,
-  softDeleteActivitiesByDoc,
-} from "../repo/activities.repo";
+import { createActivity } from "../repo/activities.repo";
+import { archiveOrCancelActivitiesByDoc } from "./activity-service";
 import { generateDocTopics } from "../vendors/llm.vendor";
 import { findUserChannelByUserId } from "../repo/users.repo";
 import { saveMessage } from "../repo/messages.repo";
@@ -62,7 +60,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
   for (const other of otherDocs) {
     if (other.id !== docId) {
       await updateDoc(other.id, userId, { status: "archived" });
-      await softDeleteActivitiesByDoc(other.id, userId);
+      await archiveOrCancelActivitiesByDoc(other.id, userId);
     }
   }
 

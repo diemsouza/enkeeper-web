@@ -1,4 +1,4 @@
-import { Activity, Approach, ApproachConfidence, ActivityStatus } from '@prisma/client'
+import { Activity, Doc, Approach, ApproachConfidence, ActivityStatus } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 
 type CreateActivityData = {
@@ -23,6 +23,8 @@ type UpdateActivityData = {
   approachConfidence?: ApproachConfidence
   approachOverride?: Approach
   waitingUser?: boolean
+  interactionCount?: number
+  lastInteractionAt?: Date | null
   status?: ActivityStatus
   pausedAt?: Date | null
   completedAt?: Date | null
@@ -117,6 +119,30 @@ export async function completeActivity(id: string, userId: string): Promise<void
   await prisma.activity.updateMany({
     where: { id, userId, deletedAt: null },
     data: { status: 'completed', completedAt: new Date(), nextMessageAt: null },
+  })
+}
+
+export type ActivityWithDoc = Activity & { doc: Pick<Doc, 'id' | 'title' | 'status'> }
+
+export async function findActivitiesForDocsList(userId: string): Promise<ActivityWithDoc[]> {
+  return prisma.activity.findMany({
+    where: { userId, status: { in: ['active', 'archived'] }, deletedAt: null },
+    include: { doc: { select: { id: true, title: true, status: true } } },
+    orderBy: { createdAt: 'desc' },
+  }) as Promise<ActivityWithDoc[]>
+}
+
+export async function findActivitiesForTtl(): Promise<Activity[]> {
+  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  return prisma.activity.findMany({
+    where: {
+      status: { in: ['active', 'archived'] },
+      deletedAt: null,
+      OR: [
+        { lastInteractionAt: { lte: cutoff } },
+        { lastInteractionAt: null, createdAt: { lte: cutoff } },
+      ],
+    },
   })
 }
 

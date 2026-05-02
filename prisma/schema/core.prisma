@@ -16,7 +16,10 @@ enum DocStatus {
 enum ActivityStatus {
     active
     paused
+    archived
+    cancelled
     completed
+    abandoned
 }
 
 enum Approach {
@@ -80,10 +83,12 @@ model Activity {
     approach            Approach           @default(discuss) @map("approach")
     approachConfidence  ApproachConfidence @default(medium)  @map("approach_confidence")
     approachOverride    Approach?                            @map("approach_override")
-    waitingUser     Boolean      @default(false)        @map("waiting_user")
-    status          ActivityStatus @default(active) @map("status")
-    pausedAt        DateTime?      @map("paused_at")
-    completedAt     DateTime?      @map("completed_at")
+    waitingUser       Boolean        @default(false) @map("waiting_user")
+    interactionCount  Int            @default(0)     @map("interaction_count")
+    lastInteractionAt DateTime?                      @map("last_interaction_at")
+    status            ActivityStatus @default(active) @map("status")
+    pausedAt          DateTime?      @map("paused_at")
+    completedAt       DateTime?      @map("completed_at")
     createdAt       DateTime       @default(now()) @map("created_at")
     updatedAt       DateTime       @updatedAt @map("updated_at")
     deletedAt       DateTime?      @map("deleted_at")

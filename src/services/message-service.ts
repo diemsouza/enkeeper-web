@@ -1,4 +1,4 @@
-import { User, UserChannel, DocType } from "@prisma/client";
+import { DocType } from "@prisma/client";
 import { parseMessage } from "../core/parser";
 import { canPractice } from "../core/access";
 import { canUploadDoc } from "../core/limits";
@@ -42,11 +42,12 @@ import {
 } from "../repo/docs.repo";
 import {
   findActiveActivitiesByUser,
+  findActivitiesForDocsList,
   pauseActivitiesByDoc,
   resumeActivitiesByDoc,
-  softDeleteActivitiesByDoc,
   updateActivity,
 } from "../repo/activities.repo";
+import { archiveOrCancelActivitiesByDoc } from "./activity-service";
 import { getEffectiveApproach } from "../core/approach";
 import {
   getTodayUsage,
@@ -60,8 +61,6 @@ import { generatePracticeFeedback } from "../vendors/llm.vendor";
 import { validateContent } from "../core/validate-content";
 import { MIN_DOC_CHARS } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
-
-type UserWithChannels = User & { channels: UserChannel[] };
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
@@ -312,7 +311,7 @@ export async function handleIncomingMessage(
             for (const other of others) {
               if (other.id !== doc.id) {
                 await updateDoc(other.id, user.id, { status: "archived" });
-                await softDeleteActivitiesByDoc(other.id, user.id);
+                await archiveOrCancelActivitiesByDoc(other.id, user.id);
               }
             }
             return formatResumeSuccess();
@@ -356,8 +355,8 @@ export async function handleIncomingMessage(
     }
 
     case "list_docs": {
-      const docs = await findDocsByUser(user.id);
-      reply = formatDocsList(docs);
+      const activities = await findActivitiesForDocsList(user.id);
+      reply = formatDocsList(activities);
       break;
     }
 
@@ -418,7 +417,7 @@ export async function handleIncomingMessage(
           for (const other of others) {
             if (other.id !== doc.id) {
               await updateDoc(other.id, user.id, { status: "archived" });
-              await softDeleteActivitiesByDoc(other.id, user.id);
+              await archiveOrCancelActivitiesByDoc(other.id, user.id);
             }
           }
           reply = formatResumeSuccess();
@@ -433,7 +432,7 @@ export async function handleIncomingMessage(
         for (const other of others) {
           if (other.id !== pausedDocs[0].id) {
             await updateDoc(other.id, user.id, { status: "archived" });
-            await softDeleteActivitiesByDoc(other.id, user.id);
+            await archiveOrCancelActivitiesByDoc(other.id, user.id);
           }
         }
         reply = formatResumeSuccess();
@@ -497,7 +496,11 @@ export async function handleIncomingMessage(
             docId: practiceDoc.id,
             approach: getEffectiveApproach(activeActivity),
           });
-          await updateActivity(activeActivity.id, user.id, { waitingUser: false });
+          await updateActivity(activeActivity.id, user.id, {
+            waitingUser: false,
+            interactionCount: activeActivity.interactionCount + 1,
+            lastInteractionAt: new Date(),
+          });
           await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
           await saveMessage({
             userId: user.id,
