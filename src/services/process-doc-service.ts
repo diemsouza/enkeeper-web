@@ -1,5 +1,12 @@
-import { findDocById, findActiveOrPausedDocsByUser, updateDoc } from "../repo/docs.repo";
-import { createActivity, softDeleteActivitiesByDoc } from "../repo/activities.repo";
+import {
+  findDocById,
+  findActiveOrPausedDocsByUser,
+  updateDoc,
+} from "../repo/docs.repo";
+import {
+  createActivity,
+  softDeleteActivitiesByDoc,
+} from "../repo/activities.repo";
 import { generateDocTopics } from "../vendors/llm.vendor";
 import { findUserChannelByUserId } from "../repo/users.repo";
 import { saveMessage } from "../repo/messages.repo";
@@ -60,7 +67,8 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
   }
 
   const now = new Date();
-  const nextMessageAt = new Date(now.getTime() + NEXT_MESSAGE_INTERVAL_MIN * 60 * 1000);
+  const intervalMinutes = NEXT_MESSAGE_INTERVAL_MIN;
+  const nextMessageAt = new Date(now.getTime() + intervalMinutes * 60 * 1000);
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   await createActivity({
@@ -68,7 +76,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     docId,
     date,
     nextMessageAt,
-    intervalMinutes: NEXT_MESSAGE_INTERVAL_MIN,
+    intervalMinutes,
     status: "active",
     approach: result.approach,
     approachConfidence: result.approachConfidence,

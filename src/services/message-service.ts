@@ -14,8 +14,6 @@ import {
   formatResumePrompt,
   formatResumeSuccess,
   formatNoPausedDocs,
-  formatShortTextWithDocs,
-  formatShortTextNoDocs,
   formatOnboardingMessage,
   formatTrialWelcome,
   formatPlanExpired,
@@ -26,7 +24,6 @@ import {
 import {
   saveMessage,
   findLastUserMessage,
-  findLastAssistantMessage,
   findLastMessageByIntent,
 } from "../repo/messages.repo";
 import {
@@ -44,7 +41,6 @@ import {
   updateDoc,
 } from "../repo/docs.repo";
 import {
-  findActivityById,
   findActiveActivitiesByUser,
   pauseActivitiesByDoc,
   resumeActivitiesByDoc,
@@ -90,16 +86,6 @@ export async function handleIncomingMessage(
   )!;
   const text = input.text ?? "";
   const today = todayDate();
-
-  // Carrega última mensagem do assistente - usada para reset de waitingUser e feedback de prática
-  const lastAssistantMsg = await findLastAssistantMessage(user.id);
-
-  // Zera waitingUser imediatamente ao receber qualquer mensagem do usuário
-  if (text && lastAssistantMsg?.activityId) {
-    await updateActivity(lastAssistantMsg.activityId, user.id, {
-      waitingUser: false,
-    });
-  }
 
   // Atualiza nome do usuário se veio pelo canal e ainda não está salvo
   if (input.contactName && !user.name) {
@@ -470,62 +456,38 @@ export async function handleIncomingMessage(
     case "free_text": {
       if (text.length >= MIN_DOC_CHARS) {
         const validation = validateContent(text);
-        if (!validation.isValid) {
+        if (validation.isValid) {
+          const todayUsage = await getTodayUsage(user.id, today);
+          if (!canUploadDoc(todayUsage?.docCount ?? 0)) {
+            reply = formatDailyLimitReached();
+            messageIntent = "free_text";
+            break;
+          }
           const activeDocs = await findActiveDocsByUser(user.id);
-          reply =
-            activeDocs.length > 0
-              ? formatShortTextWithDocs()
-              : formatShortTextNoDocs();
-          messageIntent = "free_text";
+          if (activeDocs.length > 0) {
+            reply = formatDocReplacePrompt(activeDocs[0].title);
+            messageIntent = "awaiting_doc_replace";
+            break;
+          }
+          reply = formatDocConfirmPrompt();
+          messageIntent = "awaiting_doc_confirm";
           break;
         }
-        const todayUsage = await getTodayUsage(user.id, today);
-        if (!canUploadDoc(todayUsage?.docCount ?? 0)) {
-          reply = formatDailyLimitReached();
-          messageIntent = "free_text";
-          break;
-        }
-        const activeDocs = await findActiveDocsByUser(user.id);
-        if (activeDocs.length > 0) {
-          reply = formatDocReplacePrompt(activeDocs[0].title);
-          messageIntent = "awaiting_doc_replace";
-          break;
-        }
-        reply = formatDocConfirmPrompt();
-        messageIntent = "awaiting_doc_confirm";
-        break;
       }
 
-      // Feedback de resposta de prática
-      const PRACTICE_RESPONSE_INTENTS = [
-        "practice_message",
-        "practice_feedback",
-        "practice_nudge",
-      ];
-      if (
-        lastAssistantMsg?.activityId &&
-        PRACTICE_RESPONSE_INTENTS.includes(lastAssistantMsg.intent ?? "")
-      ) {
-        const practiceActivity = await findActivityById(
-          lastAssistantMsg.activityId,
-          user.id,
-        );
-        const practiceDoc = practiceActivity
-          ? await findDocById(practiceActivity.docId, user.id)
-          : null;
+      const activeActivities = await findActiveActivitiesByUser(user.id);
+      const activeActivity = activeActivities[0] ?? null;
+
+      if (activeActivity?.waitingUser) {
+        const practiceDoc = await findDocById(activeActivity.docId, user.id);
         if (practiceDoc) {
           const topics = practiceDoc.topicsData as string[];
-          const topicIdx = Math.max(0, practiceActivity!.topicIndex - 1);
-
-          let question = lastAssistantMsg.content;
-          if (lastAssistantMsg.intent !== "practice_message") {
-            const lastPracticeMsg = await findLastMessageByIntent(
-              lastAssistantMsg.activityId,
-              "practice_message",
-            );
-            question = lastPracticeMsg?.content ?? lastAssistantMsg.content;
-          }
-
+          const topicIdx = Math.max(0, activeActivity.topicIndex - 1);
+          const lastPracticeMsg = await findLastMessageByIntent(
+            activeActivity.id,
+            "practice_message",
+          );
+          const question = lastPracticeMsg?.content ?? "";
           const feedback = await generatePracticeFeedback({
             question,
             userReply: text,
@@ -533,61 +495,10 @@ export async function handleIncomingMessage(
             docContent: practiceDoc.content,
             userId: user.id,
             docId: practiceDoc.id,
-            approach: getEffectiveApproach(practiceActivity!),
-          });
-          await saveUserMsg(
-            user.id,
-            userChannel.id,
-            text,
-            "free_text",
-            input,
-            today,
-          );
-          await saveMessage({
-            userId: user.id,
-            userChannelId: userChannel.id,
-            activityId: lastAssistantMsg.activityId,
-            role: "assistant",
-            content: feedback,
-            intent: "practice_feedback",
-          });
-          await incrementAgentMessageCount(user.id, today);
-          return [feedback];
-        }
-      }
-
-      // Fallback: se há atividade ativa mas lastAssistantMsg não era de prática,
-      // busca a última mensagem de prática dessa atividade e gera feedback
-      const activeActivities = await findActiveActivitiesByUser(user.id);
-      if (activeActivities.length > 0) {
-        const activeActivity = activeActivities[0];
-        const lastPracticeMsg = await findLastMessageByIntent(
-          activeActivity.id,
-          "practice_message",
-        );
-        const practiceDoc = lastPracticeMsg
-          ? await findDocById(activeActivity.docId, user.id)
-          : null;
-        if (practiceDoc) {
-          const topics = practiceDoc.topicsData as string[];
-          const topicIdx = Math.max(0, activeActivity.topicIndex - 1);
-          const feedback = await generatePracticeFeedback({
-            question: lastPracticeMsg!.content,
-            userReply: text,
-            topic: topics[topicIdx] ?? "",
-            docContent: practiceDoc.content,
-            userId: user.id,
-            docId: practiceDoc.id,
             approach: getEffectiveApproach(activeActivity),
           });
-          await saveUserMsg(
-            user.id,
-            userChannel.id,
-            text,
-            "free_text",
-            input,
-            today,
-          );
+          await updateActivity(activeActivity.id, user.id, { waitingUser: false });
+          await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
           await saveMessage({
             userId: user.id,
             userChannelId: userChannel.id,
@@ -601,11 +512,7 @@ export async function handleIncomingMessage(
         }
       }
 
-      const activeDocs = await findActiveDocsByUser(user.id);
-      reply =
-        activeDocs.length > 0
-          ? formatShortTextWithDocs()
-          : formatShortTextNoDocs();
+      reply = "Aguarda, a próxima mensagem chega em breve. Se quiser mudar o conteúdo, é só mandar.";
       break;
     }
   }

@@ -5,7 +5,7 @@
 **Dropuz** — agente de prática contínua de estudos via WhatsApp para o mercado brasileiro.
 O usuário manda o material que está estudando (texto, áudio, imagem ou PDF) e recebe perguntas e diálogos sobre aquele conteúdo durante o dia, no WhatsApp.
 
-Fonte de verdade do produto: `docs/Product-Brief-v7.md`
+Fontes de verdade do produto: `docs/*.md`
 
 Stack: Next.js App Router, Prisma, Supabase/PostgreSQL, TypeScript, Vercel.
 

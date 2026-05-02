@@ -10,7 +10,7 @@ export function formatOnboardingMessage(): string {
     "",
     "No seu ritmo, durante o dia, as mensagens chegam pra você praticar.",
     "",
-    "_Mande agora pra começar. Ou digite */* para ver os comandos disponíveis._",
+    "_Mande agora pra começar. Ou use */* para ver os comandos disponíveis._",
   ].join("\n");
 }
 
@@ -24,7 +24,7 @@ export function formatPlanExpired(): string {
     "",
     "Para continuar praticando, assine o Dropuz por R$19,90/mês.",
     "",
-    "_Digite */suporte* para falar com a gente e ativar sua conta._",
+    "_Use */suporte* para falar com a gente e ativar sua conta._",
   ].join("\n");
 }
 
@@ -69,7 +69,7 @@ export function formatDocsList(
     archived.forEach((d) => lines.push(`• ${d.title || "(sem título)"}`));
   }
 
-  lines.push("", "_Digite */pausar* ou */retomar* para gerenciar._");
+  lines.push("", "_Use */pausar* ou */retomar* para gerenciar._");
 
   return lines.join("\n");
 }
@@ -86,7 +86,7 @@ export function formatDocConfirmPrompt(): string {
   return [
     "Esse texto tem conteúdo suficiente para virar sua prática do dia. Quer usar?",
     "",
-    "_Digite */sim* para confirmar ou */não* para cancelar._",
+    "_Use */sim* para confirmar ou */não* para cancelar._",
   ].join("\n");
 }
 
@@ -96,7 +96,7 @@ export function formatDocReplacePrompt(title: string): string {
     "",
     "Quer substituir pela nova prática? O conteúdo atual será arquivado.",
     "",
-    "_Digite */sim* para substituir ou */não* para manter o atual._",
+    "_Use */sim* para substituir ou */não* para manter o atual._",
   ].join("\n");
 }
 
@@ -108,7 +108,7 @@ export function formatPausePrompt(docs: Pick<Doc, "id" | "title">[]): string {
   const lines = docs.map(
     (d, i) => `${i + 1}. ${d.title || "(processando...)"}`,
   );
-  return `Qual conteúdo você quer pausar?\n\n${lines.join("\n")}\n\n_Digite o número ou */cancelar*._`;
+  return `Qual conteúdo você quer pausar?\n\n${lines.join("\n")}\n\n_Digite o número ou use */cancelar*._`;
 }
 
 export function formatPauseSuccess(): string {
@@ -143,11 +143,11 @@ export function formatSupportReceived(): string {
 }
 
 export function formatShortTextWithDocs(): string {
-  return "Já recebi seu conteúdo. Te chamo em breve pra praticar. Ou digite */* para ver os comandos disponíveis.";
+  return "Já recebi seu conteúdo. Te chamo em breve pra praticar. Ou use */* para ver os comandos disponíveis.";
 }
 
 export function formatShortTextNoDocs(): string {
-  return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, áudio, imagem ou PDF.\n\n_Digite */* para ver todos os comandos._";
+  return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, áudio, imagem ou PDF.\n\n_Use */* para ver todos os comandos._";
 }
 
 export function formatPracticeNudge(): string {
@@ -157,9 +157,9 @@ export function formatPracticeNudge(): string {
 export function formatUpgradePrompt(reason: "audio" | "image"): string {
   const messages: Record<typeof reason, string> = {
     audio:
-      "Envio de áudio é exclusivo do plano Pro. _Digite */suporte* para saber mais._",
+      "Envio de áudio é exclusivo do plano Pro. _Use */suporte* para saber mais._",
     image:
-      "Envio de imagem é exclusivo do plano Pro. _Digite */suporte* para saber mais._",
+      "Envio de imagem é exclusivo do plano Pro. _Use */suporte* para saber mais._",
   };
   return messages[reason];
 }
