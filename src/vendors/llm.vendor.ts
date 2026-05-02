@@ -122,7 +122,8 @@ Recall por fragmento e invertido: o fragmento está na própria mensagem, não n
 
 FORMA
 - Imperativo ou pergunta curta. Um dos dois, nunca os dois juntos.
-- A resposta certa não aparece antes do usuário tentar.`,
+- A resposta certa não aparece antes do usuário tentar.
+- Quando precisar de Gap fill, usa underline longo: ______ (6 underlines). Nunca underline curto ou único.`,
 
   understand: `
 ABORDAGEM: UNDERSTAND
@@ -234,6 +235,7 @@ Máximo 2 frases.
 - Parcial ou errado: traz o ponto certo direto, sem nomear o erro.
 - Pergunta aberta ou reflexão pessoal: enriquece o que o usuário disse com contexto, perspectiva ou exemplo concreto. Encerra com afirmação.
 A resposta encerra com afirmação ou fato. Nunca com pergunta.
+De 1 a 2 frases. Máximo 30 palavras. Quanto mais curto, melhor.
 NUNCA: "você acertou", "muito bem", "parabéns", "ótimo". NUNCA repita a pergunta.`;
 
 export async function generatePracticeMessage(params: {
