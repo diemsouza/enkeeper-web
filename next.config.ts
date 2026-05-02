@@ -34,6 +34,7 @@ const nextConfig = {
     return config;
   },
   outputFileTracingIncludes: {
+    "/api/(.*)": ["./prompts/**/*.md"],
     "/auth/login": ["./email-templates/*"],
     "/auth/register": ["./email-templates/*"],
     "/auth/remember": ["./email-templates/*"],
