@@ -38,7 +38,7 @@ export function formatCommandList(): string {
     "*/retomar* - retomar prática pausada",
     "*/suporte* - falar com suporte",
     "",
-    "_Mande um texto, áudio, imagem ou PDF para começar uma prática sem usar os comandos._",
+    "_Mande um texto, áudio, imagem ou PDF com conteúdo relevante para praticar._",
   ].join("\n");
 }
 
@@ -86,7 +86,7 @@ export function formatDocReceived(): string {
 
 export function formatDocConfirmPrompt(): string {
   return [
-    "Esse texto tem conteúdo suficiente para virar sua prática do dia. Quer usar?",
+    "Esse é um ótimo conteúdo para estudar. Quer usar?",
     "",
     "_Use */sim* para confirmar ou */não* para cancelar._",
   ].join("\n");
@@ -96,7 +96,7 @@ export function formatDocReplacePrompt(title: string): string {
   return [
     `Você já tem um conteúdo ativo: *"${title}"*.`,
     "",
-    "Quer substituir pela nova prática? O conteúdo atual será arquivado.",
+    "Quer substituir pelo novo conteúdo? O atual será arquivado.",
     "",
     "_Use */sim* para substituir ou */não* para manter o atual._",
   ].join("\n");
