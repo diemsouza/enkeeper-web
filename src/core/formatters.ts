@@ -49,7 +49,9 @@ type ActivityDocItem = {
 
 export function formatDocsList(activities: ActivityDocItem[]): string {
   const current = activities.filter((a) => a.status === "active");
-  const archived = activities.filter((a) => a.status === "archived").slice(0, 3);
+  const archived = activities
+    .filter((a) => a.status === "archived")
+    .slice(0, 3);
 
   if (current.length === 0 && archived.length === 0) return formatNoDocs();
 
@@ -135,7 +137,7 @@ export function formatNoPausedDocs(): string {
 }
 
 export function formatSupportRequest(): string {
-  return "Escreva em uma única mensagem como podemos ajudar ou */cancelar* para sair.";
+  return "Escreva em uma única mensagem como podemos ajudar ou use */cancelar* para sair.";
 }
 
 export function formatSupportReceived(): string {
@@ -148,6 +150,10 @@ export function formatShortTextWithDocs(): string {
 
 export function formatShortTextNoDocs(): string {
   return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, áudio, imagem ou PDF.\n\n_Use */* para ver todos os comandos._";
+}
+
+export function formatPracticeComplete(): string {
+  return "Você respondeu todas as perguntas dessa rodada. Manda novo conteúdo ou continue praticando.";
 }
 
 export function formatPracticeNudge(): string {

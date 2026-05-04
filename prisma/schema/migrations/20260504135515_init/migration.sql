@@ -14,16 +14,25 @@ CREATE TYPE "ChannelType" AS ENUM ('whatsapp');
 CREATE TYPE "DocType" AS ENUM ('text', 'audio', 'image', 'pdf');
 
 -- CreateEnum
-CREATE TYPE "DocStatus" AS ENUM ('processing', 'active', 'paused', 'archived');
+CREATE TYPE "DocStatus" AS ENUM ('processing', 'active', 'paused', 'archived', 'failed');
 
 -- CreateEnum
-CREATE TYPE "ActivityStatus" AS ENUM ('active', 'paused', 'completed');
+CREATE TYPE "ActivityStatus" AS ENUM ('active', 'paused', 'archived', 'cancelled', 'completed', 'abandoned');
+
+-- CreateEnum
+CREATE TYPE "Approach" AS ENUM ('memorize', 'understand', 'practice', 'discuss', 'reflect');
+
+-- CreateEnum
+CREATE TYPE "ApproachConfidence" AS ENUM ('high', 'medium', 'low');
 
 -- CreateEnum
 CREATE TYPE "MessageRole" AS ENUM ('user', 'assistant');
 
 -- CreateEnum
 CREATE TYPE "AiProvider" AS ENUM ('openai', 'anthropic', 'google');
+
+-- CreateEnum
+CREATE TYPE "QuestionStatus" AS ENUM ('pending', 'right', 'partial', 'wrong');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -51,8 +60,9 @@ CREATE TABLE "daily_usages" (
     "user_id" TEXT NOT NULL,
     "date" DATE NOT NULL,
     "doc_count" INTEGER NOT NULL DEFAULT 0,
-    "messages_sent" INTEGER NOT NULL DEFAULT 0,
-    "messages_received" INTEGER NOT NULL DEFAULT 0,
+    "user_message_count" INTEGER NOT NULL DEFAULT 0,
+    "agent_message_count" INTEGER NOT NULL DEFAULT 0,
+    "messages_count" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -66,7 +76,6 @@ CREATE TABLE "user_channels" (
     "channel_type" "ChannelType" NOT NULL,
     "channel_id" TEXT NOT NULL,
     "channel_code" TEXT,
-    "name" TEXT,
     "metadata" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -101,10 +110,17 @@ CREATE TABLE "activities" (
     "topic_index" INTEGER NOT NULL DEFAULT 0,
     "next_message_at" TIMESTAMP(3),
     "interval_minutes" INTEGER NOT NULL DEFAULT 60,
-    "last_user_reply" TEXT,
+    "execution_count" INTEGER NOT NULL DEFAULT 0,
+    "approach" "Approach" NOT NULL DEFAULT 'discuss',
+    "approach_confidence" "ApproachConfidence" NOT NULL DEFAULT 'medium',
+    "approach_override" "Approach",
+    "waiting_user" BOOLEAN NOT NULL DEFAULT false,
+    "interaction_count" INTEGER NOT NULL DEFAULT 0,
+    "last_interaction_at" TIMESTAMP(3),
     "status" "ActivityStatus" NOT NULL DEFAULT 'active',
     "paused_at" TIMESTAMP(3),
     "completed_at" TIMESTAMP(3),
+    "practicing_until" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted_at" TIMESTAMP(3),
@@ -155,9 +171,26 @@ CREATE TABLE "messages" (
     "media_type" TEXT,
     "media_id" TEXT,
     "metadata" JSONB,
+    "question_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "messages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "questions" (
+    "id" TEXT NOT NULL,
+    "activity_id" TEXT NOT NULL,
+    "question" TEXT NOT NULL,
+    "answer_keys" TEXT[],
+    "answer" TEXT,
+    "status" "QuestionStatus",
+    "attempt_count" INTEGER NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "questions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -205,6 +238,9 @@ CREATE INDEX "messages_user_id_role_created_at_idx" ON "messages"("user_id", "ro
 -- CreateIndex
 CREATE UNIQUE INDEX "messages_user_channel_id_external_id_key" ON "messages"("user_channel_id", "external_id");
 
+-- CreateIndex
+CREATE INDEX "questions_activity_id_status_idx" ON "questions"("activity_id", "status");
+
 -- AddForeignKey
 ALTER TABLE "daily_usages" ADD CONSTRAINT "daily_usages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -240,3 +276,6 @@ ALTER TABLE "messages" ADD CONSTRAINT "messages_user_channel_id_fkey" FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE "messages" ADD CONSTRAINT "messages_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "questions" ADD CONSTRAINT "questions_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

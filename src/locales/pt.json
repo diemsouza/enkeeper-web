@@ -23,9 +23,9 @@
   },
   "seo": {
     "home": {
-      "title": "Dropuz | Seu estudo não para quando você fecha o caderno",
-      "description": "Mande o material que está estudando. O Dropuz pratica com você durante o dia, no WhatsApp. Experimente grátis.",
-      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, agente de estudos, prática contínua, flashcards, Dropuz",
+      "title": "Dropuz | Sua aula de inglês tem 30 minutos. Sua prática tem o dia inteiro.",
+      "description": "Mande o material da sua aula. O Dropuz pratica o vocabulário com você durante o dia, no WhatsApp. Experimente grátis.",
+      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Dropuz",
       "ogImage": "/og/pt-home.png"
     }
   },
@@ -35,43 +35,43 @@
   },
   "home": {
     "phrases": {
-      "0": "A aula de Inglês foi boa. O resto do dia foi em português. <strong>De novo.</strong>",
-      "1": "Sua aula acabou faz uma hora. <strong>Você lembra o que aprendeu?</strong>",
-      "2": "Leu o capítulo inteiro. <strong>Não consegue explicar pra ninguém.</strong>",
-      "3": "Estudou duas horas. A rotina voltou. <strong>O conteúdo foi junto.</strong>",
-      "4": "Fez o resumo, fechou o caderno. <strong>Acabou ai.</strong>",
-      "5": "Você não esquece por falta de esforço. <strong>Esquece por falta de prática.</strong>"
+      "0": "A aula de inglês foi boa. O resto do dia foi em português. <strong>De novo.</strong>",
+      "1": "Aprendeu o vocabulário na aula. <strong>Na semana seguinte, esqueceu metade.</strong>",
+      "2": "Fez exercícios, anotou tudo. <strong>Não usou nenhuma vez.</strong>",
+      "3": "Aula ótima. Saiu da sala. <strong>O inglês ficou lá dentro.</strong>",
+      "4": "Você não esquece por falta de esforço. <strong>Esquece por falta de prática.</strong>",
+      "5": "30 minutos de aula. <strong>23 horas e meia em português.</strong>"
     },
-    "tagline": "Seu estudo não para quando você fecha o caderno.",
+    "tagline": "Sua aula de inglês tem 30 minutos. Sua prática tem o dia inteiro.",
     "cta": "Experimentar grátis",
     "microcopy": "Abre no WhatsApp · 1 dia grátis · Sem cadastro",
     "who": {
-      "title": "Para quem estuda todo dia e perde o conteúdo no resto da rotina.",
-      "subtitle": "Não importa o que você estuda. O Dropuz trabalha em cima do que faz sentido pra você.",
+      "title": "Para quem estuda inglês e perde o vocabulário no resto da rotina.",
+      "subtitle": "Não importa onde você aprende. O Dropuz pratica em cima do material que você já tem.",
       "cards": {
         "0": {
-          "title": "Estudante de inglês",
-          "description": "Sua aula tem 50 minutos. O resto do dia é em português. Manda o material da aula e o Dropuz pratica com você durante o dia no WhatsApp."
+          "title": "Aluno de escola de idiomas",
+          "description": "Sua aula tem 50 minutos. O professor passa o vocabulário, você anota, vai embora. O Dropuz manda perguntas sobre aquele conteúdo durante o dia — enquanto você ainda lembra."
         },
         "1": {
-          "title": "Vestibulando",
-          "description": "Estudou duas horas de história, fez o resumo, fechou o caderno. O Dropuz retoma aquele conteúdo ao longo do dia pra fixar de verdade."
+          "title": "Aluno de professor particular",
+          "description": "Uma hora por semana com o professor. Os outros seis dias, sem prática. Manda o material que ele passou e o Dropuz trabalha aquele vocabulário com você todo dia."
         },
         "2": {
-          "title": "Concurseiro",
-          "description": "Muito conteúdo, pouco tempo pra revisar. Manda o material e receba perguntas no seu ritmo durante o dia, sem abrir mais um app."
+          "title": "Autodidata",
+          "description": "Aprende por conta, no seu ritmo. Manda o que você está estudando — texto, áudio, PDF — e recebe perguntas sobre aquilo ao longo do dia, sem abrir mais um app."
         },
         "3": {
-          "title": "Leitor",
-          "description": "Terminou o capítulo mas uma semana depois não consegue explicar o que leu. O Dropuz discute o conteúdo com você antes de ir embora."
+          "title": "Quem tentou e parou",
+          "description": "Já usou Anki, Duolingo, Quizlet. Cansou de abrir mais um app. O Dropuz funciona no WhatsApp que você já usa o dia inteiro — sem sessão dedicada."
         },
         "4": {
-          "title": "Autodidata",
-          "description": "Aprende em podcast, vídeo, artigo. O conteúdo está em todo lugar. Manda o trecho que te interessou e o Dropuz pratica em cima disso."
+          "title": "Quem precisa usar no trabalho",
+          "description": "Inglês técnico, vocabulário de reunião, e-mail profissional. Manda o material e pratica o que importa pra você, não cenários genéricos."
         },
         "5": {
-          "title": "Quem tentou e parou",
-          "description": "Já usou Anki, Duolingo, Quizlet. Cansou de abrir mais um app. O Dropuz funciona no WhatsApp que você já usa o dia inteiro."
+          "title": "Quem estuda faz tempo mas não evolui",
+          "description": "O problema não é o conteúdo. É que sem prática entre as aulas, nada fixa. O Dropuz é a parte que faltava — a prática do dia a dia."
         }
       }
     },
@@ -80,32 +80,32 @@
       "subtitle": "Três passos. Sem configuração.",
       "steps": {
         "0": {
-          "title": "Manda o material",
-          "description": "Texto, áudio, foto ou PDF. Pode ser a aula de inglês, o resumo da matéria, o capítulo do livro, a lista de questões."
+          "title": "Manda o material da aula",
+          "description": "Texto, áudio, foto ou PDF. A lista de vocabulário, o exercício, o PDF que o professor mandou. Qualquer material da sua aula de inglês."
         },
         "1": {
-          "title": "O Dropuz processa",
-          "description": "Identifica o conteúdo, extrai os pontos centrais e monta a prática do dia em cima do que você mandou."
+          "title": "O Dropuz gera as perguntas",
+          "description": "Extrai o vocabulário e os pontos centrais do material e monta as perguntas em cima do que você mandou — não de cenários genéricos."
         },
         "2": {
-          "title": "As perguntas chegam",
-          "description": "Ao longo do dia, no seu ritmo, o Dropuz manda perguntas e estímulos sobre aquele conteúdo direto no WhatsApp. Você responde quando puder."
+          "title": "As perguntas chegam no WhatsApp",
+          "description": "Ao longo do dia, no seu ritmo, o Dropuz manda perguntas sobre aquele vocabulário. Você responde de cabeça. O sistema avalia, dá feedback e registra o que travou."
         }
       }
     },
     "pricing": {
       "title": "Comece grátis. Depois R$19,90/mês.",
       "subtitle": "Experimente com tudo liberado. Decida depois.",
-      "description": "O trial dá acesso completo ao produto por 1 dia: materiais ilimitados, prática completa, texto, áudio, imagem e PDF. Se fizer sentido, você continua por R$19,90/mês",
+      "description": "O trial dá acesso completo ao produto por 1 dia: materiais ilimitados, prática completa, texto, áudio, imagem e PDF. Se fizer sentido, você continua por R$19,90/mês.",
       "cta": "Experimentar grátis"
     },
     "features_demo": {
       "title": "Na prática.",
-      "subtitle": "Você manda o material. O Dropuz cuida do resto.",
+      "subtitle": "Você manda o material da aula. O Dropuz pratica com você o dia inteiro.",
       "blocks": {
         "0": {
-          "title": "Manda o material. O Dropuz processa.",
-          "description": "Texto, áudio, foto ou PDF. Qualquer coisa que você está estudando vira prática durante o dia.",
+          "title": "Manda o material. O Dropuz gera as perguntas.",
+          "description": "Texto, áudio, foto ou PDF. O vocabulário da sua aula vira prática durante o dia.",
           "chat": [
             {
               "from": "user",
@@ -114,65 +114,65 @@
             },
             {
               "from": "bot",
-              "text": "Recebi! Estou preparando seu conteúdo. Em breve começo a prática.",
+              "text": "Recebi! Preparando as perguntas. Em breve começo a prática.",
               "time": "08:10"
             },
             {
               "from": "bot",
-              "text": "E aí, lembra de algum cumprimento que você já usou numa conversa em inglês?",
+              "text": "Você chega no trabalho e encontra um colega no corredor. Como você cumprimenta de forma natural?",
               "time": "09:15"
             },
             {
               "from": "user",
-              "text": "How are you, acho que esse é o mais básico",
+              "text": "How are you doing?",
               "time": "09:22"
             },
             {
               "from": "bot",
-              "text": "Isso. E se alguém te perguntar 'what have you been up to?' numa conversa informal, o que você responderia?",
+              "text": "Funciona bem. 'What have you been up to?' soa ainda mais natural pra quem você já conhece — dá um tom mais de conversa real.",
               "time": "09:22"
             }
           ]
         },
         "1": {
           "title": "Prática no seu ritmo.",
-          "description": "As perguntas chegam espaçadas ao longo do dia. Você responde quando puder. Se sumir, o Dropuz espera.",
+          "description": "As perguntas chegam espaçadas ao longo do dia. Você responde quando puder. O que errou volta depois.",
           "chat": [
             {
               "from": "bot",
-              "text": "Vamos praticar uma situação: você chegou numa reunião e quer quebrar o gelo. Como começa?",
+              "text": "Seu chefe te para no corredor e pergunta 'not much, just keeping busy' — como você traduziria isso numa conversa informal?",
               "time": "11:30"
             },
             {
               "from": "user",
-              "text": "How are you doing?",
+              "text": "sem muito, só ocupado",
               "time": "14:45"
             },
             {
               "from": "bot",
-              "text": "Boa. E se quiser soar mais natural, 'how have you been?' funciona bem pra quem você já conhece. Qual das duas você usaria com um cliente novo?",
+              "text": "Quase — 'não muito, só na correria' fica mais natural em português. 'Keeping busy' tem esse tom de quem está sempre com coisa pra fazer.",
               "time": "14:45"
             }
           ]
         },
         "2": {
-          "title": "Qualquer material. Qualquer assunto.",
-          "description": "Inglês, vestibular, concurso, livro. O Dropuz identifica o tipo de conteúdo e adapta a prática.",
+          "title": "O que errou volta. O que acertou avança.",
+          "description": "O sistema registra acerto e erro. Vocabulário que travou volta com prioridade. Todo domingo você vê sua evolução da semana.",
           "chat": [
             {
+              "from": "bot",
+              "text": "Complete: 'I'm doing well, ______.' — qual palavra faltou?",
+              "time": "16:00"
+            },
+            {
               "from": "user",
-              "text": "[PDF] Resumo - Revolução Francesa.pdf",
-              "time": "07:30"
+              "text": "thanks",
+              "time": "16:03"
             },
             {
               "from": "bot",
-              "text": "Recebi! Estou preparando seu conteúdo.",
-              "time": "07:30"
-            },
-            {
-              "from": "bot",
-              "text": "Qual foi o principal motivo econômico que levou ao início da Revolução Francesa?",
-              "time": "08:35"
+              "text": "Isso. 'Thanks' e 'thank you' funcionam nos dois casos — 'thanks' é mais informal, cai bem no small talk do dia a dia.",
+              "time": "16:03"
             }
           ]
         }

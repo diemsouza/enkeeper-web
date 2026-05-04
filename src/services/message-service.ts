@@ -20,12 +20,10 @@ import {
   formatSupportRequest,
   formatSupportReceived,
   formatDailyLimitReached,
+  formatNoDocs,
+  formatPracticeComplete,
 } from "../core/formatters";
-import {
-  saveMessage,
-  findLastUserMessage,
-  findLastMessageByIntent,
-} from "../repo/messages.repo";
+import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import {
   markUserOnboarded,
   updateUserPlanStatus,
@@ -48,7 +46,6 @@ import {
   updateActivity,
 } from "../repo/activities.repo";
 import { archiveOrCancelActivitiesByDoc } from "./activity-service";
-import { getEffectiveApproach } from "../core/approach";
 import {
   getTodayUsage,
   incrementDailyDocCount,
@@ -57,9 +54,15 @@ import {
 } from "../repo/daily-usage.repo";
 import { publishDocProcessing } from "../lib/qstash";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
-import { generatePracticeFeedback } from "../vendors/llm.vendor";
+import { generateAnswerEvaluation } from "../vendors/llm.vendor";
+import {
+  findNextQuestion,
+  findPendingQuestion,
+  updateQuestion,
+  allQuestionsRight,
+} from "../repo/questions.repo";
 import { validateContent } from "../core/validate-content";
-import { MIN_DOC_CHARS } from "../lib/constants";
+import { MIN_DOC_CHARS, PRACTICING_UNTIL_MIN } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
@@ -70,6 +73,7 @@ const OVERRIDING_INTENTS: MessageIntent[] = [
   "resume_doc",
   "unknown_command",
   "cancel",
+  "practice_now",
 ];
 
 export async function handleIncomingMessage(
@@ -444,6 +448,63 @@ export async function handleIncomingMessage(
       break;
     }
 
+    case "practice_now": {
+      const activeActivities = await findActiveActivitiesByUser(user.id);
+      const activeActivity = activeActivities[0] ?? null;
+      if (!activeActivity) {
+        reply = "Nenhuma prática ativa no momento.";
+        messageIntent = "free_text";
+        break;
+      }
+      const intensiveUntil = new Date(
+        Date.now() + PRACTICING_UNTIL_MIN * 60 * 1000,
+      );
+      await updateActivity(activeActivity.id, user.id, { intensiveUntil });
+      const practiceDoc = await findDocById(activeActivity.docId, user.id);
+      if (!practiceDoc) {
+        reply = "Nenhuma prática ativa no momento.";
+        messageIntent = "free_text";
+        break;
+      }
+      const nextQ = await findNextQuestion(activeActivity.docId);
+      if (!nextQ) {
+        reply = "Todas as perguntas já foram respondidas corretamente.";
+        messageIntent = "free_text";
+        break;
+      }
+      await sendWhatsAppMessage(userChannel.channelId, nextQ.question);
+      await saveMessage({
+        userId: user.id,
+        userChannelId: userChannel.id,
+        activityId: activeActivity.id,
+        role: "assistant",
+        content: nextQ.question,
+        intent: "practice_question",
+        questionId: nextQ.id,
+      });
+      await incrementAgentMessageCount(user.id, today);
+      await updateQuestion(nextQ.id, {
+        status: "pending",
+        activityId: activeActivity.id,
+      });
+      await updateActivity(activeActivity.id, user.id, {
+        waitingUser: true,
+        executionCount: activeActivity.executionCount + 1,
+        nextMessageAt: new Date(
+          Date.now() + activeActivity.intervalMinutes * 60 * 1000,
+        ),
+      });
+      await saveUserMsg(
+        user.id,
+        userChannel.id,
+        text,
+        "practice_now",
+        input,
+        today,
+      );
+      return [nextQ.question];
+    }
+
     case "confirm":
     case "cancel":
     case "cancel_no": {
@@ -477,45 +538,127 @@ export async function handleIncomingMessage(
       const activeActivities = await findActiveActivitiesByUser(user.id);
       const activeActivity = activeActivities[0] ?? null;
 
+      if (!activeActivity) {
+        reply = formatNoDocs();
+        break;
+      }
+
+      if (
+        activeActivity?.intensiveUntil &&
+        activeActivity.intensiveUntil <= new Date()
+      ) {
+        await updateActivity(activeActivity.id, user.id, {
+          intensiveUntil: null,
+        });
+        activeActivity.intensiveUntil = null;
+      }
+
       if (activeActivity?.waitingUser) {
         const practiceDoc = await findDocById(activeActivity.docId, user.id);
         if (practiceDoc) {
-          const topics = practiceDoc.topicsData as string[];
-          const topicIdx = Math.max(0, activeActivity.topicIndex - 1);
-          const lastPracticeMsg = await findLastMessageByIntent(
-            activeActivity.id,
-            "practice_message",
-          );
-          const question = lastPracticeMsg?.content ?? "";
-          const feedback = await generatePracticeFeedback({
-            question,
-            userReply: text,
-            topic: topics[topicIdx] ?? "",
-            docContent: practiceDoc.content,
-            userId: user.id,
-            docId: practiceDoc.id,
-            approach: getEffectiveApproach(activeActivity),
-          });
-          await updateActivity(activeActivity.id, user.id, {
-            waitingUser: false,
-            interactionCount: activeActivity.interactionCount + 1,
-            lastInteractionAt: new Date(),
-          });
-          await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
-          await saveMessage({
-            userId: user.id,
-            userChannelId: userChannel.id,
-            activityId: activeActivity.id,
-            role: "assistant",
-            content: feedback,
-            intent: "practice_feedback",
-          });
-          await incrementAgentMessageCount(user.id, today);
-          return [feedback];
+          const pendingQuestion = await findPendingQuestion(activeActivity.id);
+          if (pendingQuestion) {
+            const evaluation = await generateAnswerEvaluation({
+              question: pendingQuestion.question,
+              answerKeys: pendingQuestion.answerKeys,
+              userAnswer: text,
+              attemptCount: pendingQuestion.attemptCount,
+              docContent: practiceDoc.content,
+              userId: user.id,
+              docId: practiceDoc.id,
+            });
+            const evalStatus = evaluation?.status ?? "wrong";
+            const feedback =
+              evaluation?.feedback ?? "Não consegui avaliar sua resposta.";
+            await updateQuestion(pendingQuestion.id, {
+              answer: text,
+              status: evalStatus,
+              attemptCount: pendingQuestion.attemptCount + 1,
+            });
+            const isPracticingSessionActive =
+              activeActivity.intensiveUntil &&
+              activeActivity.intensiveUntil > new Date();
+            await updateActivity(activeActivity.id, user.id, {
+              waitingUser: false,
+              interactionCount: activeActivity.interactionCount + 1,
+              lastInteractionAt: new Date(),
+            });
+            await saveUserMsg(
+              user.id,
+              userChannel.id,
+              text,
+              "free_text",
+              input,
+              today,
+            );
+            await saveMessage({
+              userId: user.id,
+              userChannelId: userChannel.id,
+              activityId: activeActivity.id,
+              role: "assistant",
+              content: feedback,
+              intent: "practice_feedback",
+              questionId: pendingQuestion.id,
+            });
+            await incrementAgentMessageCount(user.id, today);
+
+            if (isPracticingSessionActive) {
+              const roundDone = await allQuestionsRight(activeActivity.docId);
+              if (roundDone) {
+                const completionMsg = formatPracticeComplete();
+                await sendWhatsAppMessage(userChannel.channelId, completionMsg);
+                await saveMessage({
+                  userId: user.id,
+                  userChannelId: userChannel.id,
+                  activityId: activeActivity.id,
+                  role: "assistant",
+                  content: completionMsg,
+                  intent: "practice_complete",
+                });
+                await incrementAgentMessageCount(user.id, today);
+                await updateActivity(activeActivity.id, user.id, {
+                  intensiveUntil: null,
+                  nextMessageAt: null,
+                  waitingUser: false,
+                });
+                return [feedback, completionMsg];
+              }
+
+              const nextQuestion = await findNextQuestion(activeActivity.docId);
+              if (nextQuestion) {
+                await sendWhatsAppMessage(
+                  userChannel.channelId,
+                  nextQuestion.question,
+                );
+                await saveMessage({
+                  userId: user.id,
+                  userChannelId: userChannel.id,
+                  activityId: activeActivity.id,
+                  role: "assistant",
+                  content: nextQuestion.question,
+                  intent: "practice_question",
+                  questionId: nextQuestion.id,
+                });
+                await incrementAgentMessageCount(user.id, today);
+                await updateQuestion(nextQuestion.id, {
+                  status: "pending",
+                  activityId: activeActivity.id,
+                });
+                await updateActivity(activeActivity.id, user.id, {
+                  waitingUser: true,
+                  executionCount: activeActivity.executionCount + 1,
+                });
+                return [feedback, nextQuestion.question];
+              }
+            }
+
+            return [feedback];
+          }
         }
       }
 
-      reply = "Aguarda, a próxima mensagem chega em breve. Se quiser mudar o conteúdo, é só mandar.";
+      reply =
+        "Aguarda, a próxima mensagem chega em breve. Se quiser mudar o conteúdo, é só mandar.";
       break;
     }
   }

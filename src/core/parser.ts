@@ -18,6 +18,8 @@ export function parseMessage(text: string): ParsedMessage {
   if (n === '/nao') return { intent: 'cancel_no', raw };
   if (n === '/cancelar') return { intent: 'cancel', raw };
 
+  if (n === '/praticar') return { intent: 'practice_now', raw };
+
   if (n === '/pausar') return { intent: 'pause_doc', raw };
   if (n.startsWith('/pausar ')) {
     const num = parseInt(n.slice('/pausar '.length).trim(), 10);

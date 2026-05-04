@@ -8,20 +8,22 @@
 ## 1. Activity
 
 ### O que é
-Um ciclo de prática com um material específico. Começa quando o usuário sobe material, termina por inatividade ou substituição. Não tem duração fixa — pode durar 1 dia ou várias semanas dependendo do engajamento.
+
+Um ciclo de prática com um material específico. Começa quando o usuário sobe material, termina por inatividade ou substituição. Não tem duração fixa.
 
 ### Critério de engajamento
-Ao menos 1 resposta do usuário a uma mensagem de prática. Mensagens de comando (`/pausar`, `/conteudo` etc.) não contam.
+
+Ao menos 1 resposta do usuário a uma mensagem de prática. Comandos não contam.
 
 ### Estados
 
-| Status | Descrição |
-| ------ | --------- |
-| `active` | Material ativo, prática em andamento |
-| `archived` | Substituído por novo material com ao menos 1 resposta. Pode ser retomado no futuro |
-| `cancelled` | Substituído por novo material sem nenhuma resposta |
+| Status      | Descrição                                                                                                             |
+| ----------- | --------------------------------------------------------------------------------------------------------------------- |
+| `active`    | Material ativo, prática em andamento                                                                                  |
+| `archived`  | Substituído por novo material com ao menos 1 resposta                                                                 |
+| `cancelled` | Substituído por novo material sem nenhuma resposta                                                                    |
 | `completed` | Encerrado por inatividade com ao menos 1 resposta. Também é o destino de um `archived` que atingiu o TTL sem retomada |
-| `abandoned` | Encerrado por inatividade sem nenhuma resposta |
+| `abandoned` | Encerrado por inatividade sem nenhuma resposta                                                                        |
 
 ### Transições ao subir novo material
 
@@ -30,146 +32,230 @@ Ao menos 1 resposta do usuário a uma mensagem de prática. Mensagens de comando
 
 ### Transições por inatividade
 
-TTL calculado sempre a partir da última resposta do usuário à prática (`lastInteractionAt`), não da criação da activity.
+TTL calculado a partir de `lastInteractionAt`.
 
 - `active` sem resposta há 7 dias com engajamento → `completed`
 - `active` sem resposta há 7 dias sem engajamento → `abandoned`
 - `archived` sem retomada há 7 dias → `completed`
 
+Completar todas as perguntas não altera o status — activity permanece `active`. Status só muda por inatividade ou substituição de material.
+
 ### lastInteractionAt
-Atualizado exclusivamente quando o usuário responde uma mensagem de prática da activity ativa. Comandos e mensagens fora de contexto de prática não atualizam este campo.
+
+Atualizado exclusivamente quando o usuário responde uma mensagem de prática. Comandos não atualizam este campo.
 
 ### Visibilidade ao usuário
-`/conteudo` exibe apenas `active` e `archived`. Os demais status são histórico interno — usados para métricas e relatório semanal, nunca exibidos.
+
+`/conteudo` exibe apenas `active` e `archived`. Demais status são histórico interno.
 
 ### deletedAt
-Campo operacional. Nunca acionado pelo fluxo normal de prática. Reservado para exclusão de conta (LGPD) ou limpeza sistêmica.
+
+Reservado para exclusão de conta (LGPD) ou limpeza sistêmica.
 
 ---
 
-## 2. Relatório semanal
+## 2. Questions
+
+### O que é
+
+Banco de perguntas geradas no upload do material. Cada `Question` pertence a uma `Activity`.
+
+### Status
+
+| Status    | Descrição                               |
+| --------- | --------------------------------------- |
+| `null`    | Gerada no upload, nunca enviada         |
+| `pending` | Enviada ao usuário, aguardando resposta |
+| `right`   | Respondida corretamente                 |
+| `partial` | Respondida parcialmente                 |
+| `wrong`   | Respondida errado                       |
+
+### Campos
+
+- `question` — texto da pergunta enviada ao usuário
+- `answerKeys String[]` — respostas válidas esperadas, geradas no upload, nunca exibidas ao usuário
+- `answer` — o que o usuário respondeu, copiado da mensagem recebida
+- `attemptCount` — quantas vezes essa pergunta foi enviada ao usuário. Incrementa a cada reenvio na repescagem
+
+### Fluxo
+
+1. Upload → `question-extraction` gera todas as perguntas → salvas com `status: null`
+2. Cadência pega próxima na ordem de prioridade → envia → `status: pending` → salva `Message` com `questionId`
+3. Usuário responde → copia resposta para `question.answer` → avalia contra `answerKeys` → atualiza `status` para `right`, `partial` ou `wrong` → incrementa `attemptCount`
+4. Toda mensagem de pergunta, resposta do usuário e feedback carrega o `questionId` correspondente
+
+### Repescagem
+
+Quando não há mais perguntas com `status: null` ou `pending`, ordem de prioridade:
+
+1. `wrong`
+2. `partial`
+3. Demais se necessário
+
+Pergunta reenviada vai para `pending` mas mantém `answer` e `status` anteriores até nova resposta chegar. Se enviada e não respondida (`pending` sem resposta), entra na fila de repescagem normalmente.
+
+Status nunca volta para `null`. Ciclo encerra quando todas estiverem `right` ou por inatividade (TTL da Activity).
+
+### Conclusão de rodada
+
+Quando todas as perguntas saem de `null`/`pending` pela primeira vez, envia:
+
+> Você respondeu todas as perguntas dessa rodada. Manda novo conteúdo ou continue praticando.
+
+---
+
+## 3. Relatório semanal
 
 - Gerado aos domingos.
 - Agrega todas as interações dos últimos 7 dias, independente do status da activity.
-- Uma activity iniciada no meio da semana entra normalmente no relatório do domingo seguinte.
-- Conteúdo: materiais enviados, trocas totais, tópicos praticados, conceitos com boa resposta, pontos de travamento.
+- Conteúdo: materiais enviados, trocas totais, % de acerto geral, vocabulário que travou mais (top 3–5), evolução vs semana anterior.
 
 ---
 
-## 3. Planos e acesso
+## 4. Planos e acesso
 
 ### Regra de acesso
+
 Usuário pratica se: `planStatus = active` e `planExpiresAt` no futuro. Independe de `planCode`.
 
 ### Valores de planCode
+
 `trial` | `pro`
 
 ### Valores de planStatus
+
 `active` | `canceled` | `past_due` | `expired`
 
 ### Cenários
 
-| Cenário | planCode | planStatus | planExpiresAt |
-| ------- | -------- | ---------- | ------------- |
-| Usuário novo | trial | active | criação + 1 dia |
-| Trial expirou | trial | expired | (no passado) |
-| Trial estendido por campanha | trial | active | criação + 3 a 7 dias |
-| Cortesia permanente (fundador, beta, parceiros) | trial | active | 2099-12-31 |
-| Pagou Pro | pro | active | pagamento + 30 dias |
-| Pro cancelou | pro | canceled | data do cancelamento |
-| Pro com falha de cobrança | pro | past_due | data do vencimento |
+| Cenário                                         | planCode | planStatus | planExpiresAt        |
+| ----------------------------------------------- | -------- | ---------- | -------------------- |
+| Usuário novo                                    | trial    | active     | criação + 1 dia      |
+| Trial expirou                                   | trial    | expired    | (no passado)         |
+| Trial estendido por campanha                    | trial    | active     | criação + 3 a 7 dias |
+| Cortesia permanente (fundador, beta, parceiros) | trial    | active     | 2099-12-31           |
+| Pagou Pro                                       | pro      | active     | pagamento + 30 dias  |
+| Pro cancelou                                    | pro      | canceled   | data do cancelamento |
+| Pro com falha de cobrança                       | pro      | past_due   | data do vencimento   |
 
 ### Por que cortesia usa planCode = trial
-Separa cortesia de receita real automaticamente. Query de pagantes ativos filtra apenas `planCode = pro`. Métricas de MRR não são contaminadas. Reverter uma cortesia é só ajustar `planExpiresAt`.
+
+Separa cortesia de receita real. Query de pagantes filtra só `planCode = pro`. Reverter é só ajustar `planExpiresAt`.
 
 ---
 
-## 4. Comandos
+## 5. Comandos
 
-| Comando | Ação |
-| ------- | ---- |
-| `/pausar` | Pausa o envio de mensagens de prática |
-| `/retomar` | Retoma o envio após pausa |
-| `/conteudo` | Lista a activity `active` e as `archived` |
-| `/suporte` | Aciona suporte via WhatsApp pessoal do admin |
-| `chega por hoje` | Linguagem natural — encerra o envio do dia |
+| Comando          | Ação                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------ |
+| `/pausar`        | Pausa o envio de mensagens de prática. Zera `practicingUntil`                                    |
+| `/retomar`       | Retoma o envio após pausa                                                                        |
+| `/praticar`      | Dispara próxima pergunta imediatamente, sem esperar cadência. Inicia sessão ativa por 15 minutos |
+| `/conteudo`      | Lista a activity `active` e as `archived`                                                        |
+| `/suporte`       | Aciona suporte via WhatsApp pessoal do admin                                                     |
+| `chega por hoje` | Linguagem natural — encerra o envio do dia                                                       |
+
+### Sessão ativa (/praticar)
+
+- `practicingUntil` = `now() + 15min`
+- Cada resposta do usuário durante a sessão dispara a próxima pergunta imediatamente
+- Sessão encerra quando `practicingUntil` vence, quando `/pausar` é chamado, ou quando a rodada é concluída
+- Fora da sessão, cadência normal retoma
+
+### Sem conteúdo ativo
+
+Se o usuário manda mensagem e não há nenhuma `Activity` ativa:
+
+> Ainda não recebi nenhum conteúdo. Manda o material que quer praticar — texto, áudio, foto ou PDF.
 
 ---
 
-## 5. Cadência de mensagens
+## 6. Cadência de mensagens
 
 - Primeira mensagem: 1h após o upload.
 - Janela padrão: 9h–18h, intervalos de ~1–2h.
 - Se o usuário não responde: insiste 1 vez, depois acumula e aguarda.
 - 2 dias sem material novo: envia template leve convidando a subir conteúdo.
-- Meta: mais de 85% das mensagens enviadas dentro da janela de 24h do WhatsApp (sem custo de template).
+- Meta: mais de 85% das mensagens dentro da janela de 24h do WhatsApp.
 
 ---
 
-## 6. Processamento de material
+## 7. Processamento de material
 
-- Áudio, imagem e PDF são processados em memória e descartados após extração.
-- Apenas o texto extraído e os tópicos derivados são salvos.
-- No upload: 1 chamada para detectar tipo de material e extrair 8–12 tópicos centrais.
-- Durante o dia: 1 chamada por interação, usando o próximo tópico e a última resposta do usuário.
+- Áudio, imagem e PDF processados em memória e descartados após extração.
+- Apenas texto extraído, tópicos e perguntas geradas são salvos.
+- No upload: 1 chamada para extrair tópicos (`Doc.topicsData`) + 1 chamada para gerar todas as perguntas (`Question[]`).
+- Durante o dia: 1 chamada por resposta do usuário para avaliação e feedback.
 
 ### Caps técnicos invisíveis
+
 - 5 materiais por dia por usuário
 - 30 áudios por dia, máximo 60s cada
 - 10 imagens por dia
-- 12 mensagens geradas por dia
 
 ---
 
-## 7. Regras de geração de mensagens
+## 8. Regras de geração de perguntas
 
 ### Persona
-Cara de 50 anos, leu muito, viveu bastante, sabe de tudo um pouco. Conversa sobre qualquer assunto com a mesma naturalidade — de vocabulário em inglês a devocional, de fórmula de química a filosofia. Português culto mas informal, nunca gíria, nunca formalidade de e-mail.
+
+Cara de 50 anos, leu muito, viveu bastante, sabe de tudo um pouco. Português culto mas informal, nunca gíria, nunca formalidade de e-mail.
 
 ### Tamanho
-1 frase. 2 frases só se inevitável. Corta se passar de 25 palavras.
 
-### Contexto de uso
-O usuário não está com o material na frente. A mensagem chega horas depois do upload. Todo conteúdo necessário para responder deve estar na própria mensagem — o usuário responde de cabeça, não de consulta.
+1 a 2 frases. Máximo 30 palavras. Quanto mais curto, melhor.
 
-### Estrutura
-Cada mensagem tem exatamente um movimento: um pedido, uma pergunta ou um mini-cenário. A mensagem provoca e encerra.
+### Nível e idioma
 
-### Encerramento
-Sempre com afirmação ou fato. Nunca com pergunta — incluindo perguntas disfarçadas de curiosidade ou enriquecimento.
+- Calibra pelo nível do material. Se não identificado, assume básico.
+- Básico: pergunta em PT, termo em EN.
+- Intermediário: misto PT/EN natural.
+- Avançado: majoritariamente em EN, resposta esperada em EN.
+- Nunca simplifique o que o material não simplificou.
+
+### Ancoragem
+
+Toda pergunta ancorada no material. O usuário não tem o material à mão — nunca referencie posição ou localização no texto.
+
+### Gabarito
+
+NUNCA coloque a resposta na própria pergunta.
 
 ### Gap fill
-Usa underline longo: `______`. Nunca underline curto ou único.
 
-### Idioma
-- Padrão: português brasileiro.
-- Material em inglês com abordagem `practice`: alterna PT/EN naturalmente na mesma mensagem.
-- Material em inglês com outras abordagens: cita termos em inglês quando necessário, conversa em português.
+Underline longo: `______`. Nunca use "palavra que começa/termina com XYZ" como pista.
+
+### Variação
+
+Nunca repita o mesmo formato duas vezes seguidas. Formatos: `gap_fill`, `scenario`, `production`, `reformulation`, `choice`, `recall`.
 
 ---
 
-## 8. Regras de feedback
+## 9. Regras de feedback
 
 ### Correto
-Confirma em meia frase. Adiciona fato, variação ou uso real relacionado se couber naturalmente.
+
+Confirma com leveza. Adiciona fato, variação ou uso real se couber naturalmente.
 
 ### Parcial ou errado
-Traz o ponto certo direto, sem nomear o erro. Nunca usa "errado", "incorreto" ou equivalentes.
 
-### Pergunta aberta ou reflexão (abordagem reflect)
-Sem certo/errado. Enriquece o que o usuário disse com contexto ou exemplo concreto. Encerra com afirmação.
+Traz o ponto certo como quem explica pra um amigo, não como quem corrige prova. Sem negação direta — só o certo naturalizado. Usa `answerKeys` quando relevante — forma mais natural, variações aceitas, usos reais.
 
-### Proibido em qualquer feedback
+### Pergunta aberta
+
+Sem certo/errado. Enriquece com contexto ou exemplo concreto. Encerra com afirmação.
+
+### Proibido
+
 - "Você acertou", "muito bem", "parabéns", "ótimo"
 - Repetir a pergunta anterior
 - Encerrar com pergunta
 
 ---
 
-## 9. Arquitetura e princípios
+## 10. Arquitetura e princípios
 
-- Schema agnóstico: tipo de material é coluna, não tabela separada.
-- Channel-agnostic: a lógica de negócio não conhece o canal de origem. WhatsApp, Telegram e outros são adaptadores.
-- Identidade via número de telefone (`wa_id`). Schema preparado para transição para `bsuid`.
-- Janela de 24h do WhatsApp é regra de ouro: todo fluxo é otimizado para manter a conversa dentro dela e evitar custo de template.
+- Produto focado em inglês. Arquitetura channel-agnostic e agnóstica de matéria por baixo — expansão futura sem reescrever.
+- Identidade via `wa_id`. Schema preparado para `bsuid`.
+- Janela de 24h do WhatsApp é regra de ouro.
 - API Routes puras. Sem dependência de funcionalidades específicas de plataforma de deploy.

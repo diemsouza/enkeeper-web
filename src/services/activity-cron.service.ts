@@ -7,15 +7,17 @@ import { findDocById, updateDoc } from "../repo/docs.repo";
 import {
   saveMessage,
   findLastActivityMessage,
-  findLastUserMessageByActivity,
 } from "../repo/messages.repo";
+import {
+  findNextQuestion,
+  updateQuestion,
+  allQuestionsRight,
+} from "../repo/questions.repo";
 import { findUserChannelByUserId, findUserById } from "../repo/users.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
-import { generatePracticeMessage } from "../vendors/llm.vendor";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
-import { formatPracticeNudge } from "../core/formatters";
+import { formatPracticeNudge, formatPracticeComplete } from "../core/formatters";
 import { canPractice } from "../core/access";
-import { getEffectiveApproach } from "../core/approach";
 import {
   NEXT_MESSAGE_INTERVAL_MIN,
   DOC_PROCESSING_TIMEOUT_MS,
@@ -76,7 +78,7 @@ export async function processActivityCron(): Promise<CronResult> {
       const ACTIVITY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
       if (Date.now() - activity.createdAt.getTime() > ACTIVITY_MAX_AGE_MS) {
         await updateActivity(activity.id, activity.userId, {
-          status: "completed",
+          status: "archived",
         });
         const now = new Date();
         const intervalMinutes = NEXT_MESSAGE_INTERVAL_MIN;
@@ -107,24 +109,11 @@ export async function processActivityCron(): Promise<CronResult> {
         continue;
       }
 
-      const topics = doc.topicsData as string[];
-
-      if (activity.topicIndex >= topics.length) {
-        await updateActivity(activity.id, activity.userId, {
-          topicIndex: 0,
-          nextMessageAt: new Date(
-            Date.now() + activity.intervalMinutes * 60 * 1000,
-          ),
-        });
-        skipped++;
-        continue;
-      }
-
-      // Nudge: timer expirou e usuário ainda não respondeu à practice_message
+      // Nudge: timer expirou e usuário ainda não respondeu
       const lastMsg = await findLastActivityMessage(activity.id);
       if (
         lastMsg?.role === "assistant" &&
-        lastMsg.intent === "practice_message"
+        lastMsg.intent === "practice_question"
       ) {
         const userChannel = await findUserChannelByUserId(activity.userId);
         if (!userChannel) {
@@ -159,20 +148,41 @@ export async function processActivityCron(): Promise<CronResult> {
         continue;
       }
 
-      const topic = topics[activity.topicIndex];
+      const done = await allQuestionsRight(activity.docId);
+      if (done) {
+        const lastMsg = await findLastActivityMessage(activity.id);
+        const userChannel = await findUserChannelByUserId(activity.userId);
+        if (userChannel && lastMsg?.intent !== "practice_complete") {
+          const msg = formatPracticeComplete();
+          await sendWhatsAppMessage(userChannel.channelId, msg);
+          await saveMessage({
+            userId: activity.userId,
+            userChannelId: userChannel.id,
+            activityId: activity.id,
+            role: "assistant",
+            content: msg,
+            intent: "practice_complete",
+          });
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          await incrementAgentMessageCount(activity.userId, today);
+          processed++;
+        } else {
+          skipped++;
+        }
+        await updateActivity(activity.id, activity.userId, {
+          nextMessageAt: null,
+          waitingUser: false,
+          intensiveUntil: null,
+        });
+        continue;
+      }
 
-      const lastUserMsg = await findLastUserMessageByActivity(activity.id);
-
-      const message = await generatePracticeMessage({
-        topic,
-        lastUserReply: lastUserMsg?.content ?? null,
-        doc,
-        topicIndex: activity.topicIndex,
-        totalTopics: topics.length,
-        userId: activity.userId,
-        docId: activity.docId,
-        approach: getEffectiveApproach(activity),
-      });
+      const question = await findNextQuestion(activity.docId);
+      if (!question) {
+        skipped++;
+        continue;
+      }
 
       const userChannel = await findUserChannelByUserId(activity.userId);
       if (!userChannel) {
@@ -180,23 +190,28 @@ export async function processActivityCron(): Promise<CronResult> {
         continue;
       }
 
-      await sendWhatsAppMessage(userChannel.channelId, message);
+      await sendWhatsAppMessage(userChannel.channelId, question.question);
 
       await saveMessage({
         userId: activity.userId,
         userChannelId: userChannel.id,
         activityId: activity.id,
         role: "assistant",
-        content: message,
-        intent: "practice_message",
+        content: question.question,
+        intent: "practice_question",
+        questionId: question.id,
       });
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       await incrementAgentMessageCount(activity.userId, today);
 
+      await updateQuestion(question.id, {
+        status: "pending",
+        activityId: activity.id,
+      });
+
       await updateActivity(activity.id, activity.userId, {
-        topicIndex: activity.topicIndex + 1,
         executionCount: activity.executionCount + 1,
         nextMessageAt: new Date(
           Date.now() + activity.intervalMinutes * 60 * 1000,

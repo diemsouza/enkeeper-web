@@ -8,6 +8,8 @@ export const LOCALES = ["pt-BR", "en-US"];
 export const DEFAULT_LOCALE = "pt-BR";
 export const DEFAULT_CURRENCY = "BRL";
 export const WHATSAPP_NUMBER = "551153069000";
+export const PRACTICING_UNTIL_MIN = 15;
+export const INTERACTION_TTL_DAYS = 7;
 
 const PLANS = [
   {

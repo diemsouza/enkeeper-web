@@ -15,3 +15,6 @@ export const APPROACH_PROMPTS: Record<string, string> = {
   discuss: read("approaches/discuss.md"),
   reflect: read("approaches/reflect.md"),
 };
+
+export const QUESTION_EXTRACTION_PROMPT = read("question-extraction.md");
+export const ANSWER_EVALUATION_PROMPT = read("answer-evaluation.md");

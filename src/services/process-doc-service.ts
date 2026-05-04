@@ -4,8 +4,9 @@ import {
   updateDoc,
 } from "../repo/docs.repo";
 import { createActivity } from "../repo/activities.repo";
+import { createQuestions } from "../repo/questions.repo";
 import { archiveOrCancelActivitiesByDoc } from "./activity-service";
-import { generateDocTopics } from "../vendors/llm.vendor";
+import { generateDocTopics, generateQuestions } from "../vendors/llm.vendor";
 import { findUserChannelByUserId } from "../repo/users.repo";
 import { saveMessage } from "../repo/messages.repo";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
@@ -69,7 +70,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
   const nextMessageAt = new Date(now.getTime() + intervalMinutes * 60 * 1000);
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  await createActivity({
+  const activity = await createActivity({
     userId,
     docId,
     date,
@@ -79,4 +80,15 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     approach: result.approach,
     approachConfidence: result.approachConfidence,
   });
+
+  const questions = await generateQuestions({
+    docContent: result.content,
+    docType: doc.docType,
+    userId,
+    docId,
+  });
+
+  if (questions && questions.length > 0) {
+    await createQuestions(activity.id, questions);
+  }
 }

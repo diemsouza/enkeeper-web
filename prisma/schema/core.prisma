@@ -47,6 +47,13 @@ enum AiProvider {
     google
 }
 
+enum QuestionStatus {
+    pending
+    right
+    partial
+    wrong
+}
+
 model Doc {
     id         String    @id @default(ulid()) @map("id")
     userId     String    @map("user_id")
@@ -89,13 +96,15 @@ model Activity {
     status            ActivityStatus @default(active) @map("status")
     pausedAt          DateTime?      @map("paused_at")
     completedAt       DateTime?      @map("completed_at")
+    intensiveUntil    DateTime?      @map("intensive_until")
     createdAt       DateTime       @default(now()) @map("created_at")
     updatedAt       DateTime       @updatedAt @map("updated_at")
     deletedAt       DateTime?      @map("deleted_at")
 
-    user     User      @relation(fields: [userId], references: [id])
-    doc      Doc       @relation(fields: [docId], references: [id])
-    messages Message[]
+    user      User       @relation(fields: [userId], references: [id])
+    doc       Doc        @relation(fields: [docId], references: [id])
+    messages  Message[]
+    questions Question[]
 
     @@unique([userId, docId, date])
     @@index([status, nextMessageAt])
@@ -151,6 +160,7 @@ model Message {
     mediaType     String?     @map("media_type")
     mediaId       String?     @map("media_id")
     metadata      Json?       @map("metadata")
+    questionId    String?     @map("question_id")
     createdAt     DateTime    @default(now()) @map("created_at")
 
     user        User        @relation(fields: [userId], references: [id])
@@ -162,4 +172,22 @@ model Message {
     @@index([userId, createdAt])
     @@index([userId, role, createdAt])
     @@map("messages")
+}
+
+model Question {
+    id           String          @id @default(ulid()) @map("id")
+    activityId   String          @map("activity_id")
+    question     String          @db.Text
+    answerKeys   String[]        @map("answer_keys")
+    answer       String?         @db.Text
+    status       QuestionStatus? @map("status")
+    attemptCount Int             @default(0) @map("attempt_count")
+    createdAt    DateTime        @default(now()) @map("created_at")
+    updatedAt    DateTime        @updatedAt @map("updated_at")
+    deletedAt    DateTime?       @map("deleted_at")
+
+    activity Activity @relation(fields: [activityId], references: [id])
+
+    @@index([activityId, status])
+    @@map("questions")
 }

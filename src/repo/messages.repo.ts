@@ -12,7 +12,7 @@ type SaveMessageData = {
   mediaId?: string;
   metadata?: Record<string, string | number | null>;
   activityId?: string;
-  // TODO: refactory after run - noteIds removed, replaced by activityId relation
+  questionId?: string;
 };
 
 export async function saveMessage(data: SaveMessageData): Promise<Message> {
@@ -31,6 +31,7 @@ export async function saveMessage(data: SaveMessageData): Promise<Message> {
           ? (data.metadata as Prisma.InputJsonObject)
           : undefined,
       activityId: data.activityId,
+      questionId: data.questionId,
     },
   });
 }

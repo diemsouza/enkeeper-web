@@ -3,7 +3,7 @@ import { findUserByChannel } from "../../../../repo/users.repo";
 import { findMessagesSince } from "../../../../repo/messages.repo";
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV !== "development") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

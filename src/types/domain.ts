@@ -17,6 +17,7 @@ export type MessageIntent =
   | 'awaiting_resume_select'
   | 'free_text'
   | 'unknown_command'
+  | 'practice_now'
 
 export type ParsedMessage = {
   intent: MessageIntent

@@ -7,11 +7,21 @@ import {
   DocProcessingResult,
   visionSchema,
   VisionResult,
+  questionExtractionSchema,
+  QuestionExtractionResult,
+  answerEvaluationSchema,
+  AnswerEvaluationResult,
 } from "../lib/llm-schemas";
 import { parseJsonWithFallback } from "../lib/json-utils";
 import { llmUsageService } from "../services/llm-usage-service";
 import { Approach } from "../core/approach";
-import { BASE_PROMPT, FEEDBACK_PROMPT, APPROACH_PROMPTS } from "../lib/prompts";
+import {
+  BASE_PROMPT,
+  FEEDBACK_PROMPT,
+  APPROACH_PROMPTS,
+  QUESTION_EXTRACTION_PROMPT,
+  ANSWER_EVALUATION_PROMPT,
+} from "../lib/prompts";
 
 const MODEL = "gpt-4.1-mini";
 
@@ -215,6 +225,117 @@ export async function generatePracticeFeedback(params: {
   });
 
   return llmResult.text.trim();
+}
+
+// ─── Question extraction ──────────────────────────────────────────────────────
+
+export async function generateQuestions(params: {
+  docContent: string;
+  docType: string;
+  userId: string;
+  docId: string;
+}): Promise<QuestionExtractionResult | null> {
+  const { docContent, userId, docId } = params;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cachedTokens = 0;
+  let result: QuestionExtractionResult | null = null;
+
+  const prompt = `${QUESTION_EXTRACTION_PROMPT}\n\nMaterial:\n${docContent}`;
+
+  try {
+    const llmResult = await generateText({
+      model: openai(MODEL),
+      temperature: 0.2,
+      prompt,
+    });
+    inputTokens += llmResult.usage?.inputTokens ?? 0;
+    outputTokens += llmResult.usage?.outputTokens ?? 0;
+    cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+    result = questionExtractionSchema.parse(
+      parseJsonWithFallback(llmResult.text.trim()),
+    );
+  } catch {
+    // parse failed
+  }
+
+  await llmUsageService.registerUsage({
+    userId,
+    docId,
+    usageType: "question_extraction",
+    provider: "openai",
+    model: MODEL,
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+  });
+
+  return result;
+}
+
+// ─── Answer evaluation ────────────────────────────────────────────────────────
+
+export async function generateAnswerEvaluation(params: {
+  question: string;
+  answerKeys: string[];
+  userAnswer: string;
+  attemptCount: number;
+  docContent: string;
+  userId: string;
+  docId: string;
+}): Promise<AnswerEvaluationResult | null> {
+  const { question, answerKeys, userAnswer, attemptCount, docContent, userId, docId } = params;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cachedTokens = 0;
+  let result: AnswerEvaluationResult | null = null;
+
+  const systemPrompt = ANSWER_EVALUATION_PROMPT
+    .replace("{base}", BASE_PROMPT)
+    .replace("{feedback}", FEEDBACK_PROMPT)
+    .replace("{question}", question)
+    .replace("{answer_keys}", answerKeys.join(", "))
+    .replace("{user_answer}", userAnswer)
+    .replace("{attempt_count}", String(attemptCount));
+
+  const prompt = `Contexto do material:\n${docContent.slice(0, 1000)}`;
+
+  try {
+    const llmResult = await generateText({
+      model: openai(MODEL),
+      system: systemPrompt,
+      output: Output.object({ schema: answerEvaluationSchema }),
+      temperature: 0.3,
+      prompt,
+    });
+    inputTokens += llmResult.usage?.inputTokens ?? 0;
+    outputTokens += llmResult.usage?.outputTokens ?? 0;
+    cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+    result = llmResult.output;
+  } catch (err) {
+    if (NoObjectGeneratedError.isInstance(err) && err.text) {
+      try {
+        result = answerEvaluationSchema.parse(
+          parseJsonWithFallback(err.text.trim()),
+        );
+      } catch {
+        // structured parse failed after NoObjectGeneratedError
+      }
+    }
+  }
+
+  await llmUsageService.registerUsage({
+    userId,
+    docId,
+    usageType: "answer_evaluation",
+    provider: "openai",
+    model: MODEL,
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+  });
+
+  return result;
 }
 
 // ─── PDF extraction ───────────────────────────────────────────────────────────

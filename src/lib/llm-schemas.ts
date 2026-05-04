@@ -56,3 +56,19 @@ export const docProcessingSchema = z.object({
 });
 
 export type DocProcessingResult = z.infer<typeof docProcessingSchema>;
+
+export const questionExtractionSchema = z.array(
+  z.object({
+    question: z.string(),
+    answerKeys: z.array(z.string()),
+  }),
+);
+
+export type QuestionExtractionResult = z.infer<typeof questionExtractionSchema>;
+
+export const answerEvaluationSchema = z.object({
+  status: z.enum(["right", "partial", "wrong"]),
+  feedback: z.string(),
+});
+
+export type AnswerEvaluationResult = z.infer<typeof answerEvaluationSchema>;
