@@ -10,7 +10,7 @@ import {
 import { transcribeAudio } from "../../../../vendors/whisper.vendor";
 import { extractTextFromImage, extractTextFromPdf } from "../../../../vendors/llm.vendor";
 import { canUseAudio, canUseImage } from "../../../../core/limits";
-import { formatUpgradePrompt } from "../../../../core/formatters";
+import { formatUpgradePrompt, formatImageNoText } from "../../../../core/formatters";
 import { IncomingMessage } from "../../../../types/domain";
 import {
   verifyMetaSignature,
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest): Promise<Response> {
                 id: string;
                 type: string;
                 text?: { body: string };
-                audio?: { id: string };
+                audio?: { id: string; voice?: boolean };
                 image?: { id: string };
                 document?: { id: string; mime_type?: string };
               }>;
@@ -74,25 +74,34 @@ export async function POST(req: NextRequest): Promise<Response> {
       };
 
       if (message.type === "audio" && message.audio) {
-        const user = await findOrCreateUserByChannel("whatsapp", wa_id);
-        if (!canUseAudio(user)) {
-          await sendWhatsAppMessage(wa_id, formatUpgradePrompt("audio"));
-          return;
+        const isVoiceNote = message.audio.voice === true;
+
+        if (!isVoiceNote) {
+          const user = await findOrCreateUserByChannel("whatsapp", wa_id);
+          if (!canUseAudio(user)) {
+            await sendWhatsAppMessage(wa_id, formatUpgradePrompt("audio"));
+            return;
+          }
         }
+
         const { buffer, mimeType, fileSize } = await downloadMedia(message.audio.id);
         const { text: transcription, duration, format } = await transcribeAudio(buffer, mimeType);
-        const input: IncomingMessage = {
-          ...base,
-          text: transcription,
-          mediaType: "audio",
-          mediaId: message.audio.id,
-          mediaMetadata: {
-            media_type: "audio",
-            size_bytes: fileSize ?? null,
-            duration: duration ?? null,
-            format,
-          },
-        };
+
+        const input: IncomingMessage = isVoiceNote
+          ? { ...base, text: transcription }
+          : {
+              ...base,
+              text: transcription,
+              mediaType: "audio",
+              mediaId: message.audio.id,
+              mediaMetadata: {
+                media_type: "audio",
+                size_bytes: fileSize ?? null,
+                duration: duration ?? null,
+                format,
+              },
+            };
+
         const replies = await handleIncomingMessage(input);
         for (const r of replies) await sendWhatsAppMessage(wa_id, r);
         return;
@@ -106,6 +115,12 @@ export async function POST(req: NextRequest): Promise<Response> {
         }
         const { buffer, mimeType, fileSize } = await downloadMedia(message.image.id);
         const visionResult = await extractTextFromImage(buffer, user.id);
+
+        if (visionResult.transcription_type === "description") {
+          await sendWhatsAppMessage(wa_id, formatImageNoText());
+          return;
+        }
+
         const format = mimeType.split("/")[1]?.split(";")[0] ?? "jpeg";
         const input: IncomingMessage = {
           ...base,
@@ -118,6 +133,26 @@ export async function POST(req: NextRequest): Promise<Response> {
             size_bytes: fileSize ?? null,
             format,
           },
+        };
+        const replies = await handleIncomingMessage(input);
+        for (const r of replies) await sendWhatsAppMessage(wa_id, r);
+        return;
+      }
+
+      const TEXT_MIME_TYPES = new Set(["text/plain", "text/markdown", "application/octet-stream"]);
+
+      if (
+        message.type === "document" &&
+        message.document &&
+        TEXT_MIME_TYPES.has(message.document.mime_type ?? "")
+      ) {
+        const { buffer } = await downloadMedia(message.document.id);
+        const input: IncomingMessage = {
+          ...base,
+          text: buffer.toString("utf-8"),
+          mediaType: "text",
+          mediaId: message.document.id,
+          mediaMetadata: { media_type: "text" },
         };
         const replies = await handleIncomingMessage(input);
         for (const r of replies) await sendWhatsAppMessage(wa_id, r);

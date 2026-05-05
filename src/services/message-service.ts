@@ -188,7 +188,8 @@ export async function handleIncomingMessage(
   if (
     input.mediaType === "audio" ||
     input.mediaType === "image" ||
-    input.mediaType === "pdf"
+    input.mediaType === "pdf" ||
+    input.mediaType === "text"
   ) {
     const docType = input.mediaType as DocType;
     return checkAndCreateDoc(

@@ -160,6 +160,10 @@ export function formatPracticeNudge(): string {
   return "Oi! Vi que não respondeu a última mensagem. Sem pressão, quando quiser continuar é só responder ou subir um novo conteúdo.";
 }
 
+export function formatImageNoText(): string {
+  return "Não encontrei conteúdo de texto suficiente nessa imagem. Manda o material como texto, áudio ou PDF.";
+}
+
 export function formatIntensiveModeActivated(): string {
   return "Modo intensivo ativado! Sua pergunta anterior ainda aguarda resposta.";
 }
