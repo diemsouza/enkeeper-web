@@ -20,9 +20,9 @@ export function formatTrialWelcome(): string {
 
 export function formatPlanExpired(): string {
   return [
-    "Seu período de teste encerrou. 🔒",
+    "*Seu período de teste encerrou!*",
     "",
-    "Para continuar praticando, assine o Dropuz por R$19,90/mês.",
+    "Para continuar praticando, assine o *Dropuz* por R$19,90/mês.",
     "",
     "_Use */suporte* para falar com a gente e ativar sua conta._",
   ].join("\n");

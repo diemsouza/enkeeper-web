@@ -4,23 +4,23 @@ import { cn } from "@/src/lib/utils";
 import { useInView } from "@/src/hooks/use-in-view";
 import { useTranslations } from "next-intl";
 import {
-  Languages,
   BookOpen,
   Briefcase,
-  Plane,
-  MonitorPlay,
-  Sparkles,
+  TrendingUp,
+  RefreshCcw,
+  GraduationCap,
+  User,
 } from "lucide-react";
 import React from "react";
 
 const CARD_COUNT = 6;
 const CARD_ICONS = [
-  Languages,
-  BookOpen,
-  Briefcase,
-  MonitorPlay,
-  Plane,
-  Sparkles,
+  GraduationCap, // Aluno de escola de idiomas
+  User, // Aluno de professor particular
+  BookOpen, // Autodidata
+  RefreshCcw, // Quem tentou e parou
+  Briefcase, // Quem precisa usar no trabalho
+  TrendingUp, // Quem estuda mas não evolui
 ] as const;
 
 export default function WhoFor() {
