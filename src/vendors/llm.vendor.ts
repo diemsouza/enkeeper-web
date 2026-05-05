@@ -93,10 +93,17 @@ export function buildPracticeMessagePrompt(
   },
 ): string {
   const topics = input.doc.topicsData as string[];
-  const [f1, f2, f3] = input.recentFormats ?? ["(nenhum)", "(nenhum)", "(nenhum)"];
+  const [f1, f2, f3] = input.recentFormats ?? [
+    "(nenhum)",
+    "(nenhum)",
+    "(nenhum)",
+  ];
   return APPROACH[approach]
     .replace("{voice}", VOICE_PROMPT)
-    .replace("{excerpt}", `${input.doc.content.slice(0, 1200)}\nTópicos: ${topics.join(", ")}`)
+    .replace(
+      "{excerpt}",
+      `${input.doc.content.slice(0, 1200)}\nTópicos: ${topics.join(", ")}`,
+    )
     .replace("{topic}", input.currentTopic)
     .replace("{last_answer}", input.lastAnswer || "(nenhuma)")
     .replace("{format_1}", f1)
@@ -144,7 +151,7 @@ export async function generatePracticeMessage(params: {
       model: openai(MODEL),
       output: Output.object({ schema: practiceMessageSchema }),
       prompt,
-      temperature: 0.7,
+      temperature: 0.5,
     });
     inputTokens += llmResult.usage?.inputTokens ?? 0;
     outputTokens += llmResult.usage?.outputTokens ?? 0;
@@ -274,14 +281,21 @@ export async function generateAnswerEvaluation(params: {
   userId: string;
   docId: string;
 }): Promise<AnswerEvaluationResult | null> {
-  const { question, answerKeys, userAnswer, attemptCount, docContent, userId, docId } = params;
+  const {
+    question,
+    answerKeys,
+    userAnswer,
+    attemptCount,
+    docContent,
+    userId,
+    docId,
+  } = params;
   let inputTokens = 0;
   let outputTokens = 0;
   let cachedTokens = 0;
   let result: AnswerEvaluationResult | null = null;
 
-  const systemPrompt = ANSWER_EVALUATION_PROMPT
-    .replace("{voice}", VOICE_PROMPT)
+  const systemPrompt = ANSWER_EVALUATION_PROMPT.replace("{voice}", VOICE_PROMPT)
     .replace("{question}", question)
     .replace("{answer_keys}", answerKeys.join(", "))
     .replace("{user_answer}", userAnswer)

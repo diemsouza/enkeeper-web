@@ -75,32 +75,49 @@ Banco de perguntas geradas no upload do material. Cada `Question` pertence a uma
 - `question` — texto da pergunta enviada ao usuário
 - `answerKeys String[]` — respostas válidas esperadas, geradas no upload, nunca exibidas ao usuário
 - `answer` — o que o usuário respondeu, copiado da mensagem recebida
-- `attemptCount` — quantas vezes essa pergunta foi enviada ao usuário. Incrementa a cada reenvio na repescagem
+- `attemptCount` — quantas vezes essa pergunta foi enviada ao usuário. Incrementa a cada reenvio
+- `wrongCount` — quantas vezes a avaliação retornou `wrong` ou `partial`. Incrementa em todo reenvio com esse resultado. Usado no relatório semanal para identificar vocabulário que travou
+- `questionType` — `text` (default) | `audio`. Formato em que a pergunta foi enviada ao usuário
+- `answerType` — `text` | `audio` | `null`. Preenchido no momento da resposta. Se a mensagem recebida for `audio` (voice note do WhatsApp), marca `audio`; caso contrário, `text`. `null` enquanto não houver resposta
 
 ### Fluxo
 
-1. Upload → `question-extraction` gera todas as perguntas → salvas com `status: null`
-2. Cadência pega próxima na ordem de prioridade → envia → `status: pending` → salva `Message` com `questionId`
-3. Usuário responde → copia resposta para `question.answer` → avalia contra `answerKeys` → atualiza `status` para `right`, `partial` ou `wrong` → incrementa `attemptCount`
+1. Upload → `question-extraction` gera todas as perguntas → salvas com `status: null` → atualiza `Activity.questionCount`
+2. Cron seleciona próxima pergunta (ver Seleção abaixo) → envia → `status: pending` → salva `Message` com `questionId` → atualiza `Activity.lastQuestionId`
+3. Usuário responde → preenche `answer` e `answerType` → avalia contra `answerKeys` → atualiza `status` para `right`, `partial` ou `wrong` → incrementa `attemptCount` → se `wrong` ou `partial`, incrementa `wrongCount`
 4. Toda mensagem de pergunta, resposta do usuário e feedback carrega o `questionId` correspondente
 
-### Repescagem
+### Seleção da próxima pergunta
 
-Quando não há mais perguntas com `status: null` ou `pending`, ordem de prioridade:
+Baseada em `Activity.questionRound`:
 
-1. `wrong`
-2. `partial`
-3. Demais se necessário
+**`questionRound = 0` (primeira rodada):**
 
-Pergunta reenviada vai para `pending` mas mantém `answer` e `status` anteriores até nova resposta chegar. Se enviada e não respondida (`pending` sem resposta), entra na fila de repescagem normalmente.
+1. Tenta buscar próxima com `status = null`, exceto `lastQuestionId`, `ORDER BY updatedAt DESC LIMIT 1`
+2. Retornou resultado → envia
+3. Retornou vazio e todas estão `right` → primeira rodada concluída: `questionRound = 1`, envia mensagem de conclusão, busca próxima pela query geral
+4. Retornou vazio e ainda há `wrong` ou `partial` → continua repescagem pela query geral sem incrementar `questionRound`
 
-Status nunca volta para `null`. Ciclo encerra quando todas estiverem `right` ou por inatividade (TTL da Activity).
+**`questionRound = 1` (revisão contínua):**
 
-### Conclusão de rodada
+```sql
+WHERE activityId = :activityId
+  AND id != :lastQuestionId
+ORDER BY
+  CASE WHEN status IS NULL THEN 1 ELSE 0 END DESC,
+  updatedAt DESC
+LIMIT 1
+```
 
-Quando todas as perguntas saem de `null`/`pending` pela primeira vez, envia:
+Loop infinito natural — revisão contínua sem critério de encerramento.
+
+### Conclusão da primeira rodada
+
+Quando `questionRound` vai de `0` para `1`, envia:
 
 > Você respondeu todas as perguntas dessa rodada. Manda novo conteúdo ou continue praticando.
+
+O cron continua funcionando normalmente após a mensagem.
 
 ---
 
@@ -146,21 +163,22 @@ Separa cortesia de receita real. Query de pagantes filtra só `planCode = pro`. 
 
 ## 5. Comandos
 
-| Comando          | Ação                                                                                             |
-| ---------------- | ------------------------------------------------------------------------------------------------ |
-| `/pausar`        | Pausa o envio de mensagens de prática. Zera `practicingUntil`                                    |
-| `/retomar`       | Retoma o envio após pausa                                                                        |
-| `/praticar`      | Dispara próxima pergunta imediatamente, sem esperar cadência. Inicia sessão ativa por 15 minutos |
-| `/conteudo`      | Lista a activity `active` e as `archived`                                                        |
-| `/suporte`       | Aciona suporte via WhatsApp pessoal do admin                                                     |
-| `chega por hoje` | Linguagem natural — encerra o envio do dia                                                       |
+| Comando          | Ação                                                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------------------- |
+| `/pausar`        | Pausa o envio de mensagens de prática. Zera `intensiveUntil`                                         |
+| `/retomar`       | Retoma o envio após pausa                                                                            |
+| `/praticar`      | Dispara próxima pergunta imediatamente, sem esperar cadência. Inicia sessão intensiva por 15 minutos |
+| `/conteudo`      | Lista a activity `active` e as `archived`                                                            |
+| `/suporte`       | Aciona suporte via WhatsApp pessoal do admin                                                         |
+| `chega por hoje` | Linguagem natural — encerra o envio do dia                                                           |
 
-### Sessão ativa (/praticar)
+### Sessão intensiva (/praticar)
 
-- `practicingUntil` = `now() + 15min`
+- `intensiveUntil` = `now() + 15min`
 - Cada resposta do usuário durante a sessão dispara a próxima pergunta imediatamente
-- Sessão encerra quando `practicingUntil` vence, quando `/pausar` é chamado, ou quando a rodada é concluída
-- Fora da sessão, cadência normal retoma
+- Sessão encerra quando `intensiveUntil` vence ou quando `/pausar` é chamado — `intensiveUntil` volta a `null`
+- Conclusão de rodada não encerra a sessão — apenas zera `intensiveUntil` e envia a mensagem de conclusão; cron retoma cadência normal
+- Fora da sessão, cadência normal opera normalmente
 
 ### Sem conteúdo ativo
 

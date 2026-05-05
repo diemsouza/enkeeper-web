@@ -54,6 +54,16 @@ enum QuestionStatus {
     wrong
 }
 
+enum QuestionType {
+    text
+    audio
+}
+
+enum AnswerType {
+    text
+    audio
+}
+
 model Doc {
     id         String    @id @default(ulid()) @map("id")
     userId     String    @map("user_id")
@@ -97,6 +107,9 @@ model Activity {
     pausedAt          DateTime?      @map("paused_at")
     completedAt       DateTime?      @map("completed_at")
     intensiveUntil    DateTime?      @map("intensive_until")
+    questionCount     Int            @default(0)     @map("question_count")
+    questionRound     Int            @default(0)     @map("question_round")
+    lastQuestionId    String?                        @map("last_question_id")
     createdAt       DateTime       @default(now()) @map("created_at")
     updatedAt       DateTime       @updatedAt @map("updated_at")
     deletedAt       DateTime?      @map("deleted_at")
@@ -182,6 +195,9 @@ model Question {
     answer       String?         @db.Text
     status       QuestionStatus? @map("status")
     attemptCount Int             @default(0) @map("attempt_count")
+    wrongCount   Int             @default(0) @map("wrong_count")
+    questionType QuestionType    @default(text) @map("question_type")
+    answerType   AnswerType?     @map("answer_type")
     createdAt    DateTime        @default(now()) @map("created_at")
     updatedAt    DateTime        @updatedAt @map("updated_at")
     deletedAt    DateTime?       @map("deleted_at")

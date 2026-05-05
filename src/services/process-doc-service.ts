@@ -3,7 +3,7 @@ import {
   findActiveOrPausedDocsByUser,
   updateDoc,
 } from "../repo/docs.repo";
-import { createActivity } from "../repo/activities.repo";
+import { createActivity, updateActivity } from "../repo/activities.repo";
 import { createQuestions } from "../repo/questions.repo";
 import { archiveOrCancelActivitiesByDoc } from "./activity-service";
 import { generateDocTopics, generateQuestions } from "../vendors/llm.vendor";
@@ -90,5 +90,6 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
 
   if (questions && questions.length > 0) {
     await createQuestions(activity.id, questions);
+    await updateActivity(activity.id, userId, { questionCount: questions.length });
   }
 }

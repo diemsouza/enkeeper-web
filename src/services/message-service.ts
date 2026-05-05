@@ -57,10 +57,11 @@ import { publishDocProcessing } from "../lib/qstash";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
 import {
-  findNextQuestion,
+  findNextUnansweredQuestion,
+  findNextGeneralQuestion,
+  hasWrongOrPartial,
   findPendingQuestion,
   updateQuestion,
-  allQuestionsRight,
 } from "../repo/questions.repo";
 import { validateContent } from "../core/validate-content";
 import { MIN_DOC_CHARS, PRACTICING_UNTIL_MIN } from "../lib/constants";
@@ -464,7 +465,14 @@ export async function handleIncomingMessage(
       await updateActivity(activeActivity.id, user.id, { intensiveUntil });
       const alreadyPending = await findPendingQuestion(activeActivity.id);
       if (alreadyPending) {
-        await saveUserMsg(user.id, userChannel.id, text, "practice_now", input, today);
+        await saveUserMsg(
+          user.id,
+          userChannel.id,
+          text,
+          "practice_now",
+          input,
+          today,
+        );
         return [formatIntensiveModeActivated()];
       }
       const practiceDoc = await findDocById(activeActivity.docId, user.id);
@@ -473,7 +481,11 @@ export async function handleIncomingMessage(
         messageIntent = "free_text";
         break;
       }
-      const nextQ = await findNextQuestion(activeActivity.docId);
+      const nextQ = await resolveNextQuestion(
+        activeActivity.docId,
+        activeActivity.lastQuestionId,
+        activeActivity.questionRound,
+      );
       if (!nextQ) {
         reply = "Todas as perguntas já foram respondidas corretamente.";
         messageIntent = "free_text";
@@ -499,6 +511,7 @@ export async function handleIncomingMessage(
         nextMessageAt: new Date(
           Date.now() + activeActivity.intervalMinutes * 60 * 1000,
         ),
+        lastQuestionId: nextQ.id,
       });
       await saveUserMsg(
         user.id,
@@ -576,10 +589,17 @@ export async function handleIncomingMessage(
             const evalStatus = evaluation?.status ?? "wrong";
             const feedback =
               evaluation?.feedback ?? "Não consegui avaliar sua resposta.";
+            const answerType = input.mediaType === "audio" ? "audio" : "text";
+            const isWrongOrPartial =
+              evalStatus === "wrong" || evalStatus === "partial";
             await updateQuestion(pendingQuestion.id, {
               answer: text,
               status: evalStatus,
               attemptCount: pendingQuestion.attemptCount + 1,
+              answerType,
+              ...(isWrongOrPartial
+                ? { wrongCount: pendingQuestion.wrongCount + 1 }
+                : {}),
             });
             const isPracticingSessionActive =
               activeActivity.intensiveUntil &&
@@ -609,48 +629,17 @@ export async function handleIncomingMessage(
             await incrementAgentMessageCount(user.id, today);
 
             if (isPracticingSessionActive) {
-              const roundDone = await allQuestionsRight(activeActivity.docId);
-              if (roundDone) {
-                const completionMsg = formatPracticeComplete();
-                await saveMessage({
-                  userId: user.id,
-                  userChannelId: userChannel.id,
-                  activityId: activeActivity.id,
-                  role: "assistant",
-                  content: completionMsg,
-                  intent: "practice_complete",
-                });
-                await incrementAgentMessageCount(user.id, today);
-                await updateActivity(activeActivity.id, user.id, {
-                  intensiveUntil: null,
-                  nextMessageAt: null,
-                  waitingUser: false,
-                });
-                return [feedback, completionMsg];
-              }
-
-              const nextQuestion = await findNextQuestion(activeActivity.docId);
-              if (nextQuestion) {
-                await saveMessage({
-                  userId: user.id,
-                  userChannelId: userChannel.id,
-                  activityId: activeActivity.id,
-                  role: "assistant",
-                  content: nextQuestion.question,
-                  intent: "practice_question",
-                  questionId: nextQuestion.id,
-                });
-                await incrementAgentMessageCount(user.id, today);
-                await updateQuestion(nextQuestion.id, {
-                  status: "pending",
-                  activityId: activeActivity.id,
-                });
-                await updateActivity(activeActivity.id, user.id, {
-                  waitingUser: true,
-                  executionCount: activeActivity.executionCount + 1,
-                });
-                return [feedback, nextQuestion.question];
-              }
+              const replies = await handleIntensiveNextQuestion(
+                activeActivity.docId,
+                activeActivity.lastQuestionId,
+                activeActivity.questionRound,
+                activeActivity.id,
+                user.id,
+                userChannel.id,
+                activeActivity.executionCount,
+                today,
+              );
+              if (replies.length > 0) return [feedback, ...replies];
             }
 
             return [feedback];
@@ -668,6 +657,132 @@ export async function handleIncomingMessage(
   await saveBotReply(user.id, userChannel.id, reply, today);
 
   return [reply];
+}
+
+// ─── Question selection helpers ──────────────────────────────────────────────
+
+export async function resolveNextQuestion(
+  docId: string,
+  lastQuestionId: string | null,
+  questionRound: number,
+): Promise<{ id: string; question: string } | null> {
+  if (questionRound === 0) {
+    const unanswered = await findNextUnansweredQuestion(docId, lastQuestionId);
+    if (unanswered) return unanswered;
+    const openRemains = await hasWrongOrPartial(docId);
+    if (openRemains) return findNextGeneralQuestion(docId, lastQuestionId);
+    return findNextGeneralQuestion(docId, lastQuestionId);
+  }
+  return findNextGeneralQuestion(docId, lastQuestionId);
+}
+
+async function handleIntensiveNextQuestion(
+  docId: string,
+  lastQuestionId: string | null,
+  questionRound: number,
+  activityId: string,
+  userId: string,
+  userChannelId: string,
+  executionCount: number,
+  today: Date,
+): Promise<string[]> {
+  const lastId = lastQuestionId;
+
+  if (questionRound === 0) {
+    const unanswered = await findNextUnansweredQuestion(docId, lastId);
+    if (unanswered) {
+      return sendIntensiveQuestion(
+        unanswered,
+        activityId,
+        userId,
+        userChannelId,
+        executionCount,
+        today,
+      );
+    }
+    const openRemains = await hasWrongOrPartial(docId);
+    if (openRemains) {
+      const next = await findNextGeneralQuestion(docId, lastId);
+      if (next)
+        return sendIntensiveQuestion(
+          next,
+          activityId,
+          userId,
+          userChannelId,
+          executionCount,
+          today,
+        );
+      return [];
+    }
+
+    await updateActivity(activityId, userId, {
+      questionRound: 1,
+      intensiveUntil: null,
+    });
+    const completionMsg = formatPracticeComplete();
+    await saveMessage({
+      userId,
+      userChannelId,
+      activityId,
+      role: "assistant",
+      content: completionMsg,
+      intent: "practice_complete",
+    });
+    await incrementAgentMessageCount(userId, today);
+
+    const next = await findNextGeneralQuestion(docId, lastId);
+    if (next) {
+      const questionReplies = await sendIntensiveQuestion(
+        next,
+        activityId,
+        userId,
+        userChannelId,
+        executionCount,
+        today,
+      );
+      return [completionMsg, ...questionReplies];
+    }
+    return [completionMsg];
+  }
+
+  const next = await findNextGeneralQuestion(docId, lastId);
+  if (next)
+    return sendIntensiveQuestion(
+      next,
+      activityId,
+      userId,
+      userChannelId,
+      executionCount,
+      today,
+    );
+  return [];
+}
+
+async function sendIntensiveQuestion(
+  question: { id: string; question: string },
+  activityId: string,
+  userId: string,
+  userChannelId: string,
+  executionCount: number,
+  today: Date,
+): Promise<string[]> {
+  await saveMessage({
+    userId,
+    userChannelId,
+    activityId,
+    role: "assistant",
+    content: question.question,
+    intent: "practice_question",
+    questionId: question.id,
+  });
+  await incrementAgentMessageCount(userId, today);
+  await updateQuestion(question.id, { status: "pending", activityId });
+  await updateActivity(activityId, userId, {
+    waitingUser: true,
+    executionCount: executionCount + 1,
+    lastQuestionId: question.id,
+  });
+  return [question.question];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

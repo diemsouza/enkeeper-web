@@ -1,4 +1,4 @@
-import { Question, QuestionStatus } from "@prisma/client";
+import { Question, QuestionStatus, AnswerType, QuestionType } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 
 type CreateQuestionData = {
@@ -19,22 +19,50 @@ export async function createQuestions(
   });
 }
 
-export async function findNextQuestion(docId: string): Promise<Question | null> {
+export async function findNextUnansweredQuestion(
+  docId: string,
+  lastQuestionId: string | null,
+): Promise<Question | null> {
+  return prisma.question.findFirst({
+    where: {
+      deletedAt: null,
+      status: null,
+      ...(lastQuestionId ? { NOT: { id: lastQuestionId } } : {}),
+      activity: { docId, deletedAt: null },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
+export async function findNextGeneralQuestion(
+  docId: string,
+  lastQuestionId: string | null,
+): Promise<Question | null> {
+  const baseWhere = {
+    deletedAt: null,
+    ...(lastQuestionId ? { NOT: { id: lastQuestionId } } : {}),
+    activity: { docId, deletedAt: null },
+  };
   const nullFirst = await prisma.question.findFirst({
-    where: { deletedAt: null, status: null, activity: { docId, deletedAt: null } },
-    orderBy: { createdAt: "asc" },
+    where: { ...baseWhere, status: null },
+    orderBy: { updatedAt: "desc" },
   });
   if (nullFirst) return nullFirst;
+  return prisma.question.findFirst({
+    where: baseWhere,
+    orderBy: { updatedAt: "desc" },
+  });
+}
 
-  for (const status of ["wrong", "partial"] as QuestionStatus[]) {
-    const question = await prisma.question.findFirst({
-      where: { deletedAt: null, status, activity: { docId, deletedAt: null } },
-      orderBy: { createdAt: "asc" },
-    });
-    if (question) return question;
-  }
-
-  return null;
+export async function hasWrongOrPartial(docId: string): Promise<boolean> {
+  const count = await prisma.question.count({
+    where: {
+      deletedAt: null,
+      status: { in: ["wrong", "partial"] },
+      activity: { docId, deletedAt: null },
+    },
+  });
+  return count > 0;
 }
 
 export async function findPendingQuestion(activityId: string): Promise<Question | null> {
@@ -51,17 +79,10 @@ export async function updateQuestion(
     answer?: string;
     attemptCount?: number;
     activityId?: string;
+    wrongCount?: number;
+    answerType?: AnswerType | null;
+    questionType?: QuestionType;
   },
 ): Promise<void> {
   await prisma.question.update({ where: { id }, data });
-}
-
-export async function allQuestionsRight(docId: string): Promise<boolean> {
-  const base = { deletedAt: null, activity: { docId, deletedAt: null } };
-  const total = await prisma.question.count({ where: base });
-  if (total === 0) return false;
-  const rightCount = await prisma.question.count({
-    where: { ...base, status: "right" },
-  });
-  return rightCount === total;
 }

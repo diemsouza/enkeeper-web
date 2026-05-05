@@ -34,6 +34,7 @@ export function formatCommandList(): string {
     "",
     "*/* - ver essa lista de comandos",
     "*/conteudo* - seu conteúdo atual",
+    "*/praticar* - prática intensiva",
     "*/pausar* - pausar prática",
     "*/retomar* - retomar prática pausada",
     "*/suporte* - falar com suporte",

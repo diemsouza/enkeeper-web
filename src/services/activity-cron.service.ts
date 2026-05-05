@@ -4,24 +4,26 @@ import {
   createActivity,
 } from "../repo/activities.repo";
 import { findDocById, updateDoc } from "../repo/docs.repo";
+import { saveMessage, findLastActivityMessage } from "../repo/messages.repo";
 import {
-  saveMessage,
-  findLastActivityMessage,
-} from "../repo/messages.repo";
-import {
-  findNextQuestion,
+  findNextUnansweredQuestion,
+  findNextGeneralQuestion,
+  hasWrongOrPartial,
   updateQuestion,
-  allQuestionsRight,
 } from "../repo/questions.repo";
 import { findUserChannelByUserId, findUserById } from "../repo/users.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
-import { formatPracticeNudge, formatPracticeComplete } from "../core/formatters";
+import {
+  formatPracticeNudge,
+  formatPracticeComplete,
+} from "../core/formatters";
 import { canPractice } from "../core/access";
 import {
   NEXT_MESSAGE_INTERVAL_MIN,
   DOC_PROCESSING_TIMEOUT_MS,
 } from "../lib/constants";
+import { Activity } from "@prisma/client";
 
 type CronResult = {
   processed: number;
@@ -97,6 +99,8 @@ export async function processActivityCron(): Promise<CronResult> {
             approach: activity.approach,
             approachConfidence: activity.approachConfidence,
             approachOverride: activity.approachOverride ?? undefined,
+            questionRound: activity.questionRound,
+            questionCount: activity.questionCount,
           });
         } catch (err: unknown) {
           const isPrismaUnique =
@@ -114,7 +118,6 @@ export async function processActivityCron(): Promise<CronResult> {
         continue;
       }
 
-      // Nudge: timer expirou e usuário ainda não respondeu
       const lastMsg = await findLastActivityMessage(activity.id);
       if (
         lastMsg?.role === "assistant" &&
@@ -153,50 +156,27 @@ export async function processActivityCron(): Promise<CronResult> {
         continue;
       }
 
-      const done = await allQuestionsRight(activity.docId);
-      if (done) {
-        const lastMsg = await findLastActivityMessage(activity.id);
-        const userChannel = await findUserChannelByUserId(activity.userId);
-        if (userChannel && lastMsg?.intent !== "practice_complete") {
-          const msg = formatPracticeComplete();
-          await sendWhatsAppMessage(userChannel.channelId, msg);
-          await saveMessage({
-            userId: activity.userId,
-            userChannelId: userChannel.id,
-            activityId: activity.id,
-            role: "assistant",
-            content: msg,
-            intent: "practice_complete",
-          });
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          await incrementAgentMessageCount(activity.userId, today);
-          processed++;
-        } else {
-          skipped++;
-        }
-        await updateActivity(activity.id, activity.userId, {
-          nextMessageAt: null,
-          waitingUser: false,
-          intensiveUntil: null,
-        });
-        continue;
-      }
-
-      const question = await findNextQuestion(activity.docId);
-      if (!question) {
-        skipped++;
-        continue;
-      }
-
       const userChannel = await findUserChannelByUserId(activity.userId);
       if (!userChannel) {
         skipped++;
         continue;
       }
 
-      await sendWhatsAppMessage(userChannel.channelId, question.question);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
+      const question = await selectNextQuestion(
+        activity,
+        today,
+        userChannel.channelId,
+        userChannel.id,
+      );
+      if (!question) {
+        skipped++;
+        continue;
+      }
+
+      await sendWhatsAppMessage(userChannel.channelId, question.question);
       await saveMessage({
         userId: activity.userId,
         userChannelId: userChannel.id,
@@ -206,22 +186,18 @@ export async function processActivityCron(): Promise<CronResult> {
         intent: "practice_question",
         questionId: question.id,
       });
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
       await incrementAgentMessageCount(activity.userId, today);
-
       await updateQuestion(question.id, {
         status: "pending",
         activityId: activity.id,
       });
-
       await updateActivity(activity.id, activity.userId, {
         executionCount: activity.executionCount + 1,
         nextMessageAt: new Date(
           Date.now() + activity.intervalMinutes * 60 * 1000,
         ),
         waitingUser: true,
+        lastQuestionId: question.id,
       });
 
       processed++;
@@ -232,4 +208,51 @@ export async function processActivityCron(): Promise<CronResult> {
   }
 
   return { processed, skipped, errors };
+}
+
+async function selectNextQuestion(
+  activity: Activity,
+  today: Date,
+  channelId: string,
+  userChannelId: string,
+): Promise<{ id: string; question: string } | null> {
+  const lastId = activity.lastQuestionId;
+
+  if (activity.questionRound === 0) {
+    const unanswered = await findNextUnansweredQuestion(activity.docId, lastId);
+    if (unanswered) return unanswered;
+
+    const openRemains = await hasWrongOrPartial(activity.docId);
+    if (openRemains) {
+      return findNextGeneralQuestion(activity.docId, lastId);
+    }
+
+    await completeRoundZero(activity, today, channelId, userChannelId);
+    return findNextGeneralQuestion(activity.docId, lastId);
+  }
+
+  return findNextGeneralQuestion(activity.docId, lastId);
+}
+
+async function completeRoundZero(
+  activity: Activity,
+  today: Date,
+  channelId: string,
+  userChannelId: string,
+): Promise<void> {
+  await updateActivity(activity.id, activity.userId, {
+    questionRound: 1,
+    intensiveUntil: null,
+  });
+  const msg = formatPracticeComplete();
+  await sendWhatsAppMessage(channelId, msg);
+  await saveMessage({
+    userId: activity.userId,
+    userChannelId,
+    activityId: activity.id,
+    role: "assistant",
+    content: msg,
+    intent: "practice_complete",
+  });
+  await incrementAgentMessageCount(activity.userId, today);
 }

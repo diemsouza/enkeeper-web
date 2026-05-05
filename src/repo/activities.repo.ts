@@ -19,6 +19,8 @@ type CreateActivityData = {
   approach?: Approach;
   approachConfidence?: ApproachConfidence;
   approachOverride?: Approach;
+  questionRound?: number;
+  questionCount?: number;
 };
 
 type UpdateActivityData = {
@@ -36,6 +38,9 @@ type UpdateActivityData = {
   pausedAt?: Date | null;
   completedAt?: Date | null;
   intensiveUntil?: Date | null;
+  questionCount?: number;
+  questionRound?: number;
+  lastQuestionId?: string | null;
 };
 
 export async function createActivity(
