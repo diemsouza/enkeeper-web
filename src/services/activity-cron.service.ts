@@ -109,6 +109,11 @@ export async function processActivityCron(): Promise<CronResult> {
         continue;
       }
 
+      if (activity.intensiveUntil && activity.intensiveUntil > new Date()) {
+        skipped++;
+        continue;
+      }
+
       // Nudge: timer expirou e usuário ainda não respondeu
       const lastMsg = await findLastActivityMessage(activity.id);
       if (

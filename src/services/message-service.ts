@@ -22,6 +22,7 @@ import {
   formatDailyLimitReached,
   formatNoDocs,
   formatPracticeComplete,
+  formatIntensiveModeActivated,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import {
@@ -460,6 +461,11 @@ export async function handleIncomingMessage(
         Date.now() + PRACTICING_UNTIL_MIN * 60 * 1000,
       );
       await updateActivity(activeActivity.id, user.id, { intensiveUntil });
+      const alreadyPending = await findPendingQuestion(activeActivity.id);
+      if (alreadyPending) {
+        await saveUserMsg(user.id, userChannel.id, text, "practice_now", input, today);
+        return [formatIntensiveModeActivated()];
+      }
       const practiceDoc = await findDocById(activeActivity.docId, user.id);
       if (!practiceDoc) {
         reply = "Nenhuma prática ativa no momento.";
@@ -472,7 +478,6 @@ export async function handleIncomingMessage(
         messageIntent = "free_text";
         break;
       }
-      await sendWhatsAppMessage(userChannel.channelId, nextQ.question);
       await saveMessage({
         userId: user.id,
         userChannelId: userChannel.id,
@@ -606,7 +611,6 @@ export async function handleIncomingMessage(
               const roundDone = await allQuestionsRight(activeActivity.docId);
               if (roundDone) {
                 const completionMsg = formatPracticeComplete();
-                await sendWhatsAppMessage(userChannel.channelId, completionMsg);
                 await saveMessage({
                   userId: user.id,
                   userChannelId: userChannel.id,
@@ -626,10 +630,6 @@ export async function handleIncomingMessage(
 
               const nextQuestion = await findNextQuestion(activeActivity.docId);
               if (nextQuestion) {
-                await sendWhatsAppMessage(
-                  userChannel.channelId,
-                  nextQuestion.question,
-                );
                 await saveMessage({
                   userId: user.id,
                   userChannelId: userChannel.id,

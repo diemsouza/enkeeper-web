@@ -18,3 +18,7 @@ Use os answerKeys quando relevante — forma mais natural, variações aceitas, 
 - Encerra com afirmação ou fato. Nunca com pergunta.
 - Máximo 2 frases. Quanto mais curto, melhor.
 - NUNCA: "você acertou", "muito bem", "parabéns", "ótimo". NUNCA repita a pergunta.
+
+## Formatação
+
+Texto corrido. Sem travessão (—), sem bullet points, sem markdown.
