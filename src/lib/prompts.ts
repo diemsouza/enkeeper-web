@@ -5,8 +5,9 @@ function read(file: string): string {
   return readFileSync(join(process.cwd(), "prompts", file), "utf-8").trim();
 }
 
-export const BASE_PROMPT = read("base.md");
+export const VOICE_PROMPT = read("voice.md");
 export const FEEDBACK_PROMPT = read("feedback.md");
+export const DOC_EXTRACTION_PROMPT = read("doc-extraction.md");
 
 export const APPROACH_PROMPTS: Record<string, string> = {
   memorize: read("approaches/memorize.md"),

@@ -11,13 +11,16 @@ import {
   QuestionExtractionResult,
   answerEvaluationSchema,
   AnswerEvaluationResult,
+  practiceMessageSchema,
+  PracticeMessageOutput,
 } from "../lib/llm-schemas";
 import { parseJsonWithFallback } from "../lib/json-utils";
 import { llmUsageService } from "../services/llm-usage-service";
 import { Approach } from "../core/approach";
 import {
-  BASE_PROMPT,
+  VOICE_PROMPT,
   FEEDBACK_PROMPT,
+  DOC_EXTRACTION_PROMPT,
   APPROACH_PROMPTS,
   QUESTION_EXTRACTION_PROMPT,
   ANSWER_EVALUATION_PROMPT,
@@ -26,26 +29,6 @@ import {
 const MODEL = "gpt-4.1-mini";
 
 // ─── Doc extraction ───────────────────────────────────────────────────────────
-
-const buildDocPrompt = (
-  rawContent: string,
-) => `Você recebeu um conteúdo de estudo. Extraia:
-- title: título curto (máx 8 palavras) que resuma o tema
-- topics: lista de 8 a 12 tópicos principais para praticar (strings curtas)
-- content: reescreva o conteúdo de forma clara e objetiva, mantendo todas as informações importantes para estudo espaçado
-- approach: classifique o objetivo pedagógico do material:
-  - "memorize" - lista de vocabulário, versículos, fórmulas, leis, citações para fixar
-  - "understand" - conteúdo técnico explicativo, regras, sistemas, teorias, processos
-  - "practice" - idioma estrangeiro para fluência, vocabulário técnico em uso real, exercícios para resolver
-  - "discuss" - capítulo de livro, ensaio, artigo, palestra, não-ficção densa
-  - "reflect" - devocional, autoajuda, espiritualidade, leitura introspectiva
-  Se ambíguo, use "understand".
-- approachConfidence: "high" se o sinal é claro; "medium" se material é misto; "low" se muito ambíguo
-- isValid: true se o conteúdo tem substância suficiente para gerar prática; false se é muito curto, vago ou sem sentido pedagógico
-- invalidReason: null se válido; caso contrário, breve explicação em português (ex: "conteúdo muito curto", "sem estrutura de estudo")
-
-Conteúdo:
-${rawContent}`;
 
 export async function generateDocTopics(params: {
   rawContent: string;
@@ -64,7 +47,7 @@ export async function generateDocTopics(params: {
       model: openai(MODEL),
       output: Output.object({ schema: docProcessingSchema }),
       temperature: 0.2,
-      prompt: buildDocPrompt(rawContent),
+      prompt: DOC_EXTRACTION_PROMPT.replace("{raw_content}", rawContent),
     });
     inputTokens += llmResult.usage?.inputTokens ?? 0;
     outputTokens += llmResult.usage?.outputTokens ?? 0;
@@ -100,48 +83,38 @@ export async function generateDocTopics(params: {
 
 const APPROACH = APPROACH_PROMPTS as Record<Approach, string>;
 
-function buildContext(input: {
-  doc: Pick<Doc, "docType" | "content" | "topicsData">;
-  history: Array<{ role: "user" | "assistant"; content: string }>;
-  currentTopic: string;
-  now: string;
-}): string {
-  const topics = input.doc.topicsData as string[];
-  const recentHistory = input.history.slice(-4);
-
-  return `CONTEXTO
-
-Material:
-- Tipo: ${input.doc.docType}
-- Tópicos: ${topics.join(", ")}
-- Trecho: "${input.doc.content.slice(0, 1200)}"
-
-Últimas trocas (mais recente primeiro):
-${recentHistory.length > 0 ? recentHistory.map((h) => `- ${h.role}: ${h.content}`).join("\n") : "(nenhuma)"}
-
-Tópico desta mensagem: ${input.currentTopic}
-Hora: ${input.now}
-
-Gere UMA mensagem praticando o tópico acima. Saída: apenas o texto, sem aspas, sem prefixo.`;
-}
-
 export function buildPracticeMessagePrompt(
   approach: Approach,
-  context: Parameters<typeof buildContext>[0],
+  input: {
+    doc: Pick<Doc, "content" | "topicsData">;
+    currentTopic: string;
+    lastAnswer: string;
+    recentFormats?: [string, string, string];
+  },
 ): string {
-  return `${BASE_PROMPT}\n\n${APPROACH[approach]}\n\n${buildContext(context)}`;
+  const topics = input.doc.topicsData as string[];
+  const [f1, f2, f3] = input.recentFormats ?? ["(nenhum)", "(nenhum)", "(nenhum)"];
+  return APPROACH[approach]
+    .replace("{voice}", VOICE_PROMPT)
+    .replace("{excerpt}", `${input.doc.content.slice(0, 1200)}\nTópicos: ${topics.join(", ")}`)
+    .replace("{topic}", input.currentTopic)
+    .replace("{last_answer}", input.lastAnswer || "(nenhuma)")
+    .replace("{format_1}", f1)
+    .replace("{format_2}", f2)
+    .replace("{format_3}", f3);
 }
 
 export async function generatePracticeMessage(params: {
   topic: string;
   lastUserReply: string | null;
-  doc: Pick<Doc, "docType" | "content" | "topicsData">;
+  doc: Pick<Doc, "content" | "topicsData">;
   topicIndex: number;
   totalTopics: number;
   userId: string;
   docId: string;
   approach: Approach;
-}): Promise<string> {
+  recentFormats?: [string, string, string];
+}): Promise<PracticeMessageOutput | null> {
   const {
     topic,
     lastUserReply,
@@ -151,26 +124,43 @@ export async function generatePracticeMessage(params: {
     userId,
     docId,
     approach,
+    recentFormats,
   } = params;
 
-  const history: Array<{ role: "user" | "assistant"; content: string }> =
-    lastUserReply ? [{ role: "user", content: lastUserReply }] : [];
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cachedTokens = 0;
+  let result: PracticeMessageOutput | null = null;
 
-  const systemPrompt = buildPracticeMessagePrompt(approach, {
+  const prompt = buildPracticeMessagePrompt(approach, {
     doc,
-    history,
     currentTopic: `${topicIndex + 1}/${totalTopics} - ${topic}`,
-    now: new Date().toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    lastAnswer: lastUserReply ?? "",
+    recentFormats,
   });
 
-  const llmResult = await generateText({
-    model: openai(MODEL),
-    prompt: systemPrompt,
-    temperature: 0.7,
-  });
+  try {
+    const llmResult = await generateText({
+      model: openai(MODEL),
+      output: Output.object({ schema: practiceMessageSchema }),
+      prompt,
+      temperature: 0.7,
+    });
+    inputTokens += llmResult.usage?.inputTokens ?? 0;
+    outputTokens += llmResult.usage?.outputTokens ?? 0;
+    cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+    result = llmResult.output;
+  } catch (err) {
+    if (NoObjectGeneratedError.isInstance(err) && err.text) {
+      try {
+        result = practiceMessageSchema.parse(
+          parseJsonWithFallback(err.text.trim()),
+        );
+      } catch {
+        // structured parse failed after NoObjectGeneratedError
+      }
+    }
+  }
 
   await llmUsageService.registerUsage({
     userId,
@@ -178,12 +168,12 @@ export async function generatePracticeMessage(params: {
     usageType: "practice_generation",
     provider: "openai",
     model: MODEL,
-    inputTokens: llmResult.usage?.inputTokens ?? 0,
-    outputTokens: llmResult.usage?.outputTokens ?? 0,
-    cachedTokens: llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0,
+    inputTokens,
+    outputTokens,
+    cachedTokens,
   });
 
-  return llmResult.text.trim();
+  return result;
 }
 
 // ─── Practice feedback ───────────────────────────────────────────────────────
@@ -208,7 +198,7 @@ export async function generatePracticeFeedback(params: {
 
   const llmResult = await generateText({
     model: openai(MODEL),
-    system: FEEDBACK_PROMPT,
+    system: FEEDBACK_PROMPT.replace("{voice}", VOICE_PROMPT),
     prompt,
     temperature: 0.5,
   });
@@ -291,8 +281,7 @@ export async function generateAnswerEvaluation(params: {
   let result: AnswerEvaluationResult | null = null;
 
   const systemPrompt = ANSWER_EVALUATION_PROMPT
-    .replace("{base}", BASE_PROMPT)
-    .replace("{feedback}", FEEDBACK_PROMPT)
+    .replace("{voice}", VOICE_PROMPT)
     .replace("{question}", question)
     .replace("{answer_keys}", answerKeys.join(", "))
     .replace("{user_answer}", userAnswer)

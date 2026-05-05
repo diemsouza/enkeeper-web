@@ -146,6 +146,12 @@ Dropuz is a SaaS study practice platform that receives content through WhatsApp,
 - Sempre escopo por `userId` — nunca busca sem filtro de usuário
 - Usar `select` para buscar só os campos necessários
 
+## Prompts
+
+Todo prompt novo ou atualizado segue o padrão definido em `prompts/standard.md`.
+
+Exceção: instruções simples que resolvem em poucas linhas não precisam da estrutura completa.
+
 ### Comentários
 
 - Sem comentários explicando o que o código faz — código deve ser autoexplicativo
