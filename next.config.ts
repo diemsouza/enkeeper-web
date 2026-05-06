@@ -35,11 +35,6 @@ const nextConfig = {
   },
   outputFileTracingIncludes: {
     "/api/(.*)": ["./prompts/**/*.md"],
-    "/auth/login": ["./email-templates/*"],
-    "/auth/register": ["./email-templates/*"],
-    "/auth/remember": ["./email-templates/*"],
-    "/auth/reset-password": ["./email-templates/*"],
-    "/auth/verify-email": ["./email-templates/*"],
   },
   allowedDevOrigins: ["192.168.15.5"],
   // serverExternalPackages: ["pdf-parse"],

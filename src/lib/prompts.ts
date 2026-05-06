@@ -6,7 +6,6 @@ function read(file: string): string {
 }
 
 export const VOICE_PROMPT = read("voice.md");
-export const FEEDBACK_PROMPT = read("feedback.md");
 export const DOC_EXTRACTION_PROMPT = read("doc-extraction.md");
 
 export const APPROACH_PROMPTS: Record<string, string> = {

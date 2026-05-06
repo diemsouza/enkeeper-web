@@ -19,7 +19,6 @@ import { llmUsageService } from "../services/llm-usage-service";
 import { Approach } from "../core/approach";
 import {
   VOICE_PROMPT,
-  FEEDBACK_PROMPT,
   DOC_EXTRACTION_PROMPT,
   APPROACH_PROMPTS,
   QUESTION_EXTRACTION_PROMPT,
@@ -181,47 +180,6 @@ export async function generatePracticeMessage(params: {
   });
 
   return result;
-}
-
-// ─── Practice feedback ───────────────────────────────────────────────────────
-
-export async function generatePracticeFeedback(params: {
-  question: string;
-  userReply: string;
-  topic: string;
-  docContent: string;
-  userId: string;
-  docId: string;
-  approach: Approach;
-}): Promise<string> {
-  const { question, userReply, topic, docContent, userId, docId } = params;
-
-  const prompt = [
-    `Tópico: ${topic}`,
-    `Pergunta feita: "${question}"`,
-    `Resposta do usuário: "${userReply}"`,
-    `\nContexto do material:\n${docContent.slice(0, 1000)}`,
-  ].join("\n");
-
-  const llmResult = await generateText({
-    model: openai(MODEL),
-    system: FEEDBACK_PROMPT.replace("{voice}", VOICE_PROMPT),
-    prompt,
-    temperature: 0.5,
-  });
-
-  await llmUsageService.registerUsage({
-    userId,
-    docId,
-    usageType: "practice_feedback",
-    provider: "openai",
-    model: MODEL,
-    inputTokens: llmResult.usage?.inputTokens ?? 0,
-    outputTokens: llmResult.usage?.outputTokens ?? 0,
-    cachedTokens: llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0,
-  });
-
-  return llmResult.text.trim();
 }
 
 // ─── Question extraction ──────────────────────────────────────────────────────
