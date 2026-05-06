@@ -66,7 +66,7 @@ export async function hasWrongOrPartial(docId: string): Promise<boolean> {
   const count = await prisma.question.count({
     where: {
       deletedAt: null,
-      status: { in: ["wrong", "partial"] },
+      status: { in: ["wrong", "partial", "pending"] },
       activity: { docId, deletedAt: null },
     },
   });

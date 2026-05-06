@@ -21,7 +21,6 @@ import {
   formatSupportReceived,
   formatDailyLimitReached,
   formatNoDocs,
-  formatPracticeComplete,
   formatIntensiveModeActivated,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
@@ -653,6 +652,7 @@ export async function handleIncomingMessage(
                 activeActivity.id,
                 user.id,
                 userChannel.id,
+                activeActivity.intervalMinutes,
                 activeActivity.executionCount,
                 today,
               );
@@ -704,6 +704,7 @@ async function handleIntensiveNextQuestion(
   activityId: string,
   userId: string,
   userChannelId: string,
+  intervalMinutes: number,
   executionCount: number,
   today: Date,
 ): Promise<string[]> {
@@ -741,6 +742,7 @@ async function handleIntensiveNextQuestion(
       userId,
       today,
       userChannelId,
+      intervalMinutes,
     );
 
     return [completionMsg];

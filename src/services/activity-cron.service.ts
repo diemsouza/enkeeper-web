@@ -19,10 +19,7 @@ import {
   formatPracticeComplete,
 } from "../core/formatters";
 import { canPractice } from "../core/access";
-import {
-  NEXT_MESSAGE_INTERVAL_MIN,
-  DOC_PROCESSING_TIMEOUT_MS,
-} from "../lib/constants";
+import { DOC_PROCESSING_TIMEOUT_MS } from "../lib/constants";
 import { Activity, QuestionStatus } from "@prisma/client";
 
 type CronResult = {
@@ -200,6 +197,7 @@ async function selectNextQuestion(
       activity.userId,
       today,
       userChannelId,
+      activity.intervalMinutes,
     );
     await sendWhatsAppMessage(channelId, msg);
     return findNextGeneralQuestion(activity.docId, lastId);
@@ -213,10 +211,13 @@ export async function completeRoundZero(
   userId: string,
   today: Date,
   userChannelId: string,
+  intervalMinutes: number,
 ): Promise<string> {
   await updateActivity(activityId, userId, {
     questionRound: 1,
     intensiveUntil: null,
+    waitingUser: false,
+    nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),
   });
   const msg = formatPracticeComplete();
   await saveMessage({
