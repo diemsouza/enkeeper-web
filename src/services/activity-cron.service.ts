@@ -195,13 +195,13 @@ async function selectNextQuestion(
       return findNextGeneralQuestion(activity.docId, lastId);
     }
 
-    await completeRoundZero(
+    const msg = await completeRoundZero(
       activity.id,
       activity.userId,
       today,
-      channelId,
       userChannelId,
     );
+    await sendWhatsAppMessage(channelId, msg);
     return findNextGeneralQuestion(activity.docId, lastId);
   }
 
@@ -212,7 +212,6 @@ export async function completeRoundZero(
   activityId: string,
   userId: string,
   today: Date,
-  channelId: string,
   userChannelId: string,
 ): Promise<string> {
   await updateActivity(activityId, userId, {
@@ -220,7 +219,6 @@ export async function completeRoundZero(
     intensiveUntil: null,
   });
   const msg = formatPracticeComplete();
-  await sendWhatsAppMessage(channelId, msg);
   await saveMessage({
     userId: userId,
     userChannelId,

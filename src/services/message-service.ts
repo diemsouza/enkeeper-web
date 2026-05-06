@@ -652,7 +652,6 @@ export async function handleIncomingMessage(
                 activeActivity.questionRound,
                 activeActivity.id,
                 user.id,
-                userChannel.channelId,
                 userChannel.id,
                 activeActivity.executionCount,
                 today,
@@ -704,7 +703,6 @@ async function handleIntensiveNextQuestion(
   questionRound: number,
   activityId: string,
   userId: string,
-  channelId: string,
   userChannelId: string,
   executionCount: number,
   today: Date,
@@ -742,7 +740,6 @@ async function handleIntensiveNextQuestion(
       activityId,
       userId,
       today,
-      channelId,
       userChannelId,
     );
 

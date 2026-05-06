@@ -14,3 +14,4 @@ export const INTERACTION_TTL_DAYS = 7;
 export const TRIAL_DAYS = 1;
 export const MAX_DOCS_PER_DAY = 5;
 export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
+export const SEQUENCE_WA_MESSAGE_INTERVAL_SEG = 2;

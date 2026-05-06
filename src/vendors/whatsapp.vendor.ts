@@ -1,3 +1,5 @@
+import { SEQUENCE_WA_MESSAGE_INTERVAL_SEG } from "../lib/constants";
+
 type MediaDownloadResult = {
   buffer: Buffer;
   mimeType: string;
@@ -34,6 +36,19 @@ export async function sendWhatsAppMessage(
   if (!res.ok) {
     const detail = await res.text();
     throw new Error(`Meta API error ${res.status}: ${detail}`);
+  }
+}
+
+export async function sendWhatsAppMessages(
+  to: string,
+  texts: string[],
+): Promise<void> {
+  for (let i = 0; i < texts.length; i++) {
+    if (i > 0)
+      await new Promise((resolve) =>
+        setTimeout(resolve, SEQUENCE_WA_MESSAGE_INTERVAL_SEG * 1000),
+      );
+    await sendWhatsAppMessage(to, texts[i]);
   }
 }
 

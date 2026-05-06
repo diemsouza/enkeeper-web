@@ -6,12 +6,20 @@ import { findOrCreateUserByChannel } from "../../../../services/user-service";
 import {
   downloadMedia,
   sendWhatsAppMessage,
+  sendWhatsAppMessages,
 } from "../../../../vendors/whatsapp.vendor";
 import { transcribeAudio } from "../../../../vendors/whisper.vendor";
-import { extractTextFromImage, extractTextFromPdf } from "../../../../vendors/llm.vendor";
+import {
+  extractTextFromImage,
+  extractTextFromPdf,
+} from "../../../../vendors/llm.vendor";
 import { canUseAudio, canUseImage } from "../../../../core/limits";
 import { canPractice } from "../../../../core/access";
-import { formatUpgradePrompt, formatImageNoText, formatPlanExpired } from "../../../../core/formatters";
+import {
+  formatUpgradePrompt,
+  formatImageNoText,
+  formatPlanExpired,
+} from "../../../../core/formatters";
 import { IncomingMessage } from "../../../../types/domain";
 import {
   verifyMetaSignature,
@@ -91,8 +99,14 @@ export async function POST(req: NextRequest): Promise<Response> {
           }
         }
 
-        const { buffer, mimeType, fileSize } = await downloadMedia(message.audio.id);
-        const { text: transcription, duration, format } = await transcribeAudio(buffer, mimeType);
+        const { buffer, mimeType, fileSize } = await downloadMedia(
+          message.audio.id,
+        );
+        const {
+          text: transcription,
+          duration,
+          format,
+        } = await transcribeAudio(buffer, mimeType);
 
         const input: IncomingMessage = isVoiceNote
           ? { ...base, text: transcription }
@@ -110,7 +124,7 @@ export async function POST(req: NextRequest): Promise<Response> {
             };
 
         const replies = await handleIncomingMessage(input);
-        for (const r of replies) await sendWhatsAppMessage(wa_id, r);
+        await sendWhatsAppMessages(wa_id, replies);
         return;
       }
 
@@ -120,7 +134,9 @@ export async function POST(req: NextRequest): Promise<Response> {
           await sendWhatsAppMessage(wa_id, formatUpgradePrompt("image"));
           return;
         }
-        const { buffer, mimeType, fileSize } = await downloadMedia(message.image.id);
+        const { buffer, mimeType, fileSize } = await downloadMedia(
+          message.image.id,
+        );
         const visionResult = await extractTextFromImage(buffer, user.id);
 
         if (visionResult.transcription_type === "description") {
@@ -142,7 +158,7 @@ export async function POST(req: NextRequest): Promise<Response> {
           },
         };
         const replies = await handleIncomingMessage(input);
-        for (const r of replies) await sendWhatsAppMessage(wa_id, r);
+        await sendWhatsAppMessages(wa_id, replies);
         return;
       }
 
@@ -156,7 +172,10 @@ export async function POST(req: NextRequest): Promise<Response> {
         }
 
         const mime = message.document.mime_type ?? "";
-        console.log("[WA WEBHOOK] document received", { mime, messageId: message.id });
+        console.log("[WA WEBHOOK] document received", {
+          mime,
+          messageId: message.id,
+        });
 
         if (TEXT_MIME_TYPES.has(mime) || mime.startsWith("text/")) {
           const { buffer } = await downloadMedia(message.document.id);
@@ -168,7 +187,7 @@ export async function POST(req: NextRequest): Promise<Response> {
             mediaMetadata: { media_type: "text" },
           };
           const replies = await handleIncomingMessage(input);
-          for (const r of replies) await sendWhatsAppMessage(wa_id, r);
+          await sendWhatsAppMessages(wa_id, replies);
           return;
         }
 
@@ -183,11 +202,14 @@ export async function POST(req: NextRequest): Promise<Response> {
             mediaMetadata: { media_type: "pdf", size_bytes: fileSize ?? null },
           };
           const replies = await handleIncomingMessage(input);
-          for (const r of replies) await sendWhatsAppMessage(wa_id, r);
+          await sendWhatsAppMessages(wa_id, replies);
           return;
         }
 
-        console.warn("[WA WEBHOOK] unsupported document mime_type, ignoring", { mime, messageId: message.id });
+        console.warn("[WA WEBHOOK] unsupported document mime_type, ignoring", {
+          mime,
+          messageId: message.id,
+        });
         return;
       }
 
@@ -195,16 +217,27 @@ export async function POST(req: NextRequest): Promise<Response> {
       if (message.type === "text" && message.text) {
         input = { ...base, text: message.text.body };
       } else {
-        console.log("[WA WEBHOOK] unsupported message type, ignoring", { type: message.type, messageId: message.id });
+        console.log("[WA WEBHOOK] unsupported message type, ignoring", {
+          type: message.type,
+          messageId: message.id,
+        });
         return;
       }
 
       const replies = await handleIncomingMessage(input);
-      for (const r of replies) await sendWhatsAppMessage(wa_id, r);
+      await sendWhatsAppMessages(wa_id, replies);
     } catch (err) {
-      if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
-        const raw = body as { entry?: Array<{ changes?: Array<{ value?: { messages?: Array<{ id?: string }> } }> }> };
-        const externalId = raw?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id ?? "unknown";
+      if (
+        err instanceof PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
+        const raw = body as {
+          entry?: Array<{
+            changes?: Array<{ value?: { messages?: Array<{ id?: string }> } }>;
+          }>;
+        };
+        const externalId =
+          raw?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id ?? "unknown";
         console.log(`[WEBHOOK] duplicate message ignored ${externalId}`);
         return;
       }
