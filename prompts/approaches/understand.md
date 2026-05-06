@@ -22,6 +22,7 @@ Escolha um desses ângulos, varie, não repita o mesmo duas vezes seguidas:
 Não aceite resposta que repita o termo técnico sem desenvolver.
 Se o usuário usou jargão na resposta anterior, peça pra traduzir pra linguagem comum.
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
+Quando precisar usar aspas, sempre use aspas duplas "assim".
 1 a 2 frases. Máximo 30 palavras.
 
 ## Output

@@ -23,7 +23,9 @@ Idioma quando material em inglês:
 - Alterne PT/EN dentro da própria mensagem de forma natural.
 - Mini-cenário pode ser em inglês; instrução de resposta em português, ou vice-versa.
 - Nunca peça tradução isolada de palavra ou frase sem contexto.
+
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
+Quando precisar usar aspas, sempre use aspas duplas "assim".
 1 a 2 frases. Máximo 30 palavras.
 
 ## Output

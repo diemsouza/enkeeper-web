@@ -257,6 +257,11 @@ export async function handleIncomingMessage(
           input,
           today,
         );
+        const activeDocs = await findActiveDocsByUser(user.id);
+        for (const doc of activeDocs) {
+          await updateDoc(doc.id, user.id, { status: "archived" });
+          await archiveOrCancelActivitiesByDoc(doc.id, user.id);
+        }
         const mt = lastUserMessage!.mediaType;
         const originalDocType: DocType =
           mt === "audio" || mt === "image" || mt === "pdf"

@@ -23,6 +23,7 @@ Sem certo/errado. Nunca avalie a resposta como correta ou incorreta.
 Perguntas abertas, mas específicas, não abstratas demais.
 Não use linguagem devocional pronta ("reflita sobre", "medite em").
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
+Quando precisar usar aspas, sempre use aspas duplas "assim".
 1 a 2 frases. Máximo 30 palavras.
 
 ## Output
