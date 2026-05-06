@@ -64,8 +64,8 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
   for (const other of otherDocs) {
     if (other.id !== docId) {
       await updateDoc(other.id, userId, { status: "archived" });
-      await archiveOrCancelActivitiesByDoc(other.id, userId);
     }
+    await archiveOrCancelActivitiesByDoc(other.id, userId);
   }
 
   const now = new Date();
