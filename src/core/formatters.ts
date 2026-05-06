@@ -82,7 +82,7 @@ export function formatNoDocs(): string {
 }
 
 export function formatDocReceived(): string {
-  return "Recebido! Estou preparando seu conteúdo. Em breve te mando a primeira mensagem sobre ele.";
+  return "Recebido! Estou preparando seu conteúdo. Já te chamo para praticar.";
 }
 
 export function formatDocConfirmPrompt(): string {

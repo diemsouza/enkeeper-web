@@ -4,6 +4,7 @@ export const MIN_WORDS = 50;
 export const MIN_UNIQUE_WORDS = 30;
 export const MIN_UNIQUE_RATIO = 0.3;
 export const NEXT_MESSAGE_INTERVAL_MIN = 30;
+export const FIRST_MESSAGE_INTERVAL_MIN = 3;
 export const LOCALES = ["pt-BR", "en-US"];
 export const DEFAULT_LOCALE = "pt-BR";
 export const DEFAULT_CURRENCY = "BRL";

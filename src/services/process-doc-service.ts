@@ -10,7 +10,10 @@ import { generateDocTopics, generateQuestions } from "../vendors/llm.vendor";
 import { findUserChannelByUserId } from "../repo/users.repo";
 import { saveMessage } from "../repo/messages.repo";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
-import { NEXT_MESSAGE_INTERVAL_MIN } from "../lib/constants";
+import {
+  FIRST_MESSAGE_INTERVAL_MIN,
+  NEXT_MESSAGE_INTERVAL_MIN,
+} from "../lib/constants";
 
 export async function processDoc(docId: string, userId: string): Promise<void> {
   const doc = await findDocById(docId, userId);
@@ -67,7 +70,9 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
 
   const now = new Date();
   const intervalMinutes = NEXT_MESSAGE_INTERVAL_MIN;
-  const nextMessageAt = new Date(now.getTime() + intervalMinutes * 60 * 1000);
+  const nextMessageAt = new Date(
+    now.getTime() + FIRST_MESSAGE_INTERVAL_MIN * 60 * 1000,
+  );
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const activity = await createActivity({
@@ -90,6 +95,8 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
 
   if (questions && questions.length > 0) {
     await createQuestions(activity.id, questions);
-    await updateActivity(activity.id, userId, { questionCount: questions.length });
+    await updateActivity(activity.id, userId, {
+      questionCount: questions.length,
+    });
   }
 }
