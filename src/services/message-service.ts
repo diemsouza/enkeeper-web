@@ -1,4 +1,4 @@
-import { DocType } from "@prisma/client";
+import { DocType, QuestionStatus } from "@prisma/client";
 import { parseMessage } from "../core/parser";
 import { canPractice } from "../core/access";
 import { canUploadDoc } from "../core/limits";
@@ -64,8 +64,9 @@ import {
   updateQuestion,
 } from "../repo/questions.repo";
 import { validateContent } from "../core/validate-content";
-import { MIN_DOC_CHARS, PRACTICING_UNTIL_MIN } from "../lib/constants";
+import { MIN_DOC_CHARS, INTENSIVE_UNTIL_MIN } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
+import { completeRoundZero } from "./activity-cron.service";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
@@ -153,6 +154,20 @@ export async function handleIncomingMessage(
       const cmdReply = formatCommandList();
       await saveBotReply(user.id, userChannel.id, cmdReply, today);
       return [cmdReply];
+    }
+    if (parsed.intent === "list_docs") {
+      await saveUserMsg(
+        user.id,
+        userChannel.id,
+        text,
+        "list_docs",
+        input,
+        today,
+      );
+      const activities = await findActivitiesForDocsList(user.id);
+      const docsReply = formatDocsList(activities);
+      await saveBotReply(user.id, userChannel.id, docsReply, today);
+      return [docsReply];
     }
     if (parsed.intent === "support") {
       await saveUserMsg(user.id, userChannel.id, text, "support", input, today);
@@ -460,7 +475,7 @@ export async function handleIncomingMessage(
         break;
       }
       const intensiveUntil = new Date(
-        Date.now() + PRACTICING_UNTIL_MIN * 60 * 1000,
+        Date.now() + INTENSIVE_UNTIL_MIN * 60 * 1000,
       );
       await updateActivity(activeActivity.id, user.id, { intensiveUntil });
       const alreadyPending = await findPendingQuestion(activeActivity.id);
@@ -473,7 +488,9 @@ export async function handleIncomingMessage(
           input,
           today,
         );
-        return [formatIntensiveModeActivated()];
+        const reply = formatIntensiveModeActivated();
+        await saveBotReply(user.id, userChannel.id, reply, today);
+        return [reply];
       }
       const practiceDoc = await findDocById(activeActivity.docId, user.id);
       if (!practiceDoc) {
@@ -665,7 +682,11 @@ export async function resolveNextQuestion(
   docId: string,
   lastQuestionId: string | null,
   questionRound: number,
-): Promise<{ id: string; question: string } | null> {
+): Promise<{
+  id: string;
+  question: string;
+  status: QuestionStatus | null;
+} | null> {
   if (questionRound === 0) {
     const unanswered = await findNextUnansweredQuestion(docId, lastQuestionId);
     if (unanswered) return unanswered;
@@ -715,33 +736,14 @@ async function handleIntensiveNextQuestion(
       return [];
     }
 
-    await updateActivity(activityId, userId, {
-      questionRound: 1,
-      intensiveUntil: null,
-    });
-    const completionMsg = formatPracticeComplete();
-    await saveMessage({
-      userId,
-      userChannelId,
+    const completionMsg = await completeRoundZero(
       activityId,
-      role: "assistant",
-      content: completionMsg,
-      intent: "practice_complete",
-    });
-    await incrementAgentMessageCount(userId, today);
+      userId,
+      today,
+      userChannelId,
+      userChannelId,
+    );
 
-    const next = await findNextGeneralQuestion(docId, lastId);
-    if (next) {
-      const questionReplies = await sendIntensiveQuestion(
-        next,
-        activityId,
-        userId,
-        userChannelId,
-        executionCount,
-        today,
-      );
-      return [completionMsg, ...questionReplies];
-    }
     return [completionMsg];
   }
 

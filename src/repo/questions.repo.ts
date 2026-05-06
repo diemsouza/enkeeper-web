@@ -1,4 +1,9 @@
-import { Question, QuestionStatus, AnswerType, QuestionType } from "@prisma/client";
+import {
+  Question,
+  QuestionStatus,
+  AnswerType,
+  QuestionType,
+} from "@prisma/client";
 import { prisma } from "../lib/prisma";
 
 type CreateQuestionData = {
@@ -44,13 +49,16 @@ export async function findNextGeneralQuestion(
     activity: { docId, deletedAt: null },
   };
   const nullFirst = await prisma.question.findFirst({
-    where: { ...baseWhere, status: null },
+    where: {
+      ...baseWhere,
+      OR: [{ status: null }, { NOT: { status: "right" } }],
+    },
     orderBy: { updatedAt: "desc" },
   });
   if (nullFirst) return nullFirst;
   return prisma.question.findFirst({
     where: baseWhere,
-    orderBy: { updatedAt: "desc" },
+    orderBy: { updatedAt: "asc" },
   });
 }
 
@@ -65,7 +73,9 @@ export async function hasWrongOrPartial(docId: string): Promise<boolean> {
   return count > 0;
 }
 
-export async function findPendingQuestion(activityId: string): Promise<Question | null> {
+export async function findPendingQuestion(
+  activityId: string,
+): Promise<Question | null> {
   return prisma.question.findFirst({
     where: { activityId, status: "pending", deletedAt: null },
     orderBy: { updatedAt: "desc" },

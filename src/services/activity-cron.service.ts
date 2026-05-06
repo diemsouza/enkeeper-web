@@ -23,7 +23,7 @@ import {
   NEXT_MESSAGE_INTERVAL_MIN,
   DOC_PROCESSING_TIMEOUT_MS,
 } from "../lib/constants";
-import { Activity } from "@prisma/client";
+import { Activity, QuestionStatus } from "@prisma/client";
 
 type CronResult = {
   processed: number;
@@ -72,42 +72,6 @@ export async function processActivityCron(): Promise<CronResult> {
             today.setHours(0, 0, 0, 0);
             await incrementAgentMessageCount(activity.userId, today);
           }
-        }
-        skipped++;
-        continue;
-      }
-
-      const ACTIVITY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-      if (Date.now() - activity.createdAt.getTime() > ACTIVITY_MAX_AGE_MS) {
-        await updateActivity(activity.id, activity.userId, {
-          status: "archived",
-        });
-        const now = new Date();
-        const intervalMinutes = NEXT_MESSAGE_INTERVAL_MIN;
-        const nextMessageAt = new Date(
-          now.getTime() + intervalMinutes * 60 * 1000,
-        );
-        const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        try {
-          await createActivity({
-            userId: activity.userId,
-            docId: activity.docId,
-            date,
-            nextMessageAt,
-            intervalMinutes,
-            status: "active",
-            approach: activity.approach,
-            approachConfidence: activity.approachConfidence,
-            approachOverride: activity.approachOverride ?? undefined,
-            questionRound: activity.questionRound,
-            questionCount: activity.questionCount,
-          });
-        } catch (err: unknown) {
-          const isPrismaUnique =
-            err instanceof Error &&
-            "code" in err &&
-            (err as { code: string }).code === "P2002";
-          if (!isPrismaUnique) throw err;
         }
         skipped++;
         continue;
@@ -215,7 +179,11 @@ async function selectNextQuestion(
   today: Date,
   channelId: string,
   userChannelId: string,
-): Promise<{ id: string; question: string } | null> {
+): Promise<{
+  id: string;
+  question: string;
+  status: QuestionStatus | null;
+} | null> {
   const lastId = activity.lastQuestionId;
 
   if (activity.questionRound === 0) {
@@ -227,32 +195,40 @@ async function selectNextQuestion(
       return findNextGeneralQuestion(activity.docId, lastId);
     }
 
-    await completeRoundZero(activity, today, channelId, userChannelId);
+    await completeRoundZero(
+      activity.id,
+      activity.userId,
+      today,
+      channelId,
+      userChannelId,
+    );
     return findNextGeneralQuestion(activity.docId, lastId);
   }
 
   return findNextGeneralQuestion(activity.docId, lastId);
 }
 
-async function completeRoundZero(
-  activity: Activity,
+export async function completeRoundZero(
+  activityId: string,
+  userId: string,
   today: Date,
   channelId: string,
   userChannelId: string,
-): Promise<void> {
-  await updateActivity(activity.id, activity.userId, {
+): Promise<string> {
+  await updateActivity(activityId, userId, {
     questionRound: 1,
     intensiveUntil: null,
   });
   const msg = formatPracticeComplete();
   await sendWhatsAppMessage(channelId, msg);
   await saveMessage({
-    userId: activity.userId,
+    userId: userId,
     userChannelId,
-    activityId: activity.id,
+    activityId: activityId,
     role: "assistant",
     content: msg,
     intent: "practice_complete",
   });
-  await incrementAgentMessageCount(activity.userId, today);
+  await incrementAgentMessageCount(userId, today);
+  return msg;
 }
