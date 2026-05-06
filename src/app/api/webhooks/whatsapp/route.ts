@@ -60,10 +60,16 @@ export async function POST(req: NextRequest): Promise<Response> {
       };
 
       const value = payload?.entry?.[0]?.changes?.[0]?.value;
-      if (!value?.messages?.length) return;
+      if (!value?.messages?.length) {
+        console.log("[WA WEBHOOK] no messages in payload, skipping");
+        return;
+      }
 
       const wa_id = value.contacts?.[0]?.wa_id;
-      if (!wa_id) return;
+      if (!wa_id) {
+        console.log("[WA WEBHOOK] no wa_id in payload, skipping");
+        return;
+      }
 
       const contactName = value.contacts?.[0]?.profile?.name;
       const message = value.messages[0];
@@ -140,7 +146,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         return;
       }
 
-      const TEXT_MIME_TYPES = new Set(["text/plain", "text/markdown", "application/octet-stream"]);
+      const TEXT_MIME_TYPES = new Set(["application/octet-stream"]);
 
       if (message.type === "document" && message.document) {
         const docUser = await findOrCreateUserByChannel("whatsapp", wa_id);
@@ -150,8 +156,9 @@ export async function POST(req: NextRequest): Promise<Response> {
         }
 
         const mime = message.document.mime_type ?? "";
+        console.log("[WA WEBHOOK] document received", { mime, messageId: message.id });
 
-        if (TEXT_MIME_TYPES.has(mime)) {
+        if (TEXT_MIME_TYPES.has(mime) || mime.startsWith("text/")) {
           const { buffer } = await downloadMedia(message.document.id);
           const input: IncomingMessage = {
             ...base,
@@ -180,6 +187,7 @@ export async function POST(req: NextRequest): Promise<Response> {
           return;
         }
 
+        console.warn("[WA WEBHOOK] unsupported document mime_type, ignoring", { mime, messageId: message.id });
         return;
       }
 
@@ -187,6 +195,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       if (message.type === "text" && message.text) {
         input = { ...base, text: message.text.body };
       } else {
+        console.log("[WA WEBHOOK] unsupported message type, ignoring", { type: message.type, messageId: message.id });
         return;
       }
 

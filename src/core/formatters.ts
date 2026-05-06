@@ -130,7 +130,7 @@ export function formatResumePrompt(docs: Pick<Doc, "id" | "title">[]): string {
 }
 
 export function formatResumeSuccess(): string {
-  return "Prática retomada. As perguntas voltam no próximo horário programado.";
+  return "Prática retomada. Vamos continuar de onde parou!";
 }
 
 export function formatNoPausedDocs(): string {
