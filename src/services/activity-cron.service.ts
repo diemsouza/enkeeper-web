@@ -15,12 +15,17 @@ import { findUserChannelByUserId, findUserById } from "../repo/users.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import {
-  formatPracticeNudge,
+  formatFirstPracticeNudge,
+  formatLastPracticeNudge,
   formatPracticeComplete,
 } from "../core/formatters";
 import { canPractice } from "../core/access";
-import { DOC_PROCESSING_TIMEOUT_MS } from "../lib/constants";
+import {
+  DOC_PROCESSING_TIMEOUT_MS,
+  NUDGE_INTERVAL_HOURS,
+} from "../lib/constants";
 import { Activity, QuestionStatus } from "@prisma/client";
+import { startOfDay } from "date-fns";
 
 type CronResult = {
   processed: number;
@@ -65,8 +70,7 @@ export async function processActivityCron(): Promise<CronResult> {
               content: msg,
               intent: "system_error",
             });
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            const today = startOfDay(new Date());
             await incrementAgentMessageCount(activity.userId, today);
           }
         }
@@ -80,16 +84,46 @@ export async function processActivityCron(): Promise<CronResult> {
       }
 
       const lastMsg = await findLastActivityMessage(activity.id);
+
       if (
         lastMsg?.role === "assistant" &&
-        lastMsg.intent === "practice_question"
+        (lastMsg.intent === "practice_question" ||
+          lastMsg.intent === "practice_nudge")
       ) {
         const userChannel = await findUserChannelByUserId(activity.userId);
         if (!userChannel) {
           skipped++;
           continue;
         }
-        const nudge = formatPracticeNudge();
+
+        const alreadyNudged = lastMsg.intent === "practice_nudge";
+
+        if (alreadyNudged) {
+          if (activity.nextMessageAt) {
+            const nudge = formatLastPracticeNudge();
+            await sendWhatsAppMessage(userChannel.channelId, nudge);
+            await saveMessage({
+              userId: activity.userId,
+              userChannelId: userChannel.id,
+              activityId: activity.id,
+              role: "assistant",
+              content: nudge,
+              intent: "practice_nudge",
+            });
+            const today = startOfDay(new Date());
+            await incrementAgentMessageCount(activity.userId, today);
+            await updateActivity(activity.id, activity.userId, {
+              waitingUser: true,
+              nextMessageAt: null,
+            });
+            processed++;
+          } else {
+            skipped++;
+          }
+          continue;
+        }
+
+        const nudge = formatFirstPracticeNudge();
         await sendWhatsAppMessage(userChannel.channelId, nudge);
         await saveMessage({
           userId: activity.userId,
@@ -99,13 +133,12 @@ export async function processActivityCron(): Promise<CronResult> {
           content: nudge,
           intent: "practice_nudge",
         });
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = startOfDay(new Date());
         await incrementAgentMessageCount(activity.userId, today);
         await updateActivity(activity.id, activity.userId, {
           waitingUser: true,
           nextMessageAt: new Date(
-            Date.now() + activity.intervalMinutes * 60 * 1000,
+            Date.now() + NUDGE_INTERVAL_HOURS * 60 * 60 * 1000,
           ),
         });
         processed++;
@@ -123,8 +156,7 @@ export async function processActivityCron(): Promise<CronResult> {
         continue;
       }
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = startOfDay(new Date());
 
       const question = await selectNextQuestion(
         activity,

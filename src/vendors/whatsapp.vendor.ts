@@ -1,4 +1,4 @@
-import { SEQUENCE_WA_MESSAGE_INTERVAL_SEG } from "../lib/constants";
+import { SEQUENCE_WA_MESSAGE_INTERVAL_SEC } from "../lib/constants";
 
 type MediaDownloadResult = {
   buffer: Buffer;
@@ -46,7 +46,7 @@ export async function sendWhatsAppMessages(
   for (let i = 0; i < texts.length; i++) {
     if (i > 0)
       await new Promise((resolve) =>
-        setTimeout(resolve, SEQUENCE_WA_MESSAGE_INTERVAL_SEG * 1000),
+        setTimeout(resolve, SEQUENCE_WA_MESSAGE_INTERVAL_SEC * 1000),
       );
     await sendWhatsAppMessage(to, texts[i]);
   }

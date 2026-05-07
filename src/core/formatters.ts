@@ -1,21 +1,19 @@
 import { Doc, ActivityStatus } from "@prisma/client";
 
-export function formatOnboardingMessage(): string {
-  return [
-    "Olá! Bem-vindo ao *Dropuz*. 👋",
-    "",
-    "Seu conteúdo de estudo, ativo o dia inteiro no WhatsApp.",
-    "",
-    "Mande o conteúdo do seu interesse - texto, áudio, foto ou PDF. Pode ser aula de inglês, lista de questões, capítulo de livro, resumo de matéria.",
-    "",
-    "No seu ritmo, durante o dia, as mensagens chegam pra você praticar.",
-    "",
-    "_Mande agora pra começar. Ou use */* para ver os comandos disponíveis._",
-  ].join("\n");
+export function formatOnboardingMsg1(): string {
+  return "Hi! Bem-vindo ao *Dropuz*. 👋";
 }
 
-export function formatTrialWelcome(): string {
-  return "Você tem acesso completo ao *Dropuz* por 24 horas. Aproveite para mandar seu primeiro conteúdo e sentir na prática.";
+export function formatOnboardingMsg2(): string {
+  return "Manda o material da sua aula de inglês — texto, áudio, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.";
+}
+
+export function formatOnboardingMsg3(): string {
+  return "Você tem 24 horas de acesso completo. Aproveite pra sentir na prática.";
+}
+
+export function formatOnboardingMsg4(): string {
+  return "Mande agora pra começar. Ou use */* pra ver os comandos disponíveis.";
 }
 
 export function formatPlanExpired(): string {
@@ -32,12 +30,12 @@ export function formatCommandList(): string {
   return [
     "*Comandos disponíveis:*",
     "",
-    "*/* - ver essa lista de comandos",
-    "*/conteudo* - seu conteúdo atual",
+    "*/ajuda* - ver essa lista de comandos",
     "*/praticar* - prática intensiva",
     "*/pausar* - pausar prática",
     "*/retomar* - retomar prática pausada",
-    "*/suporte* - falar com suporte",
+    "*/conteudo* - seu conteúdo atual",
+    "*/suporte* - fala com a equipe",
     "",
     "_Mande um texto, áudio, imagem ou PDF com conteúdo relevante para praticar._",
   ].join("\n");
@@ -82,7 +80,10 @@ export function formatNoDocs(): string {
 }
 
 export function formatDocReceived(): string {
-  return "Recebido! Estou preparando seu conteúdo. Já te chamo para praticar.";
+  return [
+    "Em alguns minutos chega a primeira pergunta. Responde de cabeça, sem consultar - o sistema avalia e guarda o que travou pra reforçar depois.",
+    "Se quiser praticar em sequência agora, use /praticar ou apenas aguarde.",
+  ].join("\n");
 }
 
 export function formatDocConfirmPrompt(): string {
@@ -157,8 +158,12 @@ export function formatPracticeComplete(): string {
   return "Você respondeu todas as perguntas dessa rodada. Manda novo conteúdo ou continue praticando.";
 }
 
-export function formatPracticeNudge(): string {
-  return "Oi! Vi que não respondeu a última mensagem. Sem pressão, quando quiser continuar é só responder ou subir um novo conteúdo.";
+export function formatFirstPracticeNudge(): string {
+  return "Ainda dá tempo de responder. Quando quiser, é só mandar.";
+}
+
+export function formatLastPracticeNudge(): string {
+  return "Sua prática está pausada. Quando quiser continuar, é só responder ou mandar novo conteúdo.";
 }
 
 export function formatImageNoText(): string {

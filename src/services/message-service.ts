@@ -14,14 +14,16 @@ import {
   formatResumePrompt,
   formatResumeSuccess,
   formatNoPausedDocs,
-  formatOnboardingMessage,
-  formatTrialWelcome,
   formatPlanExpired,
   formatSupportRequest,
   formatSupportReceived,
   formatDailyLimitReached,
   formatNoDocs,
   formatIntensiveModeActivated,
+  formatOnboardingMsg1,
+  formatOnboardingMsg2,
+  formatOnboardingMsg3,
+  formatOnboardingMsg4,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import {
@@ -66,6 +68,7 @@ import { validateContent } from "../core/validate-content";
 import { MIN_DOC_CHARS, INTENSIVE_UNTIL_MIN } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
+import { startOfDay } from "date-fns";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
@@ -90,7 +93,7 @@ export async function handleIncomingMessage(
     (c) => c.channelId === input.channelId,
   )!;
   const text = input.text ?? "";
-  const today = todayDate();
+  const today = startOfDay(new Date());
 
   // Atualiza nome do usuário se veio pelo canal e ainda não está salvo
   if (input.contactName && !user.name) {
@@ -191,11 +194,16 @@ export async function handleIncomingMessage(
   if (!user.onboardedAt) {
     await markUserOnboarded(user.id);
     await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
-    const welcome = formatOnboardingMessage();
-    const trial = formatTrialWelcome();
-    await saveBotReply(user.id, userChannel.id, welcome, today);
-    await saveBotReply(user.id, userChannel.id, trial, today);
-    return [welcome, trial];
+    const msgs = [
+      formatOnboardingMsg1(),
+      formatOnboardingMsg2(),
+      formatOnboardingMsg3(),
+      formatOnboardingMsg4(),
+    ];
+    for (const msg of msgs) {
+      await saveBotReply(user.id, userChannel.id, msg, today);
+    }
+    return msgs;
   }
 
   // ─── Mídia → cria Doc ──────────────────────────────────────────────────────
@@ -794,12 +802,6 @@ async function sendIntensiveQuestion(
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function todayDate(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
 
 async function saveUserMsg(
   userId: string,

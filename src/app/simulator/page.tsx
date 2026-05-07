@@ -6,6 +6,7 @@ import { WhatsAppChat } from "../../components/whatsapp-chat";
 import { useScrollToBottom } from "../../hooks/use-scroll-to-bottom";
 import { http } from "../../lib/http";
 import { Input } from "@/src/components/ui/input";
+import { startOfDay } from "date-fns";
 
 interface Message {
   from: "user" | "bot";
@@ -15,18 +16,18 @@ interface Message {
 
 type ApiMessage = { role: string; content: string; createdAt: string };
 
-function todayMidnight(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
 function nowTime(): string {
-  return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return new Date().toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function mapApiMessages(raw: ApiMessage[]): Message[] {
@@ -68,7 +69,7 @@ export default function SimulatorPage() {
     if (!channelId) return;
     try {
       const res = (await http(
-        `/api/dev/messages?channelId=${encodeURIComponent(channelId)}&after=${encodeURIComponent(todayMidnight())}`,
+        `/api/dev/messages?channelId=${encodeURIComponent(channelId)}&after=${encodeURIComponent(startOfDay(new Date()).toISOString())}`,
       )) as { messages: ApiMessage[] };
       const mapped = mapApiMessages(res.messages);
       setMessages(mapped);
@@ -115,7 +116,10 @@ export default function SimulatorPage() {
       await fetchAll();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido";
-      setMessages((prev) => [...prev, { from: "bot", text: `⚠️ ${msg}`, time: nowTime() }]);
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: `⚠️ ${msg}`, time: nowTime() },
+      ]);
     } finally {
       setLoading(false);
       scrollToBottom("smooth");
@@ -136,7 +140,9 @@ export default function SimulatorPage() {
       <div className="flex items-center gap-4 text-sm text-gray-600">
         <span className="flex items-center gap-1.5 font-medium">
           Canal
-          <code className="bg-gray-200 px-2 py-1 rounded text-xs">whatsapp</code>
+          <code className="bg-gray-200 px-2 py-1 rounded text-xs">
+            whatsapp
+          </code>
         </span>
         <label className="flex items-center gap-1.5 font-medium">
           ID
@@ -150,7 +156,10 @@ export default function SimulatorPage() {
       </div>
 
       {!!messages.length && (
-        <div ref={containerRef} className="overflow-y-auto max-h-[80vh] w-full md:w-[480px]">
+        <div
+          ref={containerRef}
+          className="overflow-y-auto max-h-[80vh] w-full md:w-[480px]"
+        >
           <WhatsAppChat messages={messages} />
           <div ref={endRef} />
         </div>
