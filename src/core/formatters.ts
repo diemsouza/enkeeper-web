@@ -47,7 +47,9 @@ type ActivityDocItem = {
 };
 
 export function formatDocsList(activities: ActivityDocItem[]): string {
-  const current = activities.filter((a) => a.status === "active");
+  const current = activities.filter((a) =>
+    ["active", "paused"].includes(a.status),
+  );
   const archived = activities
     .filter((a) => a.status === "archived")
     .slice(0, 3);

@@ -168,7 +168,11 @@ export async function findActivitiesForDocsList(
   userId: string,
 ): Promise<ActivityWithDoc[]> {
   return prisma.activity.findMany({
-    where: { userId, status: { in: ["active", "archived"] }, deletedAt: null },
+    where: {
+      userId,
+      status: { in: ["active", "paused", "archived"] },
+      deletedAt: null,
+    },
     include: { doc: { select: { id: true, title: true, status: true } } },
     orderBy: { createdAt: "desc" },
   }) as Promise<ActivityWithDoc[]>;
