@@ -5,7 +5,7 @@ export function formatOnboardingMsg1(): string {
 }
 
 export function formatOnboardingMsg2(): string {
-  return "Manda o material da sua aula de inglês — texto, áudio, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.";
+  return "Manda o material da sua aula de inglês como texto, áudio, foto ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo.";
 }
 
 export function formatOnboardingMsg3(): string {

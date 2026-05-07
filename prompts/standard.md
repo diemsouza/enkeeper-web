@@ -1,4 +1,4 @@
-# Prompt Standard — Dropuz
+# Prompt Standard - Dropuz
 
 Todo prompt segue esta estrutura em inglês. Conteúdo em português.
 

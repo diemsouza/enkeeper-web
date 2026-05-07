@@ -158,4 +158,4 @@ Exceção: instruções simples que resolvem em poucas linhas não precisam da e
 - Comentários apenas para: TODOs, justificativa de regra de negócio não óbvia, quirks de API externa
 - Código precisa seguir o padrão, clean, aspas duplas e ponto e virgula no final.
 - Sempre rode npm run build no final e ajuste o que tiver quebrado.
-- Nuca use o — (travessão) em nenhum lugar, nem texto nem código nem comentário!
+- NUNCA use o — (travessão) geralmente gerado por IA em nenhum lugar, nem texto, nem código, nem comentário, nem doc (nenhum lugar)!
