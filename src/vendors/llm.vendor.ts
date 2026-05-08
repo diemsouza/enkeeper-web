@@ -1,7 +1,6 @@
 import { generateText, NoObjectGeneratedError, Output } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { extractText } from "unpdf";
-import { Doc } from "@prisma/client";
 import {
   docProcessingSchema,
   DocProcessingResult,
@@ -11,16 +10,12 @@ import {
   SectionQuestionResult,
   answerEvaluationSchema,
   AnswerEvaluationResult,
-  practiceMessageSchema,
-  PracticeMessageOutput,
 } from "../lib/llm-schemas";
 import { parseJsonWithFallback } from "../lib/json-utils";
 import { llmUsageService } from "../services/llm-usage-service";
-import { Approach } from "../core/approach";
 import {
   VOICE_PROMPT,
   DOC_EXTRACTION_PROMPT,
-  APPROACH_PROMPTS,
   ANSWER_EVALUATION_PROMPT,
   GEN_VOCABULARY_PROMPT,
   GEN_TEXT_PROMPT,
@@ -70,110 +65,6 @@ export async function generateDocTopics(params: {
     userId,
     docId,
     usageType: "topic_extraction",
-    provider: "openai",
-    model: MODEL,
-    inputTokens,
-    outputTokens,
-    cachedTokens,
-  });
-
-  return result;
-}
-
-// ─── Practice message generation ─────────────────────────────────────────────
-
-const APPROACH = APPROACH_PROMPTS as Record<Approach, string>;
-
-export function buildPracticeMessagePrompt(
-  approach: Approach,
-  input: {
-    doc: Pick<Doc, "content" | "topicsData">;
-    currentTopic: string;
-    lastAnswer: string;
-    recentFormats?: [string, string, string];
-  },
-): string {
-  const topics = input.doc.topicsData as string[];
-  const [f1, f2, f3] = input.recentFormats ?? [
-    "(nenhum)",
-    "(nenhum)",
-    "(nenhum)",
-  ];
-  return APPROACH[approach]
-    .replace("{voice}", VOICE_PROMPT)
-    .replace(
-      "{excerpt}",
-      `${input.doc.content.slice(0, 1200)}\nTópicos: ${topics.join(", ")}`,
-    )
-    .replace("{topic}", input.currentTopic)
-    .replace("{last_answer}", input.lastAnswer || "(nenhuma)")
-    .replace("{format_1}", f1)
-    .replace("{format_2}", f2)
-    .replace("{format_3}", f3);
-}
-
-export async function generatePracticeMessage(params: {
-  topic: string;
-  lastUserReply: string | null;
-  doc: Pick<Doc, "content" | "topicsData">;
-  topicIndex: number;
-  totalTopics: number;
-  userId: string;
-  docId: string;
-  approach: Approach;
-  recentFormats?: [string, string, string];
-}): Promise<PracticeMessageOutput | null> {
-  const {
-    topic,
-    lastUserReply,
-    doc,
-    topicIndex,
-    totalTopics,
-    userId,
-    docId,
-    approach,
-    recentFormats,
-  } = params;
-
-  let inputTokens = 0;
-  let outputTokens = 0;
-  let cachedTokens = 0;
-  let result: PracticeMessageOutput | null = null;
-
-  const prompt = buildPracticeMessagePrompt(approach, {
-    doc,
-    currentTopic: `${topicIndex + 1}/${totalTopics} - ${topic}`,
-    lastAnswer: lastUserReply ?? "",
-    recentFormats,
-  });
-
-  try {
-    const llmResult = await generateText({
-      model: openai(MODEL),
-      output: Output.object({ schema: practiceMessageSchema }),
-      prompt,
-      temperature: 0.5,
-    });
-    inputTokens += llmResult.usage?.inputTokens ?? 0;
-    outputTokens += llmResult.usage?.outputTokens ?? 0;
-    cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
-    result = llmResult.output;
-  } catch (err) {
-    if (NoObjectGeneratedError.isInstance(err) && err.text) {
-      try {
-        result = practiceMessageSchema.parse(
-          parseJsonWithFallback(err.text.trim()),
-        );
-      } catch {
-        // structured parse failed after NoObjectGeneratedError
-      }
-    }
-  }
-
-  await llmUsageService.registerUsage({
-    userId,
-    docId,
-    usageType: "practice_generation",
     provider: "openai",
     model: MODEL,
     inputTokens,

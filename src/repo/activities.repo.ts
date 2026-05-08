@@ -1,8 +1,6 @@
 import {
   Activity,
   Doc,
-  Approach,
-  ApproachConfidence,
   ActivityStatus,
 } from "@prisma/client";
 import { prisma } from "../lib/prisma";
@@ -16,9 +14,6 @@ type CreateActivityData = {
   nextMessageAt?: Date;
   intervalMinutes?: number;
   status?: ActivityStatus;
-  approach?: Approach;
-  approachConfidence?: ApproachConfidence;
-  approachOverride?: Approach;
   questionRound?: number;
   questionCount?: number;
   sectionCount?: number;
@@ -29,9 +24,6 @@ type UpdateActivityData = {
   nextMessageAt?: Date | null;
   intervalMinutes?: number;
   executionCount?: number;
-  approach?: Approach;
-  approachConfidence?: ApproachConfidence;
-  approachOverride?: Approach;
   waitingUser?: boolean;
   interactionCount?: number;
   lastInteractionAt?: Date | null;

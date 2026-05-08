@@ -54,13 +54,11 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     return;
   }
 
-  const sectionTitles = result.sections.map((s) => s.title);
   const combinedContent = result.sections.map((s) => s.content).join("\n\n");
 
   await updateDoc(docId, userId, {
     title: result.title,
     content: combinedContent,
-    topicsData: sectionTitles,
     status: "active",
   });
 

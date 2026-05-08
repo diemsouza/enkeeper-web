@@ -77,11 +77,3 @@ export const answerEvaluationSchema = z.object({
 });
 
 export type AnswerEvaluationResult = z.infer<typeof answerEvaluationSchema>;
-
-export const practiceMessageSchema = z.object({
-  message: z.string(),
-  answer: z.string(),
-  format: z.enum(["gap_fill", "scenario", "production", "reformulation", "choice", "recall"]),
-});
-
-export type PracticeMessageOutput = z.infer<typeof practiceMessageSchema>;

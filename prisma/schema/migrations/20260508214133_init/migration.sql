@@ -20,12 +20,6 @@ CREATE TYPE "DocStatus" AS ENUM ('processing', 'active', 'paused', 'archived', '
 CREATE TYPE "ActivityStatus" AS ENUM ('active', 'paused', 'archived', 'cancelled', 'completed', 'abandoned');
 
 -- CreateEnum
-CREATE TYPE "Approach" AS ENUM ('memorize', 'understand', 'practice', 'discuss', 'reflect');
-
--- CreateEnum
-CREATE TYPE "ApproachConfidence" AS ENUM ('high', 'medium', 'low');
-
--- CreateEnum
 CREATE TYPE "MessageRole" AS ENUM ('user', 'assistant');
 
 -- CreateEnum
@@ -33,6 +27,18 @@ CREATE TYPE "AiProvider" AS ENUM ('openai', 'anthropic', 'google');
 
 -- CreateEnum
 CREATE TYPE "QuestionStatus" AS ENUM ('pending', 'right', 'partial', 'wrong');
+
+-- CreateEnum
+CREATE TYPE "QuestionType" AS ENUM ('text', 'audio');
+
+-- CreateEnum
+CREATE TYPE "AnswerType" AS ENUM ('text', 'audio');
+
+-- CreateEnum
+CREATE TYPE "SectionType" AS ENUM ('vocabulary', 'text', 'exercise');
+
+-- CreateEnum
+CREATE TYPE "SectionStatus" AS ENUM ('pending', 'partial', 'completed');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -92,7 +98,6 @@ CREATE TABLE "docs" (
     "doc_type" "DocType" NOT NULL,
     "raw_content" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "topics_data" JSONB NOT NULL,
     "status" "DocStatus" NOT NULL DEFAULT 'processing',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -111,16 +116,17 @@ CREATE TABLE "activities" (
     "next_message_at" TIMESTAMP(3),
     "interval_minutes" INTEGER NOT NULL DEFAULT 60,
     "execution_count" INTEGER NOT NULL DEFAULT 0,
-    "approach" "Approach" NOT NULL DEFAULT 'discuss',
-    "approach_confidence" "ApproachConfidence" NOT NULL DEFAULT 'medium',
-    "approach_override" "Approach",
     "waiting_user" BOOLEAN NOT NULL DEFAULT false,
     "interaction_count" INTEGER NOT NULL DEFAULT 0,
     "last_interaction_at" TIMESTAMP(3),
     "status" "ActivityStatus" NOT NULL DEFAULT 'active',
     "paused_at" TIMESTAMP(3),
     "completed_at" TIMESTAMP(3),
-    "practicing_until" TIMESTAMP(3),
+    "intensive_until" TIMESTAMP(3),
+    "question_count" INTEGER NOT NULL DEFAULT 0,
+    "section_count" INTEGER NOT NULL DEFAULT 0,
+    "question_round" INTEGER NOT NULL DEFAULT 0,
+    "last_question_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted_at" TIMESTAMP(3),
@@ -146,6 +152,7 @@ CREATE TABLE "llm_usages" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "doc_id" TEXT,
+    "section_id" TEXT,
     "usage_type" TEXT NOT NULL,
     "provider" "AiProvider" NOT NULL DEFAULT 'openai',
     "model" TEXT NOT NULL,
@@ -181,16 +188,38 @@ CREATE TABLE "messages" (
 CREATE TABLE "questions" (
     "id" TEXT NOT NULL,
     "activity_id" TEXT NOT NULL,
+    "section_id" TEXT,
     "question" TEXT NOT NULL,
     "answer_keys" TEXT[],
     "answer" TEXT,
     "status" "QuestionStatus",
     "attempt_count" INTEGER NOT NULL DEFAULT 0,
+    "wrong_count" INTEGER NOT NULL DEFAULT 0,
+    "question_type" "QuestionType" NOT NULL DEFAULT 'text',
+    "answer_type" "AnswerType",
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "questions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "sections" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "doc_id" TEXT,
+    "activity_id" TEXT NOT NULL,
+    "section_type" "SectionType" NOT NULL,
+    "title" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "order" INTEGER NOT NULL,
+    "status" "SectionStatus",
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "sections_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -230,6 +259,9 @@ CREATE INDEX "llm_usages_user_id_idx" ON "llm_usages"("user_id");
 CREATE INDEX "llm_usages_doc_id_idx" ON "llm_usages"("doc_id");
 
 -- CreateIndex
+CREATE INDEX "llm_usages_section_id_idx" ON "llm_usages"("section_id");
+
+-- CreateIndex
 CREATE INDEX "messages_user_id_created_at_idx" ON "messages"("user_id", "created_at");
 
 -- CreateIndex
@@ -240,6 +272,15 @@ CREATE UNIQUE INDEX "messages_user_channel_id_external_id_key" ON "messages"("us
 
 -- CreateIndex
 CREATE INDEX "questions_activity_id_status_idx" ON "questions"("activity_id", "status");
+
+-- CreateIndex
+CREATE INDEX "questions_section_id_idx" ON "questions"("section_id");
+
+-- CreateIndex
+CREATE INDEX "sections_user_id_idx" ON "sections"("user_id");
+
+-- CreateIndex
+CREATE INDEX "sections_activity_id_status_idx" ON "sections"("activity_id", "status");
 
 -- AddForeignKey
 ALTER TABLE "daily_usages" ADD CONSTRAINT "daily_usages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -269,6 +310,9 @@ ALTER TABLE "llm_usages" ADD CONSTRAINT "llm_usages_user_id_fkey" FOREIGN KEY ("
 ALTER TABLE "llm_usages" ADD CONSTRAINT "llm_usages_doc_id_fkey" FOREIGN KEY ("doc_id") REFERENCES "docs"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "llm_usages" ADD CONSTRAINT "llm_usages_section_id_fkey" FOREIGN KEY ("section_id") REFERENCES "sections"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "messages" ADD CONSTRAINT "messages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -279,3 +323,15 @@ ALTER TABLE "messages" ADD CONSTRAINT "messages_activity_id_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "questions" ADD CONSTRAINT "questions_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "questions" ADD CONSTRAINT "questions_section_id_fkey" FOREIGN KEY ("section_id") REFERENCES "sections"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sections" ADD CONSTRAINT "sections_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sections" ADD CONSTRAINT "sections_doc_id_fkey" FOREIGN KEY ("doc_id") REFERENCES "docs"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sections" ADD CONSTRAINT "sections_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

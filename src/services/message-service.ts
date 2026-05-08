@@ -924,7 +924,6 @@ async function createDocFlow(
     docType,
     rawContent,
     content: "",
-    topicsData: [],
     status: "processing",
   });
   await publishDocProcessing(doc.id, userId);

@@ -1,4 +1,4 @@
-import { Doc, DocStatus, DocType, Prisma } from '@prisma/client'
+import { Doc, DocStatus, DocType } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 
 type CreateDocData = {
@@ -8,14 +8,12 @@ type CreateDocData = {
   docType: DocType
   rawContent: string
   content: string
-  topicsData: Prisma.InputJsonValue
   status?: DocStatus
 }
 
 type UpdateDocData = {
   title?: string
   content?: string
-  topicsData?: Prisma.InputJsonValue
   status?: DocStatus
 }
 
