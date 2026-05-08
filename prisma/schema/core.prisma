@@ -64,6 +64,18 @@ enum AnswerType {
     audio
 }
 
+enum SectionType {
+    vocabulary
+    text
+    exercise
+}
+
+enum SectionStatus {
+    pending
+    partial
+    completed
+}
+
 model Doc {
     id         String    @id @default(ulid()) @map("id")
     userId     String    @map("user_id")
@@ -82,6 +94,7 @@ model Doc {
     message    Message?   @relation(fields: [messageId], references: [id])
     activities Activity[]
     llmUsages  LlmUsage[]
+    sections   Section[]
 
     @@index([userId])
     @@index([userId, status])
@@ -118,6 +131,7 @@ model Activity {
     doc       Doc        @relation(fields: [docId], references: [id])
     messages  Message[]
     questions Question[]
+    sections  Section[]
 
     @@unique([userId, docId, date])
     @@index([status, nextMessageAt])
@@ -143,6 +157,7 @@ model LlmUsage {
     id           String     @id @default(ulid()) @map("id")
     userId       String     @map("user_id")
     docId        String?    @map("doc_id")
+    sectionId    String?    @map("section_id")
     // "transcription" | "ocr" | "topic_extraction" | "practice_generation" | "weekly_report"
     usageType    String     @map("usage_type")
     provider     AiProvider @default(openai) @map("provider")
@@ -153,11 +168,13 @@ model LlmUsage {
     cachedTokens Int        @default(0) @map("cached_tokens")
     createdAt    DateTime   @default(now()) @map("created_at")
 
-    user User @relation(fields: [userId], references: [id])
-    doc  Doc? @relation(fields: [docId], references: [id])
+    user    User     @relation(fields: [userId], references: [id])
+    doc     Doc?     @relation(fields: [docId], references: [id])
+    section Section? @relation(fields: [sectionId], references: [id])
 
     @@index([userId])
     @@index([docId])
+    @@index([sectionId])
     @@map("llm_usages")
 }
 
@@ -190,6 +207,7 @@ model Message {
 model Question {
     id           String          @id @default(ulid()) @map("id")
     activityId   String          @map("activity_id")
+    sectionId    String?         @map("section_id")
     question     String          @db.Text
     answerKeys   String[]        @map("answer_keys")
     answer       String?         @db.Text
@@ -202,8 +220,35 @@ model Question {
     updatedAt    DateTime        @updatedAt @map("updated_at")
     deletedAt    DateTime?       @map("deleted_at")
 
-    activity Activity @relation(fields: [activityId], references: [id])
+    activity Activity  @relation(fields: [activityId], references: [id])
+    section  Section?  @relation(fields: [sectionId], references: [id])
 
     @@index([activityId, status])
+    @@index([sectionId])
     @@map("questions")
+}
+
+model Section {
+    id          String         @id @default(ulid()) @map("id")
+    userId      String         @map("user_id")
+    docId       String?        @map("doc_id")
+    activityId  String         @map("activity_id")
+    sectionType SectionType    @map("section_type")
+    title       String         @map("title")
+    content     String         @map("content") @db.Text
+    order       Int            @map("order")
+    status      SectionStatus? @map("status")
+    createdAt   DateTime       @default(now()) @map("created_at")
+    updatedAt   DateTime       @updatedAt @map("updated_at")
+    deletedAt   DateTime?      @map("deleted_at")
+
+    user      User       @relation(fields: [userId], references: [id])
+    doc       Doc?       @relation(fields: [docId], references: [id])
+    activity  Activity   @relation(fields: [activityId], references: [id])
+    questions Question[]
+    llmUsages LlmUsage[]
+
+    @@index([userId])
+    @@index([activityId, status])
+    @@map("sections")
 }

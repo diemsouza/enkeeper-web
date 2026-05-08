@@ -46,6 +46,7 @@ model User {
     llmUsages     LlmUsage[]
     messages      Message[]
     dailyUsages   DailyUsage[]
+    sections      Section[]
 
     @@map("users")
 }
