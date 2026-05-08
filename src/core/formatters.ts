@@ -1,4 +1,5 @@
 import { Doc, ActivityStatus } from "@prisma/client";
+import { sanitizeNoteContent } from "./sanitizer";
 
 export function formatOnboardingMsg1(): string {
   return "Hi! Bem-vindo ao *Dropuz*. 👋";
@@ -59,7 +60,7 @@ export function formatDocsList(activities: ActivityDocItem[]): string {
   const lines: string[] = [];
 
   if (current.length > 0) {
-    lines.push("*Conteúdo atual:*", "");
+    lines.push("*Conteúdo atual:*");
     current.forEach((a) => {
       const label = a.doc.status === "paused" ? "pausado" : "ativo";
       lines.push(`• ${a.doc.title || "(processando...)"} - ${label}`);
@@ -68,7 +69,7 @@ export function formatDocsList(activities: ActivityDocItem[]): string {
 
   if (archived.length > 0) {
     if (lines.length > 0) lines.push("");
-    lines.push("*Arquivados:*", "");
+    lines.push("*Arquivados:*");
     archived.forEach((a) => lines.push(`• ${a.doc.title || "(sem título)"}`));
   }
 
@@ -84,13 +85,13 @@ export function formatNoDocs(): string {
 export function formatDocReceived(): string {
   return [
     "Em alguns minutos chega a primeira pergunta. Responde de cabeça, sem consultar - o sistema avalia e guarda o que travou pra reforçar depois.",
-    "Se quiser praticar em sequência agora, use /praticar ou apenas aguarde.",
+    "Se quiser praticar em sequência agora, use */praticar* ou apenas aguarde.",
   ].join("\n");
 }
 
 export function formatDocConfirmPrompt(): string {
   return [
-    "Esse é um ótimo conteúdo para estudar. Quer usar?",
+    "Esse parece ser um ótimo conteúdo para estudar. Quer usar?",
     "",
     "_Use */sim* para confirmar ou */não* para cancelar._",
   ].join("\n");
@@ -174,6 +175,29 @@ export function formatImageNoText(): string {
 
 export function formatIntensiveModeActivated(): string {
   return "Modo intensivo ativado! Sua pergunta anterior ainda aguarda resposta.";
+}
+
+const START_MESSAGES = [
+  "Vamos praticar!",
+  "Começando agora!",
+  "Hora de praticar!",
+];
+
+const CONTINUE_MESSAGES = [
+  "Continuando!",
+  "Próxima parte!",
+  "Seguindo em frente!",
+  "Vamos lá!",
+  "Próximo!",
+];
+
+export function formatSectionTransition(
+  title: string,
+  isFirst: boolean,
+): string {
+  const pool = isFirst ? START_MESSAGES : CONTINUE_MESSAGES;
+  const prefix = pool[Math.floor(Math.random() * pool.length)];
+  return `${prefix} *${sanitizeNoteContent(title)}*`;
 }
 
 export function formatUpgradePrompt(reason: "audio" | "image"): string {

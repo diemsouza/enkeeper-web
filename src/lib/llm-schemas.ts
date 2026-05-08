@@ -47,24 +47,29 @@ export type VisionResult = z.infer<typeof visionSchema>;
 
 export const docProcessingSchema = z.object({
   title: z.string(),
-  topics: z.array(z.string()),
-  content: z.string(),
-  approach: z.enum(["memorize", "understand", "practice", "discuss", "reflect"]),
-  approachConfidence: z.enum(["high", "medium", "low"]),
   isValid: z.boolean(),
   invalidReason: z.string().nullable(),
+  sections: z.array(
+    z.object({
+      title: z.string(),
+      sectionType: z.enum(["vocabulary", "text", "exercise"]),
+      order: z.number().int(),
+      content: z.string(),
+    }),
+  ),
 });
 
 export type DocProcessingResult = z.infer<typeof docProcessingSchema>;
 
-export const questionExtractionSchema = z.array(
+export const sectionQuestionSchema = z.array(
   z.object({
     question: z.string(),
     answerKeys: z.array(z.string()),
+    format: z.string(),
   }),
 );
 
-export type QuestionExtractionResult = z.infer<typeof questionExtractionSchema>;
+export type SectionQuestionResult = z.infer<typeof sectionQuestionSchema>;
 
 export const answerEvaluationSchema = z.object({
   status: z.enum(["right", "partial", "wrong"]),

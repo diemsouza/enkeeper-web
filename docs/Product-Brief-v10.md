@@ -1,7 +1,7 @@
 # Dropuz — Product Brief
 
 > Documento vivo — base de decisão para produto e negócio.
-> Versão 9 — Maio 2026
+> Versão 10 — Maio 2026
 > Regras de sistema e comportamento técnico em Rules.md.
 
 ---
@@ -29,19 +29,15 @@ Dropuz mantém sua prática ativa no canal onde você já vive, com o conteúdo 
 ## 2. Pitch
 
 **Tagline:**
-
 > Sua aula de inglês tem 30 minutos. Sua prática tem o dia inteiro.
 
 **Subtítulo:**
-
 > Mande o material da sua aula. Pratique o vocabulário o dia todo no WhatsApp.
 
 **Diferencial em uma frase:**
-
 > Seu estudo não termina quando você fecha o caderno.
 
 **Para o professor:**
-
 > Seu aluno estuda 1h por semana com você. Os outros 6 dias e 23 horas, ele esquece. Com o Dropuz, ele pratica todo dia em cima do material que você passou.
 
 ---
@@ -63,7 +59,7 @@ A interseção "prática contextual contínua, ancorada no material do aluno, de
 ## 4. Como funciona
 
 1. Usuário manda material da aula — texto, áudio, imagem ou PDF.
-2. Sistema extrai vocabulário e tópicos, gera perguntas em cima daquele conteúdo.
+2. Sistema identifica seções do material por tipo, gera perguntas específicas por seção.
 3. Durante o dia, perguntas chegam no WhatsApp. Usuário responde de cabeça.
 4. Sistema avalia a resposta, dá feedback natural e registra acerto/erro.
 5. Perguntas erradas ou parciais voltam com prioridade nas próximas rodadas.
@@ -72,7 +68,6 @@ A interseção "prática contextual contínua, ancorada no material do aluno, de
 ### Nível e idioma das perguntas
 
 O sistema calibra pelo nível do material:
-
 - Básico: pergunta em português, termo em inglês
 - Intermediário: misto PT/EN natural
 - Avançado: majoritariamente em inglês
@@ -120,11 +115,11 @@ A arquitetura suporta outros idiomas e matérias sem reescrever. Expansão só a
 
 ### Diretos (AI tutor no WhatsApp)
 
-| Concorrente     | Modelo                             | Diferença                                              |
-| --------------- | ---------------------------------- | ------------------------------------------------------ |
-| **Parlai**      | Cenários pré-definidos, role-play  | Inventam o tema; nós usamos o material do aluno        |
-| **Zaplingo**    | Conversa de inglês, áudio          | Substituto de aula; nós complementamos                 |
-| **ChatClass**   | Aulas estruturadas no WhatsApp     | Curso completo; nós somos prática contextual           |
+| Concorrente | Modelo | Diferença |
+| ----------- | ------ | --------- |
+| **Parlai** | Cenários pré-definidos, role-play | Inventam o tema; nós usamos o material do aluno |
+| **Zaplingo** | Conversa de inglês, áudio | Substituto de aula; nós complementamos |
+| **ChatClass** | Aulas estruturadas no WhatsApp | Curso completo; nós somos prática contextual |
 | **BeConfident** | Curso completo com IA, R$59,90/mês | Substitui professor; nós complementamos qualquer fonte |
 
 Todos competem com aula. Nós complementamos aula. Eixo diferente — e o aluno do BeConfident é exatamente nosso cliente.
@@ -148,7 +143,6 @@ Experiência idêntica ao Pro por 1 dia. Após expirar: conta trancada até conv
 Não é teaser — é o produto inteiro por tempo limitado. Quem sente o valor no dia 1 paga. Quem não sente, não pagaria em nenhum preço.
 
 **Trial estendido como ferramenta de campanha:**
-
 - Padrão: 1 dia
 - Indicação de professor parceiro: 3 dias
 - Campanha sazonal: 7 dias
@@ -174,21 +168,21 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 
 ## 9. Stack técnica
 
-| Camada                                     | Tecnologia                         |
-| ------------------------------------------ | ---------------------------------- |
-| Backend + API                              | Next.js (App Router, API Routes)   |
-| Banco de dados                             | Supabase (PostgreSQL)              |
-| Deploy                                     | Vercel                             |
-| Mensageria                                 | Meta Cloud API (WhatsApp Business) |
-| Transcrição de áudio                       | OpenAI Whisper                     |
-| OCR / Vision                               | GPT-4o-mini Vision                 |
-| Extração de tópicos + geração de perguntas | Claude Haiku ou GPT-4o-mini        |
-| Avaliação de respostas + feedback          | Claude Haiku ou GPT-4o-mini        |
-| Evolução semanal                           | Modelo médio em batch              |
-| Jobs agendados                             | Vercel Cron                        |
-| Pagamento (MVP)                            | Pix manual via /suporte            |
-| Pagamento (futuro)                         | Stripe + recorrência automática    |
-| Número virtual                             | BRDID — (11) 5306-9000             |
+| Camada | Tecnologia |
+| ------ | ---------- |
+| Backend + API | Next.js (App Router, API Routes) |
+| Banco de dados | Supabase (PostgreSQL) |
+| Deploy | Vercel |
+| Mensageria | Meta Cloud API (WhatsApp Business) |
+| Transcrição de áudio | OpenAI Whisper |
+| OCR / Vision | GPT-4o-mini Vision |
+| doc-extraction + geração de perguntas por seção | Claude Haiku ou GPT-4o-mini |
+| Avaliação de respostas + feedback | Claude Haiku ou GPT-4o-mini |
+| Evolução semanal | Modelo médio em batch |
+| Jobs agendados | Vercel Cron |
+| Pagamento (MVP) | Pix manual via /suporte |
+| Pagamento (futuro) | Stripe + recorrência automática |
+| Número virtual | BRDID — (11) 5306-9000 |
 
 ---
 
@@ -196,16 +190,16 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 
 Custo variável por usuário Pro ativo:
 
-| Item                                       | Custo/mês       |
-| ------------------------------------------ | --------------- |
-| WhatsApp API                               | R$0,80–1,20     |
-| Whisper (áudios)                           | R$0,80–1,20     |
-| Vision (imagens e PDFs)                    | R$0,30–0,60     |
-| Extração de tópicos + geração de perguntas | R$0,40–0,70     |
-| Avaliação + feedback                       | R$1,20–1,80     |
-| Evolução semanal (batch)                   | R$0,30          |
-| Infra (diluído)                            | R$0,50          |
-| **Total médio**                            | **R$4,30–6,30** |
+| Item | Custo/mês |
+| ---- | --------- |
+| WhatsApp API | R$0,80–1,20 |
+| Whisper (áudios) | R$0,80–1,20 |
+| Vision (imagens e PDFs) | R$0,30–0,60 |
+| Extração de tópicos + geração de perguntas | R$0,40–0,70 |
+| Avaliação + feedback | R$1,20–1,80 |
+| Evolução semanal (batch) | R$0,30 |
+| Infra (diluído) | R$0,50 |
+| **Total médio** | **R$4,30–6,30** |
 
 **Margem bruta:** 68–78%.
 
@@ -217,12 +211,12 @@ Custo variável por usuário Pro ativo:
 
 Com R$19,90/mês e custo médio R$5,30, margem bruta de R$14,60/usuário.
 
-| Marco             | Pagantes  | MRR bruto    | Líquido estimado | O que habilita              |
-| ----------------- | --------- | ------------ | ---------------- | --------------------------- |
-| Validação         | 300       | R$5.970      | ~R$3.700         | Prova produto, mantém CLT   |
-| Transição         | 1.000     | R$19.900     | ~R$12.500        | Reduz CLT                   |
-| **Independência** | **1.800** | **R$35.820** | **~R$22.500**    | **Sai do emprego**          |
-| Conforto          | 3.000     | R$59.700     | ~R$37.500        | Reinveste em time/marketing |
+| Marco | Pagantes | MRR bruto | Líquido estimado | O que habilita |
+| ----- | -------- | --------- | ---------------- | -------------- |
+| Validação | 300 | R$5.970 | ~R$3.700 | Prova produto, mantém CLT |
+| Transição | 1.000 | R$19.900 | ~R$12.500 | Reduz CLT |
+| **Independência** | **1.800** | **R$35.820** | **~R$22.500** | **Sai do emprego** |
+| Conforto | 3.000 | R$59.700 | ~R$37.500 | Reinveste em time/marketing |
 
 Conversão estimada: 8–12% trial → Pro.
 Base necessária: 15.000–22.000 trials.
@@ -270,18 +264,16 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 ## 13. Checklist de lançamento
 
 **Já em produção:**
-
 - Stack completa (Next.js + Supabase + Vercel)
 - Integração WhatsApp Business API ativa
 - Número virtual aprovado e funcionando
 - Transcrição de áudio (Whisper)
 - OCR e descrição de imagem (Vision)
-- Schema atualizado com `Question`
+- Schema atualizado com `Section` e `Question`
 - Motor de prática com loop acerto/erro
 - Cadência e sessão ativa (/praticar)
 
 **Falta:**
-
 - [ ] Evolução semanal com % acerto e vocabulário que travou
 - [ ] Gatilhos de upgrade contextuais
 - [ ] Pix manual via /suporte
@@ -290,13 +282,11 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - [ ] Material institucional para professor (1 página)
 
 **Testes antes do beta:**
-
 - [ ] Fundador usando 7 dias sem bug crítico com material real de inglês
 - [ ] 2–3 pessoas próximas testando
 - [ ] Custo médio por usuário validado em janela real
 
 **Beta:**
-
 - [ ] 30–50 testers via Instagram e indicação
 - [ ] Trial estendido de 30 dias
 - [ ] Feedback estruturado a cada 7 dias

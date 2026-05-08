@@ -21,6 +21,7 @@ type CreateActivityData = {
   approachOverride?: Approach;
   questionRound?: number;
   questionCount?: number;
+  sectionCount?: number;
 };
 
 type UpdateActivityData = {
@@ -39,6 +40,7 @@ type UpdateActivityData = {
   completedAt?: Date | null;
   intensiveUntil?: Date | null;
   questionCount?: number;
+  sectionCount?: number;
   questionRound?: number;
   lastQuestionId?: string | null;
 };

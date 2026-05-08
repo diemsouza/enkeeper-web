@@ -13,11 +13,13 @@ type CreateQuestionData = {
 
 export async function createQuestions(
   activityId: string,
+  sectionId: string,
   questions: CreateQuestionData[],
 ): Promise<void> {
   await prisma.question.createMany({
     data: questions.map((q) => ({
       activityId,
+      sectionId,
       question: q.question,
       answerKeys: q.answerKeys,
     })),
@@ -35,7 +37,7 @@ export async function findNextUnansweredQuestion(
       ...(lastQuestionId ? { NOT: { id: lastQuestionId } } : {}),
       activity: { docId, deletedAt: null },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ section: { order: "asc" } }, { createdAt: "asc" }],
   });
 }
 

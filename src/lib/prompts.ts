@@ -8,6 +8,10 @@ function read(file: string): string {
 export const VOICE_PROMPT = read("voice.md");
 export const DOC_EXTRACTION_PROMPT = read("doc-extraction.md");
 
+export const GEN_VOCABULARY_PROMPT = read("gen-vocabulary.md");
+export const GEN_TEXT_PROMPT = read("gen-text.md");
+export const GEN_EXERCISE_PROMPT = read("gen-exercise.md");
+
 export const APPROACH_PROMPTS: Record<string, string> = {
   memorize: read("approaches/memorize.md"),
   understand: read("approaches/understand.md"),

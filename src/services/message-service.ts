@@ -64,6 +64,8 @@ import {
   findPendingQuestion,
   updateQuestion,
 } from "../repo/questions.repo";
+import { findSectionById, recalcSectionStatus } from "../repo/sections.repo";
+import { formatSectionTransition } from "../core/formatters";
 import { validateContent } from "../core/validate-content";
 import { MIN_DOC_CHARS, INTENSIVE_UNTIL_MIN } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
@@ -520,28 +522,15 @@ export async function handleIncomingMessage(
         messageIntent = "free_text";
         break;
       }
-      await saveMessage({
-        userId: user.id,
-        userChannelId: userChannel.id,
-        activityId: activeActivity.id,
-        role: "assistant",
-        content: nextQ.question,
-        intent: "practice_question",
-        questionId: nextQ.id,
-      });
-      await incrementAgentMessageCount(user.id, today);
-      await updateQuestion(nextQ.id, {
-        status: "pending",
-        activityId: activeActivity.id,
-      });
-      await updateActivity(activeActivity.id, user.id, {
-        waitingUser: true,
-        executionCount: activeActivity.executionCount + 1,
-        nextMessageAt: new Date(
-          Date.now() + activeActivity.intervalMinutes * 60 * 1000,
-        ),
-        lastQuestionId: nextQ.id,
-      });
+      const replies = await sendIntensiveQuestion(
+        nextQ,
+        activeActivity.id,
+        user.id,
+        userChannel.id,
+        activeActivity.executionCount,
+        activeActivity.intervalMinutes,
+        today,
+      );
       await saveUserMsg(
         user.id,
         userChannel.id,
@@ -550,7 +539,7 @@ export async function handleIncomingMessage(
         input,
         today,
       );
-      return [nextQ.question];
+      return replies;
     }
 
     case "confirm":
@@ -630,6 +619,9 @@ export async function handleIncomingMessage(
                 ? { wrongCount: pendingQuestion.wrongCount + 1 }
                 : {}),
             });
+            if (pendingQuestion.sectionId) {
+              await recalcSectionStatus(pendingQuestion.sectionId);
+            }
             const isPracticingSessionActive =
               activeActivity.intensiveUntil &&
               activeActivity.intensiveUntil > new Date();
@@ -699,6 +691,7 @@ export async function resolveNextQuestion(
   id: string;
   question: string;
   status: QuestionStatus | null;
+  sectionId: string | null;
 } | null> {
   if (questionRound === 0) {
     const unanswered = await findNextUnansweredQuestion(docId, lastQuestionId);
@@ -732,6 +725,7 @@ async function handleIntensiveNextQuestion(
         userId,
         userChannelId,
         executionCount,
+        intervalMinutes,
         today,
       );
     }
@@ -745,6 +739,7 @@ async function handleIntensiveNextQuestion(
           userId,
           userChannelId,
           executionCount,
+          intervalMinutes,
           today,
         );
       return [];
@@ -769,19 +764,40 @@ async function handleIntensiveNextQuestion(
       userId,
       userChannelId,
       executionCount,
+      intervalMinutes,
       today,
     );
   return [];
 }
 
 async function sendIntensiveQuestion(
-  question: { id: string; question: string },
+  question: { id: string; question: string; sectionId: string | null },
   activityId: string,
   userId: string,
   userChannelId: string,
   executionCount: number,
+  intervalMinutes: number,
   today: Date,
 ): Promise<string[]> {
+  const messages: string[] = [];
+
+  if (question.sectionId) {
+    const section = await findSectionById(question.sectionId);
+    if (section?.status === null) {
+      const transitionMsg = formatSectionTransition(section.title, executionCount === 0);
+      await saveMessage({
+        userId,
+        userChannelId,
+        activityId,
+        role: "assistant",
+        content: transitionMsg,
+        intent: "section_transition",
+      });
+      await incrementAgentMessageCount(userId, today);
+      messages.push(transitionMsg);
+    }
+  }
+
   await saveMessage({
     userId,
     userChannelId,
@@ -797,8 +813,10 @@ async function sendIntensiveQuestion(
     waitingUser: true,
     executionCount: executionCount + 1,
     lastQuestionId: question.id,
+    nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),
   });
-  return [question.question];
+  messages.push(question.question);
+  return messages;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

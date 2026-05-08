@@ -18,7 +18,9 @@ import {
   formatFirstPracticeNudge,
   formatLastPracticeNudge,
   formatPracticeComplete,
+  formatSectionTransition,
 } from "../core/formatters";
+import { findSectionById } from "../repo/sections.repo";
 import { canPractice } from "../core/access";
 import {
   DOC_PROCESSING_TIMEOUT_MS,
@@ -169,6 +171,26 @@ export async function processActivityCron(): Promise<CronResult> {
         continue;
       }
 
+      if (question.sectionId) {
+        const section = await findSectionById(question.sectionId);
+        if (section?.status === null) {
+          const transitionMsg = formatSectionTransition(
+            section.title,
+            activity.executionCount === 0,
+          );
+          await sendWhatsAppMessage(userChannel.channelId, transitionMsg);
+          await saveMessage({
+            userId: activity.userId,
+            userChannelId: userChannel.id,
+            activityId: activity.id,
+            role: "assistant",
+            content: transitionMsg,
+            intent: "section_transition",
+          });
+          await incrementAgentMessageCount(activity.userId, today);
+        }
+      }
+
       await sendWhatsAppMessage(userChannel.channelId, question.question);
       await saveMessage({
         userId: activity.userId,
@@ -212,6 +234,7 @@ async function selectNextQuestion(
   id: string;
   question: string;
   status: QuestionStatus | null;
+  sectionId: string | null;
 } | null> {
   const lastId = activity.lastQuestionId;
 

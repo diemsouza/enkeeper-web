@@ -7,8 +7,8 @@ import {
   DocProcessingResult,
   visionSchema,
   VisionResult,
-  questionExtractionSchema,
-  QuestionExtractionResult,
+  sectionQuestionSchema,
+  SectionQuestionResult,
   answerEvaluationSchema,
   AnswerEvaluationResult,
   practiceMessageSchema,
@@ -21,8 +21,10 @@ import {
   VOICE_PROMPT,
   DOC_EXTRACTION_PROMPT,
   APPROACH_PROMPTS,
-  QUESTION_EXTRACTION_PROMPT,
   ANSWER_EVALUATION_PROMPT,
+  GEN_VOCABULARY_PROMPT,
+  GEN_TEXT_PROMPT,
+  GEN_EXERCISE_PROMPT,
 } from "../lib/prompts";
 
 const MODEL = "gpt-4.1-mini";
@@ -182,21 +184,34 @@ export async function generatePracticeMessage(params: {
   return result;
 }
 
-// ─── Question extraction ──────────────────────────────────────────────────────
+// ─── Section question generation ─────────────────────────────────────────────
 
-export async function generateQuestions(params: {
-  docContent: string;
-  docType: string;
+const SECTION_PROMPTS: Record<string, string> = {
+  vocabulary: GEN_VOCABULARY_PROMPT,
+  text: GEN_TEXT_PROMPT,
+  exercise: GEN_EXERCISE_PROMPT,
+};
+
+export async function generateSectionQuestions(params: {
+  sectionType: "vocabulary" | "text" | "exercise";
+  sectionTitle: string;
+  sectionContent: string;
+  level: string;
   userId: string;
   docId: string;
-}): Promise<QuestionExtractionResult | null> {
-  const { docContent, userId, docId } = params;
+  sectionId: string;
+}): Promise<SectionQuestionResult | null> {
+  const { sectionType, sectionTitle, sectionContent, level, userId, docId, sectionId } = params;
   let inputTokens = 0;
   let outputTokens = 0;
   let cachedTokens = 0;
-  let result: QuestionExtractionResult | null = null;
+  let result: SectionQuestionResult | null = null;
 
-  const prompt = `${QUESTION_EXTRACTION_PROMPT}\n\nMaterial:\n${docContent}`;
+  const prompt = SECTION_PROMPTS[sectionType]
+    .replace("{voice}", VOICE_PROMPT)
+    .replace("{section_title}", sectionTitle)
+    .replace("{section_content}", sectionContent)
+    .replace("{level}", level || "não identificado");
 
   try {
     const llmResult = await generateText({
@@ -207,7 +222,7 @@ export async function generateQuestions(params: {
     inputTokens += llmResult.usage?.inputTokens ?? 0;
     outputTokens += llmResult.usage?.outputTokens ?? 0;
     cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
-    result = questionExtractionSchema.parse(
+    result = sectionQuestionSchema.parse(
       parseJsonWithFallback(llmResult.text.trim()),
     );
   } catch {
@@ -217,6 +232,7 @@ export async function generateQuestions(params: {
   await llmUsageService.registerUsage({
     userId,
     docId,
+    sectionId,
     usageType: "question_extraction",
     provider: "openai",
     model: MODEL,

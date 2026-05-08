@@ -52,7 +52,7 @@ Reservado para exclusão de conta (LGPD) ou limpeza sistêmica.
 ## 2. Questions
 
 ### O que é
-Banco de perguntas geradas no upload do material. Cada `Question` pertence a uma `Activity`.
+Banco de perguntas geradas no upload do material. Cada `Question` pertence a uma `Section`.
 
 ### Status
 
@@ -73,10 +73,11 @@ Banco de perguntas geradas no upload do material. Cada `Question` pertence a uma
 - `wrongCount` — quantas vezes a avaliação retornou `wrong` ou `partial`. Incrementa em todo reenvio com esse resultado. Usado no relatório semanal para identificar vocabulário que travou
 - `questionType` — `text` (default) | `audio`. Formato em que a pergunta foi enviada ao usuário
 - `answerType` — `text` | `audio` | `null`. Preenchido no momento da resposta. Se a mensagem recebida for `audio` (voice note do WhatsApp), marca `audio`; caso contrário, `text`. `null` enquanto não houver resposta
+- `sectionId` — relação opcional com `Section`
 
 ### Fluxo
 
-1. Upload → `question-extraction` gera todas as perguntas → salvas com `status: null` → atualiza `Activity.questionCount`
+1. Upload → `doc-extraction` identifica e separa seções → para cada seção, o prompt de geração correspondente cria as perguntas → salvas com `status: null` → atualiza `Activity.questionCount`
 2. Cron seleciona próxima pergunta (ver Seleção abaixo) → envia → `status: pending` → salva `Message` com `questionId` → atualiza `Activity.lastQuestionId`
 3. Usuário responde → preenche `answer` e `answerType` → avalia contra `answerKeys` → atualiza `status` para `right`, `partial` ou `wrong` → incrementa `attemptCount` → se `wrong` ou `partial`, incrementa `wrongCount`
 4. Toda mensagem de pergunta, resposta do usuário e feedback carrega o `questionId` correspondente
@@ -112,7 +113,34 @@ O cron continua funcionando normalmente após a mensagem.
 
 ---
 
-## 3. Relatório semanal
+## 3. Sections
+
+### O que é
+Divisão do material em blocos por tipo. Cada `Section` pertence a uma `Activity` e contém suas próprias `Question[]`. É criada no upload junto com o `Doc` — não tem estado de processamento próprio, pois erros de processamento pertencem ao `Doc`.
+
+### Tipos
+
+| sectionType | Descrição |
+| ----------- | --------- |
+| `vocabulary` | Lista de palavras ou expressões isoladas para fixar |
+| `text` | Texto corrido, frase, diálogo ou parágrafo para compreensão e uso |
+| `exercise` | Lista de perguntas do material, com ou sem gabarito |
+
+### Status de progresso
+
+| status | Descrição |
+| ------ | --------- |
+| `null` | Nenhuma pergunta respondida ainda |
+| `pending` | Ao menos 1 pergunta respondida |
+| `partial` | Respondeu ao menos 1, mas não todas |
+| `completed` | Todas as perguntas respondidas |
+
+### Identificação de exercise
+Só é classificado como `exercise` quando o material contém uma lista explícita de perguntas — uma ou duas perguntas soltas num texto não qualificam. O critério é estrutura de lista identificável.
+
+---
+
+## 4. Relatório semanal
 
 - Gerado aos domingos.
 - Agrega todas as interações dos últimos 7 dias, independente do status da activity.
@@ -120,7 +148,7 @@ O cron continua funcionando normalmente após a mensagem.
 
 ---
 
-## 4. Planos e acesso
+## 5. Planos e acesso
 
 ### Regra de acesso
 Usuário pratica se: `planStatus = active` e `planExpiresAt` no futuro. Independe de `planCode`.
@@ -148,7 +176,7 @@ Separa cortesia de receita real. Query de pagantes filtra só `planCode = pro`. 
 
 ---
 
-## 5. Comandos
+## 6. Comandos
 
 | Comando | Ação |
 | ------- | ---- |
@@ -202,7 +230,7 @@ Se o usuário manda mensagem e não há nenhuma `Activity` ativa:
 
 ---
 
-## 6. Onboarding
+## 7. Onboarding
 
 ### Primeiro contato
 
@@ -233,7 +261,7 @@ Se quiser praticar em sequência agora, use /praticar ou apenas aguarde.
 
 ---
 
-## 7. Cadência de mensagens
+## 8. Cadência de mensagens
 
 - Primeira mensagem: 1h após o upload.
 - Janela padrão: 9h–18h, intervalos de ~1–2h.
@@ -258,11 +286,11 @@ Quando a última mensagem do assistente é `practice_question` ou `practice_nudg
 
 ---
 
-## 8. Processamento de material
+## 9. Processamento de material
 
 - Áudio, imagem e PDF processados em memória e descartados após extração.
-- Apenas texto extraído, tópicos e perguntas geradas são salvos.
-- No upload: 1 chamada para extrair tópicos (`Doc.topicsData`) + 1 chamada para gerar todas as perguntas (`Question[]`).
+- Apenas texto extraído, seções e perguntas geradas são salvos.
+- No upload: 1 chamada para `doc-extraction` (identifica seções e limpa conteúdo) + 1 chamada por seção para o prompt de geração correspondente.
 - Durante o dia: 1 chamada por resposta do usuário para avaliação e feedback.
 
 ### Caps técnicos invisíveis
@@ -272,7 +300,71 @@ Quando a última mensagem do assistente é `practice_question` ou `practice_nudg
 
 ---
 
-## 9. Regras de geração de perguntas
+## 10. Prompts
+
+### Estrutura
+
+```
+prompts/
+  voice.md              — persona compartilhada, usada por todos os prompts de geração e avaliação
+  standard.md           — padrão de estrutura de prompt do projeto
+  doc-extraction.md     — identifica seções, classifica por tipo, limpa conteúdo
+  gen-vocabulary.md     — gera perguntas para seções do tipo vocabulary
+  gen-text.md           — gera perguntas para seções do tipo text
+  gen-exercise.md       — coleta e gera perguntas para seções do tipo exercise
+  answer-evaluation.md  — avalia resposta do usuário e gera feedback
+  approaches/           — prompts legados, não usar em novos fluxos
+```
+
+### Responsabilidades
+
+**`doc-extraction.md`**
+Lê o material bruto, identifica seções, classifica cada uma por `sectionType`, limpa o conteúdo. Não gera perguntas. Retorna JSON com `title`, `isValid`, `invalidReason` e `sections[]`.
+
+**`gen-vocabulary.md`**
+Recebe o `content` limpo de uma seção `vocabulary`. Gera perguntas de recall e produção — gap fill, cenário, recall invertido. Nunca pede tradução isolada. Cobre todos os itens antes de repetir.
+
+**`gen-text.md`**
+Recebe o `content` limpo de uma seção `text`. Gera perguntas ancoradas no conteúdo — compreensão, reformulação, uso em contexto. Nunca referencia posição no texto.
+
+**`gen-exercise.md`**
+Recebe o `content` limpo de uma seção `exercise`. Coleta perguntas já existentes no material. `answerKeys` vem do gabarito se houver; se não houver mas houver contexto, a IA gera respostas baseadas nesse contexto; se não houver nada, a IA gera uma ou mais respostas plausíveis.
+
+**`answer-evaluation.md`**
+Avalia a resposta do usuário contra `answerKeys`. Comportamento único independente do `sectionType` — `answerKeys` com uma entrada é mais restrito, com várias é mais aberto. Retorna `status` e `feedback`.
+
+### Contrato de saída do doc-extraction
+
+```json
+{
+  "title": "título curto, máx 8 palavras",
+  "isValid": true,
+  "invalidReason": null,
+  "sections": [
+    {
+      "title": "nome da seção",
+      "sectionType": "vocabulary | text | exercise",
+      "order": 1,
+      "content": "conteúdo limpo e fiel ao original"
+    }
+  ]
+}
+```
+
+### Identificação de exercise
+Só classifica como `exercise` quando o material contém lista explícita de perguntas. Uma ou duas perguntas soltas num texto não qualificam.
+
+---
+
+## 11. Regras de geração de perguntas
+
+### Quantidade por tipo de seção
+
+| Tipo | Regra |
+| --- | --- |
+| `vocabulary` | Cobre todos os itens antes de repetir. Remove ambiguidades. Máximo: 50 por seção |
+| `text` | Pequeno (até 1 parágrafo): até 5. Médio (2-4 parágrafos): até 10. Grande (5+ parágrafos): até 15 |
+| `exercise` | Fiel ao material. Se mais de 30 perguntas, remove ambiguidades e duplicatas. Máximo: 30 por seção |
 
 ### Persona
 Cara de 50 anos, leu muito, viveu bastante, sabe de tudo um pouco. Português culto mas informal, nunca gíria, nunca formalidade de e-mail.
@@ -301,7 +393,7 @@ Nunca repita o mesmo formato duas vezes seguidas. Formatos: `gap_fill`, `scenari
 
 ---
 
-## 10. Regras de feedback
+## 12. Regras de feedback
 
 ### Correto
 Confirma com leveza. Adiciona fato, variação ou uso real se couber naturalmente.
@@ -319,7 +411,7 @@ Sem certo/errado. Enriquece com contexto ou exemplo concreto. Encerra com afirma
 
 ---
 
-## 11. Arquitetura e princípios
+## 13. Arquitetura e princípios
 
 - Produto focado em inglês. Arquitetura channel-agnostic e agnóstica de matéria por baixo — expansão futura sem reescrever.
 - Identidade via `wa_id`. Schema preparado para `bsuid`.

@@ -5,8 +5,9 @@ import {
 } from "../repo/docs.repo";
 import { createActivity, updateActivity } from "../repo/activities.repo";
 import { createQuestions } from "../repo/questions.repo";
+import { createSection } from "../repo/sections.repo";
 import { archiveOrCancelActivitiesByDoc } from "./activity-service";
-import { generateDocTopics, generateQuestions } from "../vendors/llm.vendor";
+import { generateDocTopics, generateSectionQuestions } from "../vendors/llm.vendor";
 import { findUserChannelByUserId } from "../repo/users.repo";
 import { saveMessage } from "../repo/messages.repo";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
@@ -53,10 +54,13 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     return;
   }
 
+  const sectionTitles = result.sections.map((s) => s.title);
+  const combinedContent = result.sections.map((s) => s.content).join("\n\n");
+
   await updateDoc(docId, userId, {
     title: result.title,
-    content: result.content,
-    topicsData: result.topics,
+    content: combinedContent,
+    topicsData: sectionTitles,
     status: "active",
   });
 
@@ -82,21 +86,41 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     nextMessageAt,
     intervalMinutes,
     status: "active",
-    approach: result.approach,
-    approachConfidence: result.approachConfidence,
   });
 
-  const questions = await generateQuestions({
-    docContent: result.content,
-    docType: doc.docType,
-    userId,
-    docId,
-  });
+  let totalQuestions = 0;
 
-  if (questions && questions.length > 0) {
-    await createQuestions(activity.id, questions);
+  for (const sectionData of [...result.sections].sort((a, b) => a.order - b.order)) {
+    const section = await createSection({
+      userId,
+      docId,
+      activityId: activity.id,
+      sectionType: sectionData.sectionType,
+      title: sectionData.title,
+      content: sectionData.content,
+      order: sectionData.order,
+    });
+
+    const questions = await generateSectionQuestions({
+      sectionType: sectionData.sectionType,
+      sectionTitle: sectionData.title,
+      sectionContent: sectionData.content,
+      level: "",
+      userId,
+      docId,
+      sectionId: section.id,
+    });
+
+    if (questions && questions.length > 0) {
+      await createQuestions(activity.id, section.id, questions);
+      totalQuestions += questions.length;
+    }
+  }
+
+  if (totalQuestions > 0) {
     await updateActivity(activity.id, userId, {
-      questionCount: questions.length,
+      questionCount: totalQuestions,
+      sectionCount: result.sections.length,
     });
   }
 }
