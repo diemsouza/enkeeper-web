@@ -31,6 +31,8 @@ Só cria seções separadas quando o tipo muda, ou quando o material tem separa�
 Lista contínua sem separador visual, título ou numeração é sempre uma única seção, 
 independente de quantos temas diferentes contiver.
 
+Mesmo tipo, sempre uma seção só, sem exceção. Separação por tema, assunto ou contexto não cria nova seção.
+
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
 Aspas sempre duplas "assim". Apóstrofo só em contrações inglesas (I'm, don't).
 
