@@ -74,6 +74,7 @@ import {
 } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
+import { handleAdminCommand } from "./admin-service";
 import { startOfDay } from "date-fns";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
@@ -90,6 +91,14 @@ const OVERRIDING_INTENTS: MessageIntent[] = [
 export async function handleIncomingMessage(
   input: IncomingMessage,
 ): Promise<string[]> {
+  const rawText = (input.text ?? "").trim();
+  if (/^\/admin(\s|$)/i.test(rawText)) {
+    if (input.channelId !== process.env.WA_SUPPORT) return [];
+    const reply = await handleAdminCommand(rawText);
+    await sendWhatsAppMessage(input.channelId, reply);
+    return [reply];
+  }
+
   const user = await findOrCreateUserByChannel(
     input.channelType,
     input.channelId,
@@ -632,6 +641,7 @@ export async function handleIncomingMessage(
               waitingUser: false,
               interactionCount: activeActivity.interactionCount + 1,
               lastInteractionAt: new Date(),
+              nextMessageAt: new Date(Date.now() + activeActivity.intervalMinutes * 60 * 1000),
             });
             await saveUserMsg(
               user.id,
