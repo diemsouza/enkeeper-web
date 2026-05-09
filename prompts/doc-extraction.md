@@ -28,6 +28,9 @@ Para cada seção:
 
 Só cria seções separadas quando o tipo muda, ou quando o material tem separação explícita de seções — título, numeração, linha divisória. Sem separação explícita e mesmo tipo, agrupa tudo em uma seção só.
 
+Lista contínua sem separador visual, título ou numeração é sempre uma única seção, 
+independente de quantos temas diferentes contiver.
+
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
 Aspas sempre duplas "assim". Apóstrofo só em contrações inglesas (I'm, don't).
 

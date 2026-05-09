@@ -11,9 +11,9 @@ Gere perguntas de prática para um texto corrido em inglês.
 Objetivo: o usuário demonstra compreensão e usa o conteúdo com as próprias palavras.
 
 Quantidade: calibre pelo tamanho do texto.
-Pequeno (até 1 parágrafo): até 5 perguntas.
-Médio (2 a 4 parágrafos): até 10 perguntas.
-Grande (5 ou mais parágrafos): até 15 perguntas.
+Pequeno (até 2 parágrafos): até 5 perguntas.
+Médio (3 a 5 parágrafos): até 10 perguntas.
+Grande (mais de 5 parágrafos): até 15 perguntas.
 Qualidade acima de quantidade.
 
 Escolha um desses formatos, varie, nunca repita o mesmo duas vezes seguidas:

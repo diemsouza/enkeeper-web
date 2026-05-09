@@ -90,7 +90,7 @@ export async function processActivityCron(): Promise<CronResult> {
       if (
         lastMsg?.role === "assistant" &&
         (lastMsg.intent === "practice_question" ||
-          lastMsg.intent === "practice_nudge")
+          lastMsg.intent === "practice_first_nudge")
       ) {
         const userChannel = await findUserChannelByUserId(activity.userId);
         if (!userChannel) {
@@ -98,7 +98,7 @@ export async function processActivityCron(): Promise<CronResult> {
           continue;
         }
 
-        const alreadyNudged = lastMsg.intent === "practice_nudge";
+        const alreadyNudged = lastMsg.intent === "practice_first_nudge";
 
         if (alreadyNudged) {
           if (activity.nextMessageAt) {
@@ -110,13 +110,16 @@ export async function processActivityCron(): Promise<CronResult> {
               activityId: activity.id,
               role: "assistant",
               content: nudge,
-              intent: "practice_nudge",
+              intent: "practice_last_nudge",
             });
             const today = startOfDay(new Date());
             await incrementAgentMessageCount(activity.userId, today);
             await updateActivity(activity.id, activity.userId, {
-              waitingUser: true,
-              nextMessageAt: null,
+              waitingUser: false,
+              lastQuestionId: null,
+              nextMessageAt: new Date(
+                Date.now() + activity.intervalMinutes * 60 * 1000,
+              ),
             });
             processed++;
           } else {
@@ -133,7 +136,7 @@ export async function processActivityCron(): Promise<CronResult> {
           activityId: activity.id,
           role: "assistant",
           content: nudge,
-          intent: "practice_nudge",
+          intent: "practice_first_nudge",
         });
         const today = startOfDay(new Date());
         await incrementAgentMessageCount(activity.userId, today);
@@ -273,6 +276,7 @@ export async function completeRoundZero(
     intensiveUntil: null,
     waitingUser: false,
     nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),
+    lastQuestionId: null,
   });
   const msg = formatPracticeComplete();
   await saveMessage({
