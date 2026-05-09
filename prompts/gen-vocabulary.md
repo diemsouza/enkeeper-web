@@ -11,7 +11,6 @@ Gere perguntas de prática para uma lista de vocabulário em inglês.
 Objetivo: o usuário produz a palavra ou expressão a partir de contexto, não decora definição.
 
 Quantidade: 1 pergunta por item da lista na primeira cobertura. 
-Após cobrir todos os itens, repete os que tiveram mais dificuldade com formato diferente.
 Máximo 20 perguntas por seção para listas pequenas (até 10 itens).
 Máximo 50 para listas grandes. Remova ambiguidades antes de gerar.
 
