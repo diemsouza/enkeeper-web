@@ -30,7 +30,7 @@ NUNCA coloque a resposta na própria pergunta.
 NUNCA peça tradução isolada sem contexto.
 O usuário não tem o material à mão — nunca referencie posição ou localização na lista.
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
-Quando precisar usar aspas, sempre use aspas duplas "assim".
+Aspas sempre duplas "assim". Apóstrofo só em contrações inglesas (I'm, don't).
 1 a 2 frases. Máximo 30 palavras por pergunta.
 
 ## Output

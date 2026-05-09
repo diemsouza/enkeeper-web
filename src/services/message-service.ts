@@ -67,7 +67,11 @@ import {
 import { findSectionById, recalcSectionStatus } from "../repo/sections.repo";
 import { formatSectionTransition } from "../core/formatters";
 import { validateContent } from "../core/validate-content";
-import { MIN_DOC_CHARS, INTENSIVE_UNTIL_MIN } from "../lib/constants";
+import {
+  MIN_DOC_CHARS,
+  INTENSIVE_UNTIL_MIN,
+  ANSWER_EMOJI,
+} from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
 import { startOfDay } from "date-fns";
@@ -605,8 +609,7 @@ export async function handleIncomingMessage(
               docId: practiceDoc.id,
             });
             const evalStatus = evaluation?.status ?? "wrong";
-            const feedback =
-              evaluation?.feedback ?? "Não consegui avaliar sua resposta.";
+            const feedback = `${ANSWER_EMOJI[evalStatus]} ${evaluation?.feedback ?? "Não consegui avaliar sua resposta!"}`;
             const answerType = input.mediaType === "audio" ? "audio" : "text";
             const isWrongOrPartial =
               evalStatus === "wrong" || evalStatus === "partial";
@@ -784,7 +787,10 @@ async function sendIntensiveQuestion(
   if (question.sectionId) {
     const section = await findSectionById(question.sectionId);
     if (section?.status === null) {
-      const transitionMsg = formatSectionTransition(section.title, executionCount === 0);
+      const transitionMsg = formatSectionTransition(
+        section.title,
+        executionCount === 0,
+      );
       await saveMessage({
         userId,
         userChannelId,

@@ -6,11 +6,11 @@ export function formatOnboardingMsg1(): string {
 }
 
 export function formatOnboardingMsg2(): string {
-  return "Manda o material da sua aula de inglês como texto, áudio, foto ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo.";
+  return "Manda o material da sua aula de inglês como texto, foto ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo.";
 }
 
 export function formatOnboardingMsg3(): string {
-  return "Você tem 24 horas de acesso completo. Aproveite pra sentir na prática.";
+  return "Você tem 24 horas pra sentir na prática. Aproveita!";
 }
 
 export function formatOnboardingMsg4(): string {
@@ -83,10 +83,7 @@ export function formatNoDocs(): string {
 }
 
 export function formatDocReceived(): string {
-  return [
-    "Em alguns minutos chega a primeira pergunta. Responde de cabeça, sem consultar - o sistema avalia e guarda o que travou pra reforçar depois.",
-    "Se quiser praticar em sequência agora, use */praticar* ou apenas aguarde.",
-  ].join("\n");
+  return "Pronto. Em alguns minutos chega a primeira pergunta.";
 }
 
 export function formatDocConfirmPrompt(): string {

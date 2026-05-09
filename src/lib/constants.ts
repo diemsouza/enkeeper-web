@@ -16,3 +16,8 @@ export const MAX_DOCS_PER_DAY = 5;
 export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 export const SEQUENCE_WA_MESSAGE_INTERVAL_SEC = 2;
 export const NUDGE_INTERVAL_HOURS = 8;
+export const ANSWER_EMOJI = {
+  right: "✅",
+  partial: "⚠️",
+  wrong: "❌",
+} as const;

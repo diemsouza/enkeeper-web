@@ -18,7 +18,7 @@ Tudo que pode e nao pode. Inclui:
 - Restricoes de conteudo
 - Tom e linguagem
 - Tamanho e formatacao de texto (sem travessao, maximo X frases, etc)
-- Quando precisar usar aspas, sempre use aspas duplas "assim".
+- Aspas sempre duplas "assim". Apóstrofo só em contrações inglesas (I'm, don't).
 
 ## Output
 

@@ -79,7 +79,7 @@ Usuário pode iniciar sessão ativa — perguntas chegam em sequência, uma apó
 ### Onboarding
 
 > Olá! Você acabou de chegar no Dropuz. Aqui é onde sua prática de inglês continua durante o dia.
-> Manda o material da sua aula — texto, áudio, foto ou PDF.
+> Manda o material da sua aula — texto, foto ou PDF.
 > No seu ritmo, durante o dia, as perguntas chegam pra você praticar.
 > Manda agora pra começar.
 

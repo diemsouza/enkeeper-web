@@ -81,7 +81,7 @@
       "steps": {
         "0": {
           "title": "Manda o material da aula",
-          "description": "Texto, áudio, foto ou PDF. A lista de vocabulário, o exercício, o PDF que o professor mandou. Qualquer material da sua aula de inglês."
+          "description": "Texto, foto ou PDF. A lista de vocabulário, o exercício, o PDF que o professor mandou. Qualquer material da sua aula de inglês."
         },
         "1": {
           "title": "O Dropuz gera as perguntas",
@@ -105,7 +105,7 @@
       "blocks": {
         "0": {
           "title": "Manda o material. O Dropuz gera as perguntas.",
-          "description": "Texto, áudio, foto ou PDF. O vocabulário da sua aula vira prática durante o dia.",
+          "description": "Texto, foto ou PDF. O vocabulário da sua aula vira prática durante o dia.",
           "chat": [
             {
               "from": "user",

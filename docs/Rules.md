@@ -226,7 +226,7 @@ _Mande um texto, áudio, imagem ou PDF para praticar._
 
 Se o usuário manda mensagem e não há nenhuma `Activity` ativa:
 
-> Ainda não recebi nenhum conteúdo. Manda o material que quer praticar — texto, áudio, foto ou PDF.
+> Ainda não recebi nenhum conteúdo. Manda o material que quer praticar — texto, foto ou PDF.
 
 ---
 
@@ -240,7 +240,7 @@ Disparado quando `wa_id` é criado pela primeira vez (`onboardedAt` nulo). Quatr
 Hi! Bem-vindo ao *Dropuz*. 👋
 ```
 ```
-Manda o material da sua aula de inglês — texto, áudio, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
+Manda o material da sua aula de inglês — texto, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
 ```
 ```
 Você tem 24 horas de acesso completo. Aproveite pra sentir na prática.

@@ -35,7 +35,7 @@ NUNCA referencie posição no texto ("no primeiro parágrafo", "na linha 3").
 NUNCA coloque a resposta na própria pergunta.
 O usuário não tem o material à mão durante a prática.
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
-Quando precisar usar aspas, sempre use aspas duplas "assim".
+Aspas sempre duplas "assim". Apóstrofo só em contrações inglesas (I'm, don't).
 1 a 2 frases. Máximo 30 palavras por pergunta.
 
 ## Output

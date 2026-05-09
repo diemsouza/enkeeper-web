@@ -32,7 +32,7 @@ Em todos os casos:
 - Nunca reescreva ou interprete a pergunta — use o texto original.
 - Nunca coloque a resposta na própria pergunta.
 - Texto corrido. Sem travessão, sem bullet points, sem markdown.
-- Quando precisar usar aspas, sempre use aspas duplas "assim".
+- Aspas sempre duplas "assim". Apóstrofo só em contrações inglesas (I'm, don't).
 
 ## Output
 Retorne APENAS JSON válido, sem markdown, sem explicação:

@@ -29,7 +29,7 @@ Para cada seção:
 Só cria seções separadas quando o tipo muda, ou quando o material tem separação explícita de seções — título, numeração, linha divisória. Sem separação explícita e mesmo tipo, agrupa tudo em uma seção só.
 
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
-Quando precisar usar aspas, sempre use aspas duplas "assim".
+Aspas sempre duplas "assim". Apóstrofo só em contrações inglesas (I'm, don't).
 
 ## Output
 Retorne APENAS JSON válido, sem markdown, sem explicação:
