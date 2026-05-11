@@ -66,7 +66,10 @@ import {
 } from "../repo/questions.repo";
 import { findSectionById, recalcSectionStatus } from "../repo/sections.repo";
 import { formatSectionTransition } from "../core/formatters";
-import { validateContent } from "../core/validate-content";
+import {
+  validateContent,
+  formatInvalidContentMessage,
+} from "../core/validate-content";
 import {
   MIN_DOC_CHARS,
   INTENSIVE_UNTIL_MIN,
@@ -76,6 +79,7 @@ import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
 import { handleAdminCommand } from "./admin-service";
 import { startOfDay } from "date-fns";
+import { fixQuotes } from "../lib/utils";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
@@ -230,6 +234,20 @@ export async function handleIncomingMessage(
     input.mediaType === "text"
   ) {
     const docType = input.mediaType as DocType;
+    const validation = validateContent(text);
+    if (!validation.isValid) {
+      await saveUserMsg(
+        user.id,
+        userChannel.id,
+        text,
+        "free_text",
+        input,
+        today,
+      );
+      const reply = formatInvalidContentMessage(validation.invalidReason);
+      await saveBotReply(user.id, userChannel.id, reply, today);
+      return [reply];
+    }
     return checkAndCreateDoc(
       user.id,
       userChannel.id,
@@ -566,23 +584,26 @@ export async function handleIncomingMessage(
     case "free_text": {
       if (text.length >= MIN_DOC_CHARS) {
         const validation = validateContent(text);
-        if (validation.isValid) {
-          const todayUsage = await getTodayUsage(user.id, today);
-          if (!canUploadDoc(todayUsage?.docCount ?? 0)) {
-            reply = formatDailyLimitReached();
-            messageIntent = "free_text";
-            break;
-          }
-          const activeDocs = await findActiveDocsByUser(user.id);
-          if (activeDocs.length > 0) {
-            reply = formatDocReplacePrompt(activeDocs[0].title);
-            messageIntent = "awaiting_doc_replace";
-            break;
-          }
-          reply = formatDocConfirmPrompt();
-          messageIntent = "awaiting_doc_confirm";
+        if (!validation.isValid) {
+          reply = formatInvalidContentMessage(validation.invalidReason);
+          messageIntent = "free_text";
           break;
         }
+        const todayUsage = await getTodayUsage(user.id, today);
+        if (!canUploadDoc(todayUsage?.docCount ?? 0)) {
+          reply = formatDailyLimitReached();
+          messageIntent = "free_text";
+          break;
+        }
+        const activeDocs = await findActiveDocsByUser(user.id);
+        if (activeDocs.length > 0) {
+          reply = formatDocReplacePrompt(activeDocs[0].title);
+          messageIntent = "awaiting_doc_replace";
+          break;
+        }
+        reply = formatDocConfirmPrompt();
+        messageIntent = "awaiting_doc_confirm";
+        break;
       }
 
       const activeActivities = await findActiveActivitiesByUser(user.id);
@@ -618,7 +639,9 @@ export async function handleIncomingMessage(
               docId: practiceDoc.id,
             });
             const evalStatus = evaluation?.status ?? "wrong";
-            const feedback = `${ANSWER_EMOJI[evalStatus]} ${evaluation?.feedback ?? "Não consegui avaliar sua resposta!"}`;
+            const feedback = fixQuotes(
+              `${ANSWER_EMOJI[evalStatus]} ${evaluation?.feedback ?? "Não consegui avaliar sua resposta!"}`,
+            );
             const answerType = input.mediaType === "audio" ? "audio" : "text";
             const isWrongOrPartial =
               evalStatus === "wrong" || evalStatus === "partial";
@@ -641,7 +664,9 @@ export async function handleIncomingMessage(
               waitingUser: false,
               interactionCount: activeActivity.interactionCount + 1,
               lastInteractionAt: new Date(),
-              nextMessageAt: new Date(Date.now() + activeActivity.intervalMinutes * 60 * 1000),
+              nextMessageAt: new Date(
+                Date.now() + activeActivity.intervalMinutes * 60 * 1000,
+              ),
             });
             await saveUserMsg(
               user.id,

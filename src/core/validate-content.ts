@@ -5,6 +5,19 @@ type ValidationResult = {
   invalidReason?: string;
 };
 
+const REASON_TRANSLATIONS: Record<string, string> = {
+  too_short: "O conteúdo é muito curto.",
+  too_repetitive: "O conteúdo tem palavras demais repetidas.",
+};
+
+export function formatInvalidContentMessage(invalidReason?: string | null): string {
+  const translated = invalidReason
+    ? (REASON_TRANSLATIONS[invalidReason] ?? invalidReason)
+    : null;
+  const reasonPart = translated ? ` ${translated}` : "";
+  return `Não consegui usar esse material.${reasonPart} Funciona melhor com lista de palavras, texto corrido ou exercícios em inglês. Manda de novo ou tenta outro formato.`;
+}
+
 export function validateContent(text: string): ValidationResult {
   const words = text.trim().split(/\s+/).filter(Boolean);
 

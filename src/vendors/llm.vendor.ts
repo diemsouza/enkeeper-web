@@ -22,7 +22,8 @@ import {
   GEN_EXERCISE_PROMPT,
 } from "../lib/prompts";
 
-const MODEL = "gpt-4.1-mini";
+const MODEL_MINI = "gpt-4.1-mini";
+const MODEL_STANDARD = "gpt-4.1";
 
 // ─── Doc extraction ───────────────────────────────────────────────────────────
 
@@ -40,7 +41,7 @@ export async function generateDocTopics(params: {
 
   try {
     const llmResult = await generateText({
-      model: openai(MODEL),
+      model: openai(MODEL_MINI),
       output: Output.object({ schema: docProcessingSchema }),
       temperature: 0.2,
       prompt: DOC_EXTRACTION_PROMPT.replace("{raw_content}", rawContent),
@@ -66,7 +67,7 @@ export async function generateDocTopics(params: {
     docId,
     usageType: "topic_extraction",
     provider: "openai",
-    model: MODEL,
+    model: MODEL_MINI,
     inputTokens,
     outputTokens,
     cachedTokens,
@@ -92,7 +93,15 @@ export async function generateSectionQuestions(params: {
   docId: string;
   sectionId: string;
 }): Promise<SectionQuestionResult | null> {
-  const { sectionType, sectionTitle, sectionContent, level, userId, docId, sectionId } = params;
+  const {
+    sectionType,
+    sectionTitle,
+    sectionContent,
+    level,
+    userId,
+    docId,
+    sectionId,
+  } = params;
   let inputTokens = 0;
   let outputTokens = 0;
   let cachedTokens = 0;
@@ -106,7 +115,7 @@ export async function generateSectionQuestions(params: {
 
   try {
     const llmResult = await generateText({
-      model: openai(MODEL),
+      model: openai(MODEL_STANDARD),
       temperature: 0.2,
       prompt,
     });
@@ -126,7 +135,7 @@ export async function generateSectionQuestions(params: {
     sectionId,
     usageType: "question_extraction",
     provider: "openai",
-    model: MODEL,
+    model: MODEL_MINI,
     inputTokens,
     outputTokens,
     cachedTokens,
@@ -170,7 +179,7 @@ export async function generateAnswerEvaluation(params: {
 
   try {
     const llmResult = await generateText({
-      model: openai(MODEL),
+      model: openai(MODEL_STANDARD),
       system: systemPrompt,
       output: Output.object({ schema: answerEvaluationSchema }),
       temperature: 0.3,
@@ -197,7 +206,7 @@ export async function generateAnswerEvaluation(params: {
     docId,
     usageType: "answer_evaluation",
     provider: "openai",
-    model: MODEL,
+    model: MODEL_MINI,
     inputTokens,
     outputTokens,
     cachedTokens,

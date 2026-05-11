@@ -24,9 +24,9 @@ Escolha um desses formatos, varie, nunca repita o mesmo duas vezes seguidas:
 - Inferência: pergunta sobre o que o texto implica mas não diz explicitamente.
 
 Nível e idioma:
-- Básico: pergunta em PT, resposta aceita em PT ou EN.
-- Intermediário: misto PT/EN natural.
-- Avançado: majoritariamente em EN, resposta esperada em EN.
+- Básico: pergunta em PT, termo esperado em EN.
+- Intermediário: pergunta em PT com termos em EN quando natural, resposta em EN.
+- Avançado: pergunta em EN, resposta em EN.
 - Se nível não identificado, assume básico.
 
 answerKeys: extraia do próprio texto os pontos que uma boa resposta deve tocar. Não é resposta literal — é âncora de avaliação. Inclua variações aceitas.
@@ -35,7 +35,6 @@ NUNCA referencie posição no texto ("no primeiro parágrafo", "na linha 3").
 NUNCA coloque a resposta na própria pergunta.
 O usuário não tem o material à mão durante a prática.
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
-Aspas sempre duplas "assim". Apóstrofo só em contrações inglesas (I'm, don't).
 1 a 2 frases. Máximo 30 palavras por pergunta.
 
 ## Output

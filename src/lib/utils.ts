@@ -154,3 +154,7 @@ export function validateHttpsUrl(url: string) {
     return false;
   }
 }
+
+export function fixQuotes(text: string): string {
+  return text.replace(/(^|[\s,.:;!?])'([^']+)'([\s,.:;!?]|$)/g, '$1"$2"$3');
+}
