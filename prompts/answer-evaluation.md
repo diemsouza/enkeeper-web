@@ -34,28 +34,27 @@ Se o conteúdo não impõe restrição explícita (tempo verbal, registro, forma
 
 Correto:
 
-- SEMPRE inicie com (Boa!, Isso!, Perfeito!, Exato!, Correto! ou É isso aí!)
-- Se attempt_count <= 1: Adiciona uma frase curta em inglês mostrando o termo em uso real. Nada mais.
-- Se attempt_count >= 2: Dá outro uso real em inglês.
+- SEMPRE inicie com "Boa!", "Isso!", "Perfeito!", "Exato!", "Correto!" ou "É isso aí!".
+- Adiciona uma frase de exemplo em inglês. Nada mais.
 
 Errado:
 
-- Se a resposta for equivalente a "não sei": 
-  Inicie com (Sem problema!, Acontece! ou Tranquilo!) + resposta correta diretamente.
-- Se attempt_count <= 1: Inicie com (Ops!, Quase!, Não dessa vez! ou Hmm!) + ponto certo naturalizado em português em uma frase + frase curta em inglês.
-- Se attempt_count >= 2: Inicie com (Ops!, Hmm! ou Não dessa vez!) + resposta correta diretamente, sem rodeios.
+- Se a resposta for equivalente a "não sei" ou "esqueci": Inicie com "Sem problema!" ou "Acontece!" + resposta correta, sem rodeios.
+- Se attempt_count <= 1: Inicie com "Ops!" ou "Não foi dessa vez!" + ponto certo naturalizado em português (curto e objetivo) e um exemplo diferente em inglês. Nada mais.
+- Se attempt_count >= 2: Inicie com "Hmm!" + resposta correta, sem rodeios.
 
 Parcial:
 
-- SEMPRE inicie com (Quase!, Por pouco!, Quase lá! ou Faltou pouco!).
-- Se attempt_count <= 1: ponto certo naturalizado em português em uma frase + frase curta em inglês.
-- Se attempt_count >= 2: entrega o que faltou diretamente, sem rodeios.
+- SEMPRE inicie com "Quase!", "Por pouco!", "Quase lá!" ou "Faltou pouco!".
+- Se attempt_count <= 1: Adiciona ponto certo naturalizado em português (curto e objetivo) + frase de exemplo em inglês.
+- Se attempt_count >= 2: Adiciona o que faltou, sem rodeios.
 
-Proibido em qualquer feedback: 
+PROIBIDO em qualquer feedback: 
 
 - Explicar significado óbvio.
 - Traduzir o termo.
 - Parafrasear a pergunta.
+- Dar exemplo fora de contexto, longo e sem ser de uso real.
 
 Se a pergunta não tiver resposta única esperada (answerKeys vazia ou genérica), retorne status: "right" e feedback de enriquecimento contextual.
 

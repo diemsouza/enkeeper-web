@@ -1,5 +1,6 @@
 import { Doc, ActivityStatus } from "@prisma/client";
 import { sanitizeNoteContent } from "./sanitizer";
+import { MAX_DOCS_PER_DAY } from "../lib/constants";
 
 export function formatOnboardingMsg1(): string {
   return "Hi! Bem-vindo ao *Dropuz*. 👋";
@@ -105,7 +106,7 @@ export function formatDocReplacePrompt(title: string): string {
 }
 
 export function formatDailyLimitReached(): string {
-  return "Você atingiu o limite de 5 conteúdos por dia. Tente novamente amanhã.";
+  return `Você atingiu o limite de ${MAX_DOCS_PER_DAY} conteúdos por dia. Tente novamente amanhã.`;
 }
 
 export function formatPausePrompt(docs: Pick<Doc, "id" | "title">[]): string {
