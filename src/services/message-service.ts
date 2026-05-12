@@ -79,7 +79,7 @@ import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
 import { handleAdminCommand } from "./admin-service";
 import { startOfDay } from "date-fns";
-import { fixQuotes } from "../lib/utils";
+import { sanitizeText } from "../lib/utils";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
@@ -639,7 +639,7 @@ export async function handleIncomingMessage(
               docId: practiceDoc.id,
             });
             const evalStatus = evaluation?.status ?? "wrong";
-            const feedback = fixQuotes(
+            const feedback = sanitizeText(
               `${ANSWER_EMOJI[evalStatus]} ${evaluation?.feedback ?? "Não consegui avaliar sua resposta!"}`,
             );
             const answerType = input.mediaType === "audio" ? "audio" : "text";

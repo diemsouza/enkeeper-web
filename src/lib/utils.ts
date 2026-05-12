@@ -30,8 +30,10 @@ export async function safeCall<T>(
   }
 }
 
-export function sanitizeText(text: string) {
-  return text.replace("<has_function_call>", "");
+export function sanitizeText(text: string): string {
+  return text
+    .replace(/—/g, ",")
+    .replace(/(^|[\s,.:;!?])'([^']+)'([\s,.:;!?]|$)/g, '$1"$2"$3');
 }
 
 export function extractUrls(text: string): string[] {
@@ -153,8 +155,4 @@ export function validateHttpsUrl(url: string) {
   } catch {
     return false;
   }
-}
-
-export function fixQuotes(text: string): string {
-  return text.replace(/(^|[\s,.:;!?])'([^']+)'([\s,.:;!?]|$)/g, '$1"$2"$3');
 }

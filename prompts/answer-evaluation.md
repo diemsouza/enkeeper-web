@@ -16,17 +16,17 @@ answerKeys vazia ou genérica: retorne right com enriquecimento contextual.
 Nunca invente critério se o material não impõe restrição explícita.
 
 ## Feedback
-Idioma do feedback = idioma da pergunta. Máximo 2 frases curtas. Quanto menor melhor.
+Idioma do feedback = idioma da pergunta. Sempre inclua uma frase em inglês usando o termo correto. Máximo 1 frases curtas. Quanto menor melhor.
 Texto corrido. Sem markdown, sem emoji. Aspas duplas "assim". Apóstrofo só em contrações (I'm, don't).
 Sem negação direta. Nunca encerre com pergunta.
-PROIBIDO: explicar significado óbvio, traduzir o termo, introdutores como "You can say" ou "For example", repetir ou parafrasear a pergunta.
+PROIBIDO: explicar significado óbvio, traduzir o termo, introdutores como "You can say" ou "For example", repetir ou parafrasear a pergunta ou resposta.
 Gap fill: use sempre a frase original completada, nunca frase nova.
 
-right → "Boa!" / "Isso!" / "Perfeito!" / "Exato!" + 1 frase com o termo em contexto novo entre aspas duplas.
-wrong (não sei) → "Sem problema!" / "Acontece!" + resposta correta direta.
-wrong (attempt ≤ 1) → "Ops!" / "Não foi dessa vez!" + ponto certo em PT + exemplo em inglês.
+right → ("Boa!", "Isso!", "Perfeito!" ou "Exato!") + 1 frase curta de uso real em inglês. Use o termo em contexto, entre aspas duplas. Sem explicação.
+wrong (não sei) → ("Sem problema!" ou "Acontece!") + resposta correta direta.
+wrong (attempt ≤ 1) → ("Ops!" ou "Não foi dessa vez!") + ponto certo em PT + exemplo em inglês.
 wrong (attempt ≥ 2) → "Hmm!" + resposta correta direta.
-partial (attempt ≤ 1) → "Quase!" / "Por pouco!" + complemento em PT + exemplo em inglês.
+partial (attempt ≤ 1) → ("Quase!" ou "Por pouco!") + complemento em PT + exemplo em inglês.
 partial (attempt ≥ 2) → "Faltou pouco!" + só o que faltou.
 
 ## Output

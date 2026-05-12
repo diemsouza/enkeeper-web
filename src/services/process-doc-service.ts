@@ -19,7 +19,7 @@ import {
   FIRST_MESSAGE_INTERVAL_MIN,
   NEXT_MESSAGE_INTERVAL_MIN,
 } from "../lib/constants";
-import { fixQuotes } from "../lib/utils";
+import { sanitizeText } from "../lib/utils";
 
 export async function processDoc(docId: string, userId: string): Promise<void> {
   const doc = await findDocById(docId, userId);
@@ -100,8 +100,8 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       docId,
       activityId: activity.id,
       sectionType: sectionData.sectionType,
-      title: fixQuotes(sectionData.title),
-      content: fixQuotes(sectionData.content),
+      title: sanitizeText(sectionData.title),
+      content: sanitizeText(sectionData.content),
       order: sectionData.order,
     });
 
@@ -121,8 +121,8 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
         section.id,
         questions.map((q) => ({
           ...q,
-          question: fixQuotes(q.question),
-          answerKeys: q.answerKeys.map((k) => fixQuotes(k)),
+          question: sanitizeText(q.question),
+          answerKeys: q.answerKeys.map((k) => sanitizeText(k)),
         })),
       );
       totalQuestions += questions.length;

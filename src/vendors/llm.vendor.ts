@@ -1,5 +1,6 @@
 import { generateText, NoObjectGeneratedError, Output } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
 import { extractText } from "unpdf";
 import {
   docProcessingSchema,
@@ -23,7 +24,7 @@ import {
 } from "../lib/prompts";
 
 const MODEL_MINI = "gpt-4.1-mini";
-const MODEL_STANDARD = "gpt-4.1";
+const MODEL_STANDARD = "claude-haiku-4-5-20251001"; // "gpt-4.1";
 
 // ─── Doc extraction ───────────────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export async function generateSectionQuestions(params: {
 
   try {
     const llmResult = await generateText({
-      model: openai(MODEL_STANDARD),
+      model: anthropic(MODEL_STANDARD),
       temperature: 0.2,
       prompt,
     });
@@ -134,8 +135,8 @@ export async function generateSectionQuestions(params: {
     docId,
     sectionId,
     usageType: "question_extraction",
-    provider: "openai",
-    model: MODEL_MINI,
+    provider: "anthropic",
+    model: MODEL_STANDARD,
     inputTokens,
     outputTokens,
     cachedTokens,
@@ -179,7 +180,7 @@ export async function generateAnswerEvaluation(params: {
 
   try {
     const llmResult = await generateText({
-      model: openai(MODEL_STANDARD),
+      model: anthropic(MODEL_STANDARD),
       system: systemPrompt,
       output: Output.object({ schema: answerEvaluationSchema }),
       temperature: 0.3,
@@ -205,8 +206,8 @@ export async function generateAnswerEvaluation(params: {
     userId,
     docId,
     usageType: "answer_evaluation",
-    provider: "openai",
-    model: MODEL_MINI,
+    provider: "anthropic",
+    model: MODEL_STANDARD,
     inputTokens,
     outputTokens,
     cachedTokens,
