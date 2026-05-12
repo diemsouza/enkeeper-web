@@ -62,6 +62,40 @@ enum SectionStatus {
     completed
 }
 
+enum QuestionFormat {
+    gap_fill // frase com lacuna no meio: "I found the ______ between work and enjoy."
+    recall // dado o contexto ou uso, traga o termo: "Como se diz 'deixa pra lá' em inglês?"
+    recall_inverted // dado o termo, traga o significado ou uso: "O que significa 'never mind'?"
+    scenario // situação realista, qual termo usaria: "Você quer pedir pra alguém esperar. O que diz?"
+    choice // duas ou mais opções, escolhe a correta: "Qual usaria: 'never mind' ou 'no way'?"
+}
+
+model Message {
+    id            String      @id @default(ulid()) @map("id")
+    userId        String      @map("user_id")
+    userChannelId String      @map("user_channel_id")
+    activityId    String?     @map("activity_id")
+    role          MessageRole @map("role")
+    content       String      @map("content")
+    intent        String?     @map("intent")
+    externalId    String?     @map("external_id")
+    mediaType     String?     @map("media_type")
+    mediaId       String?     @map("media_id")
+    metadata      Json?       @map("metadata")
+    questionId    String?     @map("question_id")
+    createdAt     DateTime    @default(now()) @map("created_at")
+
+    user        User        @relation(fields: [userId], references: [id])
+    userChannel UserChannel @relation(fields: [userChannelId], references: [id])
+    activity    Activity?   @relation(fields: [activityId], references: [id])
+    docs        Doc[]
+
+    @@unique([userChannelId, externalId])
+    @@index([userId, createdAt])
+    @@index([userId, role, createdAt])
+    @@map("messages")
+}
+
 model Doc {
     id         String    @id @default(ulid()) @map("id")
     userId     String    @map("user_id")
@@ -87,28 +121,27 @@ model Doc {
 }
 
 model Activity {
-    id              String         @id @default(ulid()) @map("id")
-    userId          String         @map("user_id")
-    docId           String         @map("doc_id")
-    date            DateTime       @map("date") @db.Date
-    topicIndex      Int            @default(0) @map("topic_index")
-    nextMessageAt   DateTime?      @map("next_message_at")
-    intervalMinutes Int          @default(60)           @map("interval_minutes")
-    executionCount  Int          @default(0)            @map("execution_count")
+    id                String         @id @default(ulid()) @map("id")
+    userId            String         @map("user_id")
+    docId             String         @map("doc_id")
+    date              DateTime       @map("date") @db.Date
+    nextMessageAt     DateTime?      @map("next_message_at")
+    intervalMinutes   Int            @default(60) @map("interval_minutes")
+    executionCount    Int            @default(0) @map("execution_count")
     waitingUser       Boolean        @default(false) @map("waiting_user")
-    interactionCount  Int            @default(0)     @map("interaction_count")
-    lastInteractionAt DateTime?                      @map("last_interaction_at")
+    interactionCount  Int            @default(0) @map("interaction_count")
+    lastInteractionAt DateTime?      @map("last_interaction_at")
     status            ActivityStatus @default(active) @map("status")
     pausedAt          DateTime?      @map("paused_at")
     completedAt       DateTime?      @map("completed_at")
     intensiveUntil    DateTime?      @map("intensive_until")
-    questionCount     Int            @default(0)     @map("question_count")
-    sectionCount      Int            @default(0)     @map("section_count")
-    questionRound     Int            @default(0)     @map("question_round")
-    lastQuestionId    String?                        @map("last_question_id")
-    createdAt       DateTime       @default(now()) @map("created_at")
-    updatedAt       DateTime       @updatedAt @map("updated_at")
-    deletedAt       DateTime?      @map("deleted_at")
+    questionCount     Int            @default(0) @map("question_count")
+    sectionCount      Int            @default(0) @map("section_count")
+    questionRound     Int            @default(0) @map("question_round")
+    lastQuestionId    String?        @map("last_question_id")
+    createdAt         DateTime       @default(now()) @map("created_at")
+    updatedAt         DateTime       @updatedAt @map("updated_at")
+    deletedAt         DateTime?      @map("deleted_at")
 
     user      User       @relation(fields: [userId], references: [id])
     doc       Doc        @relation(fields: [docId], references: [id])
@@ -119,6 +152,57 @@ model Activity {
     @@unique([userId, docId, date])
     @@index([status, nextMessageAt])
     @@map("activities")
+}
+
+model Section {
+    id          String         @id @default(ulid()) @map("id")
+    userId      String         @map("user_id")
+    docId       String?        @map("doc_id")
+    activityId  String         @map("activity_id")
+    sectionType SectionType    @map("section_type")
+    title       String         @map("title")
+    content     String         @map("content") @db.Text
+    order       Int            @map("order")
+    status      SectionStatus? @map("status")
+    createdAt   DateTime       @default(now()) @map("created_at")
+    updatedAt   DateTime       @updatedAt @map("updated_at")
+    deletedAt   DateTime?      @map("deleted_at")
+
+    user      User       @relation(fields: [userId], references: [id])
+    doc       Doc?       @relation(fields: [docId], references: [id])
+    activity  Activity   @relation(fields: [activityId], references: [id])
+    questions Question[]
+    llmUsages LlmUsage[]
+
+    @@index([userId])
+    @@index([activityId, status])
+    @@map("sections")
+}
+
+model Question {
+    id              String          @id @default(ulid()) @map("id")
+    activityId      String          @map("activity_id")
+    sectionId       String?         @map("section_id")
+    question        String          @db.Text
+    answerKeys      String[]        @map("answer_keys")
+    answer          String?         @db.Text
+    questionType    QuestionType    @default(text) @map("question_type")
+    answerType      AnswerType?     @map("answer_type")
+    questionFormat  QuestionFormat? @map("question_format")
+    questionOptions String[]        @map("question_options")
+    attemptCount    Int             @default(0) @map("attempt_count")
+    wrongCount      Int             @default(0) @map("wrong_count")
+    status          QuestionStatus? @map("status")
+    createdAt       DateTime        @default(now()) @map("created_at")
+    updatedAt       DateTime        @updatedAt @map("updated_at")
+    deletedAt       DateTime?       @map("deleted_at")
+
+    activity Activity @relation(fields: [activityId], references: [id])
+    section  Section? @relation(fields: [sectionId], references: [id])
+
+    @@index([activityId, status])
+    @@index([sectionId])
+    @@map("questions")
 }
 
 model WeeklyReport {
@@ -159,79 +243,4 @@ model LlmUsage {
     @@index([docId])
     @@index([sectionId])
     @@map("llm_usages")
-}
-
-model Message {
-    id            String      @id @default(ulid()) @map("id")
-    userId        String      @map("user_id")
-    userChannelId String      @map("user_channel_id")
-    activityId    String?     @map("activity_id")
-    role          MessageRole @map("role")
-    content       String      @map("content")
-    intent        String?     @map("intent")
-    externalId    String?     @map("external_id")
-    mediaType     String?     @map("media_type")
-    mediaId       String?     @map("media_id")
-    metadata      Json?       @map("metadata")
-    questionId    String?     @map("question_id")
-    createdAt     DateTime    @default(now()) @map("created_at")
-
-    user        User        @relation(fields: [userId], references: [id])
-    userChannel UserChannel @relation(fields: [userChannelId], references: [id])
-    activity    Activity?   @relation(fields: [activityId], references: [id])
-    docs        Doc[]
-
-    @@unique([userChannelId, externalId])
-    @@index([userId, createdAt])
-    @@index([userId, role, createdAt])
-    @@map("messages")
-}
-
-model Question {
-    id           String          @id @default(ulid()) @map("id")
-    activityId   String          @map("activity_id")
-    sectionId    String?         @map("section_id")
-    question     String          @db.Text
-    answerKeys   String[]        @map("answer_keys")
-    answer       String?         @db.Text
-    status       QuestionStatus? @map("status")
-    attemptCount Int             @default(0) @map("attempt_count")
-    wrongCount   Int             @default(0) @map("wrong_count")
-    questionType QuestionType    @default(text) @map("question_type")
-    answerType   AnswerType?     @map("answer_type")
-    createdAt    DateTime        @default(now()) @map("created_at")
-    updatedAt    DateTime        @updatedAt @map("updated_at")
-    deletedAt    DateTime?       @map("deleted_at")
-
-    activity Activity  @relation(fields: [activityId], references: [id])
-    section  Section?  @relation(fields: [sectionId], references: [id])
-
-    @@index([activityId, status])
-    @@index([sectionId])
-    @@map("questions")
-}
-
-model Section {
-    id          String         @id @default(ulid()) @map("id")
-    userId      String         @map("user_id")
-    docId       String?        @map("doc_id")
-    activityId  String         @map("activity_id")
-    sectionType SectionType    @map("section_type")
-    title       String         @map("title")
-    content     String         @map("content") @db.Text
-    order       Int            @map("order")
-    status      SectionStatus? @map("status")
-    createdAt   DateTime       @default(now()) @map("created_at")
-    updatedAt   DateTime       @updatedAt @map("updated_at")
-    deletedAt   DateTime?      @map("deleted_at")
-
-    user      User       @relation(fields: [userId], references: [id])
-    doc       Doc?       @relation(fields: [docId], references: [id])
-    activity  Activity   @relation(fields: [activityId], references: [id])
-    questions Question[]
-    llmUsages LlmUsage[]
-
-    @@index([userId])
-    @@index([activityId, status])
-    @@map("sections")
 }

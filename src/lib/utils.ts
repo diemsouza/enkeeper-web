@@ -156,3 +156,7 @@ export function validateHttpsUrl(url: string) {
     return false;
   }
 }
+
+export function sanitizeWhatsappContent(text: string): string {
+  return text.replace(/[*_~`[\]]/g, "");
+}

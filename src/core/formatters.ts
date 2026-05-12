@@ -1,6 +1,6 @@
 import { Doc, ActivityStatus } from "@prisma/client";
-import { sanitizeNoteContent } from "./sanitizer";
 import { MAX_DOCS_PER_DAY } from "../lib/constants";
+import { sanitizeWhatsappContent } from "../lib/utils";
 
 export function formatOnboardingMsg1(): string {
   return "Hi! Bem-vindo ao *Dropuz*. 👋";
@@ -195,7 +195,7 @@ export function formatSectionTransition(
 ): string {
   const pool = isFirst ? START_MESSAGES : CONTINUE_MESSAGES;
   const prefix = pool[Math.floor(Math.random() * pool.length)];
-  return `${prefix} *${sanitizeNoteContent(title)}*`;
+  return `${prefix} *${sanitizeWhatsappContent(title)}*`;
 }
 
 export function formatUpgradePrompt(reason: "audio" | "image"): string {
