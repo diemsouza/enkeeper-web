@@ -5,14 +5,14 @@ export const open_question: QuestionFormatData = {
   question_info:
     "Pergunta direta extraída ou baseada no material. Resposta objetiva.",
   feedback_info:
-    "Confirma com o termo em contexto de uso real. Sem explicar significado, sem descrever o que a palavra significa.",
+    "Confirma com o termo em contexto de uso real. Sem explicação adicional.",
   levels: {
     basic: {
       question: "O que acontece quando você pratica vocabulário todo dia?",
       feedback: {
         right: "Isso! O vocabulário fixa com mais facilidade.",
         wrong: "Errado! Praticar todo dia faz o vocabulário fixar.",
-        partial: "Quase! A ideia está certa, mas faltou completar.",
+        partial: "Quase! Praticar todo dia faz o vocabulário fixar.",
       },
     },
     intermediate: {
@@ -20,8 +20,7 @@ export const open_question: QuestionFormatData = {
       feedback: {
         right: "Isso! Learning becomes more efficient and consistent.",
         wrong: "Errado! Finding the sweet spot makes learning more efficient.",
-        partial:
-          "Quase! You got part of it, finding the sweet spot improves efficiency.",
+        partial: "Quase! Finding the sweet spot makes learning more efficient.",
       },
     },
     advanced: {
@@ -33,7 +32,7 @@ export const open_question: QuestionFormatData = {
         wrong:
           "Not quite! Consistency beats intensity because it reinforces memory over time.",
         partial:
-          "Almost! You're on the right track, add that consistency builds long-term retention.",
+          "Almost! Consistency beats intensity because it reinforces memory over time.",
       },
     },
   },

@@ -4,6 +4,7 @@ export const open_text: QuestionFormatData = {
   format: "open_text",
   question_info:
     "Varie entre: compreensão (ideia ou fato do conteúdo), reformulação (explique com outras palavras), produção (use vocabulário do conteúdo em nova frase) e inferência (o que o conteúdo implica mas não diz explicitamente).",
+  feedback_info: "Confirma ou corrige direto, sem explicação adicional.",
   levels: {
     basic: {
       question: "O que o texto diz sobre a importância de praticar todo dia?",
@@ -19,12 +20,11 @@ export const open_text: QuestionFormatData = {
     intermediate: {
       question: 'Como você explicaria "sweet spot" com suas próprias palavras?',
       feedback: {
-        right:
-          'Isso! "Sweet spot" is that perfect point where everything works just right.',
+        right: 'Isso! "Sweet spot" is that perfect point where things click.',
         wrong:
-          'Errado! "Sweet spot" é o ponto ideal, onde tudo se encaixa perfeitamente.',
+          'Errado! "Sweet spot" — o ponto onde tudo se encaixa. "That\'s the sweet spot."',
         partial:
-          'Quase! A ideia está certa, mas "sweet spot" é mais específico, é o ponto ideal, não só "bom".',
+          'Quase! A ideia está certa, mas faltou o termo: "sweet spot". "That\'s the sweet spot."',
       },
     },
     advanced: {
@@ -34,7 +34,7 @@ export const open_text: QuestionFormatData = {
         right:
           "Exactly! Consistency is what turns occasional effort into real progress.",
         wrong:
-          "Errado! The text argues that consistency, not intensity, drives real progress.",
+          "Not quite! The text argues that consistency, not intensity, drives real progress.",
         partial:
           "Almost! You got the idea, but the text emphasizes consistency over intensity.",
       },

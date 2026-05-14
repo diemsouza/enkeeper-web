@@ -1,7 +1,7 @@
 # Dropuz — Product Brief
 
 > Documento vivo — base de decisão para produto e negócio.
-> Versão 10 — Maio 2026
+> Versão 11 — Maio 2026
 > Regras de sistema e comportamento técnico em Rules.md.
 
 ---
@@ -59,7 +59,7 @@ A interseção "prática contextual contínua, ancorada no material do aluno, de
 ## 4. Como funciona
 
 1. Usuário manda material da aula — texto, áudio, imagem ou PDF.
-2. Sistema identifica seções do material por tipo, gera perguntas específicas por seção.
+2. Sistema identifica seções do material por tipo, detecta o nível e gera perguntas específicas por seção.
 3. Durante o dia, perguntas chegam no WhatsApp. Usuário responde de cabeça.
 4. Sistema avalia a resposta, dá feedback natural e registra acerto/erro.
 5. Perguntas erradas ou parciais voltam com prioridade nas próximas rodadas.
@@ -67,10 +67,14 @@ A interseção "prática contextual contínua, ancorada no material do aluno, de
 
 ### Nível e idioma das perguntas
 
-O sistema calibra pelo nível do material:
+O sistema detecta o nível do material automaticamente no upload:
 - Básico: pergunta em português, termo em inglês
 - Intermediário: misto PT/EN natural
 - Avançado: majoritariamente em inglês
+
+### Formatos de pergunta
+
+Vocabulário usa variação automática entre: gap fill, recall, recall invertido, cenário e múltipla escolha. Texto usa pergunta aberta. Exercise usa pergunta direta baseada no material.
 
 ### Modo sessão (/praticar)
 
@@ -78,10 +82,12 @@ Usuário pode iniciar sessão ativa — perguntas chegam em sequência, uma apó
 
 ### Onboarding
 
-> Olá! Você acabou de chegar no Dropuz. Aqui é onde sua prática de inglês continua durante o dia.
-> Manda o material da sua aula — texto, foto ou PDF.
-> No seu ritmo, durante o dia, as perguntas chegam pra você praticar.
-> Manda agora pra começar.
+```
+Hi! Bem-vindo ao *Dropuz*. 👋
+Manda o material da sua aula de inglês — texto, áudio, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
+Você tem 24 horas pra sentir na prática. Aproveita!
+Mande agora pra começar. Ou use / pra ver os comandos disponíveis.
+```
 
 ---
 
@@ -176,8 +182,9 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Mensageria | Meta Cloud API (WhatsApp Business) |
 | Transcrição de áudio | OpenAI Whisper |
 | OCR / Vision | GPT-4o-mini Vision |
-| doc-extraction + geração de perguntas por seção | Claude Haiku ou GPT-4o-mini |
-| Avaliação de respostas + feedback | Claude Haiku ou GPT-4o-mini |
+| Extração de material (doc-extraction) | GPT-4.1-mini |
+| Geração de perguntas | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
+| Avaliação de respostas + feedback | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Evolução semanal | Modelo médio em batch |
 | Jobs agendados | Vercel Cron |
 | Pagamento (MVP) | Pix manual via /suporte |
@@ -269,9 +276,13 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Número virtual aprovado e funcionando
 - Transcrição de áudio (Whisper)
 - OCR e descrição de imagem (Vision)
-- Schema atualizado com `Section` e `Question`
+- Schema atualizado com Section, Question, QuestionFormat, llm_logs
 - Motor de prática com loop acerto/erro
 - Cadência e sessão ativa (/praticar)
+- Sistema de formatos granulares (gap_fill, recall, recall_inverted, scenario, choice, open_text, open_question)
+- Detecção automática de nível no upload
+- Múltipla escolha (choice) com opções embaralhadas
+- Logs de LLM com DISABLE_LLM_LOGS
 
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou

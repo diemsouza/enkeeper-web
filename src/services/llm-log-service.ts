@@ -22,7 +22,11 @@ type RegisterLlmLogInput = {
 
 class LlmLogService {
   async registerLog(params: RegisterLlmLogInput): Promise<void> {
-    if (process.env.DISABLE_LLM_LOGS === "1") return;
+    if (
+      process.env.DISABLE_LLM_LOGS === "true" ||
+      process.env.DISABLE_LLM_LOGS === "1"
+    )
+      return;
     try {
       await prisma.llmLog.create({
         data: {

@@ -78,6 +78,7 @@ import {
   MIN_DOC_CHARS,
   INTENSIVE_UNTIL_MIN,
   ANSWER_EMOJI,
+  MAX_DOCS_PER_DAY,
 } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
@@ -601,7 +602,10 @@ export async function handleIncomingMessage(
         }
         const activeDocs = await findActiveDocsByUser(user.id);
         if (activeDocs.length > 0) {
-          reply = formatDocReplacePrompt(activeDocs[0].title);
+          reply = formatDocReplacePrompt(
+            activeDocs[0].title,
+            MAX_DOCS_PER_DAY - (todayUsage?.docCount ?? 0),
+          );
           messageIntent = "awaiting_doc_replace";
           break;
         }
@@ -871,13 +875,17 @@ async function sendIntensiveQuestion(
   }
 
   let intensiveOptions = question.questionOptions;
-  if (question.questionFormat === QuestionFormat.choice && intensiveOptions.length > 0) {
+  if (
+    question.questionFormat === QuestionFormat.choice &&
+    intensiveOptions.length > 0
+  ) {
     intensiveOptions = [...intensiveOptions].sort(() => Math.random() - 0.5);
     await updateQuestion(question.id, { questionOptions: intensiveOptions });
   }
 
   const questionText =
-    question.questionFormat === QuestionFormat.choice && intensiveOptions.length > 0
+    question.questionFormat === QuestionFormat.choice &&
+    intensiveOptions.length > 0
       ? formatChoiceQuestion(question.question, intensiveOptions)
       : question.question;
 
@@ -977,7 +985,10 @@ async function checkAndCreateDoc(
         input,
         today,
       );
-    const reply = formatDocReplacePrompt(activeDocs[0].title);
+    const reply = formatDocReplacePrompt(
+      activeDocs[0].title,
+      MAX_DOCS_PER_DAY - (todayUsage?.docCount ?? 0),
+    );
     await saveBotReply(userId, userChannelId, reply, today);
     return [reply];
   }
@@ -1010,8 +1021,8 @@ async function createDocFlow(
     status: "processing",
   });
   await publishDocProcessing(doc.id, userId);
-  await incrementDailyDocCount(userId, today);
-  const reply = formatDocReceived();
+  const docCount = await incrementDailyDocCount(userId, today);
+  const reply = formatDocReceived(MAX_DOCS_PER_DAY - docCount);
   await saveBotReply(userId, userChannelId, reply, today);
   return [reply];
 }

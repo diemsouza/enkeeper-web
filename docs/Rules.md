@@ -73,6 +73,8 @@ Banco de perguntas geradas no upload do material. Cada `Question` pertence a uma
 - `wrongCount` — quantas vezes a avaliação retornou `wrong` ou `partial`. Incrementa em todo reenvio com esse resultado. Usado no relatório semanal para identificar vocabulário que travou
 - `questionType` — `text` (default) | `audio`. Formato em que a pergunta foi enviada ao usuário
 - `answerType` — `text` | `audio` | `null`. Preenchido no momento da resposta. Se a mensagem recebida for `audio` (voice note do WhatsApp), marca `audio`; caso contrário, `text`. `null` enquanto não houver resposta
+- `questionFormat QuestionFormat?` — formato da pergunta. Ver enum em Seção 11
+- `questionOptions String[]` — opções embaralhadas para o formato `choice`. Vazio nos demais formatos
 - `sectionId` — relação opcional com `Section`
 
 ### Fluxo
@@ -226,7 +228,7 @@ _Mande um texto, áudio, imagem ou PDF para praticar._
 
 Se o usuário manda mensagem e não há nenhuma `Activity` ativa:
 
-> Ainda não recebi nenhum conteúdo. Manda o material que quer praticar — texto, foto ou PDF.
+> Ainda não recebi nenhum conteúdo. Manda o material que quer praticar — texto, áudio, foto ou PDF.
 
 ---
 
@@ -240,10 +242,10 @@ Disparado quando `wa_id` é criado pela primeira vez (`onboardedAt` nulo). Quatr
 Hi! Bem-vindo ao *Dropuz*. 👋
 ```
 ```
-Manda o material da sua aula de inglês — texto, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
+Manda o material da sua aula de inglês — texto, áudio, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
 ```
 ```
-Você tem 24 horas de acesso completo. Aproveite pra sentir na prática.
+Você tem 24 horas pra sentir na prática. Aproveita!
 ```
 ```
 Mande agora pra começar. Ou use / pra ver os comandos disponíveis.
@@ -254,9 +256,7 @@ Mande agora pra começar. Ou use / pra ver os comandos disponíveis.
 Disparado quando o usuário sobe o primeiro material (`activityCount === 1`). Substitui qualquer msg genérica de confirmação de upload:
 
 ```
-Em alguns minutos chega a primeira pergunta. Responde de cabeça, sem consultar — o sistema avalia e guarda o que travou pra reforçar depois.
-
-Se quiser praticar em sequência agora, use /praticar ou apenas aguarde.
+Em alguns minutos chega a primeira pergunta.
 ```
 
 ---
@@ -290,7 +290,7 @@ Quando a última mensagem do assistente é `practice_question` ou `practice_nudg
 
 - Áudio, imagem e PDF processados em memória e descartados após extração.
 - Apenas texto extraído, seções e perguntas geradas são salvos.
-- No upload: 1 chamada para `doc-extraction` (identifica seções e limpa conteúdo) + 1 chamada por seção para o prompt de geração correspondente.
+- No upload: 1 chamada para `doc-extraction` (identifica seções, nível e limpa conteúdo) + 1 chamada por seção para o prompt de geração correspondente.
 - Durante o dia: 1 chamada por resposta do usuário para avaliação e feedback.
 
 ### Caps técnicos invisíveis
@@ -306,38 +306,56 @@ Quando a última mensagem do assistente é `practice_question` ou `practice_nudg
 
 ```
 prompts/
-  voice.md              — persona compartilhada, usada por todos os prompts de geração e avaliação
-  standard.md           — padrão de estrutura de prompt do projeto
-  doc-extraction.md     — identifica seções, classifica por tipo, limpa conteúdo
+  voice.md              — persona compartilhada, usada por todos os prompts
+  standard.md           — padrão de estrutura de prompt do projeto (inclui ## Examples)
+  doc-extraction.md     — identifica seções, classifica por tipo, detecta nível, limpa conteúdo
   gen-vocabulary.md     — gera perguntas para seções do tipo vocabulary
   gen-text.md           — gera perguntas para seções do tipo text
-  gen-exercise.md       — coleta e gera perguntas para seções do tipo exercise
+  gen-exercise.md       — extrai e padroniza perguntas de seções do tipo exercise
   answer-evaluation.md  — avalia resposta do usuário e gera feedback
   approaches/           — prompts legados, não usar em novos fluxos
+
+src/formats/
+  types.ts              — tipos QuestionFormatData e FormatLevel
+  index.ts              — exporta todos os formatos e funções utilitárias
+  gap_fill.ts           — exemplos e instruções do formato gap_fill
+  recall.ts             — exemplos e instruções do formato recall
+  recall_inverted.ts    — exemplos e instruções do formato recall_inverted
+  scenario.ts           — exemplos e instruções do formato scenario
+  choice.ts             — exemplos e instruções do formato choice
+  open_text.ts          — exemplos e instruções do formato open_text
+  open_question.ts      — exemplos e instruções do formato open_question
 ```
 
 ### Responsabilidades
 
 **`doc-extraction.md`**
-Lê o material bruto, identifica seções, classifica cada uma por `sectionType`, limpa o conteúdo. Não gera perguntas. Retorna JSON com `title`, `isValid`, `invalidReason` e `sections[]`.
+Lê o material bruto, identifica seções, classifica cada uma por `sectionType`, detecta o nível do material (`basic`, `intermediate`, `advanced`), limpa o conteúdo. Não gera perguntas. Retorna JSON com `title`, `level`, `isValid`, `invalidReason` e `sections[]`.
 
 **`gen-vocabulary.md`**
-Recebe o `content` limpo de uma seção `vocabulary`. Gera perguntas de recall e produção — gap fill, cenário, recall invertido. Nunca pede tradução isolada. Cobre todos os itens antes de repetir.
+Recebe seção `vocabulary` + `level` + `{question_examples}` injetado. Gera 1 pergunta por item seguindo o formato do exemplo injetado. Retorna `questionFormat` e `questionOptions` em cada item.
 
 **`gen-text.md`**
-Recebe o `content` limpo de uma seção `text`. Gera perguntas ancoradas no conteúdo — compreensão, reformulação, uso em contexto. Nunca referencia posição no texto.
+Recebe seção `text` + `level` + `{question_examples}` injetado (sempre `open_text`). Gera perguntas de compreensão, reformulação, produção e inferência. Retorna `questionFormat: open_text` em cada item.
 
 **`gen-exercise.md`**
-Recebe o `content` limpo de uma seção `exercise`. Coleta perguntas já existentes no material. `answerKeys` vem do gabarito se houver; se não houver mas houver contexto, a IA gera respostas baseadas nesse contexto; se não houver nada, a IA gera uma ou mais respostas plausíveis.
+Recebe seção `exercise` + `level` + `{question_examples}` injetado (sempre `open_question`). Extrai perguntas do material e reescreve no padrão do exemplo. Retorna `questionFormat: open_question` em cada item.
 
 **`answer-evaluation.md`**
-Avalia a resposta do usuário contra `answerKeys`. Comportamento único independente do `sectionType` — `answerKeys` com uma entrada é mais restrito, com várias é mais aberto. Retorna `status` e `feedback`.
+Avalia a resposta do usuário contra `answerKeys`. Recebe `{feedback_examples}` injetado com o padrão de feedback do formato da pergunta. Retorna `status` e `feedback`.
+
+### Separação system / prompt
+
+Todos os prompts seguem o padrão:
+- `system` — Role + Rules + Examples + Output (estático, cacheável)
+- `prompt` — Context com variáveis dinâmicas (pergunta, conteúdo, resposta do usuário)
 
 ### Contrato de saída do doc-extraction
 
 ```json
 {
   "title": "título curto, máx 8 palavras",
+  "level": "basic | intermediate | advanced",
   "isValid": true,
   "invalidReason": null,
   "sections": [
@@ -356,28 +374,70 @@ Só classifica como `exercise` quando o material contém lista explícita de per
 
 ---
 
-## 11. Regras de geração de perguntas
+## 11. Sistema de formatos de perguntas
 
-### Quantidade por tipo de seção
+### Enum QuestionFormat
 
-| Tipo | Regra |
-| --- | --- |
-| `vocabulary` | Cobre todos os itens antes de repetir. Remove ambiguidades. Máximo: 50 por seção |
-| `text` | Pequeno (até 1 parágrafo): até 5. Médio (2-4 parágrafos): até 10. Grande (5+ parágrafos): até 15 |
-| `exercise` | Fiel ao material. Se mais de 30 perguntas, remove ambiguidades e duplicatas. Máximo: 30 por seção |
+```
+gap_fill        — frase com lacuna cobrindo o termo fixado
+recall          — dado o significado, traga o termo
+recall_inverted — dado o termo, traga o significado ou uso
+scenario        — situação realista que leva ao termo
+choice          — múltipla escolha com 2 a 5 opções
+open_text       — pergunta aberta sobre texto corrido
+open_question   — pergunta direta com resposta objetiva (exercise)
+```
+
+### Formatos por sectionType
+
+| sectionType | Sorteia formato? | Formatos possíveis |
+| ----------- | ---------------- | ------------------ |
+| vocabulary | sim | gap_fill, recall, recall_inverted, scenario, choice |
+| text | não | open_text fixo |
+| exercise | não | open_question fixo |
+
+### Funções utilitárias (src/formats/index.ts)
+
+**`getFormatsForType(sectionType)`**
+Retorna array de `QuestionFormat` possíveis para o tipo de seção.
+
+**`getQuestionExamples(formats, level)`**
+Retorna string com exemplos de pergunta por formato e nível, pronta para injetar como `{question_examples}` nos prompts de geração.
+
+**`getFeedbackExamples(formats, level)`**
+Retorna string com exemplos de feedback (right, wrong, partial) por formato e nível, pronta para injetar como `{feedback_examples}` no avaliador.
+
+### Sorteio de formato
+
+O sorteio acontece no código antes de cada chamada de geração — nunca no prompt. O código passa o array de formatos possíveis e o exemplo correspondente ao formato sorteado. O modelo executa, não decide.
+
+Para `choice`: `questionOptions` é embaralhado antes de salvar no banco. A ordem salva é a ordem exibida e avaliada.
+
+---
+
+## 12. Logs de LLM
+
+Todas as chamadas ao LLM são registradas na tabela `llm_logs` com input, output, tokens, modelo e provider.
+
+Pode ser desligado via variável de ambiente: `DISABLE_LLM_LOGS=true`.
+
+Útil para debug em providers que não têm painel de log próprio (ex: Anthropic).
+
+---
+
+## 13. Regras de geração de perguntas
 
 ### Persona
-Cara de 50 anos, leu muito, viveu bastante, sabe de tudo um pouco. Português culto mas informal, nunca gíria, nunca formalidade de e-mail.
+40 anos, leu muito, viveu bastante, sabe de tudo um pouco. Português e inglês cultos mas informais, nunca gíria, nunca formalidade de e-mail.
 
 ### Tamanho
 1 a 2 frases. Máximo 30 palavras. Quanto mais curto, melhor.
 
 ### Nível e idioma
-- Calibra pelo nível do material. Se não identificado, assume básico.
-- Básico: pergunta em PT, termo em EN.
-- Intermediário: misto PT/EN natural.
+- Calibra pelo nível identificado no `doc-extraction`. Se não identificado, assume `basic`.
+- Básico: pergunta em PT, termo em EN. Gap fill em inglês com dica PT entre parênteses.
+- Intermediário: pergunta em PT com termos EN quando natural, resposta em EN.
 - Avançado: majoritariamente em EN, resposta esperada em EN.
-- Nunca simplifique o que o material não simplificou.
 
 ### Ancoragem
 Toda pergunta ancorada no material. O usuário não tem o material à mão — nunca referencie posição ou localização no texto.
@@ -386,34 +446,32 @@ Toda pergunta ancorada no material. O usuário não tem o material à mão — n
 NUNCA coloque a resposta na própria pergunta.
 
 ### Gap fill
-Underline longo: `______`. Nunca use "palavra que começa/termina com XYZ" como pista.
-
-### Variação
-Nunca repita o mesmo formato duas vezes seguidas. Formatos: `gap_fill`, `scenario`, `production`, `reformulation`, `choice`, `recall`.
+Underline longo: `______`. Lacuna sempre no meio da frase, cobrindo o termo fixado. Frase sempre em inglês. Significado em PT entre parênteses no final.
 
 ---
 
-## 12. Regras de feedback
+## 14. Regras de feedback
 
-### Correto
-Confirma com leveza. Adiciona fato, variação ou uso real se couber naturalmente.
+Definidas nos arquivos `src/formats/*.ts` via `feedback_info` por formato. O avaliador recebe os exemplos injetados via `{feedback_examples}`.
 
-### Parcial ou errado
-Traz o ponto certo como quem explica pra um amigo, não como quem corrige prova. Sem negação direta — só o certo naturalizado. Usa `answerKeys` quando relevante — forma mais natural, variações aceitas, usos reais.
+### Padrão de abertura
+- right: "Boa!", "Correto!", "Exato!" ou "Perfeito!"
+- wrong: "Errado!", "Infelizmente não!", "Ops, errado!", "Ainda não!" ou "Hmmm, errou!"
+- partial: "Quase!", "Por pouco!" ou "Quase lá!"
 
-### Pergunta aberta
-Sem certo/errado. Enriquece com contexto ou exemplo concreto. Encerra com afirmação.
-
-### Proibido
-- "Você acertou", "muito bem", "parabéns", "ótimo"
-- Repetir a pergunta anterior
+### Proibido em qualquer feedback
+- Explicar significado óbvio
+- Traduzir o termo
+- Repetir ou parafrasear a pergunta
 - Encerrar com pergunta
+- Usar travessão como separador
 
 ---
 
-## 13. Arquitetura e princípios
+## 15. Arquitetura e princípios
 
 - Produto focado em inglês. Arquitetura channel-agnostic e agnóstica de matéria por baixo — expansão futura sem reescrever.
 - Identidade via `wa_id`. Schema preparado para `bsuid`.
 - Janela de 24h do WhatsApp é regra de ouro.
 - API Routes puras. Sem dependência de funcionalidades específicas de plataforma de deploy.
+- Sanitização de texto (aspas, travessão) feita no código antes de enviar ao usuário — não depende do modelo.

@@ -83,8 +83,12 @@ export function formatNoDocs(): string {
   return "Você ainda não tem conteúdos.\nMande um texto, áudio, imagem ou PDF para começar.";
 }
 
-export function formatDocReceived(): string {
-  return "Pronto. Em alguns minutos chega a primeira pergunta.";
+export function formatDocReceived(remaining: number): string {
+  const lines = ["Pronto. Em alguns minutos chega a primeira pergunta."];
+  if (remaining === 1)
+    lines.push("\n_Você ainda pode enviar mais 1 conteúdo hoje._");
+  if (remaining === 0) lines.push("\n_Esse foi seu último conteúdo do dia._");
+  return lines.join("");
 }
 
 export function formatDocConfirmPrompt(): string {
@@ -95,13 +99,23 @@ export function formatDocConfirmPrompt(): string {
   ].join("\n");
 }
 
-export function formatDocReplacePrompt(title: string): string {
+export function formatDocReplacePrompt(
+  title: string,
+  remaining: number,
+): string {
+  const limitNote =
+    remaining === 1
+      ? "\n_Você ainda pode enviar mais 1 conteúdo hoje._"
+      : remaining === 0
+        ? "\n_Esse foi seu último conteúdo do dia._"
+        : "";
+
   return [
     `Você já tem um conteúdo ativo: *"${title}"*.`,
     "",
     "Quer substituir pelo novo conteúdo? O atual será arquivado.",
     "",
-    "_Use */sim* para substituir ou */não* para manter o atual._",
+    `_Use */sim* para substituir ou */não* para manter o atual._${limitNote}`,
   ].join("\n");
 }
 
@@ -198,7 +212,10 @@ export function formatSectionTransition(
   return `${prefix} *${sanitizeWhatsappContent(title)}*`;
 }
 
-export function formatChoiceQuestion(question: string, options: string[]): string {
+export function formatChoiceQuestion(
+  question: string,
+  options: string[],
+): string {
   if (!options.length) return question;
   const labels = "abcdefghij";
   return `${question}\n\n${options.map((o, i) => `${labels[i]}) ${o}`).join("\n")}`;
