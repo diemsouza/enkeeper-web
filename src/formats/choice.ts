@@ -5,7 +5,7 @@ export const choice: QuestionFormatData = {
   question_info:
     "Apresenta de 2 à 5 opções. As opções vão em questionOptions, a correta em answerKeys.",
   feedback_info:
-    "Nunca explique por que a opção errada está errada, sem explicação adicional, apenas confirme ou corrija com o termo certo em contexto. Aceitar letra (a, b, c, d, e) ou texto da opção como resposta válida.",
+    "Nunca explique o resultado, só siga o padrão do exemplo relacionado. Aceitar letra (a, b, c, d, e) ou texto da opção como resposta válida.",
   levels: {
     basic: {
       question: 'Qual palavra significa "jardim" em inglês?',

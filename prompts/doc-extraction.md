@@ -31,8 +31,7 @@ Para cada seção:
 
 Só cria seções separadas quando o tipo muda, ou quando o material tem separação explícita de seções, título, numeração, linha divisória. Sem separação explícita e mesmo tipo, agrupa tudo em uma seção só.
 
-Lista contínua sem separador visual, título ou numeração é sempre uma única seção, 
-independente de quantos temas diferentes contiver.
+Lista contínua sem separador visual, título ou numeração é sempre uma única seção, independente de quantos temas diferentes contiver.
 
 Mesmo tipo, sempre uma seção só, sem exceção. Separação por tema, assunto ou contexto não cria nova seção.
 

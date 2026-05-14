@@ -26,7 +26,6 @@ import {
 import { QuestionFormat } from "@prisma/client";
 
 const MODEL_MINI = "gpt-4.1-mini";
-//const MODEL_STANDARD = "claude-haiku-4-5-20251001";
 const MODEL_ANTHROPIC = "claude-haiku-4-5-20251001";
 const MODEL_OPENAI = "gpt-4.1";
 const PROVIDER_STANDARD = "anthropic";
@@ -58,10 +57,8 @@ export async function generateDocSections(params: {
   const startTime = Date.now();
 
   const systemPrompt = DOC_EXTRACTION_PROMPT;
-  const userPrompt = `
-Conteúdo recebido:
-{raw_content}
-`.replace("{raw_content}", rawContent);
+  const userPrompt = `Conteúdo recebido:
+{raw_content}`.replace("{raw_content}", rawContent);
 
   try {
     const llmResult = await generateText({
@@ -164,11 +161,9 @@ export async function generateSectionQuestions(params: {
     .replace("{voice}", VOICE_PROMPT)
     .replace("{question_examples}", questionExamples);
 
-  const userPrompt = `
-Seção: {section_title}
+  const userPrompt = `Seção: {section_title}
 Conteúdo: {section_content}
-Nível: {level}
-`
+Nível: {level}`
     .replace("{section_title}", sectionTitle)
     .replace("{section_content}", sectionContent)
     .replace("{level}", level);
@@ -266,14 +261,12 @@ export async function generateAnswerEvaluation(params: {
     VOICE_PROMPT,
   ).replace("{feedback_examples}", feedbackExamples);
 
-  let userPrompt = `
-Pergunta: {question}
+  let userPrompt = `Pergunta: {question}
 Formato: {question_format}
 Respostas válidas: {answer_keys}
 Tentativa: {attempt_count}
 Nível: {level}
-Resposta do usuário: {user_answer}
-  `
+Resposta do usuário: {user_answer}`
     .replace("{question}", question)
     .replace("{answer_keys}", answerKeys.join(", "))
     .replace("{user_answer}", userAnswer)

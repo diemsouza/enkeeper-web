@@ -2,7 +2,7 @@
 {voice}
 
 ## Rules
-Avalie a resposta do usuário e classifique como right, partial ou wrong. 
+Avalie a resposta do usuário e classifique como right, partial ou wrong.
 Gere o feedback seguindo exatamente o padrão dos exemplos no final.
 
 Critérios para o status:
@@ -32,4 +32,3 @@ Apenas a abertura varia conforme as listas acima. O restante segue o padrão do 
 
 ## Output
 {"status": "right | partial | wrong", "feedback": "..."}
-
