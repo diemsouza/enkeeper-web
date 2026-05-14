@@ -9,7 +9,7 @@ import { createQuestions } from "../repo/questions.repo";
 import { createSection } from "../repo/sections.repo";
 import { archiveOrCancelActivitiesByDoc } from "./activity-service";
 import {
-  generateDocTopics,
+  generateDocSections,
   generateSectionQuestions,
 } from "../vendors/llm.vendor";
 import { findUserChannelByUserId } from "../repo/users.repo";
@@ -20,6 +20,11 @@ import {
   NEXT_MESSAGE_INTERVAL_MIN,
 } from "../lib/constants";
 import { sanitizeText } from "../lib/utils";
+import {
+  getFormatsBySectionType,
+  getQuestionExamples,
+} from "../core/question-format";
+import { QuestionFormat } from "@prisma/client";
 
 export async function processDoc(docId: string, userId: string): Promise<void> {
   const doc = await findDocById(docId, userId);
@@ -28,7 +33,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     return;
   }
 
-  const result = await generateDocTopics({
+  const result = await generateDocSections({
     rawContent: doc.rawContent,
     docType: doc.docType,
     userId,
@@ -63,6 +68,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
   await updateDoc(docId, userId, {
     title: result.title,
     content: combinedContent,
+    level: result.level,
     status: "active",
   });
 
@@ -105,11 +111,15 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       order: sectionData.order,
     });
 
+    const exampleFormats = getFormatsBySectionType(sectionData.sectionType);
+    const questionExamples = getQuestionExamples(exampleFormats, result.level);
+
     const questions = await generateSectionQuestions({
       sectionType: sectionData.sectionType,
       sectionTitle: sectionData.title,
       sectionContent: sectionData.content,
-      level: "",
+      level: result.level,
+      questionExamples: questionExamples,
       userId,
       docId,
       sectionId: section.id,
@@ -119,12 +129,16 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       await createQuestions(
         activity.id,
         section.id,
-        questions.map((q) => ({
-          ...q,
-          question: sanitizeText(q.question),
-          answerKeys: q.answerKeys.map((k) => sanitizeText(k)),
-        })),
+        questions.map((q) => {
+          return {
+            question: sanitizeText(q.question),
+            answerKeys: q.answerKeys.map((k) => sanitizeText(k)),
+            questionFormat: q.questionFormat as QuestionFormat,
+            questionOptions: q.questionOptions?.map((o) => sanitizeText(o)),
+          };
+        }),
       );
+
       totalQuestions += questions.length;
     }
   }

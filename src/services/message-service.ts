@@ -1,4 +1,4 @@
-import { DocType, QuestionStatus } from "@prisma/client";
+import { DocType, QuestionFormat, QuestionStatus } from "@prisma/client";
 import { parseMessage } from "../core/parser";
 import { canPractice } from "../core/access";
 import { canUploadDoc } from "../core/limits";
@@ -57,6 +57,7 @@ import {
 import { publishDocProcessing } from "../lib/qstash";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
+import { getFeedbackExamples } from "../core/question-format";
 import {
   findNextUnansweredQuestion,
   findNextGeneralQuestion,
@@ -65,7 +66,10 @@ import {
   updateQuestion,
 } from "../repo/questions.repo";
 import { findSectionById, recalcSectionStatus } from "../repo/sections.repo";
-import { formatSectionTransition } from "../core/formatters";
+import {
+  formatSectionTransition,
+  formatChoiceQuestion,
+} from "../core/formatters";
 import {
   validateContent,
   formatInvalidContentMessage,
@@ -629,14 +633,33 @@ export async function handleIncomingMessage(
         if (practiceDoc) {
           const pendingQuestion = await findPendingQuestion(activeActivity.id);
           if (pendingQuestion) {
+            const questionFormats = [
+              pendingQuestion.questionFormat,
+            ] as QuestionFormat[];
+            const feedbackExamples = pendingQuestion.questionFormat
+              ? getFeedbackExamples(questionFormats, practiceDoc.level)
+              : "";
+            const questionForEval =
+              pendingQuestion.questionFormat === QuestionFormat.choice &&
+              pendingQuestion.questionOptions.length > 0
+                ? formatChoiceQuestion(
+                    pendingQuestion.question,
+                    pendingQuestion.questionOptions,
+                  )
+                : pendingQuestion.question;
+
             const evaluation = await generateAnswerEvaluation({
-              question: pendingQuestion.question,
+              question: questionForEval,
               answerKeys: pendingQuestion.answerKeys,
               userAnswer: text,
               attemptCount: pendingQuestion.attemptCount,
               docContent: practiceDoc.content,
+              feedbackExamples: feedbackExamples,
+              questionFormat: pendingQuestion.questionFormat ?? "",
+              level: practiceDoc.level,
               userId: user.id,
               docId: practiceDoc.id,
+              questionFormats,
             });
             const evalStatus = evaluation?.status ?? "wrong";
             const feedback = sanitizeText(
@@ -730,6 +753,8 @@ export async function resolveNextQuestion(
   question: string;
   status: QuestionStatus | null;
   sectionId: string | null;
+  questionFormat: QuestionFormat | null;
+  questionOptions: string[];
 } | null> {
   if (questionRound === 0) {
     const unanswered = await findNextUnansweredQuestion(docId, lastQuestionId);
@@ -809,7 +834,13 @@ async function handleIntensiveNextQuestion(
 }
 
 async function sendIntensiveQuestion(
-  question: { id: string; question: string; sectionId: string | null },
+  question: {
+    id: string;
+    question: string;
+    sectionId: string | null;
+    questionFormat: QuestionFormat | null;
+    questionOptions: string[];
+  },
   activityId: string,
   userId: string,
   userChannelId: string,
@@ -839,12 +870,23 @@ async function sendIntensiveQuestion(
     }
   }
 
+  let intensiveOptions = question.questionOptions;
+  if (question.questionFormat === QuestionFormat.choice && intensiveOptions.length > 0) {
+    intensiveOptions = [...intensiveOptions].sort(() => Math.random() - 0.5);
+    await updateQuestion(question.id, { questionOptions: intensiveOptions });
+  }
+
+  const questionText =
+    question.questionFormat === QuestionFormat.choice && intensiveOptions.length > 0
+      ? formatChoiceQuestion(question.question, intensiveOptions)
+      : question.question;
+
   await saveMessage({
     userId,
     userChannelId,
     activityId,
     role: "assistant",
-    content: question.question,
+    content: questionText,
     intent: "practice_question",
     questionId: question.id,
   });
@@ -856,7 +898,7 @@ async function sendIntensiveQuestion(
     lastQuestionId: question.id,
     nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),
   });
-  messages.push(question.question);
+  messages.push(questionText);
   return messages;
 }
 

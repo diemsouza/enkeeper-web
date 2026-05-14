@@ -1,5 +1,5 @@
 export type FormatLevel = {
-  question_example: string;
+  question: string;
   feedback: {
     right: string;
     wrong: string;
@@ -9,7 +9,8 @@ export type FormatLevel = {
 
 export type QuestionFormatData = {
   format: string;
-  description: string;
+  question_info?: string;
+  feedback_info?: string;
   levels: {
     basic: FormatLevel;
     intermediate: FormatLevel;

@@ -198,6 +198,12 @@ export function formatSectionTransition(
   return `${prefix} *${sanitizeWhatsappContent(title)}*`;
 }
 
+export function formatChoiceQuestion(question: string, options: string[]): string {
+  if (!options.length) return question;
+  const labels = "abcdefghij";
+  return `${question}\n\n${options.map((o, i) => `${labels[i]}) ${o}`).join("\n")}`;
+}
+
 export function formatUpgradePrompt(reason: "audio" | "image"): string {
   const messages: Record<typeof reason, string> = {
     audio:

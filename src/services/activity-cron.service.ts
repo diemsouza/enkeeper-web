@@ -15,6 +15,7 @@ import { findUserChannelByUserId, findUserById } from "../repo/users.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import {
+  formatChoiceQuestion,
   formatFirstPracticeNudge,
   formatLastPracticeNudge,
   formatPracticeComplete,
@@ -26,7 +27,7 @@ import {
   DOC_PROCESSING_TIMEOUT_MS,
   NUDGE_INTERVAL_HOURS,
 } from "../lib/constants";
-import { Activity, QuestionStatus } from "@prisma/client";
+import { Activity, QuestionFormat, QuestionStatus } from "@prisma/client";
 import { startOfDay } from "date-fns";
 
 type CronResult = {
@@ -194,13 +195,23 @@ export async function processActivityCron(): Promise<CronResult> {
         }
       }
 
-      await sendWhatsAppMessage(userChannel.channelId, question.question);
+      let choiceOptions = question.questionOptions;
+      if (question.questionFormat === QuestionFormat.choice && choiceOptions.length > 0) {
+        choiceOptions = [...choiceOptions].sort(() => Math.random() - 0.5);
+      }
+
+      const questionText =
+        question.questionFormat === QuestionFormat.choice && choiceOptions.length > 0
+          ? formatChoiceQuestion(question.question, choiceOptions)
+          : question.question;
+
+      await sendWhatsAppMessage(userChannel.channelId, questionText);
       await saveMessage({
         userId: activity.userId,
         userChannelId: userChannel.id,
         activityId: activity.id,
         role: "assistant",
-        content: question.question,
+        content: questionText,
         intent: "practice_question",
         questionId: question.id,
       });
@@ -208,6 +219,9 @@ export async function processActivityCron(): Promise<CronResult> {
       await updateQuestion(question.id, {
         status: "pending",
         activityId: activity.id,
+        ...(question.questionFormat === QuestionFormat.choice && choiceOptions.length > 0
+          ? { questionOptions: choiceOptions }
+          : {}),
       });
       await updateActivity(activity.id, activity.userId, {
         executionCount: activity.executionCount + 1,
@@ -238,6 +252,8 @@ async function selectNextQuestion(
   question: string;
   status: QuestionStatus | null;
   sectionId: string | null;
+  questionFormat: QuestionFormat | null;
+  questionOptions: string[];
 } | null> {
   const lastId = activity.lastQuestionId;
 

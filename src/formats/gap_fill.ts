@@ -1,24 +1,30 @@
 import { QuestionFormatData } from "./types";
 
 const intermediateAdvanced = {
-  question_example: "Complete: \"I found the ______ between price and quality.\" (ponto ideal)",
+  question:
+    'Complete: "I found the ______ between price and quality." (ponto ideal)',
   feedback: {
-    right: "Exato! \"I found the sweet spot between price and quality.\"",
-    wrong: "Não foi dessa vez! \"Sweet spot\" completa — \"I found the sweet spot between price and quality.\"",
-    partial: "Quase! Faltou o artigo — \"I found the sweet spot between price and quality.\"",
+    right: 'Exato! "I found the sweet spot between price and quality."',
+    wrong:
+      'Errado! O correto é "Sweet spot". "I found the sweet spot between price and quality."',
+    partial:
+      'Quase! Faltou o artigo. "I found the sweet spot between price and quality."',
   },
 };
 
 export const gap_fill: QuestionFormatData = {
   format: "gap_fill",
-  description: "Frase completa e natural com ______ no lugar do termo fixado. A lacuna cobre sempre o termo do material — nunca palavra do contexto ao redor.",
+  question_info:
+    "Frase sempre em inglês. Lacuna no meio da frase cobrindo o termo fixado em contexto de uso real. Nunca em definição. Inclua sempre o significado em PT entre parênteses no final.",
+  feedback_info:
+    "Use sempre a frase original completada, nunca crie frase nova. Sem explicar o significado, sem descrever a palavra, sem contexto adicional.",
   levels: {
     basic: {
-      question_example: "Complete: \"O ______ fica atrás da casa.\" (garden)",
+      question: 'Complete: "I have a ______ behind my house." (jardim)',
       feedback: {
-        right: "Exato! \"O garden fica atrás da casa.\"",
-        wrong: "Não foi dessa vez! \"Garden\" completa — \"O garden fica atrás da casa.\"",
-        partial: "Quase! Faltou o \"n\" no final — \"garden\".",
+        right: 'Exato! "I have a garden behind my house."',
+        wrong: 'Errado! É "Garden" como em "I have a garden behind my house."',
+        partial: 'Quase! É "garden" veja "I have a garden behind my house."',
       },
     },
     intermediate: intermediateAdvanced,

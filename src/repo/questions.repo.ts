@@ -1,5 +1,6 @@
 import {
   Question,
+  QuestionFormat,
   QuestionStatus,
   AnswerType,
   QuestionType,
@@ -9,6 +10,8 @@ import { prisma } from "../lib/prisma";
 type CreateQuestionData = {
   question: string;
   answerKeys: string[];
+  questionFormat?: QuestionFormat;
+  questionOptions?: string[];
 };
 
 export async function createQuestions(
@@ -22,6 +25,8 @@ export async function createQuestions(
       sectionId,
       question: q.question,
       answerKeys: q.answerKeys,
+      ...(q.questionFormat ? { questionFormat: q.questionFormat } : {}),
+      questionOptions: q.questionOptions ?? [],
     })),
   });
 }
@@ -94,6 +99,7 @@ export async function updateQuestion(
     wrongCount?: number;
     answerType?: AnswerType | null;
     questionType?: QuestionType;
+    questionOptions?: string[];
   },
 ): Promise<void> {
   await prisma.question.update({ where: { id }, data });

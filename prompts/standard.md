@@ -20,6 +20,10 @@ Tudo que pode e nao pode. Inclui:
 - Tamanho e formatacao de texto (sem travessao, maximo X frases, etc)
 - Aspas sempre duplas "assim". Apóstrofo só em contrações inglesas (I'm, don't).
 
+## Examples
+
+Formatos que o modelo pode usar como referencia na geração de parguntas e respostas
+
 ## Output
 
 Formato esperado da resposta.

@@ -39,7 +39,7 @@ export const schemaToJsonLite = (schema: z.ZodType<any>): any => {
 };
 
 export const visionSchema = z.object({
-  transcription_type: z.enum(['text', 'description']),
+  transcription_type: z.enum(["text", "description"]),
   content: z.string(),
 });
 
@@ -47,6 +47,7 @@ export type VisionResult = z.infer<typeof visionSchema>;
 
 export const docProcessingSchema = z.object({
   title: z.string(),
+  level: z.enum(["basic", "intermediate", "advanced"]),
   isValid: z.boolean(),
   invalidReason: z.string().nullable(),
   sections: z.array(
@@ -65,7 +66,8 @@ export const sectionQuestionSchema = z.array(
   z.object({
     question: z.string(),
     answerKeys: z.array(z.string()),
-    format: z.string(),
+    questionFormat: z.string().optional(),
+    questionOptions: z.array(z.string()).default([]),
   }),
 );
 

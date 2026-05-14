@@ -68,6 +68,14 @@ enum QuestionFormat {
     recall_inverted // dado o termo, traga o significado ou uso: "O que significa 'never mind'?"
     scenario // situação realista, qual termo usaria: "Você quer pedir pra alguém esperar. O que diz?"
     choice // duas ou mais opções, escolhe a correta: "Qual usaria: 'never mind' ou 'no way'?"
+    open_text // gerado a partir de texto corrido
+    open_question // pergunta direta com resposta objetiva
+}
+
+enum Level {
+    basic
+    intermediate
+    advanced
 }
 
 model Message {
@@ -102,6 +110,7 @@ model Doc {
     messageId  String?   @map("message_id")
     title      String    @map("title")
     docType    DocType   @map("doc_type")
+    level      Level     @default(basic) @map("level")
     rawContent String    @map("raw_content") @db.Text
     content    String    @map("content") @db.Text
     status     DocStatus @default(processing) @map("status")
@@ -114,6 +123,7 @@ model Doc {
     activities Activity[]
     llmUsages  LlmUsage[]
     sections   Section[]
+    llmLogs    LlmLog[]
 
     @@index([userId])
     @@index([userId, status])
@@ -173,6 +183,7 @@ model Section {
     activity  Activity   @relation(fields: [activityId], references: [id])
     questions Question[]
     llmUsages LlmUsage[]
+    llmLogs   LlmLog[]
 
     @@index([userId])
     @@index([activityId, status])
@@ -225,7 +236,6 @@ model LlmUsage {
     userId       String     @map("user_id")
     docId        String?    @map("doc_id")
     sectionId    String?    @map("section_id")
-    // "transcription" | "ocr" | "topic_extraction" | "practice_generation" | "weekly_report"
     usageType    String     @map("usage_type")
     provider     AiProvider @default(openai) @map("provider")
     model        String     @map("model")
@@ -243,4 +253,36 @@ model LlmUsage {
     @@index([docId])
     @@index([sectionId])
     @@map("llm_usages")
+}
+
+model LlmLog {
+    id           String     @id @default(ulid()) @map("id")
+    userId       String?    @map("user_id")
+    docId        String?    @map("doc_id")
+    sectionId    String?    @map("section_id")
+    questionId   String?    @map("question_id")
+    stage        String     @map("stage")
+    provider     AiProvider @default(openai) @map("provider")
+    model        String     @map("model")
+    input        Json       @map("input")
+    output       Json?      @map("output")
+    parsedOutput Json?      @map("parsed_output")
+    success      Boolean    @default(true) @map("success")
+    error        String?    @map("error")
+    inputTokens  Int        @default(0) @map("input_tokens")
+    outputTokens Int        @default(0) @map("output_tokens")
+    totalTokens  Int        @default(0) @map("total_tokens")
+    cachedTokens Int        @default(0) @map("cached_tokens")
+    durationMs   Int?       @map("duration_ms")
+    createdAt    DateTime   @default(now()) @map("created_at")
+
+    user    User?    @relation(fields: [userId], references: [id])
+    doc     Doc?     @relation(fields: [docId], references: [id])
+    section Section? @relation(fields: [sectionId], references: [id])
+
+    @@index([userId])
+    @@index([docId])
+    @@index([stage])
+    @@index([createdAt])
+    @@map("llm_logs")
 }
