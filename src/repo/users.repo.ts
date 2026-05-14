@@ -55,6 +55,47 @@ export async function updateUserPlan(
   await prisma.user.update({ where: { id: userId }, data });
 }
 
+type UserStat = {
+  total: number;
+  active: number;
+  trial: number;
+  pro: number;
+  expired: number;
+  recent: { channelId: string; name: string | null; createdAt: Date }[];
+};
+
+export async function fetchUserStats(): Promise<UserStat> {
+  const now = new Date();
+  const [total, active, trial, pro, expired, recent] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { planStatus: "active" } }),
+    prisma.user.count({ where: { planCode: "trial", planStatus: "active", planExpiresAt: { gt: now } } }),
+    prisma.user.count({ where: { planCode: "pro", planStatus: "active" } }),
+    prisma.user.count({ where: { planStatus: "expired" } }),
+    prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        name: true,
+        createdAt: true,
+        channels: { select: { channelId: true }, where: { channelType: "whatsapp" }, take: 1 },
+      },
+    }),
+  ]);
+  return {
+    total,
+    active,
+    trial,
+    pro,
+    expired,
+    recent: recent.map((u) => ({
+      channelId: u.channels[0]?.channelId ?? "?",
+      name: u.name,
+      createdAt: u.createdAt,
+    })),
+  };
+}
+
 export async function createUserWithChannel(
   channelType: ChannelType,
   channelId: string,

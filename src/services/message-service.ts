@@ -112,6 +112,7 @@ export async function handleIncomingMessage(
     input.channelType,
     input.channelId,
     input.channelCode,
+    input.contactName ?? undefined,
   );
   const userChannel = user.channels.find(
     (c) => c.channelId === input.channelId,

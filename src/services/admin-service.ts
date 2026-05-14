@@ -1,14 +1,16 @@
 import { User } from "@prisma/client";
 import { findActiveActivitiesByUser } from "../repo/activities.repo";
-import { findUserByChannel, updateUserPlan } from "../repo/users.repo";
+import { findUserByChannel, fetchUserStats, updateUserPlan } from "../repo/users.repo";
 
 export async function handleAdminCommand(text: string): Promise<string> {
   const parts = text.trim().split(/\s+/);
   const subcommand = parts[1]?.toLowerCase();
 
-  if (!subcommand || subcommand === "help" || !["upgrade", "expire", "extend", "info"].includes(subcommand)) {
+  if (!subcommand || subcommand === "help" || !["upgrade", "expire", "extend", "info", "users"].includes(subcommand)) {
     return formatAdminHelp();
   }
+
+  if (subcommand === "users") return fetchUsersReport();
 
   const waId = parts[2];
   if (!waId) {
@@ -63,11 +65,34 @@ async function buildUserInfo(user: User, waId: string): Promise<string> {
   return formatAdminUserInfo(user, waId, activities.length);
 }
 
+async function fetchUsersReport(): Promise<string> {
+  const stats = await fetchUserStats();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const lines = [
+    "*Usuarios*",
+    "",
+    `*Total:* ${stats.total}`,
+    `*Ativos:* ${stats.active}`,
+    `*Trial:* ${stats.trial}`,
+    `*Pro:* ${stats.pro}`,
+    `*Expirados:* ${stats.expired}`,
+    "",
+    "*Ultimos cadastrados:*",
+    ...stats.recent.map((u) => {
+      const d = u.createdAt;
+      const date = `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      return `${u.channelId} - ${u.name ?? "Nao identificado"} - ${date}`;
+    }),
+  ];
+  return lines.join("\n");
+}
+
 function formatAdminHelp(): string {
   return [
     "*Admin*",
     "",
     "/admin help - lista este menu",
+    "/admin users - relatorio de cadastros",
     "/admin info <wa_id> - estado atual do usuario",
     "/admin upgrade <wa_id> - pro ativo por 30 dias",
     "/admin expire <wa_id> - expirar plano agora",
