@@ -1,12 +1,20 @@
 import { User } from "@prisma/client";
 import { findActiveActivitiesByUser } from "../repo/activities.repo";
-import { findUserByChannel, fetchUserStats, updateUserPlan } from "../repo/users.repo";
+import {
+  findUserByChannel,
+  fetchUserStats,
+  updateUserPlan,
+} from "../repo/users.repo";
 
 export async function handleAdminCommand(text: string): Promise<string> {
   const parts = text.trim().split(/\s+/);
   const subcommand = parts[1]?.toLowerCase();
 
-  if (!subcommand || subcommand === "help" || !["upgrade", "expire", "extend", "info", "users"].includes(subcommand)) {
+  if (
+    !subcommand ||
+    subcommand === "help" ||
+    !["upgrade", "expire", "extend", "info", "users"].includes(subcommand)
+  ) {
     return formatAdminHelp();
   }
 
@@ -34,8 +42,15 @@ async function applyUpgrade(waId: string): Promise<string> {
   const user = await findUserByChannel("whatsapp", waId);
   if (!user) return `Usuário não encontrado: ${waId}`;
   const planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  await updateUserPlan(user.id, { planCode: "pro", planStatus: "active", planExpiresAt });
-  return buildUserInfo({ ...user, planCode: "pro", planStatus: "active", planExpiresAt }, waId);
+  await updateUserPlan(user.id, {
+    planCode: "pro",
+    planStatus: "active",
+    planExpiresAt,
+  });
+  return buildUserInfo(
+    { ...user, planCode: "pro", planStatus: "active", planExpiresAt },
+    waId,
+  );
 }
 
 async function applyExpire(waId: string): Promise<string> {
@@ -69,7 +84,7 @@ async function fetchUsersReport(): Promise<string> {
   const stats = await fetchUserStats();
   const pad = (n: number) => String(n).padStart(2, "0");
   const lines = [
-    "*Usuarios*",
+    "*Usuários*",
     "",
     `*Total:* ${stats.total}`,
     `*Ativos:* ${stats.active}`,
@@ -100,7 +115,11 @@ function formatAdminHelp(): string {
   ].join("\n");
 }
 
-function formatAdminUserInfo(user: User, waId: string, activityCount: number): string {
+function formatAdminUserInfo(
+  user: User,
+  waId: string,
+  activityCount: number,
+): string {
   const expiresAt = user.planExpiresAt
     ? user.planExpiresAt.toISOString().slice(0, 10)
     : "sem expiracao";

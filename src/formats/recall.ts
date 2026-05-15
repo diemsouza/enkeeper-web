@@ -5,7 +5,7 @@ export const recall: QuestionFormatData = {
   question_info:
     "Pergunta direta pedindo o termo a partir do significado ou uso.",
   feedback_info:
-    "Confirma com o termo em contexto de uso real. Sem explicação adicional.",
+    "Confirma com a resposta correta em frase de uso real. Sem explicação adicional.",
   levels: {
     basic: {
       question: 'Como se diz "jardim" em inglês?',

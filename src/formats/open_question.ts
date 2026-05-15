@@ -5,7 +5,7 @@ export const open_question: QuestionFormatData = {
   question_info:
     "Pergunta direta extraída ou baseada no material. Resposta objetiva.",
   feedback_info:
-    "Confirma com o termo em contexto de uso real. Sem explicação adicional.",
+    "Confirma com a resposta correta em frase de uso real. Sem explicação adicional.",
   levels: {
     basic: {
       question: "O que acontece quando você pratica vocabulário todo dia?",

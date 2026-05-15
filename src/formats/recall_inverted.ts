@@ -5,7 +5,7 @@ export const recall_inverted: QuestionFormatData = {
   question_info:
     "Dado o termo, o usuário explica o significado ou uso em contexto.",
   feedback_info:
-    "Confirma com o termo em contexto de uso real. Sem explicação adicional.",
+    "Confirma com a resposta correta em frase de uso real. Sem explicação adicional.",
   levels: {
     basic: {
       question: 'O que significa "garden"?',

@@ -3,7 +3,6 @@
 
 ## Rules
 Avalie a resposta do usuário e classifique como right, partial ou wrong.
-Gere o feedback seguindo exatamente o padrão dos exemplos no final.
 
 Critérios para o status:
 

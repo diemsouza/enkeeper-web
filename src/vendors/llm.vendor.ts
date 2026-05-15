@@ -264,7 +264,7 @@ export async function generateAnswerEvaluation(params: {
   let userPrompt = `Pergunta: {question}
 Formato: {question_format}
 Respostas válidas: {answer_keys}
-Tentativa: {attempt_count}
+Tentativas: {attempt_count}
 Nível: {level}
 Resposta do usuário: {user_answer}`
     .replace("{question}", question)

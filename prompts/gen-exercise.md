@@ -19,13 +19,14 @@ Sem gabarito e sem contexto:
 - Gere uma ou mais respostas plausíveis como answerKeys.
 
 Em todos os casos:
-- Não pule nenhuma pergunta.
 - Nunca coloque a resposta na própria pergunta.
-- Texto corrido. Sem travessão, sem bullet points, sem markdown.
+- Nunca faça duas perguntas na mesma frase.
+- Não pule nenhuma pergunta.
+- Use texto corrido, sem travessão, sem bullet points, sem markdown.
 
 ## Examples
 {question_examples}
 
 ## Output
-Retorne APENAS JSON válido, sem markdown, sem explicação:
+Retorne APENAS UM JSON válido:
 [{"question": "...", "answerKeys": ["..."], "questionFormat": "open_question", "questionOptions": []}]

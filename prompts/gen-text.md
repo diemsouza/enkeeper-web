@@ -12,14 +12,15 @@ Grande (mais de 5 parágrafos): até 15 perguntas.
 
 answerKeys: pontos que uma boa resposta deve tocar. Não é resposta literal, é âncora de avaliação. Inclua variações aceitas.
 
-NUNCA referencie posição no texto.
-NUNCA coloque a resposta na própria pergunta.
-Texto corrido. Sem travessão, sem bullet points, sem markdown.
+Nunca referencie posição no texto.
+Nunca coloque a resposta na própria pergunta.
+Nunca faça duas perguntas na mesma frase.
+Use texto corrido, sem travessão, sem bullet points, sem markdown.
 1 a 2 frases. Máximo 30 palavras por pergunta.
 
 ## Examples
 {question_examples}
 
 ## Output
-Retorne APENAS JSON válido, sem markdown, sem explicação:
+Retorne APENAS UM JSON válido:
 [{"question": "...", "answerKeys": ["..."], "questionFormat": "open_text", "questionOptions": []}]

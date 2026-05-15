@@ -14,15 +14,16 @@ Nível e idioma:
 
 Distribua os formatos entre os itens, use cada formato ao menos uma vez antes de repetir.
 
-NUNCA coloque a resposta na própria pergunta.
-NUNCA peça tradução isolada sem contexto.
+Nunca coloque a resposta na própria pergunta.
+Nunca peça tradução isolada sem contexto.
 Nunca referencie posição ou localização na lista.
-Texto corrido. Sem travessão, sem bullet points, sem markdown.
+Nunca faça duas perguntas na mesma frase.
+Use texto corrido, sem travessão, sem bullet points, sem markdown.
 1 a 2 frases. Máximo 30 palavras por pergunta.
 
 ## Examples
 {question_examples}
 
 ## Output
-Retorne APENAS JSON válido, sem markdown, sem explicação:
+Retorne APENAS UM JSON válido:
 [{"question": "...", "answerKeys": ["..."], "questionFormat": "gap_fill | recall | recall_inverted | scenario | choice", "questionOptions": []}]

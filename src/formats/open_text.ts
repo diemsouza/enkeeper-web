@@ -4,7 +4,8 @@ export const open_text: QuestionFormatData = {
   format: "open_text",
   question_info:
     "Varie entre: compreensão (ideia ou fato do conteúdo), reformulação (explique com outras palavras), produção (use vocabulário do conteúdo em nova frase) e inferência (o que o conteúdo implica mas não diz explicitamente).",
-  feedback_info: "Confirma ou corrige direto, sem explicação adicional.",
+  feedback_info:
+    "Confirma com a resposta correta em frase de uso real. Sem explicação adicional.",
   levels: {
     basic: {
       question: "O que o texto diz sobre a importância de praticar todo dia?",

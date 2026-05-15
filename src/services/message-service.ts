@@ -101,13 +101,6 @@ export async function handleIncomingMessage(
   input: IncomingMessage,
 ): Promise<string[]> {
   const rawText = (input.text ?? "").trim();
-  if (/^\/admin(\s|$)/i.test(rawText)) {
-    if (input.channelId !== process.env.WA_SUPPORT) return [];
-    const reply = await handleAdminCommand(rawText);
-    await sendWhatsAppMessage(input.channelId, reply);
-    return [reply];
-  }
-
   const user = await findOrCreateUserByChannel(
     input.channelType,
     input.channelId,
@@ -117,8 +110,16 @@ export async function handleIncomingMessage(
   const userChannel = user.channels.find(
     (c) => c.channelId === input.channelId,
   )!;
+
   const text = input.text ?? "";
   const today = startOfDay(new Date());
+
+  if (/^\/admin(\s|$)/i.test(rawText)) {
+    if (input.channelId !== process.env.WA_SUPPORT) return [];
+    const reply = await handleAdminCommand(rawText);
+    await saveBotReply(user.id, userChannel.id, reply, today);
+    return [reply];
+  }
 
   // Atualiza nome do usuário se veio pelo canal e ainda não está salvo
   if (input.contactName && !user.name) {
@@ -400,7 +401,10 @@ export async function handleIncomingMessage(
       const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
       const supportMsg = `*Suporte*\n\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`;
       const supportNumber = process.env.WA_SUPPORT;
-      if (supportNumber) await sendWhatsAppMessage(supportNumber, supportMsg);
+      if (supportNumber) {
+        await sendWhatsAppMessage(supportNumber, supportMsg);
+      }
+
       await saveUserMsg(
         user.id,
         userChannel.id,

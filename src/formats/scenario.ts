@@ -3,9 +3,9 @@ import { QuestionFormatData } from "./types";
 export const scenario: QuestionFormatData = {
   format: "scenario",
   question_info:
-    "Situação realista que leva naturalmente ao termo. Termina com pergunta direta, nunca com lacuna.",
+    "Usa uma sSituação realista que leva naturalmente ao termo. Termina com pergunta direta e única.",
   feedback_info:
-    "Confirma com o termo em contexto de uso real. Sem explicação adicional.",
+    "Confirma com a resposta correta em frase de uso real. Sem explicação adicional.",
   levels: {
     basic: {
       question:

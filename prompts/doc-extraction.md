@@ -38,5 +38,5 @@ Mesmo tipo, sempre uma seção só, sem exceção. Separação por tema, assunto
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
 
 ## Output
-Retorne APENAS JSON válido, sem markdown, sem explicação:
+Retorne APENAS UM JSON válido:
 {"title": "título curto para o conteudo, máx 8 palavras", "level": "basic | intermediate | advanced", "isValid": true, "invalidReason": null, "sections": [{"title": "...", "sectionType": "vocabulary | text | exercise", "order": 1, "content": "..."}]}
