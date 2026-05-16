@@ -114,7 +114,7 @@ export async function handleIncomingMessage(
   const text = input.text ?? "";
   const today = startOfDay(new Date());
 
-  if (/^\/admin(\s|$)/i.test(rawText)) {
+  if (/^admin(\s|$)/i.test(rawText)) {
     if (input.channelId !== process.env.WA_SUPPORT) return [];
     const reply = await handleAdminCommand(rawText);
     await saveBotReply(user.id, userChannel.id, reply, today);
@@ -271,7 +271,7 @@ export async function handleIncomingMessage(
   const isOverriding = OVERRIDING_INTENTS.includes(parsed.intent);
 
   if (pendingIntent && !isOverriding) {
-    // Aguardando /sim ou /não após texto longo
+    // Aguardando sim ou não após texto longo
     if (pendingIntent === "awaiting_doc_confirm") {
       if (parsed.intent === "confirm") {
         await saveUserMsg(
@@ -295,7 +295,7 @@ export async function handleIncomingMessage(
       return [reply];
     }
 
-    // Aguardando /sim ou /não para substituir doc ativo
+    // Aguardando sim ou não para substituir doc ativo
     if (pendingIntent === "awaiting_doc_replace") {
       if (parsed.intent === "confirm") {
         await saveUserMsg(
@@ -354,7 +354,7 @@ export async function handleIncomingMessage(
             await pauseActivitiesByDoc(doc.id, user.id);
             return formatPauseSuccess();
           })()
-        : "Número inválido. Use /pausar para ver seus conteúdos ativos.";
+        : "Número inválido. Use pausar para ver seus conteúdos ativos.";
       await saveBotReply(user.id, userChannel.id, reply, today);
       return [reply];
     }
@@ -391,7 +391,7 @@ export async function handleIncomingMessage(
             }
             return formatResumeSuccess();
           })()
-        : "Número inválido. Use /retomar para ver seus conteúdos pausados.";
+        : "Número inválido. Use retomar para ver seus conteúdos pausados.";
       await saveBotReply(user.id, userChannel.id, reply, today);
       return [reply];
     }
@@ -422,10 +422,19 @@ export async function handleIncomingMessage(
 
   // ─── Fluxo normal ────────────────────────────────────────────────────────
 
-  let messageIntent: MessageIntent = parsed.intent;
+  const activeActivities = await findActiveActivitiesByUser(user.id);
+  const activeActivity = activeActivities[0] ?? null;
+
+  // waitingUser === true → ignora match de comando, trata como resposta de prática
+  const effectiveIntent: MessageIntent =
+    activeActivity?.waitingUser && parsed.intent !== "free_text"
+      ? "free_text"
+      : parsed.intent;
+
+  let messageIntent: MessageIntent = effectiveIntent;
   let reply = "";
 
-  switch (parsed.intent) {
+  switch (effectiveIntent) {
     case "list_commands":
     case "unknown_command": {
       reply = formatCommandList();
@@ -454,7 +463,7 @@ export async function handleIncomingMessage(
         const doc = activeDocs[parsed.docIndex - 1];
         if (!doc) {
           reply =
-            "Número inválido. Use /pausar para ver seus conteúdos ativos.";
+            "Número inválido. Use pausar para ver seus conteúdos ativos.";
         } else {
           await updateDoc(doc.id, user.id, { status: "paused" });
           await pauseActivitiesByDoc(doc.id, user.id);
@@ -487,7 +496,7 @@ export async function handleIncomingMessage(
         const doc = pausedDocs[parsed.docIndex - 1];
         if (!doc) {
           reply =
-            "Número inválido. Use /retomar para ver seus conteúdos pausados.";
+            "Número inválido. Use retomar para ver seus conteúdos pausados.";
         } else {
           await updateDoc(doc.id, user.id, { status: "active" });
           await resumeActivitiesByDoc(doc.id, user.id);
@@ -619,9 +628,6 @@ export async function handleIncomingMessage(
         messageIntent = "awaiting_doc_confirm";
         break;
       }
-
-      const activeActivities = await findActiveActivitiesByUser(user.id);
-      const activeActivity = activeActivities[0] ?? null;
 
       if (!activeActivity) {
         reply = formatNoDocs();

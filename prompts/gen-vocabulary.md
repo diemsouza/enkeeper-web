@@ -22,6 +22,9 @@ Nunca faça duas perguntas na mesma frase.
 Use texto corrido, sem travessão, sem bullet points, sem markdown.
 1 a 2 frases. Máximo 30 palavras por pergunta.
 
+Se um par parecer semanticamente inconsistente com alta confiança, adicione warning ao item.
+Gírias, expressões idiomáticas e jargão técnico nunca recebem warning.
+
 O bloco de exemplos abaixo cobre os formatos disponíveis. Siga a fórmula e o padrão do formato sorteado para cada item.
 
 ## Examples
@@ -34,7 +37,8 @@ Retorne APENAS UM JSON válido (array). Sem markdown, sem cercas de código (```
   "question": "enunciado da pergunta",
   "answerKeys": ["resposta principal", "variações aceitáveis"],
   "questionFormat": "gap_fill | recall | recall_inverted | scenario | choice",
-  "questionOptions": []
+  "questionOptions": [],
+  "warning": "Termo inconsitente: tradução ou significado errado!"
 }]
 
 Regras do JSON:
@@ -42,4 +46,4 @@ Regras do JSON:
 - answerKeys: sempre array com pelo menos 1 item. Inclua variações aceitáveis. Pelo menos uma das chaves deve ser igual a sourceItem.
 - questionOptions: vazio em todos os formatos, exceto choice.
 - Em choice: questionOptions tem 2 a 5 opções (preferência 4). A resposta correta deve estar entre as opções e também em answerKeys. Distratores plausíveis do mesmo campo semântico, sem absurdos.
-- O enunciado da pergunta nunca inclui as opções do choice. As opções vivem só em questionOptions.
+- O enunciado da pergunta nunca inclui as opções do choice. As opções vivem só em questionOptions.- warning: string curta em português descrevendo a inconsistência. Omita o campo quando não houver inconsistência.

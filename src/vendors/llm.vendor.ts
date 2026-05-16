@@ -194,6 +194,12 @@ Nível: {level}`
         .filter((q) => {
           const source = q.sourceItem?.toLowerCase().trim();
           if (!source) return false;
+          if (q.warning) {
+            console.warn(
+              `[gen-vocabulary] Pergunta descartada por warning: ${q.warning}. Q: ${q.question} A: ${q.answerKeys}`,
+            );
+            return false;
+          }
 
           if (q.questionFormat === "recall_inverted") {
             // sourceItem aparece NA pergunta (entre aspas)

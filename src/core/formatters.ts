@@ -15,7 +15,7 @@ export function formatOnboardingMsg3(): string {
 }
 
 export function formatOnboardingMsg4(): string {
-  return "Mande agora pra começar. Ou use */* pra ver os comandos disponíveis.";
+  return "Mande agora pra começar. Ou use *ajuda* pra ver os comandos disponíveis.";
 }
 
 export function formatPlanExpired(): string {
@@ -24,7 +24,7 @@ export function formatPlanExpired(): string {
     "",
     "Para continuar praticando, assine o *Dropuz* por R$19,90/mês.",
     "",
-    "_Use */suporte* para falar com a gente e ativar sua conta._",
+    "_Use *suporte* para falar com a gente e ativar sua conta._",
   ].join("\n");
 }
 
@@ -32,12 +32,12 @@ export function formatCommandList(): string {
   return [
     "*Comandos disponíveis:*",
     "",
-    "*/ajuda* - ver essa lista de comandos",
-    "*/praticar* - prática intensiva",
-    "*/pausar* - pausar prática",
-    "*/retomar* - retomar prática pausada",
-    "*/conteudo* - seu conteúdo atual",
-    "*/suporte* - fala com a equipe",
+    "*ajuda* - ver essa lista de comandos",
+    "*praticar* - prática intensiva",
+    "*pausar* - pausar prática",
+    "*retomar* - retomar prática pausada",
+    "*conteudo* - seu conteúdo atual",
+    "*suporte* - fala com a equipe",
     "",
     "_Mande um texto, áudio, imagem ou PDF com conteúdo relevante para praticar._",
   ].join("\n");
@@ -74,7 +74,7 @@ export function formatDocsList(activities: ActivityDocItem[]): string {
     archived.forEach((a) => lines.push(`• ${a.doc.title || "(sem título)"}`));
   }
 
-  lines.push("", "_Use */pausar* ou */retomar* para gerenciar._");
+  lines.push("", "_Use *pausar* ou *retomar* para gerenciar._");
 
   return lines.join("\n");
 }
@@ -95,7 +95,7 @@ export function formatDocConfirmPrompt(): string {
   return [
     "Esse parece ser um ótimo conteúdo para estudar. Quer usar?",
     "",
-    "_Use */sim* para confirmar ou */não* para cancelar._",
+    "_Use *sim* para confirmar ou *não* para cancelar._",
   ].join("\n");
 }
 
@@ -115,7 +115,7 @@ export function formatDocReplacePrompt(
     "",
     "Quer substituir pelo novo conteúdo? O atual será arquivado.",
     "",
-    `_Use */sim* para substituir ou */não* para manter o atual._${limitNote}`,
+    `_Use *sim* para substituir ou *não* para manter o atual._${limitNote}`,
   ].join("\n");
 }
 
@@ -127,11 +127,11 @@ export function formatPausePrompt(docs: Pick<Doc, "id" | "title">[]): string {
   const lines = docs.map(
     (d, i) => `${i + 1}. ${d.title || "(processando...)"}`,
   );
-  return `Qual conteúdo você quer pausar?\n\n${lines.join("\n")}\n\n_Digite o número ou use */cancelar*._`;
+  return `Qual conteúdo você quer pausar?\n\n${lines.join("\n")}\n\n_Digite o número ou use *cancelar*._`;
 }
 
 export function formatPauseSuccess(): string {
-  return "Prática pausada. Use */retomar* quando quiser continuar.";
+  return "Prática pausada. Use *retomar* quando quiser continuar.";
 }
 
 export function formatNoPausableDocs(): string {
@@ -142,7 +142,7 @@ export function formatResumePrompt(docs: Pick<Doc, "id" | "title">[]): string {
   const lines = docs.map(
     (d, i) => `${i + 1}. ${d.title || "(processando...)"}`,
   );
-  return `Qual conteúdo você quer retomar?\n\n${lines.join("\n")}\n\n_Digite o número ou */cancelar*._`;
+  return `Qual conteúdo você quer retomar?\n\n${lines.join("\n")}\n\n_Digite o número ou *cancelar*._`;
 }
 
 export function formatResumeSuccess(): string {
@@ -154,7 +154,7 @@ export function formatNoPausedDocs(): string {
 }
 
 export function formatSupportRequest(): string {
-  return "Escreva em uma única mensagem como podemos ajudar ou use */cancelar* para sair.";
+  return "Escreva em uma única mensagem como podemos ajudar ou use *cancelar* para sair.";
 }
 
 export function formatSupportReceived(): string {
@@ -162,11 +162,11 @@ export function formatSupportReceived(): string {
 }
 
 export function formatShortTextWithDocs(): string {
-  return "Já recebi seu conteúdo. Te chamo em breve pra praticar. Ou use */* para ver os comandos disponíveis.";
+  return "Já recebi seu conteúdo. Te chamo em breve pra praticar. Ou use *ajuda* para ver os comandos disponíveis.";
 }
 
 export function formatShortTextNoDocs(): string {
-  return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, áudio, imagem ou PDF.\n\n_Use */* para ver todos os comandos._";
+  return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, áudio, imagem ou PDF.\n\n_Use *ajuda* para ver todos os comandos._";
 }
 
 export function formatPracticeComplete(): string {
@@ -224,9 +224,9 @@ export function formatChoiceQuestion(
 export function formatUpgradePrompt(reason: "audio" | "image"): string {
   const messages: Record<typeof reason, string> = {
     audio:
-      "Envio de áudio é exclusivo do plano Pro. _Use */suporte* para saber mais._",
+      "Envio de áudio é exclusivo do plano Pro. _Use *suporte* para saber mais._",
     image:
-      "Envio de imagem é exclusivo do plano Pro. _Use */suporte* para saber mais._",
+      "Envio de imagem é exclusivo do plano Pro. _Use *suporte* para saber mais._",
   };
   return messages[reason];
 }

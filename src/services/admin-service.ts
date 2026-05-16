@@ -22,13 +22,13 @@ export async function handleAdminCommand(text: string): Promise<string> {
 
   const waId = parts[2];
   if (!waId) {
-    return `Uso: /admin ${subcommand} <wa_id>`;
+    return `Uso: admin ${subcommand} <wa_number>`;
   }
 
   if (subcommand === "extend") {
     const days = parseInt(parts[3] ?? "", 10);
     if (!parts[3] || isNaN(days) || days <= 0) {
-      return "Uso: /admin extend <wa_id> <dias>";
+      return "Uso: admin extend <wa_number> <dias>";
     }
     return applyExtend(waId, days);
   }
@@ -106,12 +106,12 @@ function formatAdminHelp(): string {
   return [
     "*Admin*",
     "",
-    "/admin help - lista este menu",
-    "/admin users - relatorio de cadastros",
-    "/admin info <wa_id> - estado atual do usuario",
-    "/admin upgrade <wa_id> - pro ativo por 30 dias",
-    "/admin expire <wa_id> - expirar plano agora",
-    "/admin extend <wa_id> <dias> - estender plano por N dias",
+    "admin help - lista este menu",
+    "admin users - relatorio de cadastros",
+    "admin info <wa_number> - estado atual do usuario",
+    "admin upgrade <wa_number> - pro ativo por 30 dias",
+    "admin expire <wa_number> - expirar plano agora",
+    "admin extend <wa_number> <dias> - estender plano por N dias",
   ].join("\n");
 }
 

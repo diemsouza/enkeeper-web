@@ -1,3 +1,4 @@
+import { Warning } from "postcss";
 import z from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
@@ -69,6 +70,7 @@ export const sectionQuestionSchema = z.array(
     answerKeys: z.array(z.string()),
     questionFormat: z.string().optional(),
     questionOptions: z.array(z.string()).default([]),
+    warning: z.string().optional(),
   }),
 );
 
