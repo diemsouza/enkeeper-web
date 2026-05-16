@@ -57,7 +57,7 @@ import {
 import { publishDocProcessing } from "../lib/qstash";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
-import { getFeedbackExamples } from "../core/question-format";
+import { getFeedbackExamples } from "../core/format-loader";
 import {
   findNextUnansweredQuestion,
   findNextGeneralQuestion,
@@ -153,8 +153,9 @@ export async function handleIncomingMessage(
       const channelCode = userChannel.channelCode ?? userChannel.channelId;
       const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
       const supportMsg = `*Suporte*\n\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`;
-      if (process.env.WA_SUPPORT)
+      if (process.env.WA_SUPPORT) {
         await sendWhatsAppMessage(process.env.WA_SUPPORT, supportMsg);
+      }
       await saveUserMsg(
         user.id,
         userChannel.id,
@@ -879,19 +880,10 @@ async function sendIntensiveQuestion(
     }
   }
 
-  let intensiveOptions = question.questionOptions;
-  if (
-    question.questionFormat === QuestionFormat.choice &&
-    intensiveOptions.length > 0
-  ) {
-    intensiveOptions = [...intensiveOptions].sort(() => Math.random() - 0.5);
-    await updateQuestion(question.id, { questionOptions: intensiveOptions });
-  }
-
   const questionText =
     question.questionFormat === QuestionFormat.choice &&
-    intensiveOptions.length > 0
-      ? formatChoiceQuestion(question.question, intensiveOptions)
+    question.questionOptions.length > 0
+      ? formatChoiceQuestion(question.question, question.questionOptions)
       : question.question;
 
   await saveMessage({

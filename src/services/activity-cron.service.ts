@@ -1,7 +1,6 @@
 import {
   findEligibleActivities,
   updateActivity,
-  createActivity,
 } from "../repo/activities.repo";
 import { findDocById, updateDoc } from "../repo/docs.repo";
 import { saveMessage, findLastActivityMessage } from "../repo/messages.repo";
@@ -195,14 +194,10 @@ export async function processActivityCron(): Promise<CronResult> {
         }
       }
 
-      let choiceOptions = question.questionOptions;
-      if (question.questionFormat === QuestionFormat.choice && choiceOptions.length > 0) {
-        choiceOptions = [...choiceOptions].sort(() => Math.random() - 0.5);
-      }
-
       const questionText =
-        question.questionFormat === QuestionFormat.choice && choiceOptions.length > 0
-          ? formatChoiceQuestion(question.question, choiceOptions)
+        question.questionFormat === QuestionFormat.choice &&
+        question.questionOptions.length > 0
+          ? formatChoiceQuestion(question.question, question.questionOptions)
           : question.question;
 
       await sendWhatsAppMessage(userChannel.channelId, questionText);
@@ -219,9 +214,6 @@ export async function processActivityCron(): Promise<CronResult> {
       await updateQuestion(question.id, {
         status: "pending",
         activityId: activity.id,
-        ...(question.questionFormat === QuestionFormat.choice && choiceOptions.length > 0
-          ? { questionOptions: choiceOptions }
-          : {}),
       });
       await updateActivity(activity.id, activity.userId, {
         executionCount: activity.executionCount + 1,

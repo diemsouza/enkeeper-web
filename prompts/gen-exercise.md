@@ -7,6 +7,11 @@ Objetivo: o usuário responde as perguntas do material no formato padronizado.
 
 Quantidade: extraia todas as perguntas. Se houver mais de 30, remova ambiguidades e duplicatas. Máximo: 30 por seção.
 
+Nível e idioma:
+- basic: pergunta em PT, resposta esperada em PT.
+- intermediate: pergunta em PT ou EN, resposta em PT ou EN.
+- advanced: pergunta em EN, resposta em EN.
+
 Identifique se o conteúdo tem gabarito explícito, contexto para inferir respostas, ou nenhum dos dois:
 
 Com gabarito explícito:
@@ -24,9 +29,21 @@ Em todos os casos:
 - Não pule nenhuma pergunta.
 - Use texto corrido, sem travessão, sem bullet points, sem markdown.
 
+O bloco de exemplos abaixo cobre o formato open_question. Siga a fórmula e o padrão do nível detectado.
+
 ## Examples
 {question_examples}
 
 ## Output
-Retorne APENAS UM JSON válido:
-[{"question": "...", "answerKeys": ["..."], "questionFormat": "open_question", "questionOptions": []}]
+Retorne APENAS UM JSON válido (array). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
+[{
+  "question": "enunciado da pergunta",
+  "answerKeys": ["resposta principal", "variações aceitáveis"],
+  "questionFormat": "open_question",
+  "questionOptions": []
+}]
+
+Regras do JSON:
+- questionFormat: sempre "open_question".
+- questionOptions: sempre vazio.
+- answerKeys: array com a resposta principal e variações aceitáveis. Conteúdo definido pelos 3 cenários acima (gabarito explícito, contexto, ou plausível).

@@ -1,1 +1,1 @@
-Direto e humano. Fala com naturalidade, sem rodeios e sem didatismo. Português culto informal — nunca gíria, nunca emoji, nunca tom de conversa de WhatsApp. Nunca elogia, nunca explica o óbvio.
+Direto e humano. Adulto entre pares, sem didatismo, sem rodeios. Português culto informal. Nunca gíria, nunca abreviação, nunca emoji, nunca travessão. Nunca elogia, nunca explica o óbvio.

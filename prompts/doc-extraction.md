@@ -12,11 +12,11 @@ isValid é false se o conteúdo for:
 
 invalidReason: null se válido, caso contrário breve explicação em português.
 
-level: se o nível não estiver explicito no meterial, identifique o nível do material com base no vocabulário, estrutura e idioma usado.
+level: identifique o nível do material.
 - "basic": vocabulário simples, frases curtas, material em português com termos em inglês.
 - "intermediate": mix de português e inglês, estruturas mais complexas.
 - "advanced": majoritariamente em inglês, vocabulário técnico ou avançado.
-- Se não identificado, retorne "basic".
+Se o material indicar o nível explicitamente, use o indicado. Se não conseguir determinar, retorne "basic".
 
 Classificação de sectionType:
 - "vocabulary": lista de palavras ou expressões isoladas, com ou sem tradução
@@ -33,10 +33,29 @@ Só cria seções separadas quando o tipo muda, ou quando o material tem separa�
 
 Lista contínua sem separador visual, título ou numeração é sempre uma única seção, independente de quantos temas diferentes contiver.
 
-Mesmo tipo, sempre uma seção só, sem exceção. Separação por tema, assunto ou contexto não cria nova seção.
+Mesmo tipo, sempre uma seção só, sem exceção. Separação por tema, assunto ou contexto não cria nova seção. O critério é estrutural (visual ou descritivo no material), nunca semântico.
 
 Texto corrido. Sem travessão, sem bullet points, sem markdown.
 
 ## Output
-Retorne APENAS UM JSON válido:
-{"title": "título curto para o conteudo, máx 8 palavras", "level": "basic | intermediate | advanced", "isValid": true, "invalidReason": null, "sections": [{"title": "...", "sectionType": "vocabulary | text | exercise", "order": 1, "content": "..."}]}
+Retorne APENAS UM JSON válido. Sem markdown, sem cercas de código (```), sem texto antes ou depois.
+{
+  "title": "título curto para o conteúdo, máx 8 palavras",
+  "level": "basic | intermediate | advanced",
+  "isValid": true,
+  "invalidReason": null,
+  "sections": [
+    {
+      "title": "nome curto",
+      "sectionType": "vocabulary | text | exercise",
+      "order": 1,
+      "content": "conteúdo limpo"
+    }
+  ]
+}
+
+Regras do JSON:
+- title (raiz): título curto do material inteiro, máx 8 palavras.
+- isValid: false se o conteúdo não atende os critérios acima.
+- invalidReason: breve explicação em português quando isValid é false, senão null.
+- sections: array, mesmo quando há uma seção só.

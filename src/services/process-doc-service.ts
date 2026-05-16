@@ -23,8 +23,9 @@ import { sanitizeText } from "../lib/utils";
 import {
   getFormatsBySectionType,
   getQuestionExamples,
-} from "../core/question-format";
+} from "../core/format-loader";
 import { QuestionFormat } from "@prisma/client";
+import { shuffle } from "lodash";
 
 export async function processDoc(docId: string, userId: string): Promise<void> {
   const doc = await findDocById(docId, userId);
@@ -134,7 +135,9 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
             question: sanitizeText(q.question),
             answerKeys: q.answerKeys.map((k) => sanitizeText(k)),
             questionFormat: q.questionFormat as QuestionFormat,
-            questionOptions: q.questionOptions?.map((o) => sanitizeText(o)),
+            questionOptions: q.questionFormat
+              ? shuffle(q.questionOptions.map((o) => sanitizeText(o)))
+              : undefined,
           };
         }),
       );

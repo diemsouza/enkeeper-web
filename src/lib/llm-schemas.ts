@@ -64,6 +64,7 @@ export type DocProcessingResult = z.infer<typeof docProcessingSchema>;
 
 export const sectionQuestionSchema = z.array(
   z.object({
+    sourceItem: z.string().optional(),
     question: z.string(),
     answerKeys: z.array(z.string()),
     questionFormat: z.string().optional(),
