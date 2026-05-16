@@ -83,12 +83,26 @@ export function formatNoDocs(): string {
   return "Você ainda não tem conteúdos.\nMande um texto, áudio, imagem ou PDF para começar.";
 }
 
-export function formatDocReceived(remaining: number): string {
+export function formatDocReceiving(): string {
+  return "Recebido e processando...";
+}
+
+export function formatDocProcessed(hasWarning: boolean, remaining: number): string {
   const lines = ["Pronto. Em alguns minutos chega a primeira pergunta."];
+  if (hasWarning)
+    lines.push("\nAlguns termos pareceram inconsistentes e foram ignorados.");
   if (remaining === 1)
     lines.push("\n_Você ainda pode enviar mais 1 conteúdo hoje._");
   if (remaining === 0) lines.push("\n_Esse foi seu último conteúdo do dia._");
   return lines.join("");
+}
+
+export function formatDocProcessingFailed(): string {
+  return "Algo deu errado no processamento. Tenta mandar de novo.";
+}
+
+export function formatDocNoQuestions(): string {
+  return "Não consegui identificar conteúdo para praticar nesse material. Manda outro.";
 }
 
 export function formatDocConfirmPrompt(): string {

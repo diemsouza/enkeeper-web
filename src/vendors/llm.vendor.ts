@@ -182,45 +182,6 @@ Nível: {level}`
     result = sectionQuestionSchema.parse(
       parseJsonWithFallback(llmResult.text.trim()),
     );
-
-    // Validação anti-vazamento entre itens adjacentes (só vocabulary).
-    // sourceItem é o "ponteiro" declarado pelo modelo pro item da lista
-    // que ele está cobrindo. Pra ser válido:
-    // - recall_inverted: sourceItem deve aparecer na pergunta (ex: "O que significa 'blanket'?")
-    // - demais formatos: sourceItem deve estar no answerKeys
-    // Se não bater, descarta. sourceItem removido antes de salvar (auditoria).
-    if (result && sectionType === "vocabulary") {
-      const valid = result
-        .filter((q) => {
-          const source = q.sourceItem?.toLowerCase().trim();
-          if (!source) return false;
-          if (q.warning) {
-            console.warn(
-              `[gen-vocabulary] Pergunta descartada por warning: ${q.warning}. Q: ${q.question} A: ${q.answerKeys}`,
-            );
-            return false;
-          }
-
-          if (q.questionFormat === "recall_inverted") {
-            // sourceItem aparece NA pergunta (entre aspas)
-            return q.question.toLowerCase().includes(source);
-          }
-
-          // demais formatos: sourceItem está no answerKeys
-          const keys = q.answerKeys.map((k) => k.toLowerCase().trim());
-          return keys.includes(source);
-        })
-        .map(({ sourceItem, ...rest }) => rest);
-
-      const discarded = result.length - valid.length;
-      if (discarded > 0) {
-        console.warn(
-          `[gen-vocabulary] ${discarded}/${result.length} perguntas descartadas por sourceItem inconsistente`,
-        );
-      }
-
-      result = valid as SectionQuestionResult;
-    }
   } catch (err) {
     if (err instanceof Error) logError = err.message;
   }

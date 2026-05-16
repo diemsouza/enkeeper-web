@@ -7,7 +7,7 @@ import {
   formatDocsList,
   formatDocConfirmPrompt,
   formatDocReplacePrompt,
-  formatDocReceived,
+  formatDocReceiving,
   formatPausePrompt,
   formatPauseSuccess,
   formatNoPausableDocs,
@@ -50,7 +50,6 @@ import {
 import { archiveOrCancelActivitiesByDoc } from "./activity-service";
 import {
   getTodayUsage,
-  incrementDailyDocCount,
   incrementUserMessageCount,
   incrementAgentMessageCount,
 } from "../repo/daily-usage.repo";
@@ -1024,8 +1023,7 @@ async function createDocFlow(
     status: "processing",
   });
   await publishDocProcessing(doc.id, userId);
-  const docCount = await incrementDailyDocCount(userId, today);
-  const reply = formatDocReceived(MAX_DOCS_PER_DAY - docCount);
+  const reply = formatDocReceiving();
   await saveBotReply(userId, userChannelId, reply, today);
   return [reply];
 }
