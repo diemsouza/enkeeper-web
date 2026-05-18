@@ -87,7 +87,10 @@ export function formatDocReceiving(): string {
   return "Recebido e processando...";
 }
 
-export function formatDocProcessed(hasWarning: boolean, remaining: number): string {
+export function formatDocProcessed(
+  hasWarning: boolean,
+  remaining: number,
+): string {
   const lines = ["Pronto. Em alguns minutos chega a primeira pergunta."];
   if (hasWarning)
     lines.push("\nAlguns termos pareceram inconsistentes e foram ignorados.");
@@ -233,6 +236,47 @@ export function formatChoiceQuestion(
   if (!options.length) return question;
   const labels = "abcdefghij";
   return `${question}\n\n${options.map((o, i) => `${labels[i]}) ${o}`).join("\n")}`;
+}
+
+type PreviousActivitySummaryData = {
+  docTitle: string;
+  questionCount: number;
+  right: number;
+  partial: number;
+  wrong: number;
+  responses: number;
+  period: string;
+};
+
+export function formatPreviousActivitySummary(
+  data: PreviousActivitySummaryData,
+): string {
+  const { docTitle, questionCount, right, partial, wrong, responses, period } =
+    data;
+  const taxa = right / responses;
+
+  let leitura: string;
+  if (responses < 5) {
+    leitura = "Você mal começou esse aqui.";
+  } else if (taxa >= 0.8) {
+    leitura = "Mandou bem nesse material.";
+  } else if (taxa >= 0.5) {
+    leitura = "Esse material rendeu, dá pra apertar mais.";
+  } else {
+    leitura = "Esse travou bastante. Vale revisar.";
+  }
+
+  return [
+    `Enquanto a próxima pergunta não chega, segue um resumo do material anterior: *${docTitle}*`,
+    "",
+    `Período: ${period}`,
+    `Perguntas: ${questionCount}`,
+    `Respondidas: ${responses}`,
+    `Corretas: ${right}`,
+    `Erradas: ${wrong + partial}`,
+    "",
+    leitura,
+  ].join("\n");
 }
 
 export function formatUpgradePrompt(reason: "audio" | "image"): string {

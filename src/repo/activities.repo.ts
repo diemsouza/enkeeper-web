@@ -35,6 +35,7 @@ type UpdateActivityData = {
   sectionCount?: number;
   questionRound?: number;
   lastQuestionId?: string | null;
+  summary?: string | null;
 };
 
 export async function createActivity(
@@ -170,6 +171,23 @@ export async function findActivitiesForDocsList(
     include: { doc: { select: { id: true, title: true, status: true } } },
     orderBy: { createdAt: "desc" },
   }) as Promise<ActivityWithDoc[]>;
+}
+
+export async function findLatestArchivedActivityForSummary(userId: string) {
+  return prisma.activity.findFirst({
+    where: { userId, status: "archived", summary: null, deletedAt: null },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      createdAt: true,
+      lastInteractionAt: true,
+      doc: { select: { title: true } },
+      questions: {
+        where: { deletedAt: null, status: { in: ["right", "partial", "wrong"] } },
+        select: { status: true },
+      },
+    },
+  });
 }
 
 export async function findActivitiesForTtl(): Promise<Activity[]> {

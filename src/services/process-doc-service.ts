@@ -7,14 +7,20 @@ import { formatInvalidContentMessage } from "../core/validate-content";
 import { createActivity, updateActivity } from "../repo/activities.repo";
 import { createQuestions } from "../repo/questions.repo";
 import { createSection } from "../repo/sections.repo";
-import { archiveOrCancelActivitiesByDoc } from "./activity-service";
+import {
+  archiveOrCancelActivitiesByDoc,
+  buildPreviousActivitySummary,
+} from "./activity-service";
 import {
   generateDocSections,
   generateSectionQuestions,
 } from "../vendors/llm.vendor";
 import { findUserChannelByUserId } from "../repo/users.repo";
 import { saveMessage } from "../repo/messages.repo";
-import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
+import {
+  sendWhatsAppMessage,
+  sendWhatsAppMessages,
+} from "../vendors/whatsapp.vendor";
 import { incrementDailyDocCount } from "../repo/daily-usage.repo";
 import {
   formatDocProcessed,
@@ -188,6 +194,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     }
 
     if (questions && questions.length > 0) {
+      questions = shuffle(questions); // embaralha perguntas dentro da seção pra evitar padrão
       await createQuestions(
         activity.id,
         section.id,
@@ -216,13 +223,17 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
       const msg = formatDocProcessed(hasWarning, MAX_DOCS_PER_DAY - docCount);
-      await sendWhatsAppMessage(userChannel.channelId, msg);
-      await saveMessage({
-        userId,
-        userChannelId: userChannel.id,
-        role: "assistant",
-        content: msg,
-      });
+      const summary = await buildPreviousActivitySummary(userId);
+      const messages = summary ? [msg, summary] : [msg];
+      await sendWhatsAppMessages(userChannel.channelId, messages);
+      for (const content of messages) {
+        await saveMessage({
+          userId,
+          userChannelId: userChannel.id,
+          role: "assistant",
+          content,
+        });
+      }
     }
   } else {
     await updateDoc(docId, userId, { status: "failed" });

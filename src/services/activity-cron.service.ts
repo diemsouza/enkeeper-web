@@ -115,11 +115,8 @@ export async function processActivityCron(): Promise<CronResult> {
             const today = startOfDay(new Date());
             await incrementAgentMessageCount(activity.userId, today);
             await updateActivity(activity.id, activity.userId, {
-              waitingUser: false,
+              waitingUser: true,
               nextMessageAt: null,
-              //nextMessageAt: new Date(
-              //  Date.now() + activity.intervalMinutes * 60 * 1000,
-              //),
             });
             processed++;
           } else {
