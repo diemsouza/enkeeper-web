@@ -1,6 +1,6 @@
 import { Doc, ActivityStatus } from "@prisma/client";
-import { MAX_DOCS_PER_DAY } from "../lib/constants";
-import { sanitizeWhatsappContent } from "../lib/utils";
+import { ANSWER_EMOJI, MAX_DOCS_PER_DAY } from "../lib/constants";
+import { sanitizeText, sanitizeWhatsappContent } from "../lib/utils";
 
 export function formatOnboardingMsg1(): string {
   return "Hi! Bem-vindo ao *Dropuz*. 👋";
@@ -287,4 +287,30 @@ export function formatUpgradePrompt(reason: "audio" | "image"): string {
       "Envio de imagem é exclusivo do plano Pro. _Use *suporte* para saber mais._",
   };
   return messages[reason];
+}
+
+const DONT_KNOW_PATTERNS =
+  /não sei|nao sei|não lembro|nao lembro|sem ideia|desisti|desisto|esqueci|/i;
+
+export function humanizeFeedback(
+  evalStatus: "right" | "wrong" | "partial",
+  userAnswer: string,
+  agentFeedback: string,
+): string {
+  const feedback = sanitizeText(
+    `${ANSWER_EMOJI[evalStatus]} ${agentFeedback ?? "Não consegui avaliar sua resposta!"}`,
+  );
+
+  if (evalStatus !== "wrong") return feedback;
+
+  if (!DONT_KNOW_PATTERNS.test(userAnswer.trim())) return feedback;
+
+  const openings = ["Tudo bem!", "Acontece!", "Sem problemas!"];
+  const opening = openings[Math.floor(Math.random() * openings.length)];
+
+  // substitui só a abertura, mantém o resto do feedback intacto
+  return feedback.replace(
+    /^(Errado!|Ainda não!|Ops, errado!|Infelizmente não!|Hmmm, errou!)/,
+    opening,
+  );
 }

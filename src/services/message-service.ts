@@ -24,6 +24,7 @@ import {
   formatOnboardingMsg2,
   formatOnboardingMsg3,
   formatOnboardingMsg4,
+  humanizeFeedback,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import {
@@ -57,6 +58,7 @@ import { publishDocProcessing } from "../lib/qstash";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
 import { getFeedbackExamples } from "../core/format-loader";
+import { calcSm2 } from "../core/sm2";
 import {
   findNextUnansweredQuestion,
   findNextGeneralQuestion,
@@ -461,8 +463,7 @@ export async function handleIncomingMessage(
       if (parsed.docIndex !== undefined) {
         const doc = activeDocs[parsed.docIndex - 1];
         if (!doc) {
-          reply =
-            "Número inválido. Use pausar para ver seus conteúdos ativos.";
+          reply = "Número inválido. Use pausar para ver seus conteúdos ativos.";
         } else {
           await updateDoc(doc.id, user.id, { status: "paused" });
           await pauseActivitiesByDoc(doc.id, user.id);
@@ -565,7 +566,8 @@ export async function handleIncomingMessage(
       const nextQ = await resolveNextQuestion(
         activeActivity.docId,
         activeActivity.lastQuestionId,
-        activeActivity.questionRound,
+        activeActivity.roundCompleted,
+        activeActivity.id,
       );
       if (!nextQ) {
         reply = "Todas as perguntas já foram respondidas corretamente.";
@@ -677,12 +679,20 @@ export async function handleIncomingMessage(
               questionFormats,
             });
             const evalStatus = evaluation?.status ?? "wrong";
-            const feedback = sanitizeText(
-              `${ANSWER_EMOJI[evalStatus]} ${evaluation?.feedback ?? "Não consegui avaliar sua resposta!"}`,
+            const feedback = humanizeFeedback(
+              evalStatus,
+              text,
+              evaluation?.feedback || "",
             );
             const answerType = input.mediaType === "audio" ? "audio" : "text";
             const isWrongOrPartial =
               evalStatus === "wrong" || evalStatus === "partial";
+            const sm2 = calcSm2(
+              pendingQuestion.easeFactor,
+              pendingQuestion.interval,
+              pendingQuestion.nextRevisionAt,
+              evalStatus,
+            );
             await updateQuestion(pendingQuestion.id, {
               answer: text,
               status: evalStatus,
@@ -690,6 +700,13 @@ export async function handleIncomingMessage(
               answerType,
               ...(isWrongOrPartial
                 ? { wrongCount: pendingQuestion.wrongCount + 1 }
+                : {}),
+              ...(sm2 !== null
+                ? {
+                    easeFactor: sm2.easeFactor,
+                    interval: sm2.interval,
+                    nextRevisionAt: sm2.nextRevisionAt,
+                  }
                 : {}),
             });
             if (pendingQuestion.sectionId) {
@@ -729,7 +746,7 @@ export async function handleIncomingMessage(
               const replies = await handleIntensiveNextQuestion(
                 activeActivity.docId,
                 activeActivity.lastQuestionId,
-                activeActivity.questionRound,
+                activeActivity.roundCompleted,
                 activeActivity.id,
                 user.id,
                 userChannel.id,
@@ -762,7 +779,8 @@ export async function handleIncomingMessage(
 export async function resolveNextQuestion(
   docId: string,
   lastQuestionId: string | null,
-  questionRound: number,
+  roundCompleted: boolean,
+  activityId: string,
 ): Promise<{
   id: string;
   question: string;
@@ -771,20 +789,20 @@ export async function resolveNextQuestion(
   questionFormat: QuestionFormat | null;
   questionOptions: string[];
 } | null> {
-  if (questionRound === 0) {
+  if (!roundCompleted) {
     const unanswered = await findNextUnansweredQuestion(docId, lastQuestionId);
     if (unanswered) return unanswered;
     const openRemains = await hasWrongOrPartial(docId);
-    if (openRemains) return findNextGeneralQuestion(docId, lastQuestionId);
-    return findNextGeneralQuestion(docId, lastQuestionId);
+    if (openRemains) return findNextGeneralQuestion(activityId, lastQuestionId);
+    return findNextGeneralQuestion(activityId, lastQuestionId);
   }
-  return findNextGeneralQuestion(docId, lastQuestionId);
+  return findNextGeneralQuestion(activityId, lastQuestionId);
 }
 
 async function handleIntensiveNextQuestion(
   docId: string,
   lastQuestionId: string | null,
-  questionRound: number,
+  roundCompleted: boolean,
   activityId: string,
   userId: string,
   userChannelId: string,
@@ -794,7 +812,7 @@ async function handleIntensiveNextQuestion(
 ): Promise<string[]> {
   const lastId = lastQuestionId;
 
-  if (questionRound === 0) {
+  if (!roundCompleted) {
     const unanswered = await findNextUnansweredQuestion(docId, lastId);
     if (unanswered) {
       return sendIntensiveQuestion(
@@ -809,7 +827,7 @@ async function handleIntensiveNextQuestion(
     }
     const openRemains = await hasWrongOrPartial(docId);
     if (openRemains) {
-      const next = await findNextGeneralQuestion(docId, lastId);
+      const next = await findNextGeneralQuestion(activityId, lastId);
       if (next)
         return sendIntensiveQuestion(
           next,
@@ -834,7 +852,7 @@ async function handleIntensiveNextQuestion(
     return [completionMsg];
   }
 
-  const next = await findNextGeneralQuestion(docId, lastId);
+  const next = await findNextGeneralQuestion(activityId, lastId);
   if (next)
     return sendIntensiveQuestion(
       next,

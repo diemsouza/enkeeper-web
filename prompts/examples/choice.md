@@ -10,7 +10,7 @@ nota: As opções vão em questionOptions, a correta em answerKeys. As opções 
 
 ### feedback
 fórmula: abertura + frase de uso real com o item correto
-nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução.
+nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
 
 right:
 - Boa! "My garden is beautiful."
@@ -34,7 +34,7 @@ nota: As opções vão em questionOptions, a correta em answerKeys. As opções 
 
 ### feedback
 fórmula: abertura + frase de uso real com a expressão correta
-nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução.
+nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
 
 right:
 - Boa! "Never mind, it's not a big deal."
@@ -58,7 +58,7 @@ nota: As opções vão em questionOptions, a correta em answerKeys. As opções 
 
 ### feedback
 fórmula: abertura em PT + frase de uso real em EN com a expressão correta
-nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução.
+nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
 
 right:
 - Boa! "That's the sweet spot between speed and quality."

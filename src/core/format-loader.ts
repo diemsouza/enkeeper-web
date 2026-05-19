@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Level, QuestionFormat } from "@prisma/client";
+import { SectionQuestionResult } from "../lib/llm-schemas";
 
 const VOCABULARY_FORMATS: QuestionFormat[] = [
   QuestionFormat.gap_fill,
@@ -89,42 +90,71 @@ export function getFeedbackExamples(
   return formats.map((f) => buildBlock(f, level, "feedback")).join("\n\n");
 }
 
-type VocabItem = { term: string; translation: string };
-type GeneratedQuestion = {
-  sourceItem?: string;
-  question: string;
-  answerKeys: string[];
-  questionFormat: string;
-  questionOptions: string[];
-};
+function looksLikeDoubleQuestion(question: string): boolean {
+  const marks = (question.match(/\?/g) || []).length;
+  if (marks > 1) return true;
+  // "e quem", "e onde", "e qual", "e como" perto do fim
+  return /\be (quem|onde|qual|como|o que)\b.*\?/i.test(question);
+}
 
-export function validateVocabularyGeneration(
-  items: VocabItem[],
-  questions: GeneratedQuestion[],
-) {
-  const itemMap = new Map(items.map((i) => [i.term.toLowerCase().trim(), i]));
+export function validateGeneratedQuestion(
+  questions: SectionQuestionResult,
+  sectionType: string,
+): { questions: SectionQuestionResult; hasWarning: boolean } {
+  // Validação anti-vazamento entre itens adjacentes (só vocabulary).
+  // sourceItem é o "ponteiro" declarado pelo modelo pro item da lista
+  // que ele está cobrindo. Pra ser válido:
+  // - recall_inverted: sourceItem deve aparecer na pergunta (ex: "O que significa 'blanket'?")
+  // - demais formatos: sourceItem deve estar no answerKeys
+  // Se não bater, descarta. sourceItem removido antes de salvar (auditoria).
 
-  const valid = [];
-  const invalid = [];
+  let hasWarning = false;
+  let valid = [...questions];
+  if (!!valid.length && sectionType === "vocabulary") {
+    valid = valid
+      .filter((q) => {
+        const source = q.sourceItem?.toLowerCase().trim();
+        if (!source) return false;
+        if (q.warning) {
+          console.warn(
+            `[gen-vocabulary] Pergunta descartada por warning: ${q.warning}. Q: ${q.question} A: ${q.answerKeys}`,
+          );
+          hasWarning = true;
+          return false;
+        }
 
-  for (const q of questions) {
-    const source = q.sourceItem?.toLowerCase().trim();
-    const keys = q.answerKeys.map((k) => k.toLowerCase().trim());
+        if (q.questionFormat === "recall_inverted") {
+          // sourceItem aparece NA pergunta (entre aspas)
+          return q.question.toLowerCase().includes(source);
+        }
 
-    const itemExists = source && itemMap.has(source);
-    const keyMatchesSource = source && keys.includes(source);
+        // demais formatos: sourceItem está no answerKeys
+        const keys = q.answerKeys.map((k) => k.toLowerCase().trim());
+        return keys.includes(source);
+      })
+      .map(({ sourceItem, ...rest }) => rest);
 
-    if (itemExists && keyMatchesSource) {
-      // remove sourceItem antes de salvar, é só auditoria
-      const { sourceItem, ...rest } = q as any;
-      valid.push(rest);
-    } else {
-      invalid.push(q);
+    const discarded = questions.length - valid.length;
+    if (discarded > 0) {
       console.warn(
-        `[gen-vocabulary] Descartada. sourceItem=${q.sourceItem}, answerKeys=${JSON.stringify(q.answerKeys)}`,
+        `[gen-vocabulary] ${discarded}/${questions.length} perguntas descartadas por sourceItem inconsistente`,
       );
     }
   }
 
-  return { valid, invalid };
+  // Cenário: se não tiver conseguido validar por sourceItem, pelo menos tenta filtrar perguntas que parecem conter mais de uma pergunta (só cenário, que é o mais propenso a isso).
+  if (!!valid.length && sectionType === "scenario") {
+    valid = valid.filter((q) => {
+      if (looksLikeDoubleQuestion(q.question)) {
+        console.warn(
+          `[gen-scenario] Pergunta descartada por parecer conter mais de uma pergunta: Q: ${q.question} A: ${q.answerKeys}`,
+        );
+        hasWarning = true;
+        return false;
+      }
+      return true;
+    });
+  }
+
+  return { questions: valid, hasWarning };
 }

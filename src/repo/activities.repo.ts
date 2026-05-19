@@ -14,7 +14,7 @@ type CreateActivityData = {
   nextMessageAt?: Date;
   intervalMinutes?: number;
   status?: ActivityStatus;
-  questionRound?: number;
+  roundCompleted?: boolean;
   questionCount?: number;
   sectionCount?: number;
 };
@@ -33,7 +33,7 @@ type UpdateActivityData = {
   intensiveUntil?: Date | null;
   questionCount?: number;
   sectionCount?: number;
-  questionRound?: number;
+  roundCompleted?: boolean;
   lastQuestionId?: string | null;
   summary?: string | null;
 };

@@ -8,7 +8,7 @@ Critérios para o status:
 
 - right: correta ou equivalente, ignore maiúsculas, acentos, pontuação e contrações.
 - wrong: errada, em branco, "não sei" ou "não lembro".
-- partial: ideia certa mas incompleta ou imprecisa.
+- partial: ideia certa mas incompleta ou imprecisa. Inclui grafia muito próxima do correto (erro de sufixo, letra trocada, plural).
 
 Alguns formatos são binários e não usam partial. Quando os exemplos do formato não trazem partial, use apenas right ou wrong.
 

@@ -41,8 +41,15 @@ Completar todas as perguntas não altera o status — activity permanece `active
 ### lastInteractionAt
 Atualizado exclusivamente quando o usuário responde uma mensagem de prática. Comandos não atualizam este campo.
 
+### summary
+Campo `String?` que armazena o resumo gerado ao final da activity, quando ela é arquivada. Serve de guard de idempotência: se `summary` está preenchido, o resumo já foi gerado e enviado para essa activity. Nunca é gerado novamente.
+
+Preenchido apenas quando a activity vai para `archived` (teve ao menos 1 resposta). Activities `cancelled` não geram resumo.
+
+O resumo é exibido ao usuário após o processamento do novo material, como mensagem separada, antes da primeira pergunta do novo ciclo.
+
 ### Visibilidade ao usuário
-`/conteudo` exibe apenas `active`, `paused` e `archived`. Demais status são histórico interno.
+`conteudo` exibe apenas `active`, `paused` e `archived`. Demais status são histórico interno.
 
 ### deletedAt
 Reservado para exclusão de conta (LGPD) ou limpeza sistêmica.
@@ -76,13 +83,19 @@ Banco de perguntas geradas no upload do material. Cada `Question` pertence a uma
 - `questionFormat QuestionFormat?` — formato da pergunta. Ver enum em Seção 11
 - `questionOptions String[]` — opções embaralhadas para o formato `choice`. Vazio nos demais formatos
 - `sectionId` — relação opcional com `Section`
+- `easeFactor Float @default(2.5)` — fator de facilidade do SM-2. Sobe com acertos, cai com erros. Mínimo 1.3
+- `interval Int @default(0)` — último intervalo calculado em dias
+- `nextRevisionAt DateTime?` — quando a pergunta está elegível para revisão pelo SM-2. `null` enquanto não houver primeira resposta
 
 ### Fluxo
 
 1. Upload → `doc-extraction` identifica e separa seções → para cada seção, o prompt de geração correspondente cria as perguntas → salvas com `status: null` → atualiza `Activity.questionCount`
 2. Cron seleciona próxima pergunta (ver Seleção abaixo) → envia → `status: pending` → salva `Message` com `questionId` → atualiza `Activity.lastQuestionId`
-3. Usuário responde → preenche `answer` e `answerType` → avalia contra `answerKeys` → atualiza `status` para `right`, `partial` ou `wrong` → incrementa `attemptCount` → se `wrong` ou `partial`, incrementa `wrongCount`
+3. Usuário responde → preenche `answer` e `answerType` → avalia contra `answerKeys` → atualiza `status` para `right`, `partial` ou `wrong` → incrementa `attemptCount` → se `wrong` ou `partial`, incrementa `wrongCount` → calcula e salva campos SM-2 (ver Seção 16)
 4. Toda mensagem de pergunta, resposta do usuário e feedback carrega o `questionId` correspondente
+
+### Ordem de criação
+As perguntas são embaralhadas antes de salvar no banco. A ordem salva é a ordem de exibição no round 0.
 
 ### Seleção da próxima pergunta
 
@@ -91,18 +104,14 @@ Baseada em `Activity.questionRound`:
 **`questionRound = 0` (primeira rodada):**
 1. Tenta buscar próxima com `status = null`, exceto `lastQuestionId`, `ORDER BY updatedAt DESC LIMIT 1`
 2. Retornou resultado → envia
-3. Retornou vazio e todas estão `right` → primeira rodada concluída: `questionRound = 1`, envia mensagem de conclusão, busca próxima pela query geral
+3. Retornou vazio e todas estão com `status != null` → primeira rodada concluída: `questionRound = 1`, envia mensagem de conclusão, busca próxima pela query do round 1
 4. Retornou vazio e ainda há `wrong` ou `partial` → continua repescagem pela query geral sem incrementar `questionRound`
 
-**`questionRound = 1` (revisão contínua):**
-```sql
-WHERE activityId = :activityId
-  AND id != :lastQuestionId
-ORDER BY
-  CASE WHEN status IS NULL THEN 1 ELSE 0 END DESC,
-  updatedAt DESC
-LIMIT 1
-```
+**`questionRound = 1` (revisão contínua com SM-2):**
+
+1. SM-2 elegíveis: busca perguntas com `nextRevisionAt <= now()`, exceto `lastQuestionId`, `ORDER BY nextRevisionAt ASC LIMIT 1`
+2. Se não houver elegíveis: fallback por `wrong` e `partial` primeiro, depois `right`, todos por `updatedAt ASC`, exceto `lastQuestionId`
+
 Loop infinito natural — revisão contínua sem critério de encerramento.
 
 ### Conclusão da primeira rodada
@@ -182,47 +191,45 @@ Separa cortesia de receita real. Query de pagantes filtra só `planCode = pro`. 
 
 | Comando | Ação |
 | ------- | ---- |
-| `/ajuda` | Lista os comandos disponíveis |
-| `/praticar` | Dispara próxima pergunta imediatamente, sem esperar cadência. Inicia sessão intensiva por 15 minutos |
-| `/pausar` | Pausa o envio de mensagens de prática. Zera `intensiveUntil` |
-| `/retomar` | Retoma o envio após pausa |
-| `/conteudo` | Lista a activity `active`, `paused` e as `archived`, independente de estar pausada |
-| `/suporte` | Aciona suporte via WhatsApp pessoal do admin |
-| `chega por hoje` | Linguagem natural — encerra o envio do dia |
+| `ajuda` | Lista os comandos disponíveis |
+| `praticar` | Dispara próxima pergunta imediatamente, sem esperar cadência. Inicia sessão intensiva por 15 minutos |
+| `pausar` | Pausa o envio de mensagens de prática. Zera `intensiveUntil` |
+| `retomar` | Retoma o envio após pausa |
+| `conteudo` | Lista a activity `active`, `paused` e as `archived`, independente de estar pausada |
+| `suporte` | Aciona suporte via WhatsApp pessoal do admin |
 
 ### Parse de comandos
 
-- `/` sozinho → mesmo comportamento de `/ajuda`
-- `/ajuda` → exibe menu de comandos
-- `/comando` não reconhecido → "Comando não reconhecido. Manda /ajuda pra ver o que está disponível."
-- Qualquer mensagem começando com `/` nunca é avaliada como resposta de prática
+- `ajuda` → exibe menu de comandos
+- `comando` não reconhecido → "Comando não reconhecido. Manda ajuda pra ver o que está disponível."
 
-### Menu de comandos (/ajuda)
+### Menu de comandos (ajuda)
 
 ```
 *Comandos disponíveis:*
 
-*/ajuda* - ver essa lista
-*/conteudo* - seu conteúdo atual
-*/praticar* - prática intensiva
-*/pausar* - pausar prática
-*/retomar* - retomar prática pausada
-*/suporte* - falar com suporte
+*ajuda* - ver essa lista
+*conteudo* - seu conteúdo atual
+*praticar* - prática intensiva
+*pausar* - pausar prática
+*retomar* - retomar prática pausada
+*suporte* - falar com suporte
 
 _Mande um texto, áudio, imagem ou PDF para praticar._
 ```
 
-### Sessão intensiva (/praticar)
+### Sessão intensiva (praticar)
 
 - `intensiveUntil` = `now() + 15min`
 - Cada resposta do usuário durante a sessão dispara a próxima pergunta imediatamente
-- Sessão encerra quando `intensiveUntil` vence ou quando `/pausar` é chamado — `intensiveUntil` volta a `null`
+- Sessão encerra quando `intensiveUntil` vence ou quando `pausar` é chamado — `intensiveUntil` volta a `null`
 - Conclusão de rodada não encerra a sessão — apenas zera `intensiveUntil` e envia a mensagem de conclusão; cron retoma cadência normal
 - Fora da sessão, cadência normal opera normalmente
+- Sessão intensiva e cadência não interferem no cálculo SM-2. Perguntas respondidas pelo fallback (cadência ou intensivo) não recalculam `easeFactor` nem `nextRevisionAt`. O SM-2 só recalcula quando a pergunta aparece como elegível (`nextRevisionAt <= now()`)
 
-### /conteudo e pausa
+### conteudo e pausa
 
-`/conteudo` exibe activities com status `active`, `paused` e `archived` independente de `waitingUser`. Pausar não arquiva nem remove o conteúdo — apenas para o envio. O conteúdo só some do `/conteudo` quando substituído ou arquivado pelo fluxo padrão.
+`conteudo` exibe activities com status `active`, `paused` e `archived` independente de `waitingUser`. Pausar não arquiva nem remove o conteúdo — apenas para o envio. O conteúdo só some do `conteudo` quando substituído ou arquivado pelo fluxo padrão.
 
 ### Sem conteúdo ativo
 
@@ -248,7 +255,7 @@ Manda o material da sua aula de inglês — texto, áudio, foto ou PDF — e rec
 Você tem 24 horas pra sentir na prática. Aproveita!
 ```
 ```
-Mande agora pra começar. Ou use / pra ver os comandos disponíveis.
+Mande agora pra começar. Ou use ajuda pra ver os comandos disponíveis.
 ```
 
 ### Pós-primeiro-material
@@ -292,6 +299,42 @@ Quando a última mensagem do assistente é `practice_question` ou `practice_nudg
 - Apenas texto extraído, seções e perguntas geradas são salvos.
 - No upload: 1 chamada para `doc-extraction` (identifica seções, nível e limpa conteúdo) + 1 chamada por seção para o prompt de geração correspondente.
 - Durante o dia: 1 chamada por resposta do usuário para avaliação e feedback.
+
+### Resumo do material anterior
+
+Após processamento com sucesso de um novo material, se existir uma activity anterior com status `archived` e `summary = null`, o sistema gera o resumo, salva em `Activity.summary` e envia ao usuário como mensagem separada, antes da primeira pergunta do novo ciclo.
+
+O resumo só é gerado uma vez por activity. `summary` preenchido indica que já foi enviado — não gera novamente. Activities `cancelled` não geram resumo.
+
+**Formato:**
+
+```
+Enquanto a próxima pergunta não chega, segue um resumo do material anterior.
+
+Seu material anterior: *{título do doc}*
+
+Período: {duração entre createdAt e lastInteractionAt}
+Perguntas: {questionCount}
+Respondidas: {right + partial + wrong}
+Acertos: {right}
+Erros: {wrong + partial}
+
+{linha de leitura}
+```
+
+**Linha de leitura** (determinística, sem IA):
+
+```
+respondidas = right + partial + wrong
+taxa = right / respondidas
+```
+
+- `respondidas < 5` → "Você mal começou esse aqui."
+- `taxa >= 0.8` → "Mandou bem nesse material."
+- `taxa >= 0.5` → "Esse material rendeu, dá pra apertar mais."
+- `taxa < 0.5` → "Esse travou bastante. Vale revisar."
+
+Sem emoji na linha de leitura. Tom seco, leitura de resultado, não elogio.
 
 ### Caps técnicos invisíveis
 - 5 materiais por dia por usuário
@@ -475,3 +518,72 @@ Definidas nos arquivos `src/formats/*.ts` via `feedback_info` por formato. O ava
 - Janela de 24h do WhatsApp é regra de ouro.
 - API Routes puras. Sem dependência de funcionalidades específicas de plataforma de deploy.
 - Sanitização de texto (aspas, travessão) feita no código antes de enviar ao usuário — não depende do modelo.
+
+---
+
+## 16. Repetição espaçada (SM-2 adaptado)
+
+### O que é
+Mecanismo de priorização de revisão baseado no desempenho do usuário por pergunta. Determina quando cada pergunta volta como revisão prioritária após a primeira exposição.
+
+### Para que serve
+Garante que perguntas que travaram voltam antes das que o usuário já domina. Quanto mais erra, mais rápido volta. Quanto mais acerta, mais espaço ganha entre revisões. O algoritmo não controla o ritmo de envio — a cadência do produto faz isso. O SM-2 controla apenas a ordem e o intervalo de elegibilidade de revisão.
+
+### Valor entregue
+O usuário pratica no ritmo dele (cadência ou intensivo) e o sistema garante que o que travou volta na hora certa. Quem usa o produto por dias consecutivos com o mesmo material tem revisões priorizadas pelo desempenho real, não por ordem arbitrária. É repetição com inteligência, sem exigir disciplina de sessão dedicada.
+
+### Campos em Question
+
+| Campo | Tipo | Default | Descrição |
+| ----- | ---- | ------- | --------- |
+| `easeFactor` | Float | 2.5 | Fator de facilidade. Sobe com acertos, cai com erros. Mínimo 1.3 |
+| `interval` | Int | 0 | Último intervalo calculado em dias |
+| `nextRevisionAt` | DateTime? | null | Quando está elegível para revisão pelo SM-2. null até a primeira resposta |
+
+### Quando o SM-2 atua
+
+O SM-2 só atua no `questionRound = 1`. No round 0 (primeira exposição), os campos são calculados e salvos a cada resposta, mas não influenciam a seleção — o round 0 segue a ordem normal até todas terem sido respondidas ao menos uma vez.
+
+### Cálculo a cada resposta
+
+**Primeira resposta** (`nextRevisionAt` é null): calcula normalmente pela fórmula abaixo. Não é tratada como exceção — a primeira resposta já tem informação suficiente para o cálculo.
+
+**Resposta pelo SM-2** (`nextRevisionAt <= now()`): recalcula `easeFactor`, `interval` e `nextRevisionAt`.
+
+**Resposta pelo fallback** (`nextRevisionAt` no futuro ou null já processado): registra `status`, `updatedAt`, `wrongCount` normalmente. Não recalcula `easeFactor` nem `nextRevisionAt`. O SM-2 permanece inalterado até a pergunta aparecer como elegível.
+
+### Fórmula
+
+```
+// Atualiza easeFactor conforme resultado
+right:   easeFactor = easeFactor + 0.1
+partial: easeFactor = easeFactor - 0.15
+wrong:   easeFactor = easeFactor - 0.2
+
+// Aplica mínimo
+easeFactor = Math.max(1.3, easeFactor)
+
+// Calcula próximo interval
+wrong ou partial: interval = 1
+right:            interval = Math.round(Math.min(Math.max(interval, 1) * easeFactor, 3))
+
+// Agenda próxima revisão
+nextRevisionAt = now() + interval dias
+```
+
+O intervalo máximo é **3 dias**. Esse teto existe porque o ciclo de troca de material do produto é curto — intervalos maiores fariam a revisão vencer depois que o usuário já trocou de material, perdendo o efeito.
+
+### Seleção no round 1
+
+1. SM-2 elegíveis: `nextRevisionAt <= now()`, exceto `lastQuestionId`, `ORDER BY nextRevisionAt ASC`
+2. Fallback quando não há elegíveis: `wrong` e `partial` por `updatedAt ASC`, depois `right` por `updatedAt ASC`, exceto `lastQuestionId`
+
+### Convivência com cadência e sessão intensiva
+
+Cadência e sessão intensiva aceleram a exposição mas não interferem no SM-2. Uma pergunta respondida múltiplas vezes no mesmo dia pelo fallback não recalcula o SM-2. No dia seguinte, as que tiverem `nextRevisionAt <= now()` aparecem como elegíveis e aí sim o SM-2 recalcula. Isso garante que o algoritmo opera sobre revisões reais, não sobre repetições intradiárias.
+
+### Identificação de SM-2 vs fallback na avaliação
+
+- `nextRevisionAt` null: primeira resposta, calcula e seta pela primeira vez
+- `nextRevisionAt <= now()`: SM-2 elegível, recalcula
+- `nextRevisionAt` no futuro: fallback, não recalcula

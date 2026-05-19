@@ -1,16 +1,16 @@
 ## BASIC
 
 ### question
-fórmula: situação curta em PT que leva naturalmente ao termo, encerrando com pergunta direta sobre o que dizer em EN
-nota: Situação realista e cotidiana. Uma pergunta só no final. O termo correto vai em answerKeys. Varie o tipo de situação entre exemplos.
+fórmula: situação curta em PT, terminando com pergunta única que nomeia o que se busca (palavra, expressão, nome)
+nota: Uma situação, um item, uma pergunta. A situação deve ser específica o suficiente para apontar ao termo de answerKeys. A pergunta final nomeia o tipo de item buscado. Nunca peça duas informações.
 
-- Você está mostrando sua casa pra um amigo e quer falar do espaço verde atrás. O que você diz em inglês?
-- Você acabou de acordar e quer convidar alguém pra primeira refeição do dia. Como chama isso em inglês?
-- Você quer apresentar alguém próximo, alguém com quem você sai bastante. Como você chama essa pessoa em inglês?
+- Você gosta do espaço verde atrás da sua casa, onde tem flores e grama. Qual o nome desse espaço em inglês?
+- Você convida alguém pra sentar e comer com você de manhã. Qual o nome dessa refeição em inglês?
+- Seu amigo chega no almoço de domingo e cumprimenta todo mundo de forma descontraída. Qual expressão ele usaria em inglês?
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com o termo em EN
-nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre o termo em destaque antes da frase.
+nota: Sempre frase de uso real com o termo. Nunca explicação ou tradução. Em wrong e partial, mostre o termo em destaque antes da frase.
 
 right:
 - Boa! "This is my garden."
@@ -30,16 +30,16 @@ partial:
 ## INTERMEDIATE
 
 ### question
-fórmula: situação em PT (ou mista PT/EN) que leva a uma expressão, phrasal verb ou colocação em EN, encerrando com pergunta direta
-nota: Situação realista, conflito ou interação social específica. Uma pergunta só no final. answerKeys cobre o item esperado. Varie o tipo de situação entre exemplos.
+fórmula: situação curta em PT (ou mista PT/EN), terminando com pergunta única que nomeia o que se busca (expressão, phrasal verb, palavra)
+nota: Uma situação, um item, uma pergunta. A situação deve ser específica o suficiente para apontar ao item de answerKeys. A pergunta final nomeia o tipo de item buscado. Nunca peça duas informações.
 
-- Seu amigo está falando sobre um problema antigo que já foi resolvido. Você quer dizer pra ele esquecer isso. O que você diz?
-- Você tentou consertar algo sozinho por horas e percebeu que não vai conseguir. Que phrasal verb descreve o que você precisa fazer?
-- Sua amiga vai pra uma entrevista importante em uma hora e ainda não se arrumou. O que você diz pra ela apressar a preparação?
+- Seu amigo remói um problema já resolvido. Qual expressão você usa pra dizer pra ele largar isso?
+- Você tentou consertar sozinho por horas e não conseguiu. Qual phrasal verb descreve o que você precisa fazer?
+- Sua amiga tem entrevista em uma hora e não se arrumou. O que você diz pra ela se preparar?
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com a expressão em EN
-nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre a expressão em destaque antes da frase.
+nota: Sempre frase de uso real com a expressão. Nunca explicação ou tradução. Em wrong e partial, mostre a expressão em destaque antes da frase.
 
 right:
 - Boa! "Never mind, it's in the past."
@@ -59,16 +59,16 @@ partial:
 ## ADVANCED
 
 ### question
-fórmula: situação em EN que leva a um idiom, expressão idiomática ou colocação avançada, encerrando com pergunta direta em EN
-nota: Situação profissional, social ou de nuance cultural. Uma pergunta só no final. answerKeys cobre o item esperado. Varie o tipo de contexto entre exemplos.
+fórmula: situação curta em EN, terminando com pergunta única que nomeia o que se busca (idiom, expressão, colocação)
+nota: Uma situação, um item, uma pergunta. A situação deve ser específica o suficiente para apontar ao item de answerKeys. A pergunta final nomeia o tipo de item buscado. Nunca peça duas informações.
 
-- Your team is debating the ideal balance between speed and quality. What expression describes that perfect balance point?
-- You've been putting off a difficult conversation for weeks and finally need to have it. What idiom describes what you have to do?
-- Your colleague keeps interrupting before you finish your point. How would you politely ask them to wait?
+- Your team debates speed versus quality in every sprint. What expression names that ideal balance?
+- You keep delaying a difficult talk you know you must have. What idiom describes what you need to do?
+- A colleague cuts you off before you finish your point. How do you ask them to wait?
 
 ### feedback
 fórmula: abertura em PT + frase de uso real em EN com a expressão correta
-nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre a expressão em destaque antes da frase.
+nota: Sempre frase de uso real com a expressão. Nunca explicação ou tradução. Em wrong e partial, mostre a expressão em destaque antes da frase.
 
 right:
 - Boa! "That's the sweet spot between speed and quality."

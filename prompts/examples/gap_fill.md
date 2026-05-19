@@ -10,7 +10,7 @@ nota: A frase é sempre em EN. A lacuna cai sobre o termo em contexto de uso rea
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com o termo em EN preenchido
-nota: Use sempre a frase original completada, nunca crie frase nova. Em wrong e partial, mostre o termo em destaque antes da frase.
+nota: Use sempre a frase original completada, nunca crie frase nova. Em wrong e partial, mostre o termo em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "I have a garden behind my house."
@@ -39,7 +39,7 @@ nota: A frase é sempre em EN. A lacuna pode cobrir mais de uma palavra (express
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com a expressão em EN preenchida
-nota: Use sempre a frase original completada, nunca crie frase nova. Em wrong e partial, mostre a expressão em destaque antes da frase.
+nota: Use sempre a frase original completada, nunca crie frase nova. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "Just never mind, it's not a big deal."
@@ -68,7 +68,7 @@ nota: A frase é sempre em EN. A lacuna cobre o item idiomático. Use underline 
 
 ### feedback
 fórmula: abertura em PT + frase de uso real em EN com a expressão correta preenchida
-nota: Use sempre a frase original completada, nunca crie frase nova. Em wrong e partial, mostre a expressão em destaque antes da frase.
+nota: Use sempre a frase original completada, nunca crie frase nova. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "We finally hit the sweet spot on pricing."

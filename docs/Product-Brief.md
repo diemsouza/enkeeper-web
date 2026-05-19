@@ -1,7 +1,7 @@
 # Dropuz — Product Brief
 
 > Documento vivo — base de decisão para produto e negócio.
-> Versão 11 — Maio 2026
+> Versão 12 — Maio 2026
 > Regras de sistema e comportamento técnico em Rules.md.
 
 ---
@@ -62,8 +62,9 @@ A interseção "prática contextual contínua, ancorada no material do aluno, de
 2. Sistema identifica seções do material por tipo, detecta o nível e gera perguntas específicas por seção.
 3. Durante o dia, perguntas chegam no WhatsApp. Usuário responde de cabeça.
 4. Sistema avalia a resposta, dá feedback natural e registra acerto/erro.
-5. Perguntas erradas ou parciais voltam com prioridade nas próximas rodadas.
-6. Domingo, o usuário recebe a evolução da semana — % de acerto, vocabulário que travou, evolução vs semana anterior.
+5. Perguntas que travaram voltam com prioridade, calculadas por repetição espaçada.
+6. Ao trocar de material, o usuário recebe um resumo do ciclo anterior: tempo, perguntas respondidas, acertos e erros.
+7. Domingo, o usuário recebe a evolução da semana — % de acerto, vocabulário que travou, evolução vs semana anterior.
 
 ### Nível e idioma das perguntas
 
@@ -76,9 +77,19 @@ O sistema detecta o nível do material automaticamente no upload:
 
 Vocabulário usa variação automática entre: gap fill, recall, recall invertido, cenário e múltipla escolha. Texto usa pergunta aberta. Exercise usa pergunta direta baseada no material.
 
-### Modo sessão (/praticar)
+### Repetição espaçada
+
+O sistema usa SM-2 adaptado para priorizar revisões. Após a primeira exposição completa, perguntas que travaram voltam primeiro. Perguntas dominadas ganham espaço crescente entre revisões, até o teto de 3 dias — ajustado ao ciclo real de troca de material do produto.
+
+Cadência e sessão intensiva aceleram a exposição sem interferir no algoritmo. O SM-2 opera sobre revisões de dias distintos, não sobre repetições do mesmo dia. Quem pratica mais rápido chega mais cedo na revisão espaçada.
+
+### Modo sessão (praticar)
 
 Usuário pode iniciar sessão ativa — perguntas chegam em sequência, uma após a outra, sem esperar a cadência. Sessão dura 15 minutos de inatividade.
+
+### Resumo de material
+
+Ao subir novo material, o usuário recebe um resumo do ciclo anterior: quanto tempo durou, quantas perguntas foram respondidas, acertos e erros, e uma leitura direta do resultado. Fecha o ciclo anterior e contextualiza o novo.
 
 ### Onboarding
 
@@ -86,7 +97,7 @@ Usuário pode iniciar sessão ativa — perguntas chegam em sequência, uma apó
 Hi! Bem-vindo ao *Dropuz*. 👋
 Manda o material da sua aula de inglês — texto, áudio, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
 Você tem 24 horas pra sentir na prática. Aproveita!
-Mande agora pra começar. Ou use / pra ver os comandos disponíveis.
+Mande agora pra começar. Ou use ajuda pra ver os comandos disponíveis.
 ```
 
 ---
@@ -132,7 +143,7 @@ Todos competem com aula. Nós complementamos aula. Eixo diferente — e o aluno 
 
 ### Riscos competitivos
 
-- **Concorrente incorporar "manda seu material"** — mitigação: velocidade e profundidade da evolução semanal com histórico de acerto/erro.
+- **Concorrente incorporar "manda seu material"** — mitigação: profundidade do histórico de acerto/erro acumulado e repetição espaçada personalizada por usuário.
 - **Meta mudar política/preço de API** — mitigação: arquitetura multicanal, Telegram como segundo adaptador.
 - **Grandes players** — mitigação: voo baixo. Nicho brasileiro fica na zona cega por 12–18 meses.
 
@@ -157,7 +168,8 @@ Não é teaser — é o produto inteiro por tempo limitado. Quem sente o valor n
 ### Pro — R$19,90/mês recorrente
 
 - Materiais ilimitados
-- Prática diária com loop de acerto/erro
+- Prática diária com repetição espaçada
+- Resumo de ciclo ao trocar de material
 - Evolução semanal
 - Texto, áudio, imagem, PDF
 - Histórico permanente
@@ -187,7 +199,7 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Avaliação de respostas + feedback | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Evolução semanal | Modelo médio em batch |
 | Jobs agendados | Vercel Cron |
-| Pagamento (MVP) | Pix manual via /suporte |
+| Pagamento (MVP) | Pix manual via suporte |
 | Pagamento (futuro) | Stripe + recorrência automática |
 | Número virtual | BRDID — (11) 5306-9000 |
 
@@ -278,16 +290,18 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - OCR e descrição de imagem (Vision)
 - Schema atualizado com Section, Question, QuestionFormat, llm_logs
 - Motor de prática com loop acerto/erro
-- Cadência e sessão ativa (/praticar)
+- Cadência e sessão ativa (praticar)
 - Sistema de formatos granulares (gap_fill, recall, recall_inverted, scenario, choice, open_text, open_question)
 - Detecção automática de nível no upload
 - Múltipla escolha (choice) com opções embaralhadas
 - Logs de LLM com DISABLE_LLM_LOGS
+- Resumo de material anterior ao trocar de conteúdo
 
 **Falta:**
+- [ ] Repetição espaçada SM-2 (easeFactor, interval, nextRevisionAt)
 - [ ] Evolução semanal com % acerto e vocabulário que travou
 - [ ] Gatilhos de upgrade contextuais
-- [ ] Pix manual via /suporte
+- [ ] Pix manual via suporte
 - [ ] Site refeito com nova copy (foco inglês)
 - [ ] Onboarding atualizado
 - [ ] Material institucional para professor (1 página)
@@ -310,14 +324,14 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 1. **Qualidade conversacional.** Pergunta tem que soar como pessoa, feedback como amigo. É o trabalho central.
 2. **Custo de WhatsApp.** Se janela 24h cair abaixo de 80%, custos disparam. Monitorar semanalmente.
 3. **Dependência da Meta.** Mitigado por arquitetura multicanal.
-4. **Concorrente no mesmo eixo.** Histórico de acerto/erro acumulado é a defesa — vantagem do incumbente.
+4. **Concorrente no mesmo eixo.** Histórico de acerto/erro acumulado com repetição espaçada personalizada é a defesa — vantagem do incumbente.
 5. **Conversão abaixo do projetado.** Se cair para 5%, meta sobe para ~3.000 pagantes.
 
 ---
 
 ## 15. Resumo executivo
 
-Um agente de prática de inglês que mantém seu vocabulário ativo o dia inteiro no WhatsApp. Você manda o material da aula, recebe perguntas durante o dia, o sistema avalia e registra o que travou. Toda semana você vê sua evolução real.
+Um agente de prática de inglês que mantém seu vocabulário ativo o dia inteiro no WhatsApp. Você manda o material da aula, recebe perguntas durante o dia, o sistema avalia e registra o que travou. O que travou volta mais cedo. O que você domina ganha espaço. Toda semana você vê sua evolução real.
 
 Entra focado em inglês. Posicionamento de complemento — não compete com professor, trabalha com ele. Canal principal de aquisição é o próprio professor como parceiro.
 

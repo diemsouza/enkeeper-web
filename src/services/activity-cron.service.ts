@@ -246,13 +246,13 @@ async function selectNextQuestion(
 } | null> {
   const lastId = activity.lastQuestionId;
 
-  if (activity.questionRound === 0) {
+  if (!activity.roundCompleted) {
     const unanswered = await findNextUnansweredQuestion(activity.docId, lastId);
     if (unanswered) return unanswered;
 
     const openRemains = await hasWrongOrPartial(activity.docId);
     if (openRemains) {
-      return findNextGeneralQuestion(activity.docId, lastId);
+      return findNextGeneralQuestion(activity.id, lastId);
     }
 
     const msg = await completeRoundZero(
@@ -263,10 +263,10 @@ async function selectNextQuestion(
       activity.intervalMinutes,
     );
     await sendWhatsAppMessage(channelId, msg);
-    return findNextGeneralQuestion(activity.docId, lastId);
+    return findNextGeneralQuestion(activity.id, lastId);
   }
 
-  return findNextGeneralQuestion(activity.docId, lastId);
+  return findNextGeneralQuestion(activity.id, lastId);
 }
 
 export async function completeRoundZero(
@@ -277,7 +277,7 @@ export async function completeRoundZero(
   intervalMinutes: number,
 ): Promise<string> {
   await updateActivity(activityId, userId, {
-    questionRound: 1,
+    roundCompleted: true,
     intensiveUntil: null,
     waitingUser: false,
     nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),

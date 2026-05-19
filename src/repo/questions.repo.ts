@@ -47,22 +47,28 @@ export async function findNextUnansweredQuestion(
 }
 
 export async function findNextGeneralQuestion(
-  docId: string,
+  activityId: string,
   lastQuestionId: string | null,
 ): Promise<Question | null> {
+  const now = new Date();
   const baseWhere = {
+    activityId,
     deletedAt: null,
     ...(lastQuestionId ? { NOT: { id: lastQuestionId } } : {}),
-    activity: { docId, deletedAt: null },
   };
-  const nullFirst = await prisma.question.findFirst({
-    where: {
-      ...baseWhere,
-      OR: [{ status: null }, { NOT: { status: "right" } }],
-    },
-    orderBy: { updatedAt: "desc" },
+
+  const sm2Eligible = await prisma.question.findFirst({
+    where: { ...baseWhere, nextRevisionAt: { lte: now } },
+    orderBy: { nextRevisionAt: "asc" },
   });
-  if (nullFirst) return nullFirst;
+  if (sm2Eligible) return sm2Eligible;
+
+  const wrongOrPartial = await prisma.question.findFirst({
+    where: { ...baseWhere, status: { in: ["wrong", "partial"] } },
+    orderBy: { updatedAt: "asc" },
+  });
+  if (wrongOrPartial) return wrongOrPartial;
+
   return prisma.question.findFirst({
     where: baseWhere,
     orderBy: { updatedAt: "asc" },
@@ -100,6 +106,9 @@ export async function updateQuestion(
     answerType?: AnswerType | null;
     questionType?: QuestionType;
     questionOptions?: string[];
+    easeFactor?: number;
+    interval?: number;
+    nextRevisionAt?: Date;
   },
 ): Promise<void> {
   await prisma.question.update({ where: { id }, data });
