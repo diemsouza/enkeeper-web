@@ -679,11 +679,9 @@ export async function handleIncomingMessage(
               questionFormats,
             });
             const evalStatus = evaluation?.status ?? "wrong";
-            const feedback = humanizeFeedback(
-              evalStatus,
-              text,
-              evaluation?.feedback || "",
-            );
+            const feedback = evaluation
+              ? humanizeFeedback(evaluation)
+              : "Não consegui avaliar sua resposta!";
             const answerType = input.mediaType === "audio" ? "audio" : "text";
             const isWrongOrPartial =
               evalStatus === "wrong" || evalStatus === "partial";

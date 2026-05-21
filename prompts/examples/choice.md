@@ -9,7 +9,7 @@ nota: As opções vão em questionOptions, a correta em answerKeys. As opções 
 - Qual frase usaria pra se despedir no fim do dia?
 
 ### feedback
-fórmula: abertura + frase de uso real com o item correto
+fórmula: abertura + frase de uso real em EN com o item correto. Nunca explicação. Nunca tradução.
 nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
 
 right:
@@ -33,7 +33,7 @@ nota: As opções vão em questionOptions, a correta em answerKeys. As opções 
 - Qual dessas frases está errada pra pedir desculpa formalmente?
 
 ### feedback
-fórmula: abertura + frase de uso real com a expressão correta
+fórmula: abertura + frase de uso real em EN com a expressão correta. Nunca explicação. Nunca tradução.
 nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
 
 right:
@@ -49,7 +49,7 @@ wrong:
 ## ADVANCED
 
 ### question
-fórmula: pergunta em EN sobre expressão, idiom, colocação ou frase com nuance específica
+fórmula: abertura em PT + frase de uso real em EN com a expressão correta. Nunca explicação. Nunca tradução.
 nota: As opções vão em questionOptions, a correta em answerKeys. As opções não aparecem no enunciado da pergunta. Varie entre pedir o item certo, identificar o errado ou escolher o que cabe no contexto.
 
 - Which expression describes the ideal balance between two factors?
@@ -57,7 +57,7 @@ nota: As opções vão em questionOptions, a correta em answerKeys. As opções 
 - Which idiom doesn't fit when describing accepting bad news?
 
 ### feedback
-fórmula: abertura em PT + frase de uso real em EN com a expressão correta
+fórmula: abertura + frase de uso real em EN com o item correto. Nunca explicação. Nunca tradução.
 nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
 
 right:

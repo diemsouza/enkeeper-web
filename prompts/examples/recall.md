@@ -10,7 +10,7 @@ nota: O termo correto vai em answerKeys. Varie o fraseado entre exemplos, manten
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com o termo em EN
-nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre o termo em destaque antes da frase.
+nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre o termo em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "My garden is beautiful."
@@ -39,7 +39,7 @@ nota: O termo correto vai em answerKeys. Varie o fraseado entre exemplos, podend
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com a expressão em EN
-nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre a expressão em destaque antes da frase.
+nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "Never mind, it's not a big deal."
@@ -68,7 +68,7 @@ nota: O termo correto vai em answerKeys. Varie o fraseado entre exemplos: descri
 
 ### feedback
 fórmula: abertura em PT + frase de uso real em EN com a expressão correta
-nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre a expressão em destaque antes da frase.
+nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "Hold on, let me check that for you."

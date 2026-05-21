@@ -8,7 +8,7 @@ Critérios para o status:
 
 - right: correta ou equivalente, ignore maiúsculas, acentos, pontuação e contrações.
 - wrong: errada, em branco, "não sei" ou "não lembro".
-- partial: ideia certa mas incompleta ou imprecisa. Inclui grafia muito próxima do correto (erro de sufixo, letra trocada, plural).
+- partial: ideia certa mas incompleta ou imprecisa. Inclui grafia muito próxima quando é claramente o mesmo termo com erro de digitação ou acento. Palavras diferentes com grafia parecida são wrong, mesmo que relacionadas (ex: "shelve" no lugar de "shelf" é wrong).
 
 Alguns formatos são binários e não usam partial. Quando os exemplos do formato não trazem partial, use apenas right ou wrong.
 
@@ -32,4 +32,8 @@ O bloco de exemplos abaixo corresponde ao formato da pergunta avaliada. Siga a f
 {feedback_examples}
 
 ## Output
-{"status": "right | partial | wrong", "feedback": "..."}
+Retorne APENAS UM JSON válido (array). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
+{"status": "right | partial | wrong", "feedback": "...", "user_unknown": false}
+
+Regras do JSON:
+- user_unknown: true quando a resposta for "não sei", "não lembro", "sem ideia" ou equivalente. false nos demais casos.

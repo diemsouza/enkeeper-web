@@ -79,6 +79,7 @@ export type SectionQuestionResult = z.infer<typeof sectionQuestionSchema>;
 export const answerEvaluationSchema = z.object({
   status: z.enum(["right", "partial", "wrong"]),
   feedback: z.string(),
+  user_unknown: z.boolean().optional(),
 });
 
 export type AnswerEvaluationResult = z.infer<typeof answerEvaluationSchema>;

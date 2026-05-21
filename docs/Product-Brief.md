@@ -1,4 +1,4 @@
-# Dropuz — Product Brief
+# Praticae — Product Brief
 
 > Documento vivo — base de decisão para produto e negócio.
 > Versão 12 — Maio 2026
@@ -22,7 +22,7 @@ Para quem estuda inglês e perde o conteúdo no resto da rotina. Aluno de escola
 
 Vocabulário novo não fixa sem repetição contextual. Você estuda 30 minutos, depois é português o dia inteiro. Flashcard exige disciplina e sessão dedicada. Tutor de IA conversa sobre cenários genéricos, não sobre o material da sua aula.
 
-Dropuz mantém sua prática ativa no canal onde você já vive, com o conteúdo que você já está estudando.
+Praticae mantém sua prática ativa no canal onde você já vive, com o conteúdo que você já está estudando.
 
 ---
 
@@ -38,7 +38,7 @@ Dropuz mantém sua prática ativa no canal onde você já vive, com o conteúdo 
 > Seu estudo não termina quando você fecha o caderno.
 
 **Para o professor:**
-> Seu aluno estuda 1h por semana com você. Os outros 6 dias e 23 horas, ele esquece. Com o Dropuz, ele pratica todo dia em cima do material que você passou.
+> Seu aluno estuda 1h por semana com você. Os outros 6 dias e 23 horas, ele esquece. Com o Praticae, ele pratica todo dia em cima do material que você passou.
 
 ---
 
@@ -94,7 +94,7 @@ Ao subir novo material, o usuário recebe um resumo do ciclo anterior: quanto te
 ### Onboarding
 
 ```
-Hi! Bem-vindo ao *Dropuz*. 👋
+Hi! Bem-vindo ao *Praticae*. 👋
 Manda o material da sua aula de inglês — texto, áudio, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
 Você tem 24 horas pra sentir na prática. Aproveita!
 Mande agora pra começar. Ou use ajuda pra ver os comandos disponíveis.
@@ -110,7 +110,7 @@ Concorrentes (Parlai, Zaplingo, ChatClass) competem com o professor — o aluno 
 
 Nós somos a prática entre as aulas. Aluno de Wizard, Cultura Inglesa, professor particular, autodidata — todos cabem. Professor não nos vê como ameaça; nos vê como ferramenta que melhora o resultado do aluno dele.
 
-O founder é usuário ativo do próprio produto — estuda inglês com o Dropuz todo dia. Esse é o case real.
+O founder é usuário ativo do próprio produto — estuda inglês com o Praticae todo dia. Esse é o case real.
 
 ---
 
@@ -253,7 +253,7 @@ Base necessária: 15.000–22.000 trials.
 
 ### Canal #1: parceria com professor de inglês
 
-O professor passa o material, o Dropuz entrega a prática. O resultado do aluno melhora na aula seguinte — o professor fica mais valorizado.
+O professor passa o material, o Praticae entrega a prática. O resultado do aluno melhora na aula seguinte — o professor fica mais valorizado.
 
 - Trial estendido de 3 dias para alunos indicados pelo professor
 - Material institucional pronto (1 página)
@@ -263,7 +263,7 @@ Meta: 20 professores com 5k+ seguidores nos primeiros 3 meses.
 
 ### Canal #2: founder como usuário real
 
-Founder estuda inglês com o Dropuz todo dia. Reels mostrando o fluxo real — material enviado, perguntas recebidas, evolução semanal. Storytelling de quem construiu para si mesmo.
+Founder estuda inglês com o Praticae todo dia. Reels mostrando o fluxo real — material enviado, perguntas recebidas, evolução semanal. Storytelling de quem construiu para si mesmo.
 
 Demonstração visual = produto. Não precisa explicar.
 

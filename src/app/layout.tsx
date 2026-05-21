@@ -30,10 +30,10 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: t("keywords"),
     robots: "index, nofollow, noimageindex",
     alternates: {
-      canonical: "https://dropuz.com.br",
+      canonical: "https://praticae.com",
       languages: {
-        "x-default": "https://dropuz.com.br",
-        "pt-BR": "https://dropuz.com.br/?lang=pt",
+        "x-default": "https://praticae.com",
+        "pt-BR": "https://praticae.com/?lang=pt",
       },
     },
   };
@@ -56,7 +56,7 @@ export default async function RootLayout({
           sizes="180x180"
           href="/apple-touch-icon.png"
         />
-        <meta name="apple-mobile-web-app-title" content="dropuz" />
+        <meta name="apple-mobile-web-app-title" content="praticae" />
         <link rel="manifest" href="/site.webmanifest" />
         {process.env.NEXT_PUBLIC_GTM_ID && (
           <Script

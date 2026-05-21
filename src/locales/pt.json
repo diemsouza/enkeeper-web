@@ -1,6 +1,6 @@
 {
   "app": {
-    "brand": "Dropuz",
+    "brand": "Praticae",
     "not_found": {
       "code_404": "404",
       "title_page_not_found": "Página não encontrada",
@@ -23,9 +23,9 @@
   },
   "seo": {
     "home": {
-      "title": "Dropuz | Sua aula de inglês tem 30 minutos. Sua prática tem o dia inteiro.",
-      "description": "Mande o material da sua aula. O Dropuz pratica o vocabulário com você durante o dia, no WhatsApp. Experimente grátis.",
-      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Dropuz",
+      "title": "Praticae | Sua aula de inglês tem 30 minutos. Sua prática tem o dia inteiro.",
+      "description": "Mande o material da sua aula. O Praticae pratica o vocabulário com você durante o dia, no WhatsApp. Experimente grátis por 1 dia.",
+      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Praticae",
       "ogImage": "/og/pt-home.png"
     }
   },
@@ -47,15 +47,15 @@
     "microcopy": "Abre no WhatsApp · 1 dia grátis · Sem cadastro",
     "who": {
       "title": "Para quem estuda inglês e perde o vocabulário no resto da rotina.",
-      "subtitle": "Não importa onde você aprende. O Dropuz pratica em cima do material que você já tem.",
+      "subtitle": "Não importa onde você aprende. O Praticae pratica em cima do material que você já tem.",
       "cards": {
         "0": {
           "title": "Aluno de escola de idiomas",
-          "description": "Sua aula tem 50 minutos. O professor passa o vocabulário, você anota, vai embora. O Dropuz manda perguntas sobre aquele conteúdo durante o dia enquanto você ainda lembra."
+          "description": "Sua aula tem 50 minutos. O professor passa o vocabulário, você anota, vai embora. O Praticae manda perguntas sobre aquele conteúdo durante o dia enquanto você ainda lembra."
         },
         "1": {
           "title": "Aluno de professor particular",
-          "description": "Uma hora por semana com o professor. Os outros seis dias, sem prática. Manda o material que ele passou e o Dropuz trabalha aquele vocabulário com você todo dia."
+          "description": "Uma hora por semana com o professor. Os outros seis dias, sem prática. Manda o material que ele passou e o Praticae trabalha aquele vocabulário com você todo dia."
         },
         "2": {
           "title": "Autodidata",
@@ -63,7 +63,7 @@
         },
         "3": {
           "title": "Quem tentou e parou",
-          "description": "Já usou Anki, Duolingo, Quizlet. Cansou de abrir mais um app. O Dropuz funciona no WhatsApp que você já usa o dia inteiro sem sessão dedicada."
+          "description": "Já usou Anki, Duolingo, Quizlet. Cansou de abrir mais um app. O Praticae funciona no WhatsApp que você já usa o dia inteiro, sem sessão dedicada."
         },
         "4": {
           "title": "Quem precisa usar no trabalho",
@@ -71,7 +71,7 @@
         },
         "5": {
           "title": "Quem estuda mas não evolui",
-          "description": "O problema não é o conteúdo. É que sem prática entre as aulas, nada fixa. O Dropuz é a parte que faltava, a prática do dia a dia."
+          "description": "O problema não é o conteúdo. É que sem prática entre as aulas, nada fixa. O Praticae é a parte que faltava, a prática do dia a dia."
         }
       }
     },
@@ -84,27 +84,27 @@
           "description": "Texto, foto ou PDF. A lista de vocabulário, o exercício, o PDF que o professor mandou. Qualquer material da sua aula de inglês."
         },
         "1": {
-          "title": "O Dropuz gera as perguntas",
+          "title": "O Praticae gera as perguntas",
           "description": "Extrai o vocabulário e os pontos centrais do material e monta as perguntas em cima do que você mandou, não de cenários genéricos."
         },
         "2": {
           "title": "As perguntas chegam no WhatsApp",
-          "description": "Ao longo do dia, no seu ritmo, o Dropuz manda perguntas sobre aquele vocabulário. Você responde de cabeça. O sistema avalia, dá feedback e registra o que travou."
+          "description": "Ao longo do dia, no seu ritmo, o Praticae manda perguntas sobre aquele vocabulário. Você responde de cabeça. O sistema avalia, dá feedback e registra o que travou."
         }
       }
     },
     "pricing": {
-      "title": "Comece grátis. Depois R$19,90/mês.",
-      "subtitle": "Experimente com tudo liberado e decida depois.",
-      "description": "O trial dá acesso completo ao produto por 1 dia: envie seu material de estudo, prática completa, texto, áudio, imagem e PDF. Se fizer sentido, você continua por R$19,90/mês.",
+      "title": "1 dia grátis. Depois R$19,90/mês.",
+      "subtitle": "Experimente com tudo liberado. Sem cartão, sem cadastro.",
+      "description": "O trial dá acesso completo ao produto por 1 dia: envie seu material, pratique o vocabulário, texto, áudio, imagem e PDF. Se fizer sentido, você continua por R$19,90/mês.",
       "cta": "Experimentar grátis"
     },
     "features_demo": {
       "title": "Na prática.",
-      "subtitle": "Você manda o material da aula. O Dropuz pratica com você o dia inteiro.",
+      "subtitle": "Você manda o material da aula. O Praticae pratica com você o dia inteiro.",
       "blocks": {
         "0": {
-          "title": "Manda o material. O Dropuz gera as perguntas.",
+          "title": "Manda o material. O Praticae gera as perguntas.",
           "description": "Texto, foto ou PDF. O vocabulário da sua aula vira prática durante o dia.",
           "chat": [
             {
@@ -150,7 +150,7 @@
             },
             {
               "from": "bot",
-              "text": "Quase - 'não muito, só na correria' fica mais natural em português. 'Keeping busy' tem esse tom de quem está sempre com coisa pra fazer.",
+              "text": "Quase. 'Não muito, só na correria' fica mais natural em português. 'Keeping busy' tem esse tom de quem está sempre com coisa pra fazer.",
               "time": "14:45"
             }
           ]
@@ -171,7 +171,7 @@
             },
             {
               "from": "bot",
-              "text": "Isso. 'Thanks' e 'thank you' funcionam nos dois casos, 'thanks' é mais informal, cai bem no small talk do dia a dia.",
+              "text": "Isso. 'Thanks' e 'thank you' funcionam nos dois casos. 'Thanks' é mais informal, cai bem no small talk do dia a dia.",
               "time": "16:03"
             }
           ]
@@ -179,7 +179,7 @@
       }
     },
     "footer": {
-      "copyright": "Copyright © 2026 Dropuz. Todos os direitos reservados.",
+      "copyright": "Copyright © 2026 Praticae. Todos os direitos reservados.",
       "privacy": "Política de Privacidade",
       "terms": "Termos de Uso"
     }

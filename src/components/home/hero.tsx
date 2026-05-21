@@ -122,9 +122,7 @@ export default function Hero() {
   }, [charIndex, isDeleting, isPaused, phraseIndex, reducedMotion]);
 
   const currentPhrase = phrases[phraseIndex];
-  const displayedTotal = reducedMotion
-    ? totalChars(currentPhrase)
-    : charIndex;
+  const displayedTotal = reducedMotion ? totalChars(currentPhrase) : charIndex;
 
   return (
     <section className="section-light min-h-screen flex flex-col items-center justify-center pt-20 pb-24 px-6 gap-y-8">
@@ -148,7 +146,7 @@ export default function Hero() {
         {/* Tagline */}
         <p className="text-[18px] font-normal text-muted-foreground text-center">
           <strong className="font-normal text-black dark:text-white">
-            Dropuz
+            Praticae
           </strong>
           . {t("tagline")}
         </p>

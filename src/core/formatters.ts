@@ -1,9 +1,11 @@
 import { Doc, ActivityStatus } from "@prisma/client";
 import { ANSWER_EMOJI, MAX_DOCS_PER_DAY } from "../lib/constants";
 import { sanitizeText, sanitizeWhatsappContent } from "../lib/utils";
+import { AnswerEvaluationResult } from "../lib/llm-schemas";
+import { shuffle } from "lodash";
 
 export function formatOnboardingMsg1(): string {
-  return "Hi! Bem-vindo ao *Dropuz*. 👋";
+  return "Hi! Bem-vindo ao *Praticae*. 👋";
 }
 
 export function formatOnboardingMsg2(): string {
@@ -22,7 +24,7 @@ export function formatPlanExpired(): string {
   return [
     "*Seu período de teste encerrou!*",
     "",
-    "Para continuar praticando, assine o *Dropuz* por R$19,90/mês.",
+    "Para continuar praticando, assine o *Praticae* por R$19,90/mês.",
     "",
     "_Use *suporte* para falar com a gente e ativar sua conta._",
   ].join("\n");
@@ -289,28 +291,35 @@ export function formatUpgradePrompt(reason: "audio" | "image"): string {
   return messages[reason];
 }
 
-const DONT_KNOW_PATTERNS =
-  /não sei|nao sei|não lembro|nao lembro|sem ideia|desisti|desisto|esqueci|/i;
-
 export function humanizeFeedback(
-  evalStatus: "right" | "wrong" | "partial",
-  userAnswer: string,
-  agentFeedback: string,
+  feedbackResult: AnswerEvaluationResult,
 ): string {
-  const feedback = sanitizeText(
-    `${ANSWER_EMOJI[evalStatus]} ${agentFeedback ?? "Não consegui avaliar sua resposta!"}`,
-  );
+  const {
+    status: evalStatus,
+    feedback: agentFeedback,
+    user_unknown: userUnknown,
+  } = feedbackResult;
+  let feedback = sanitizeText(agentFeedback);
 
-  if (evalStatus !== "wrong") return feedback;
+  // humaniza feedback de "errado" para "não sei" quando o usuário indicou que não sabia a resposta
+  if (evalStatus === "wrong" && userUnknown) {
+    const openings = [
+      "Tudo bem!",
+      "Acontece!",
+      "Sem problemas!",
+      "Tranquilo!",
+      "Não se preocupe!",
+    ];
+    const opening = shuffle(openings).pop() ?? openings[0];
 
-  if (!DONT_KNOW_PATTERNS.test(userAnswer.trim())) return feedback;
+    // substitui só a abertura, mantém o resto do feedback intacto
+    return feedback.replace(
+      /^(Errado!|Ainda não!|Ops, errado!|Infelizmente não!|Hmmm, errou!)/,
+      opening,
+    );
+  }
 
-  const openings = ["Tudo bem!", "Acontece!", "Sem problemas!"];
-  const opening = openings[Math.floor(Math.random() * openings.length)];
+  feedback = `${ANSWER_EMOJI[evalStatus]} ${feedback}`;
 
-  // substitui só a abertura, mantém o resto do feedback intacto
-  return feedback.replace(
-    /^(Errado!|Ainda não!|Ops, errado!|Infelizmente não!|Hmmm, errou!)/,
-    opening,
-  );
+  return feedback;
 }

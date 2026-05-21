@@ -1,4 +1,4 @@
-# Dropuz — Rules
+# Praticae — Rules
 
 > Regras de negócio, comportamento do sistema e decisões técnicas.
 > Fonte de verdade para implementação. Separado do brief narrativo.
@@ -246,7 +246,7 @@ Se o usuário manda mensagem e não há nenhuma `Activity` ativa:
 Disparado quando `wa_id` é criado pela primeira vez (`onboardedAt` nulo). Quatro mensagens em sequência com ~2s de intervalo entre cada uma:
 
 ```
-Hi! Bem-vindo ao *Dropuz*. 👋
+Hi! Bem-vindo ao *Praticae*. 👋
 ```
 ```
 Manda o material da sua aula de inglês — texto, áudio, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.

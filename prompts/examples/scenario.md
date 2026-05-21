@@ -10,7 +10,7 @@ nota: Uma situação, um item, uma pergunta. A situação deve ser específica o
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com o termo em EN
-nota: Sempre frase de uso real com o termo. Nunca explicação ou tradução. Em wrong e partial, mostre o termo em destaque antes da frase.
+nota: Sempre frase de uso real com o termo. Nunca explicação ou tradução. Em wrong e partial, mostre o termo em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "This is my garden."
@@ -39,7 +39,7 @@ nota: Uma situação, um item, uma pergunta. A situação deve ser específica o
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com a expressão em EN
-nota: Sempre frase de uso real com a expressão. Nunca explicação ou tradução. Em wrong e partial, mostre a expressão em destaque antes da frase.
+nota: Sempre frase de uso real com a expressão. Nunca explicação ou tradução. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "Never mind, it's in the past."
@@ -68,7 +68,7 @@ nota: Uma situação, um item, uma pergunta. A situação deve ser específica o
 
 ### feedback
 fórmula: abertura em PT + frase de uso real em EN com a expressão correta
-nota: Sempre frase de uso real com a expressão. Nunca explicação ou tradução. Em wrong e partial, mostre a expressão em destaque antes da frase.
+nota: Sempre frase de uso real com a expressão. Nunca explicação ou tradução. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "That's the sweet spot between speed and quality."
