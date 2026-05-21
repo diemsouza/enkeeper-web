@@ -19,7 +19,7 @@ right:
 
 wrong:
 - Errado! O texto fala sobre praticar todo dia pra fixar o vocabulário.
-- Ainda não! A ideia central é que constância vale mais que intensidade.
+- Hmmm, errou! A ideia central é que constância vale mais que intensidade.
 - Ops, errado! O texto mostra que prática diária consolida o aprendizado.
 
 partial:
@@ -48,7 +48,7 @@ right:
 
 wrong:
 - Errado! "Sweet spot" é o ponto onde tudo se encaixa. "That's the sweet spot."
-- Ainda não! O texto fala do equilíbrio ideal entre dois fatores. "Sweet spot."
+- Hmmm, errou! O texto fala do equilíbrio ideal entre dois fatores. "Sweet spot."
 - Ops, errado! "Sweet spot" descreve o ponto perfeito de equilíbrio.
 
 partial:
@@ -77,7 +77,7 @@ right:
 
 wrong:
 - Errado! The text argues that consistency, not intensity, drives real progress.
-- Ainda não! The main point is that daily effort compounds over time.
+- Hmmm, errou! The main point is that daily effort compounds over time.
 - Ops, errado! The text emphasizes consistency over intense bursts of work.
 
 partial:

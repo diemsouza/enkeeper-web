@@ -290,3 +290,20 @@ model LlmLog {
     @@index([createdAt])
     @@map("llm_logs")
 }
+
+enum WaitlistStatus {
+    pending
+    invited
+    active
+}
+
+model Waitlist {
+    id        String         @id @default(ulid()) @map("id")
+    name      String
+    phone     String         @unique
+    status    WaitlistStatus @default(pending)
+    createdAt DateTime       @default(now()) @map("created_at")
+    updatedAt DateTime       @updatedAt @map("updated_at")
+
+    @@map("waitlist")
+}

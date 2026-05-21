@@ -90,7 +90,7 @@ export function Header({
         ) : (
           <Link href="/" className="flex items-center space-x-1">
             <img
-              src="/images/logo-150.png "
+              src="/images/logo.svg "
               width={128}
               height={128}
               className="h-8 w-8 rounded-lg me-1"

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.DISABLE_LANDING_PAGE === "true") {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }
 }

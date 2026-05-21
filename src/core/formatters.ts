@@ -314,7 +314,7 @@ export function humanizeFeedback(
 
     // substitui só a abertura, mantém o resto do feedback intacto
     return feedback.replace(
-      /^(Errado!|Ainda não!|Ops, errado!|Infelizmente não!|Hmmm, errou!)/,
+      /^(Errado!|Hmmm, errou!|Ops, errado!|Infelizmente não!|Hmmm, errou!)/,
       opening,
     );
   }

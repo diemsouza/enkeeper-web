@@ -19,7 +19,7 @@ right:
 
 wrong:
 - Errado! Praticar todo dia faz o vocabulário fixar.
-- Ainda não! A repetição diária é o que consolida o aprendizado.
+- Hmmm, errou! A repetição diária é o que consolida o aprendizado.
 - Ops, errado! Estudar pouco e com frequência supera estudar muito de vez em quando.
 
 partial:
@@ -48,7 +48,7 @@ right:
 
 wrong:
 - Errado! Finding the sweet spot makes learning more efficient.
-- Ainda não! O equilíbrio importa porque evita esforço sem retorno.
+- Hmmm, errou! O equilíbrio importa porque evita esforço sem retorno.
 - Ops, errado! Hitting the sweet spot turns effort into steady progress.
 
 partial:
@@ -77,7 +77,7 @@ right:
 
 wrong:
 - Errado! Consistency beats intensity because it reinforces memory over time.
-- Ainda não! The main risk is forgetting most of what you studied between sessions.
+- Hmmm, errou! The main risk is forgetting most of what you studied between sessions.
 - Ops, errado! Daily exposure builds retention through repeated, contextual reinforcement.
 
 partial:

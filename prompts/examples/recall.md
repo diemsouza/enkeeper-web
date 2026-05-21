@@ -19,7 +19,7 @@ right:
 
 wrong:
 - Errado! "Garden". "My garden is beautiful."
-- Ainda não! "Garden". "She likes the garden."
+- Hmmm, errou! "Garden". "She likes the garden."
 - Ops, errado! "Garden". "The dog is in the garden."
 
 partial:
@@ -48,7 +48,7 @@ right:
 
 wrong:
 - Errado! "Never mind". "Never mind, it's not a big deal."
-- Ainda não! "Never mind". "Just say never mind and move on."
+- Hmmm, errou! "Never mind". "Just say never mind and move on."
 - Ops, errado! "Never mind". "She told me never mind when I apologized."
 
 partial:
@@ -77,7 +77,7 @@ right:
 
 wrong:
 - Errado! "Hold on". "Hold on, let me check that for you."
-- Ainda não! "Hold on". "Just hold on a second, I'll be right back."
+- Hmmm, errou! "Hold on". "Just hold on a second, I'll be right back."
 - Ops, errado! "Hold on". "Hold on, I think I know the answer."
 
 partial:

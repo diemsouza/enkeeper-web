@@ -19,7 +19,7 @@ right:
 
 wrong:
 - Errado! "Garden". "This is my garden."
-- Ainda não! "Garden". "My garden is beautiful."
+- Hmmm, errou! "Garden". "My garden is beautiful."
 - Ops, errado! "Garden". "We're sitting in the garden."
 
 partial:
@@ -48,7 +48,7 @@ right:
 
 wrong:
 - Errado! "Never mind". "Never mind, it's in the past."
-- Ainda não! "Never mind". "Just never mind and move on."
+- Hmmm, errou! "Never mind". "Just never mind and move on."
 - Ops, errado! "Never mind". "Never mind what he said yesterday."
 
 partial:
@@ -77,7 +77,7 @@ right:
 
 wrong:
 - Errado! "Sweet spot". "That's the sweet spot between speed and quality."
-- Ainda não! "Sweet spot". "We've finally hit the sweet spot on pricing."
+- Hmmm, errou! "Sweet spot". "We've finally hit the sweet spot on pricing."
 - Ops, errado! "Sweet spot". "Finding the sweet spot took months of testing."
 
 partial:

@@ -45,6 +45,19 @@
     "tagline": "Your notes on WhatsApp.",
     "cta": "Get started",
     "microcopy": "Opens on WhatsApp · Free · No sign-up",
+    "waitlist": {
+      "cta": "Join the waitlist",
+      "modal": {
+        "title": "Waitlist",
+        "description": "Praticae opens in stages. Join the list and I'll let you know when it's your turn.",
+        "name_placeholder": "What's your name?",
+        "submit": "Save my spot",
+        "success": "Spot saved! I'll let you know when it's your turn.",
+        "error": "Something went wrong. Try again?",
+        "already_waitlisted": "You're already on the list! Your turn is coming.",
+        "close": "Close"
+      }
+    },
     "who": {
       "title": "For those who study English for real.",
       "subtitle": "No matter how you learn. Praticae fits the way you do it.",

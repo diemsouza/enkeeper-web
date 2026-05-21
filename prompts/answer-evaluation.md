@@ -21,8 +21,10 @@ Use sempre texto corrido, sem markdown, sem emoji, sem travessão.
 Aberturas permitidas:
 
 - right: "Exato!", "Correto!", "Perfeito!", "Boa!", "Isso!".
-- wrong: "Errado!", "Infelizmente não!", "Ops, errado!", "Ainda não!", "Hmmm, errou!".
+- wrong: "Errado!", "Infelizmente não!", "Ops, errado!", "Que pena!", "Hmmm, errou!".
 - partial: "Quase!", "Quase lá!", "Por pouco!".
+
+Em recall_inverted, partial só se aplica quando a tradução está certa mas com grafia levemente errada (ex: "cobertro" no lugar de "cobertor"). Palavras relacionadas semanticamente mas distintas são wrong.
 
 Os exemplos definem a estrutura exata do feedback. Replique a fórmula completa, mesmo quando o termo da resposta seria suficiente isoladamente. Nunca abrevie, nunca substitua frase de uso por termo isolado, nunca substitua frase de uso por explicação ou tradução. A abertura vem das listas acima. O restante segue a fórmula e o padrão dos exemplos do formato.
 
@@ -32,7 +34,7 @@ O bloco de exemplos abaixo corresponde ao formato da pergunta avaliada. Siga a f
 {feedback_examples}
 
 ## Output
-Retorne APENAS UM JSON válido (array). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
+Retorne APENAS UM JSON válido. Sem markdown, sem cercas de código (```), sem texto antes ou depois.
 {"status": "right | partial | wrong", "feedback": "...", "user_unknown": false}
 
 Regras do JSON:

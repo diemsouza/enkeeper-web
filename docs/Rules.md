@@ -499,7 +499,7 @@ Definidas nos arquivos `src/formats/*.ts` via `feedback_info` por formato. O ava
 
 ### Padrão de abertura
 - right: "Boa!", "Correto!", "Exato!" ou "Perfeito!"
-- wrong: "Errado!", "Infelizmente não!", "Ops, errado!", "Ainda não!" ou "Hmmm, errou!"
+- wrong: "Errado!", "Infelizmente não!", "Ops, errado!", "Hmmm, errou!" ou "Hmmm, errou!"
 - partial: "Quase!", "Por pouco!" ou "Quase lá!"
 
 ### Proibido em qualquer feedback

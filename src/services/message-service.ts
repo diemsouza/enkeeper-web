@@ -84,6 +84,7 @@ import {
 import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
 import { handleAdminCommand } from "./admin-service";
+import { markWaitlistActive } from "../repo/waitlist.repo";
 import { startOfDay } from "date-fns";
 import { sanitizeText } from "../lib/utils";
 
@@ -221,6 +222,12 @@ export async function handleIncomingMessage(
 
   if (!user.onboardedAt) {
     await markUserOnboarded(user.id);
+    try {
+      const normalizedPhone = userChannel.channelId.replace(/\D/g, "");
+      await markWaitlistActive(normalizedPhone);
+    } catch {
+      // non-blocking
+    }
     await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
     const msgs = [
       formatOnboardingMsg1(),
