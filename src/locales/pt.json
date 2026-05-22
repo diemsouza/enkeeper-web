@@ -23,9 +23,9 @@
   },
   "seo": {
     "home": {
-      "title": "Praticae | Sua aula de inglês tem 30 minutos. Sua prática tem o dia inteiro.",
-      "description": "Mande o material da sua aula. O Praticae pratica o vocabulário com você durante o dia, no WhatsApp. Experimente grátis por 1 dia.",
-      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Praticae",
+      "title": "Praticae | Inglês o dia inteiro no WhatsApp, com o material da sua aula.",
+      "description": "Prática diária de inglês direto no WhatsApp. Manda o material da sua aula e pratica o dia inteiro no seu ritmo.",
+      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Praticae, Praticai",
       "ogImage": "/images/logo.png"
     }
   },
@@ -114,7 +114,7 @@
     },
     "features_demo": {
       "title": "Na prática.",
-      "subtitle": "Você manda o material da aula. O Praticae pratica com você o dia inteiro.",
+      "subtitle": "Você manda o material e pratica o dia inteiro sem abrir mais um app.",
       "blocks": {
         "0": {
           "title": "Manda o material. O Praticae gera as perguntas.",

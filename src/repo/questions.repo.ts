@@ -46,6 +46,21 @@ export async function findNextUnansweredQuestion(
   });
 }
 
+export async function findSm2EligibleQuestion(
+  activityId: string,
+  lastQuestionId: string | null,
+): Promise<Question | null> {
+  return prisma.question.findFirst({
+    where: {
+      activityId,
+      deletedAt: null,
+      nextRevisionAt: { lte: new Date() },
+      ...(lastQuestionId ? { NOT: { id: lastQuestionId } } : {}),
+    },
+    orderBy: { nextRevisionAt: "asc" },
+  });
+}
+
 export async function findNextGeneralQuestion(
   activityId: string,
   lastQuestionId: string | null,
@@ -101,6 +116,7 @@ export async function updateQuestion(
     status?: QuestionStatus;
     answer?: string;
     attemptCount?: number;
+    revisionCount?: number;
     activityId?: string;
     wrongCount?: number;
     answerType?: AnswerType | null;

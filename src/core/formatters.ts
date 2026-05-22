@@ -247,13 +247,14 @@ type PreviousActivitySummaryData = {
   partial: number;
   wrong: number;
   responses: number;
+  revisadas: number;
   period: string;
 };
 
 export function formatPreviousActivitySummary(
   data: PreviousActivitySummaryData,
 ): string {
-  const { docTitle, questionCount, right, partial, wrong, responses, period } =
+  const { docTitle, questionCount, right, partial, wrong, responses, revisadas, period } =
     data;
   const taxa = right / responses;
 
@@ -274,6 +275,7 @@ export function formatPreviousActivitySummary(
     `Período: ${period}`,
     `Perguntas: ${questionCount}`,
     `Respondidas: ${responses}`,
+    `Revisadas: ${revisadas}`,
     `Corretas: ${right}`,
     `Erradas: ${wrong + partial}`,
     "",

@@ -7,6 +7,7 @@ import { saveMessage, findLastActivityMessage } from "../repo/messages.repo";
 import {
   findNextUnansweredQuestion,
   findNextGeneralQuestion,
+  findSm2EligibleQuestion,
   hasWrongOrPartial,
   updateQuestion,
 } from "../repo/questions.repo";
@@ -247,6 +248,9 @@ async function selectNextQuestion(
   const lastId = activity.lastQuestionId;
 
   if (!activity.roundCompleted) {
+    const sm2 = await findSm2EligibleQuestion(activity.id, lastId);
+    if (sm2) return sm2;
+
     const unanswered = await findNextUnansweredQuestion(activity.docId, lastId);
     if (unanswered) return unanswered;
 

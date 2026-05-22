@@ -77,6 +77,7 @@ Banco de perguntas geradas no upload do material. Cada `Question` pertence a uma
 - `answerKeys String[]` — respostas válidas esperadas, geradas no upload, nunca exibidas ao usuário
 - `answer` — o que o usuário respondeu, copiado da mensagem recebida
 - `attemptCount` — quantas vezes essa pergunta foi enviada ao usuário. Incrementa a cada reenvio
+- `revisionCount` — quantas vezes a pergunta foi respondida após a primeira exposição. Incrementa quando `attemptCount > 0` no momento da avaliação. Não incrementa na primeira resposta
 - `wrongCount` — quantas vezes a avaliação retornou `wrong` ou `partial`. Incrementa em todo reenvio com esse resultado. Usado no relatório semanal para identificar vocabulário que travou
 - `questionType` — `text` (default) | `audio`. Formato em que a pergunta foi enviada ao usuário
 - `answerType` — `text` | `audio` | `null`. Preenchido no momento da resposta. Se a mensagem recebida for `audio` (voice note do WhatsApp), marca `audio`; caso contrário, `text`. `null` enquanto não houver resposta
@@ -91,7 +92,7 @@ Banco de perguntas geradas no upload do material. Cada `Question` pertence a uma
 
 1. Upload → `doc-extraction` identifica e separa seções → para cada seção, o prompt de geração correspondente cria as perguntas → salvas com `status: null` → atualiza `Activity.questionCount`
 2. Cron seleciona próxima pergunta (ver Seleção abaixo) → envia → `status: pending` → salva `Message` com `questionId` → atualiza `Activity.lastQuestionId`
-3. Usuário responde → preenche `answer` e `answerType` → avalia contra `answerKeys` → atualiza `status` para `right`, `partial` ou `wrong` → incrementa `attemptCount` → se `wrong` ou `partial`, incrementa `wrongCount` → calcula e salva campos SM-2 (ver Seção 16)
+3. Usuário responde → preenche `answer` e `answerType` → avalia contra `answerKeys` → atualiza `status` para `right`, `partial` ou `wrong` → incrementa `attemptCount` → se `attemptCount > 0` antes do incremento, incrementa `revisionCount` → se `wrong` ou `partial`, incrementa `wrongCount` → calcula e salva campos SM-2 (ver Seção 16)
 4. Toda mensagem de pergunta, resposta do usuário e feedback carrega o `questionId` correspondente
 
 ### Ordem de criação
@@ -99,24 +100,23 @@ As perguntas são embaralhadas antes de salvar no banco. A ordem salva é a orde
 
 ### Seleção da próxima pergunta
 
-Baseada em `Activity.questionRound`:
+Baseada em `Activity.roundCompleted` (Bool):
 
-**`questionRound = 0` (primeira rodada):**
-1. Tenta buscar próxima com `status = null`, exceto `lastQuestionId`, `ORDER BY updatedAt DESC LIMIT 1`
-2. Retornou resultado → envia
-3. Retornou vazio e todas estão com `status != null` → primeira rodada concluída: `questionRound = 1`, envia mensagem de conclusão, busca próxima pela query do round 1
-4. Retornou vazio e ainda há `wrong` ou `partial` → continua repescagem pela query geral sem incrementar `questionRound`
+**`roundCompleted = false` (primeira rodada):**
+1. SM-2 elegíveis: `nextRevisionAt <= now()`, exceto `lastQuestionId`, `ORDER BY nextRevisionAt ASC LIMIT 1`
+2. Se vazio: `status = null`, exceto `lastQuestionId`, `ORDER BY updatedAt DESC LIMIT 1`
+3. Se vazio e ainda há `wrong` ou `partial`: fallback geral (SM-2 elegíveis → wrong/partial → any por `updatedAt ASC`)
+4. Se vazio e não há `wrong` ou `partial`: primeira rodada concluída — `roundCompleted = true`, envia mensagem de conclusão, executa fallback geral
 
-**`questionRound = 1` (revisão contínua com SM-2):**
-
-1. SM-2 elegíveis: busca perguntas com `nextRevisionAt <= now()`, exceto `lastQuestionId`, `ORDER BY nextRevisionAt ASC LIMIT 1`
+**`roundCompleted = true` (revisão contínua com SM-2):**
+1. SM-2 elegíveis: `nextRevisionAt <= now()`, exceto `lastQuestionId`, `ORDER BY nextRevisionAt ASC LIMIT 1`
 2. Se não houver elegíveis: fallback por `wrong` e `partial` primeiro, depois `right`, todos por `updatedAt ASC`, exceto `lastQuestionId`
 
 Loop infinito natural — revisão contínua sem critério de encerramento.
 
 ### Conclusão da primeira rodada
 
-Quando `questionRound` vai de `0` para `1`, envia:
+Quando `roundCompleted` vai de `false` para `true`, envia:
 
 > Você respondeu todas as perguntas dessa rodada. Manda novo conteúdo ou continue praticando.
 
@@ -316,8 +316,9 @@ Seu material anterior: *{título do doc}*
 Período: {duração entre createdAt e lastInteractionAt}
 Perguntas: {questionCount}
 Respondidas: {right + partial + wrong}
-Acertos: {right}
-Erros: {wrong + partial}
+Revisadas: {questions com attemptCount > 1}
+Corretas: {right}
+Erradas: {wrong + partial}
 
 {linha de leitura}
 ```
@@ -542,7 +543,7 @@ O usuário pratica no ritmo dele (cadência ou intensivo) e o sistema garante qu
 
 ### Quando o SM-2 atua
 
-O SM-2 só atua no `questionRound = 1`. No round 0 (primeira exposição), os campos são calculados e salvos a cada resposta, mas não influenciam a seleção — o round 0 segue a ordem normal até todas terem sido respondidas ao menos uma vez.
+Os campos SM-2 são calculados e salvos a cada resposta desde a primeira exposição. Perguntas SM-2 elegíveis (`nextRevisionAt <= now()`) são priorizadas na seleção independente de `roundCompleted` — tanto no round 0 quanto na revisão contínua. A diferença é que no round 0 ainda existem perguntas `status = null` que entram como segunda opção antes do fallback.
 
 ### Cálculo a cada resposta
 
@@ -573,10 +574,9 @@ nextRevisionAt = now() + interval dias
 
 O intervalo máximo é **3 dias**. Esse teto existe porque o ciclo de troca de material do produto é curto — intervalos maiores fariam a revisão vencer depois que o usuário já trocou de material, perdendo o efeito.
 
-### Seleção no round 1
+### Ordem de seleção
 
-1. SM-2 elegíveis: `nextRevisionAt <= now()`, exceto `lastQuestionId`, `ORDER BY nextRevisionAt ASC`
-2. Fallback quando não há elegíveis: `wrong` e `partial` por `updatedAt ASC`, depois `right` por `updatedAt ASC`, exceto `lastQuestionId`
+Ver Seção 2 — "Seleção da próxima pergunta". A lógica é a mesma para ambos os valores de `roundCompleted`: SM-2 elegíveis sempre primeiro.
 
 ### Convivência com cadência e sessão intensiva
 

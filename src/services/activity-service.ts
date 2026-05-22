@@ -29,6 +29,7 @@ export async function buildPreviousActivitySummary(
     const partial = data.questions.filter((q) => q.status === "partial").length;
     const wrong = data.questions.filter((q) => q.status === "wrong").length;
     const responses = right + partial + wrong;
+    const revisadas = data.questions.filter((q) => q.attemptCount > 1).length;
     if (responses === 0) return null;
 
     const ref = data.lastInteractionAt ?? data.createdAt;
@@ -50,6 +51,7 @@ export async function buildPreviousActivitySummary(
       partial,
       wrong,
       responses,
+      revisadas,
       period,
     });
 

@@ -62,6 +62,7 @@ import { calcSm2 } from "../core/sm2";
 import {
   findNextUnansweredQuestion,
   findNextGeneralQuestion,
+  findSm2EligibleQuestion,
   hasWrongOrPartial,
   findPendingQuestion,
   updateQuestion,
@@ -703,6 +704,9 @@ export async function handleIncomingMessage(
               status: evalStatus,
               attemptCount: pendingQuestion.attemptCount + 1,
               answerType,
+              ...(pendingQuestion.attemptCount > 0
+                ? { revisionCount: pendingQuestion.revisionCount + 1 }
+                : {}),
               ...(isWrongOrPartial
                 ? { wrongCount: pendingQuestion.wrongCount + 1 }
                 : {}),
@@ -795,6 +799,9 @@ export async function resolveNextQuestion(
   questionOptions: string[];
 } | null> {
   if (!roundCompleted) {
+    const sm2 = await findSm2EligibleQuestion(activityId, lastQuestionId);
+    if (sm2) return sm2;
+
     const unanswered = await findNextUnansweredQuestion(docId, lastQuestionId);
     if (unanswered) return unanswered;
     const openRemains = await hasWrongOrPartial(docId);

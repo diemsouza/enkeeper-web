@@ -295,10 +295,10 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Detecção automática de nível no upload
 - Múltipla escolha (choice) com opções embaralhadas
 - Logs de LLM com DISABLE_LLM_LOGS
-- Resumo de material anterior ao trocar de conteúdo
+- Resumo de material anterior ao trocar de conteúdo (com Revisadas)
+- Repetição espaçada SM-2 com timing corrigido (easeFactor, interval, nextRevisionAt, revisionCount)
 
 **Falta:**
-- [ ] Repetição espaçada SM-2 (easeFactor, interval, nextRevisionAt)
 - [ ] Evolução semanal com % acerto e vocabulário que travou
 - [ ] Gatilhos de upgrade contextuais
 - [ ] Pix manual via suporte

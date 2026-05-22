@@ -184,7 +184,7 @@ export async function findLatestArchivedActivityForSummary(userId: string) {
       doc: { select: { title: true } },
       questions: {
         where: { deletedAt: null, status: { in: ["right", "partial", "wrong"] } },
-        select: { status: true },
+        select: { status: true, attemptCount: true },
       },
     },
   });

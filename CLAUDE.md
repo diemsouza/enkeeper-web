@@ -17,6 +17,7 @@ Stack: Next.js 15 App Router, Prisma 6, Supabase/PostgreSQL, TypeScript strict, 
 - Toda mudanca de schema vai em `prisma/schema/*`
 - Rodar `npx prisma@6.10.1 migrate dev --name <name>` para aplicar; se for complexo ou arriscado, pedir ao usuario via `!`
 - Nunca criar migration SQL manualmente salvo revisao explicita do dev
+- Siga o padrão do que já existe, id é ulid, nome camelCase e @map("snake_case")
 
 ## Commands
 
@@ -58,9 +59,11 @@ src/
       webhooks/   -- whatsapp inbound
       simulate/   -- disparo manual para dev
       users/      -- endpoints de conta
+      waitlist/   -- cadastro de lista de espera
+      dev/
+        messages/ -- historico de mensagens (desenvolvimento)
   components/     -- ui/ (shadcn), home/ (landing), shared/ (reutilizavel)
   core/           -- logica de dominio pura, zero I/O
-  formats/        -- dados tipados por QuestionFormat (choice, gap_fill, recall, etc.)
   hooks/          -- custom React hooks
   i18n/ + locales/ -- next-intl: pt.json e en.json
   lib/            -- utilitarios puros: prisma.ts, llm-schemas.ts, prompts.ts, constants.ts
@@ -69,7 +72,6 @@ src/
   vendors/        -- clientes de APIs externas (llm, whatsapp, storage)
 prisma/schema/    -- schemas por dominio: account.prisma, core.prisma
 prompts/          -- arquivos .md de prompt por etapa LLM
-email-templates/  -- Handlebars por locale (en/, pt/)
 docs/             -- Product-Brief.md, Rules.md
 ```
 
@@ -109,40 +111,25 @@ Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.servic
 | `UserChannel`  | Canal conectado (whatsapp); `channelUserId`, `phoneNumber`                            |
 | `Doc`          | Material enviado; `rawContent`, `content`, `docType`, `level`, `status`               |
 | `Section`      | Secao do material (vocabulary/text/exercise); ligada ao `Doc`                         |
-| `Question`     | Pergunta gerada; `questionFormat`, `answerKeys`, `questionOptions`, `status`          |
+| `Question`     | Pergunta gerada; `questionFormat`, `answerKeys`, `questionOptions`, `status`, `revisionCount` |
 | `Activity`     | Sessao de pratica por `[userId, docId, date]`; `nextMessageAt`, cadencia              |
 | `WeeklyReport` | Relatorio semanal enviado aos domingos                                                |
 | `Message`      | Historico de mensagens WhatsApp; ligado a `Activity`                                 |
 | `LlmUsage`     | Contabilidade de tokens por chamada (provider, model, tipo de uso)                    |
 | `LlmLog`       | Payload completo de cada chamada LLM (input, output, durationMs, success, error)      |
+| `Waitlist`     | Lista de espera; `email`, `status` (pending/invited/active)                           |
 
 ## Sistema de formatos de pergunta
 
 Formatos validos (`QuestionFormat` enum): `gap_fill`, `recall`, `recall_inverted`, `scenario`, `choice`, `open_text`, `open_question`.
 
-Cada formato tem um arquivo em `src/formats/<format>.ts` exportando `QuestionFormatData`:
+Cada formato tem um arquivo de exemplo em `prompts/examples/<format>.md` com blocos por nivel (`## BASIC`, `## INTERMEDIATE`, `## ADVANCED`) e secao (`### question`, `### feedback`).
 
-```typescript
-type QuestionFormatData = {
-  format: string;
-  question_info?: string;   // instrucao adicional pro LLM gerar a pergunta
-  feedback_info?: string;   // instrucao adicional pro LLM gerar o feedback
-  levels: {
-    basic: FormatLevel;
-    intermediate: FormatLevel;
-    advanced: FormatLevel;
-  };
-};
-type FormatLevel = {
-  question: string;    // exemplo de pergunta nesse nivel
-  feedback: { right: string; wrong: string; partial?: string; };
-};
-```
-
-Funcoes em `src/core/question-format.ts`:
+Funcoes em `src/core/format-loader.ts`:
 - `getFormatsBySectionType(sectionType)` -- retorna formatos validos para o tipo de secao
 - `getQuestionExamples(formats, level)` -- string formatada com exemplos de pergunta por formato
 - `getFeedbackExamples(formats, level)` -- string formatada com exemplos de feedback por formato
+- `validateGeneratedQuestion(questions, sectionType)` -- filtra perguntas invalidas por sourceItem
 
 O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotacao manual.
 
@@ -162,8 +149,10 @@ O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotac
 
 `PROVIDER_STANDARD` alterna entre `"anthropic"` (claude-haiku-4-5) e `"openai"` (gpt-4.1). Mudar a constante no topo do arquivo para trocar.
 
+Transcricao de audio: `src/vendors/whisper.vendor.ts` (OpenAI whisper-1).
+
 Schemas Zod para saidas estruturadas: `src/lib/llm-schemas.ts`.
-Textos dos prompts: `prompts/*.md`, carregados em `src/lib/prompts.ts`.
+Textos dos prompts: `prompts/*.md`, exemplos de formato em `prompts/examples/*.md`.
 
 ## LLM logging
 
@@ -224,6 +213,7 @@ Arquivos de prompt ativos:
 - Single responsibility -- se precisa de comentario pra explicar o que faz, divide
 - Maximo ~30 linhas por funcao
 - Sem side effects em `src/core/` -- mesma entrada sempre produz mesma saida
+- Sempre veja se já tem algo pra ser reutilizado antes de criar ou motificar.
 
 ### Prisma
 
@@ -236,6 +226,7 @@ Arquivos de prompt ativos:
 - Sem comentarios explicando o que o codigo faz -- codigo deve ser autoexplicativo
 - Comentarios apenas para: TODOs, justificativa de regra de negocio nao obvia, quirks de API externa
 - NUNCA use o -- (travessao) gerado por IA em nenhum lugar: texto, codigo, comentario ou doc
+- Evite criar 
 
 ### Build
 
