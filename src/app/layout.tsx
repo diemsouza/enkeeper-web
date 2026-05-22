@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t("title"),
     description: t("description"),
     keywords: t("keywords"),
-    robots: "index, nofollow, noimageindex",
+    robots: "index, nofollow",
     alternates: {
       canonical: "https://praticae.com",
       languages: {

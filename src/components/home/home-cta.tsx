@@ -4,10 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/src/components/ui/button";
 import { WaitlistModal } from "@/src/components/home/waitlist-modal";
-import { WHATSAPP_NUMBER } from "@/src/lib/constants";
-
 const IS_WAITLIST = process.env.NEXT_PUBLIC_WAITLIST_MODE === "true";
-const WA_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -34,7 +31,11 @@ export function HomeCTA({ waLabel, buttonClassName }: HomeCTAProps) {
   if (IS_WAITLIST) {
     return (
       <>
-        <Button size="lg" className={buttonClassName} onClick={() => setOpen(true)}>
+        <Button
+          size="lg"
+          className={buttonClassName}
+          onClick={() => setOpen(true)}
+        >
           {t("waitlist.cta")}
         </Button>
         <WaitlistModal open={open} onOpenChange={setOpen} />
@@ -43,7 +44,7 @@ export function HomeCTA({ waLabel, buttonClassName }: HomeCTAProps) {
   }
 
   return (
-    <a href={WA_LINK} target="_blank" rel="noopener noreferrer">
+    <a href="/open-whatsapp" target="_blank" rel="noopener noreferrer nofollow">
       <Button size="lg" className={buttonClassName}>
         <WhatsAppIcon className="w-5 h-5" />
         {waLabel}

@@ -7,20 +7,20 @@ import {
   BookOpen,
   Briefcase,
   TrendingUp,
-  RefreshCcw,
-  GraduationCap,
-  User,
+  Calendar,
+  MessageSquare,
+  Brain,
 } from "lucide-react";
 import React from "react";
 
 const CARD_COUNT = 6;
 const CARD_ICONS = [
-  GraduationCap, // Aluno de escola de idiomas
-  User, // Aluno de professor particular
-  BookOpen, // Autodidata
-  RefreshCcw, // Quem tentou e parou
-  Briefcase, // Quem precisa usar no trabalho
-  TrendingUp, // Quem estuda mas não evolui
+  BookOpen,
+  Calendar,
+  MessageSquare,
+  TrendingUp,
+  Briefcase,
+  Brain,
 ] as const;
 
 export default function WhoFor() {

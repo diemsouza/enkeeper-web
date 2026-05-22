@@ -42,7 +42,7 @@
       "4": "Você não esquece por falta de esforço. <strong>Esquece por falta de prática.</strong>",
       "5": "30 minutos de aula. <strong>23 horas e meia em português.</strong>"
     },
-    "tagline": "Sua aula de inglês tem 30 minutos. Sua prática tem o dia inteiro.",
+    "tagline": "Inglês o dia inteiro, no WhatsApp, com o material da sua aula.",
     "cta": "Experimentar grátis",
     "microcopy": "Abre no WhatsApp · 1 dia grátis · Sem cadastro",
     "waitlist": {
@@ -59,32 +59,32 @@
       }
     },
     "who": {
-      "title": "Para quem estuda inglês e perde o vocabulário no resto da rotina.",
-      "subtitle": "Não importa onde você aprende. O Praticae pratica em cima do material que você já tem.",
+      "title": "Para quem estuda inglês e quer praticar mais, sem obstáculo.",
+      "subtitle": "Não importa onde você aprende. Pratica em cima do seu material, no seu contexto e no seu ritmo sem travar.",
       "cards": {
         "0": {
-          "title": "Aluno de escola de idiomas",
-          "description": "Sua aula tem 50 minutos. O professor passa o vocabulário, você anota, vai embora. O Praticae manda perguntas sobre aquele conteúdo durante o dia enquanto você ainda lembra."
+          "title": "Aprendi na aula. Na semana seguinte, esqueci.",
+          "description": "Manda o material e recebe perguntas sobre ele ao longo do dia, enquanto o conteúdo ainda está fresco. O que praticou fica. O que não praticou some."
         },
         "1": {
-          "title": "Aluno de professor particular",
-          "description": "Uma hora por semana com o professor. Os outros seis dias, sem prática. Manda o material que ele passou e o Praticae trabalha aquele vocabulário com você todo dia."
+          "title": "Tentei manter a disciplina. Não consegui.",
+          "description": "As perguntas chegam no WhatsApp que você já usa. Sem abrir app, sem sessão dedicada, sem lembrar de estudar. A prática acontece sem você precisar organizar."
         },
         "2": {
-          "title": "Autodidata",
-          "description": "Aprende por conta, no seu ritmo. Manda o que você está estudando, texto, áudio, PDF e recebe perguntas sobre aquilo ao longo do dia, sem abrir mais um app."
+          "title": "Entendo quando leio. Trava quando preciso usar.",
+          "description": "Responder de cabeça, sem consultar, é o que treina o uso real. É diferente de só reconhecer. Com prática ativa no dia a dia, a lacuna entre entender e usar vai fechando."
         },
         "3": {
-          "title": "Quem tentou e parou",
-          "description": "Já usou Anki, Duolingo, Quizlet. Cansou de abrir mais um app. O Praticae funciona no WhatsApp que você já usa o dia inteiro, sem sessão dedicada."
+          "title": "Estudo faz meses. Não sinto que evoluí.",
+          "description": "Cada material que você manda vira prática do dia. Com o tempo, dá pra ver o que fixou, o que ainda trava e o quanto avançou desde o começo."
         },
         "4": {
-          "title": "Quem precisa usar no trabalho",
-          "description": "Inglês técnico, vocabulário de reunião, e-mail profissional. Manda o material e pratica o que importa pra você, não cenários genéricos."
+          "title": "Tenho reunião em inglês amanhã. Já travei só de pensar.",
+          "description": "Manda o material do seu contexto, técnico, profissional, do que for, e pratica o que faz sentido pro seu momento. Não cenários genéricos que nunca acontecem na vida real."
         },
         "5": {
-          "title": "Quem estuda mas não evolui",
-          "description": "O problema não é o conteúdo. É que sem prática entre as aulas, nada fixa. O Praticae é a parte que faltava, a prática do dia a dia."
+          "title": "O que aprendo hoje some em dois dias.",
+          "description": "O sistema identifica o que travou e traz de volta no momento certo, antes de esquecer de vez. Sem precisar lembrar de revisar, sem montar deck, sem disciplina extra."
         }
       }
     },
@@ -114,35 +114,37 @@
     },
     "features_demo": {
       "title": "Na prática.",
-      "subtitle": "Você manda o material e pratica o dia inteiro sem abrir mais um app.",
+      "subtitle": "Você manda o material. As perguntas chegam durante o dia.",
       "blocks": {
         "0": {
-          "title": "Manda o material. O Praticae gera as perguntas.",
+          "title": "Manda o material. As perguntas saem do seu material.",
           "description": "Texto, foto ou PDF. O vocabulário da sua aula vira prática durante o dia.",
           "chat": [
             {
               "from": "user",
-              "text": "Greeting and small talk: How are you? / I'm doing well, thanks. / What have you been up to? / Not much, just keeping busy.",
+              "type": "file",
+              "fileName": "Vocabulario Aula 3.pdf",
+              "fileSize": "5 páginas · PDF · 12 kB",
               "time": "08:10"
             },
             {
               "from": "bot",
-              "text": "Recebi! Preparando as perguntas. Em breve começo a prática.",
+              "text": "Recebi! Em breve começa a prática.",
               "time": "08:10"
             },
             {
               "from": "bot",
-              "text": "Você chega no trabalho e encontra um colega no corredor. Como você cumprimenta de forma natural?",
+              "text": "Como se diz \"prazo\" em inglês?",
               "time": "09:15"
             },
             {
               "from": "user",
-              "text": "How are you doing?",
+              "text": "deadline",
               "time": "09:22"
             },
             {
               "from": "bot",
-              "text": "Funciona bem. \"What have you been up to?\" soa ainda mais natural pra quem você já conhece, dá um tom mais de conversa real.",
+              "text": "✅ Boa! \"The deadline is Friday.\"",
               "time": "09:22"
             }
           ]
@@ -153,38 +155,38 @@
           "chat": [
             {
               "from": "bot",
-              "text": "Seu chefe te para no corredor e pergunta \"not much, just keeping busy\", como você traduziria isso numa conversa informal?",
+              "text": "Como se diz \"lidar com\" em inglês?\na) deal with\nb) handle on\nc) face up\nd) manage to",
               "time": "11:30"
             },
             {
               "from": "user",
-              "text": "sem muito, só ocupado",
+              "text": "C",
               "time": "14:45"
             },
             {
               "from": "bot",
-              "text": "Quase. \"Não muito, só na correria\" fica mais natural em português. \"Keeping busy\" tem esse tom de quem está sempre com coisa pra fazer.",
+              "text": "⚠️ Quase! \"Face up\" precisa de \"to\": \"You need to face up to it.\"",
               "time": "14:45"
             }
           ]
         },
         "2": {
-          "title": "O que errou volta. O que acertou avança.",
-          "description": "O sistema registra acerto e erro. Vocabulário que travou volta com prioridade. Todo domingo você vê sua evolução da semana.",
+          "title": "O sistema aprende o que travou.",
+          "description": "Acertos e erros ficam registrados. O que travou volta por repetição espaçada, na hora certa.",
           "chat": [
             {
               "from": "bot",
-              "text": "Complete: \"I'm doing well, ______.\" Qual palavra faltou?",
+              "text": "Complete: \"I need to ___ a meeting for tomorrow.\" (agendar)",
               "time": "16:00"
             },
             {
               "from": "user",
-              "text": "thanks",
+              "text": "make",
               "time": "16:03"
             },
             {
               "from": "bot",
-              "text": "Isso. \"Thanks\" e \"thank you\" funcionam nos dois cases. \"Thanks\" é mais informal, cai bem no small talk do dia a dia.",
+              "text": "❌ Errado! \"Schedule\" é o certo: \"I need to schedule a meeting.\"",
               "time": "16:03"
             }
           ]

@@ -5,7 +5,14 @@ import { WhatsAppChat } from "@/src/components/whatsapp-chat";
 import { useInView } from "@/src/hooks/use-in-view";
 import { cn } from "@/src/lib/utils";
 
-type RawMsg = { from: "user" | "bot"; text: string; time: string };
+type RawMsg = {
+  from: "user" | "bot";
+  text?: string;
+  time: string;
+  type?: "file";
+  fileName?: string;
+  fileSize?: string;
+};
 
 export default function FeaturesDemo() {
   const tDemo = useTranslations("home.features_demo");

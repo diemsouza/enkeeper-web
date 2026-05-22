@@ -4,8 +4,25 @@ import { WhatsAppText } from "./shared/whatsapp-text";
 
 interface Message {
   from: "user" | "bot";
-  text: string;
+  text?: string;
   time: string;
+  type?: "file";
+  fileName?: string;
+  fileSize?: string;
+}
+
+function FileCard({ fileName, fileSize }: { fileName: string; fileSize: string }) {
+  return (
+    <div className="flex items-center gap-3 py-1">
+      <div className="w-10 h-10 rounded-lg bg-red-500 flex items-center justify-center shrink-0">
+        <span className="text-white text-[10px] font-bold tracking-wide">PDF</span>
+      </div>
+      <div className="min-w-0">
+        <p className="font-semibold text-[13px] leading-tight">{fileName}</p>
+        <p className="text-[11px] opacity-50 mt-0.5">{fileSize}</p>
+      </div>
+    </div>
+  );
 }
 
 export function WhatsAppChat({ messages }: { messages: Message[] }) {
@@ -25,9 +42,13 @@ export function WhatsAppChat({ messages }: { messages: Message[] }) {
                 : "bg-white dark:bg-[#202C33] text-[#1a1a1a] dark:text-[#e9edef] border border-black/[0.08] rounded-[10px_10px_10px_2px] px-3 pt-2 pb-1.5 text-[13.5px] max-w-[70%]"
             }
           >
-            <p className="whitespace-pre-line leading-[1.5]">
-              <WhatsAppText text={msg.text} />
-            </p>
+            {msg.type === "file" ? (
+              <FileCard fileName={msg.fileName!} fileSize={msg.fileSize!} />
+            ) : (
+              <p className="whitespace-pre-line leading-[1.5]">
+                <WhatsAppText text={msg.text ?? ""} />
+              </p>
+            )}
             <p className="text-[10.5px] opacity-55 mt-0.5 text-right">
               {msg.time}
             </p>
