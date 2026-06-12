@@ -1,6 +1,6 @@
 {
   "app": {
-    "brand": "Praticae",
+    "brand": "Fluizer",
     "not_found": {
       "code_404": "404",
       "title_page_not_found": "Página não encontrada",
@@ -23,9 +23,9 @@
   },
   "seo": {
     "home": {
-      "title": "Praticae | Inglês o dia inteiro no WhatsApp, com o material da sua aula.",
+      "title": "Fluizer | Inglês o dia inteiro no WhatsApp, com o material da sua aula.",
       "description": "Prática diária de inglês direto no WhatsApp. Manda o material da sua aula e pratica o dia inteiro no seu ritmo.",
-      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Praticae, Praticai",
+      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Fluizer, Praticai",
       "ogImage": "/images/logo.png"
     }
   },
@@ -49,7 +49,7 @@
       "cta": "Entrar na lista de espera",
       "modal": {
         "title": "Lista de espera",
-        "description": "O Praticae abre por etapas. Entra na lista e te aviso quando chegar sua vez.",
+        "description": "O Fluizer abre por etapas. Entra na lista e te aviso quando chegar sua vez.",
         "name_placeholder": "Como você se chama?",
         "submit": "Garantir meu lugar",
         "success": "Lugar garantido! Em breve você começa a praticar.",
@@ -97,12 +97,12 @@
           "description": "Texto, foto ou PDF. A lista de vocabulário, o exercício, o PDF que o professor mandou. Qualquer material da sua aula de inglês."
         },
         "1": {
-          "title": "O Praticae gera as perguntas",
+          "title": "O Fluizer gera as perguntas",
           "description": "Extrai o vocabulário e os pontos centrais do material e monta as perguntas em cima do que você mandou, não de cenários genéricos."
         },
         "2": {
           "title": "As perguntas chegam no WhatsApp",
-          "description": "Ao longo do dia, no seu ritmo, o Praticae manda perguntas sobre aquele vocabulário. Você responde de cabeça. O sistema avalia, dá feedback e registra o que travou."
+          "description": "Ao longo do dia, no seu ritmo, o Fluizer manda perguntas sobre aquele vocabulário. Você responde de cabeça. O sistema avalia, dá feedback e registra o que travou."
         }
       }
     },
@@ -117,7 +117,7 @@
       "subtitle": "Você manda o material. As perguntas chegam durante o dia.",
       "blocks": {
         "0": {
-          "title": "Manda o material. As perguntas saem do seu material.",
+          "title": "As perguntas saem do seu material de estudo.",
           "description": "Texto, foto ou PDF. O vocabulário da sua aula vira prática durante o dia.",
           "chat": [
             {
@@ -194,7 +194,7 @@
       }
     },
     "footer": {
-      "copyright": "Copyright © 2026 Praticae. Todos os direitos reservados.",
+      "copyright": "Copyright © 2026 Fluizer. Todos os direitos reservados.",
       "privacy": "Política de Privacidade",
       "terms": "Termos de Uso"
     }

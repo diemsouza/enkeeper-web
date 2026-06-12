@@ -30,10 +30,10 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: t("keywords"),
     robots: "index, nofollow",
     alternates: {
-      canonical: "https://praticae.com",
+      canonical: "https://fluizer.com",
       languages: {
-        "x-default": "https://praticae.com",
-        "pt-BR": "https://praticae.com/?lang=pt",
+        "x-default": "https://fluizer.com",
+        "pt-BR": "https://fluizer.com/?lang=pt",
       },
     },
   };
@@ -56,7 +56,7 @@ export default async function RootLayout({
           sizes="180x180"
           href="/apple-touch-icon.png"
         />
-        <meta name="apple-mobile-web-app-title" content="praticae" />
+        <meta name="apple-mobile-web-app-title" content="fluizer" />
         <link rel="manifest" href="/site.webmanifest" />
         {process.env.NEXT_PUBLIC_GTM_ID && (
           <Script

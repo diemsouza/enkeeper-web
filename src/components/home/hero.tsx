@@ -131,7 +131,7 @@ export default function Hero() {
         {/* Tagline */}
         <p className="text-[18px] font-normal text-muted-foreground text-center">
           <strong className="font-normal text-black dark:text-white">
-            Praticae
+            Fluizer
           </strong>
           . {t("tagline")}
         </p>

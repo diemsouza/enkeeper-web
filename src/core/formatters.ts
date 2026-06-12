@@ -5,7 +5,7 @@ import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { shuffle } from "lodash";
 
 export function formatOnboardingMsg1(): string {
-  return "Hi! Bem-vindo ao *Praticae*. 👋";
+  return "Hi! Bem-vindo a *Fluizer*. 👋";
 }
 
 export function formatOnboardingMsg2(): string {
@@ -24,7 +24,7 @@ export function formatPlanExpired(): string {
   return [
     "*Seu período de teste encerrou!*",
     "",
-    "Para continuar praticando, assine o *Praticae* por R$19,90/mês.",
+    "Para continuar praticando, assine o *Fluizer* por R$19,90/mês.",
     "",
     "_Use *suporte* para falar com a gente e ativar sua conta._",
   ].join("\n");
@@ -254,8 +254,16 @@ type PreviousActivitySummaryData = {
 export function formatPreviousActivitySummary(
   data: PreviousActivitySummaryData,
 ): string {
-  const { docTitle, questionCount, right, partial, wrong, responses, revisadas, period } =
-    data;
+  const {
+    docTitle,
+    questionCount,
+    right,
+    partial,
+    wrong,
+    responses,
+    revisadas,
+    period,
+  } = data;
   const taxa = right / responses;
 
   let leitura: string;

@@ -1,4 +1,4 @@
-# Prompt Standard - Praticae
+# Prompt Standard - Fluizer
 
 Todo prompt segue esta estrutura em inglês. Conteúdo em português.
 

@@ -6,7 +6,7 @@ export function FooterSocial() {
   return (
     <div className="flex items-center justify-center gap-6 py-4 opacity-80 hover:opacity-100 transition">
       <a
-        href="https://instagram.com/praticae"
+        href="https://instagram.com/getfluizer"
         target="_blank"
         rel="noreferrer"
         aria-label="Instagram"
@@ -16,7 +16,7 @@ export function FooterSocial() {
       </a>
 
       <a
-        href="https://linkedin.com/company/praticae"
+        href="https://linkedin.com/company/getfluizer"
         target="_blank"
         rel="noreferrer"
         aria-label="LinkedIn"
@@ -26,7 +26,7 @@ export function FooterSocial() {
       </a>
 
       <a
-        href="https://twitter.com/praticae"
+        href="https://twitter.com/getfluizer"
         target="_blank"
         rel="noreferrer"
         aria-label="X / Twitter"
@@ -36,7 +36,7 @@ export function FooterSocial() {
       </a>
 
       <a
-        href="https://facebook.com/praticae"
+        href="https://facebook.com/getfluizer"
         target="_blank"
         rel="noreferrer"
         aria-label="Facebook"
