@@ -312,18 +312,36 @@ const NUDGE_CLOSING_POOL = [
 ];
 
 // fonte de verdade do texto real dos templates na Meta — alterar aqui antes de atualizar na Meta
-const NUDGE_TEMPLATE_CONFIG: Record<string, { templateName: string; text: string }> = {
-  d2:  { templateName: "nudge_d2",  text: "Já faz 2 dias sem praticar. O vocabulário novo esquece rápido sem repetição. É só responder pra retomar." },
-  d3:  { templateName: "nudge_d3",  text: "3 dias sem praticar. O que você aprendeu começa a escapar. Retoma quando puder, é só mandar uma resposta." },
-  d7:  { templateName: "nudge_d7",  text: "Uma semana sem praticar. Boa parte do que você treinou já começou a sumir. Ainda dá pra recuperar, é só retomar." },
-  d14: { templateName: "nudge_d14", text: "Duas semanas. Ainda dá pra voltar do zero ou continuar de onde parou. É só mandar uma resposta ou um material novo." },
+const NUDGE_TEMPLATE_CONFIG: Record<
+  string,
+  { templateName: string; text: string }
+> = {
+  d2: {
+    templateName: "nudge_d2",
+    text: "Você não respondeu suas perguntas nos últimos 2 dias. Quando quiser retomar, é só responder.",
+  },
+  d3: {
+    templateName: "nudge_d3",
+    text: "Você não respondeu suas perguntas nos últimos 3 dias. Seu conteúdo segue disponível quando quiser.",
+  },
+  d7: {
+    templateName: "nudge_d7",
+    text: "Você não respondeu suas perguntas nos últimos 7 dias. Seu conteúdo segue disponível quando quiser.",
+  },
+  d14: {
+    templateName: "nudge_d14",
+    text: "Você não respondeu suas perguntas nos últimos 14 dias. Seu conteúdo segue disponível quando quiser.",
+  },
 };
 
 export function formatNudgeMessage(step: string): NudgePayload {
   const template = NUDGE_TEMPLATE_CONFIG[step];
-  if (template) return { text: template.text, templateName: template.templateName };
-  const body = NUDGE_BODY_POOL[Math.floor(Math.random() * NUDGE_BODY_POOL.length)];
-  const closing = NUDGE_CLOSING_POOL[Math.floor(Math.random() * NUDGE_CLOSING_POOL.length)];
+  if (template)
+    return { text: template.text, templateName: template.templateName };
+  const body =
+    NUDGE_BODY_POOL[Math.floor(Math.random() * NUDGE_BODY_POOL.length)];
+  const closing =
+    NUDGE_CLOSING_POOL[Math.floor(Math.random() * NUDGE_CLOSING_POOL.length)];
   return { text: `${body} ${closing}`, templateName: null };
 }
 

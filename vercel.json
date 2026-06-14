@@ -3,10 +3,6 @@
     {
       "path": "/api/cron/activity",
       "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/activity-ttl",
-      "schedule": "0 0 * * *"
     }
   ]
 }

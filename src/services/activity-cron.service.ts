@@ -29,6 +29,7 @@ import {
   DOC_PROCESSING_TIMEOUT_MS,
   NUDGE_THRESHOLDS_MS,
   getNextNudgeStep,
+  getEntryNudgeStep,
 } from "../lib/constants";
 import { Activity, QuestionFormat, QuestionStatus } from "@prisma/client";
 import { startOfDay } from "date-fns";
@@ -104,23 +105,39 @@ export async function processActivityCron(): Promise<CronResult> {
 
         const referenceTime = activity.lastInteractionAt ?? activity.createdAt;
         const elapsedMs = Date.now() - referenceTime.getTime();
-        const nextStep = getNextNudgeStep(activity.lastNudgeStep);
 
-        if (!nextStep) {
-          await updateActivity(activity.id, activity.userId, {
-            nextMessageAt: null,
-          });
-          skipped++;
-          continue;
-        }
-
-        const thresholdMs = NUDGE_THRESHOLDS_MS[nextStep];
-        if (elapsedMs < thresholdMs) {
-          await updateActivity(activity.id, activity.userId, {
-            nextMessageAt: new Date(referenceTime.getTime() + thresholdMs),
-          });
-          skipped++;
-          continue;
+        let nextStep;
+        if (activity.lastNudgeStep === null) {
+          const entryStep = getEntryNudgeStep(elapsedMs);
+          if (!entryStep) {
+            await updateActivity(activity.id, activity.userId, {
+              nextMessageAt: new Date(
+                referenceTime.getTime() + NUDGE_THRESHOLDS_MS.h2,
+              ),
+            });
+            skipped++;
+            continue;
+          }
+          nextStep = entryStep;
+        } else {
+          const candidate = getNextNudgeStep(activity.lastNudgeStep);
+          if (!candidate) {
+            await updateActivity(activity.id, activity.userId, {
+              nextMessageAt: null,
+            });
+            skipped++;
+            continue;
+          }
+          if (elapsedMs < NUDGE_THRESHOLDS_MS[candidate]) {
+            await updateActivity(activity.id, activity.userId, {
+              nextMessageAt: new Date(
+                referenceTime.getTime() + NUDGE_THRESHOLDS_MS[candidate],
+              ),
+            });
+            skipped++;
+            continue;
+          }
+          nextStep = candidate;
         }
 
         const today = startOfDay(new Date());

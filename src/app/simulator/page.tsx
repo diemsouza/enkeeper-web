@@ -174,12 +174,6 @@ export default function SimulatorPage() {
         >
           ⚡ Cron Activity
         </button>
-        <button
-          onClick={() => void fetch("/api/cron/develop-activity-ttl")}
-          className="text-xs bg-white border border-gray-300 hover:bg-gray-50 text-gray-600 rounded-full px-3 py-1 transition-colors"
-        >
-          ⚡ Cron TTL
-        </button>
       </div>
 
       <div className="flex items-center gap-2 w-full md:max-w-[480px]">

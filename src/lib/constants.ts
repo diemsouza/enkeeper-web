@@ -10,7 +10,6 @@ export const DEFAULT_LOCALE = "pt-BR";
 export const DEFAULT_CURRENCY = "BRL";
 export const WHATSAPP_NUMBER = "551153069000";
 export const INTENSIVE_UNTIL_MIN = 15;
-export const INTERACTION_TTL_DAYS = 7;
 export const TRIAL_DAYS = 1;
 export const MAX_DOCS_PER_DAY = 5;
 export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
@@ -32,6 +31,18 @@ export function getNextNudgeStep(current: string | null): NudgeStep | null {
   if (!current) return "h2";
   const idx = NUDGE_STEPS.indexOf(current as NudgeStep);
   return idx >= 0 && idx < NUDGE_STEPS.length - 1 ? NUDGE_STEPS[idx + 1] : null;
+}
+
+export function getEntryNudgeStep(elapsedMs: number): NudgeStep | null {
+  let entry: NudgeStep | null = null;
+  for (const step of NUDGE_STEPS) {
+    if (elapsedMs >= NUDGE_THRESHOLDS_MS[step]) {
+      entry = step;
+    } else {
+      break;
+    }
+  }
+  return entry;
 }
 
 export const ANSWER_EMOJI = {

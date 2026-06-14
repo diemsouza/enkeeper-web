@@ -18,24 +18,15 @@ Um ciclo de prática vinculado a um material específico. Começa quando o usuá
 | `active` | Material ativo, prática em andamento |
 | `archived` | Substituído por novo material com ao menos 1 resposta |
 | `cancelled` | Substituído por novo material sem nenhuma resposta |
-| `completed` | Encerrado por inatividade com ao menos 1 resposta |
-| `abandoned` | Encerrado por inatividade sem nenhuma resposta |
 
-Um `archived` que ficar 7 dias sem retomada também vira `completed`.
+Activity nunca encerra por inatividade. Só muda de status por ação do usuário — troca de material. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
 
 ### Transições ao subir novo material
 
 - Anterior teve resposta: vai para `archived`, novo ciclo começa como `active`
 - Anterior não teve resposta: vai para `cancelled`, novo ciclo começa como `active`
 
-### Encerramento por inatividade
-
-Calculado a partir da última resposta do usuário a uma pergunta de prática.
-
-- 7 dias sem resposta com engajamento anterior: `completed`
-- 7 dias sem resposta sem nenhum engajamento: `abandoned`
-
-Completar todas as perguntas não encerra a activity. Só inatividade ou troca de material encerram.
+Completar todas as perguntas não altera o status. A activity permanece `active` indefinidamente até o usuário trocar de material.
 
 ### Resumo ao trocar de material
 
@@ -283,7 +274,9 @@ Nenhuma mensagem deve soar como notificação de app pedindo atenção. Cada uma
 
 Após d14 sem resposta: usuário entra na lista de abordagem manual. Sem mensagem adicional automática.
 
-**Reset:** qualquer resposta a uma pergunta de prática zera o fluxo completamente.
+**Reset:** qualquer resposta a uma pergunta de prática zera o fluxo completamente — `lastNudgeStep` e `lastNudgeAt` voltam a `null`.
+
+**Step inicial baseado no tempo real:** quando `lastNudgeStep` é `null`, o cron não assume h2 automaticamente. Calcula quanto tempo passou desde `lastInteractionAt` e entra diretamente no step correspondente, pulando os já vencidos. Isso evita que um usuário que sumiu há 5 dias receba o nudge de 2h.
 
 ### Lista de abordagem manual
 
