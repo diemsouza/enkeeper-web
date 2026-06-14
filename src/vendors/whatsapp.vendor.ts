@@ -52,6 +52,41 @@ export async function sendWhatsAppMessages(
   }
 }
 
+export async function sendWhatsAppTemplate(
+  to: string,
+  templateName: string,
+): Promise<void> {
+  const token = process.env.WABA_TOKEN;
+  const phoneNumberId = process.env.WABA_PHONE_ID;
+
+  if (process.env.SIMULATOR_MODE === "true") return;
+
+  const res = await fetch(
+    `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "template",
+        template: {
+          name: templateName,
+          language: { code: "pt_BR" },
+        },
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Meta template API error ${res.status}: ${detail}`);
+  }
+}
+
 export async function downloadMedia(
   mediaId: string,
 ): Promise<MediaDownloadResult> {

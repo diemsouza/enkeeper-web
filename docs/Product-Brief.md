@@ -2,7 +2,7 @@
 
 > Documento vivo — base de decisão para produto e negócio.
 > Versão 12 — Maio 2026
-> Regras de sistema e comportamento técnico em Rules.md.
+> Regras de negócio e produto em Product-Rules.md
 
 ---
 

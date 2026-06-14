@@ -6,7 +6,7 @@
 O usuario manda o material da aula (texto, audio, imagem ou PDF) e recebe perguntas sobre aquele conteudo durante o dia, no WhatsApp.
 
 Fontes de verdade:
-- Produto e regras de negocio: `docs/Product-Brief.md` e `docs/Rules.md`
+- Produto e regras de negocio e do produto: `docs/Product-Brief.md` e `docs/Product-Rules.md`
 - Contexto geral: `README.md`
 
 Stack: Next.js 15 App Router, Prisma 6, Supabase/PostgreSQL, TypeScript strict, Vercel.
@@ -72,7 +72,7 @@ src/
   vendors/        -- clientes de APIs externas (llm, whatsapp, storage)
 prisma/schema/    -- schemas por dominio: account.prisma, core.prisma
 prompts/          -- arquivos .md de prompt por etapa LLM
-docs/             -- Product-Brief.md, Rules.md
+docs/             -- Product-Brief.md, Product-Rules.md
 ```
 
 ### Camadas e regras

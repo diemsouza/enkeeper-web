@@ -13,11 +13,13 @@ import {
 } from "../repo/questions.repo";
 import { findUserChannelByUserId, findUserById } from "../repo/users.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
-import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
+import {
+  sendWhatsAppMessage,
+  sendWhatsAppTemplate,
+} from "../vendors/whatsapp.vendor";
 import {
   formatChoiceQuestion,
-  formatFirstPracticeNudge,
-  formatLastPracticeNudge,
+  formatNudgeMessage,
   formatPracticeComplete,
   formatSectionTransition,
 } from "../core/formatters";
@@ -25,7 +27,8 @@ import { findSectionById } from "../repo/sections.repo";
 import { canPractice } from "../core/access";
 import {
   DOC_PROCESSING_TIMEOUT_MS,
-  NUDGE_INTERVAL_HOURS,
+  NUDGE_THRESHOLDS_MS,
+  getNextNudgeStep,
 } from "../lib/constants";
 import { Activity, QuestionFormat, QuestionStatus } from "@prisma/client";
 import { startOfDay } from "date-fns";
@@ -91,7 +94,7 @@ export async function processActivityCron(): Promise<CronResult> {
       if (
         lastMsg?.role === "assistant" &&
         (lastMsg.intent === "practice_question" ||
-          lastMsg.intent === "practice_first_nudge")
+          lastMsg.intent === "practice_nudge")
       ) {
         const userChannel = await findUserChannelByUserId(activity.userId);
         if (!userChannel) {
@@ -99,51 +102,64 @@ export async function processActivityCron(): Promise<CronResult> {
           continue;
         }
 
-        const alreadyNudged = lastMsg.intent === "practice_first_nudge";
+        const referenceTime = activity.lastInteractionAt ?? activity.createdAt;
+        const elapsedMs = Date.now() - referenceTime.getTime();
+        const nextStep = getNextNudgeStep(activity.lastNudgeStep);
 
-        if (alreadyNudged) {
-          if (activity.nextMessageAt) {
-            const nudge = formatLastPracticeNudge();
-            await sendWhatsAppMessage(userChannel.channelId, nudge);
-            await saveMessage({
-              userId: activity.userId,
-              userChannelId: userChannel.id,
-              activityId: activity.id,
-              role: "assistant",
-              content: nudge,
-              intent: "practice_last_nudge",
-            });
-            const today = startOfDay(new Date());
-            await incrementAgentMessageCount(activity.userId, today);
-            await updateActivity(activity.id, activity.userId, {
-              waitingUser: true,
-              nextMessageAt: null,
-            });
-            processed++;
-          } else {
-            skipped++;
-          }
+        if (!nextStep) {
+          await updateActivity(activity.id, activity.userId, {
+            nextMessageAt: null,
+          });
+          skipped++;
           continue;
         }
 
-        const nudge = formatFirstPracticeNudge();
-        await sendWhatsAppMessage(userChannel.channelId, nudge);
+        const thresholdMs = NUDGE_THRESHOLDS_MS[nextStep];
+        if (elapsedMs < thresholdMs) {
+          await updateActivity(activity.id, activity.userId, {
+            nextMessageAt: new Date(referenceTime.getTime() + thresholdMs),
+          });
+          skipped++;
+          continue;
+        }
+
+        const today = startOfDay(new Date());
+        const nudge = formatNudgeMessage(nextStep);
+
+        try {
+          if (nudge.templateName) {
+            await sendWhatsAppTemplate(userChannel.channelId, nudge.templateName);
+          } else {
+            await sendWhatsAppMessage(userChannel.channelId, nudge.text);
+          }
+        } catch (err) {
+          console.error(`[activity-cron] nudge send error (${nextStep}):`, err);
+          errors++;
+          continue;
+        }
+
         await saveMessage({
           userId: activity.userId,
           userChannelId: userChannel.id,
           activityId: activity.id,
           role: "assistant",
-          content: nudge,
-          intent: "practice_first_nudge",
+          content: nudge.text,
+          intent: "practice_nudge",
         });
-        const today = startOfDay(new Date());
         await incrementAgentMessageCount(activity.userId, today);
+
+        const nextAfterStep = getNextNudgeStep(nextStep);
         await updateActivity(activity.id, activity.userId, {
+          lastNudgeStep: nextStep,
+          lastNudgeAt: new Date(),
           waitingUser: true,
-          nextMessageAt: new Date(
-            Date.now() + NUDGE_INTERVAL_HOURS * 60 * 60 * 1000,
-          ),
+          nextMessageAt: nextAfterStep
+            ? new Date(
+                referenceTime.getTime() + NUDGE_THRESHOLDS_MS[nextAfterStep],
+              )
+            : null,
         });
+
         processed++;
         continue;
       }

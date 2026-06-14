@@ -15,7 +15,25 @@ export const TRIAL_DAYS = 1;
 export const MAX_DOCS_PER_DAY = 5;
 export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 export const SEQUENCE_WA_MESSAGE_INTERVAL_SEC = 2;
-export const NUDGE_INTERVAL_HOURS = 8;
+export const NUDGE_STEPS = ["h2", "h12", "h23", "d2", "d3", "d7", "d14"] as const;
+export type NudgeStep = (typeof NUDGE_STEPS)[number];
+
+export const NUDGE_THRESHOLDS_MS: Record<NudgeStep, number> = {
+  h2:  2 * 60 * 60 * 1000,
+  h12: 12 * 60 * 60 * 1000,
+  h23: 23 * 60 * 60 * 1000,
+  d2:  2 * 24 * 60 * 60 * 1000,
+  d3:  3 * 24 * 60 * 60 * 1000,
+  d7:  7 * 24 * 60 * 60 * 1000,
+  d14: 14 * 24 * 60 * 60 * 1000,
+};
+
+export function getNextNudgeStep(current: string | null): NudgeStep | null {
+  if (!current) return "h2";
+  const idx = NUDGE_STEPS.indexOf(current as NudgeStep);
+  return idx >= 0 && idx < NUDGE_STEPS.length - 1 ? NUDGE_STEPS[idx + 1] : null;
+}
+
 export const ANSWER_EMOJI = {
   right: "✅",
   partial: "⚠️",

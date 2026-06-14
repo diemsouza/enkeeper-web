@@ -192,14 +192,6 @@ export function formatPracticeComplete(): string {
   return "Você respondeu todas as perguntas dessa rodada. Manda novo conteúdo ou continue praticando.";
 }
 
-export function formatFirstPracticeNudge(): string {
-  return "Ainda dá tempo de responder. Quando quiser, é só mandar.";
-}
-
-export function formatLastPracticeNudge(): string {
-  return "Sua prática está pausada. Quando quiser continuar, é só responder ou mandar novo conteúdo.";
-}
-
 export function formatImageNoText(): string {
   return "Não encontrei conteúdo de texto suficiente nessa imagem. Manda o material como texto, áudio ou PDF.";
 }
@@ -299,6 +291,40 @@ export function formatUpgradePrompt(reason: "audio" | "image"): string {
       "Envio de imagem é exclusivo do plano Pro. _Use *suporte* para saber mais._",
   };
   return messages[reason];
+}
+
+export type NudgePayload = { text: string; templateName: string | null };
+
+const NUDGE_BODY_POOL = [
+  "Não deixa o inglês esfriar.",
+  "O cérebro esquece rápido sem prática.",
+  "Você já começou, o mais difícil já passou.",
+  "Consistência é o que separa quem aprende de quem tenta.",
+  "Um pouquinho todo dia vale mais que muito de vez em quando.",
+];
+
+const NUDGE_CLOSING_POOL = [
+  "É só responder.",
+  "Quando puder, é só mandar.",
+  "Tá aqui te esperando.",
+  "Pode responder quando quiser.",
+  "É só mandar quando estiver pronto.",
+];
+
+// fonte de verdade do texto real dos templates na Meta — alterar aqui antes de atualizar na Meta
+const NUDGE_TEMPLATE_CONFIG: Record<string, { templateName: string; text: string }> = {
+  d2:  { templateName: "nudge_d2",  text: "Já faz 2 dias sem praticar. O vocabulário novo esquece rápido sem repetição. É só responder pra retomar." },
+  d3:  { templateName: "nudge_d3",  text: "3 dias sem praticar. O que você aprendeu começa a escapar. Retoma quando puder, é só mandar uma resposta." },
+  d7:  { templateName: "nudge_d7",  text: "Uma semana sem praticar. Boa parte do que você treinou já começou a sumir. Ainda dá pra recuperar, é só retomar." },
+  d14: { templateName: "nudge_d14", text: "Duas semanas. Ainda dá pra voltar do zero ou continuar de onde parou. É só mandar uma resposta ou um material novo." },
+};
+
+export function formatNudgeMessage(step: string): NudgePayload {
+  const template = NUDGE_TEMPLATE_CONFIG[step];
+  if (template) return { text: template.text, templateName: template.templateName };
+  const body = NUDGE_BODY_POOL[Math.floor(Math.random() * NUDGE_BODY_POOL.length)];
+  const closing = NUDGE_CLOSING_POOL[Math.floor(Math.random() * NUDGE_CLOSING_POOL.length)];
+  return { text: `${body} ${closing}`, templateName: null };
 }
 
 export function humanizeFeedback(

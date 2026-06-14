@@ -36,6 +36,8 @@ type UpdateActivityData = {
   roundCompleted?: boolean;
   lastQuestionId?: string | null;
   summary?: string | null;
+  lastNudgeStep?: string | null;
+  lastNudgeAt?: Date | null;
 };
 
 export async function createActivity(

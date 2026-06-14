@@ -731,6 +731,8 @@ export async function handleIncomingMessage(
               nextMessageAt: new Date(
                 Date.now() + activeActivity.intervalMinutes * 60 * 1000,
               ),
+              lastNudgeStep: null,
+              lastNudgeAt: null,
             });
             await saveUserMsg(
               user.id,
