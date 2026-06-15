@@ -8,6 +8,7 @@ const PHRASE_COUNT = 6;
 const TYPE_SPEED = 85;
 const DELETE_SPEED = 30;
 const PAUSE_MS = 3200;
+const IS_WAITLIST = process.env.NEXT_PUBLIC_WAITLIST_MODE === "true";
 
 type Segment = { text: string; bold: boolean };
 
@@ -144,7 +145,7 @@ export default function Hero() {
           buttonClassName="rounded-full px-8 h-12 font-semibold gap-2 text-base"
         />
         <p className="text-[13px] text-muted-foreground/70 text-center">
-          {t("microcopy")}
+          {IS_WAITLIST ? t("waitlist_microcopy") : t("microcopy")}
         </p>
       </div>
     </section>

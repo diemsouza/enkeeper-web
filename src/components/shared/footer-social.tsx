@@ -16,7 +16,7 @@ export function FooterSocial() {
       </a>
 
       <a
-        href="https://linkedin.com/company/getfluizer"
+        href="https://linkedin.com/company/fluizer"
         target="_blank"
         rel="noreferrer"
         aria-label="LinkedIn"
@@ -36,7 +36,7 @@ export function FooterSocial() {
       </a>
 
       <a
-        href="https://facebook.com/getfluizer"
+        href="https://facebook.com/fluizer"
         target="_blank"
         rel="noreferrer"
         aria-label="Facebook"

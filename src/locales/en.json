@@ -44,7 +44,8 @@
     },
     "tagline": "Your notes on WhatsApp.",
     "cta": "Get started",
-    "microcopy": "Opens on WhatsApp · Free · No sign-up",
+    "microcopy": "Opens on WhatsApp · Get started free · No sign-up",
+    "waitlist_microcopy": "Secure your spot · Get started free · No sign-up",
     "waitlist": {
       "cta": "Join the waitlist",
       "modal": {

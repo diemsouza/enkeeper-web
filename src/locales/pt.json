@@ -25,7 +25,7 @@
     "home": {
       "title": "Fluizer | Inglês o dia inteiro no WhatsApp, com o material da sua aula.",
       "description": "Prática diária de inglês direto no WhatsApp. Manda o material da sua aula e pratica o dia inteiro no seu ritmo.",
-      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Fluizer, Praticai",
+      "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Fluizer",
       "ogImage": "/images/logo.png"
     }
   },
@@ -44,7 +44,8 @@
     },
     "tagline": "Inglês o dia inteiro, no WhatsApp, com o material da sua aula.",
     "cta": "Experimentar grátis",
-    "microcopy": "Abre no WhatsApp · 1 dia grátis · Sem cadastro",
+    "microcopy": "Abre no WhatsApp · Comece grátis · Sem cadastro",
+    "waitlist_microcopy": "Garantir minha vaga · Comece grátis · Sem cadastro",
     "waitlist": {
       "cta": "Entrar na lista de espera",
       "modal": {
@@ -107,9 +108,9 @@
       }
     },
     "pricing": {
-      "title": "1 dia grátis. Depois R$19,90/mês.",
-      "subtitle": "Experimente com tudo liberado. Sem cartão, sem cadastro.",
-      "description": "O trial dá acesso completo ao produto por 1 dia: envie seu material, pratique o vocabulário, texto, áudio, imagem e PDF. Se fizer sentido, você continua por R$19,90/mês.",
+      "title": "Comece grátis.",
+      "subtitle": "Acesso completo por 1 dia. Sem cartão e sem cadastro.",
+      "description": "Envie seu material, pratique o vocabulário, texto, áudio, imagem e PDF. Se fizer sentido, você pode continuar por 19,90/mes.",
       "cta": "Experimentar grátis"
     },
     "features_demo": {
