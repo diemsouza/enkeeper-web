@@ -1,4 +1,5 @@
 import { findWaitlistByPhone, createWaitlistEntry } from "@/src/repo/waitlist.repo";
+import { sendWhatsAppMessage } from "@/src/vendors/whatsapp.vendor";
 
 export async function POST(request: Request): Promise<Response> {
   const body = await request.json();
@@ -15,6 +16,17 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json({ success: true, already: true });
     }
     await createWaitlistEntry(name, phone);
+    const waSupport = process.env.WA_SUPPORT;
+    if (waSupport) {
+      try {
+        await sendWhatsAppMessage(
+          waSupport,
+          `Novo contato na lista de espera.\nNome: ${name}\nTelefone: ${phone}`,
+        );
+      } catch {
+        // falha silenciosa
+      }
+    }
     return Response.json({ success: true });
   } catch {
     return Response.json({ error: "internal error" }, { status: 500 });

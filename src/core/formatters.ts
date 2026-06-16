@@ -306,7 +306,7 @@ const NUDGE_BODY_POOL = [
 const NUDGE_CLOSING_POOL = [
   "É só responder.",
   "Quando puder, é só mandar.",
-  "Tá aqui te esperando.",
+  "A pergunta continua aqui te esperando.",
   "Pode responder quando quiser.",
   "É só mandar quando estiver pronto.",
 ];

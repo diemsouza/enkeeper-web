@@ -48,6 +48,7 @@ function renderTyped(phrase: Segment[], charIndex: number) {
 }
 
 export default function Hero() {
+  const tApp = useTranslations("app");
   const t = useTranslations("home");
 
   const phrases = useMemo(
@@ -132,7 +133,7 @@ export default function Hero() {
         {/* Tagline */}
         <p className="text-[18px] font-normal text-muted-foreground text-center">
           <strong className="font-normal text-black dark:text-white">
-            Fluizer
+            {tApp("brand")}
           </strong>
           . {t("tagline")}
         </p>
