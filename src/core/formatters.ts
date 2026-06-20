@@ -86,7 +86,7 @@ export function formatNoDocs(): string {
 }
 
 export function formatDocReceiving(): string {
-  return "Recebido e processando...";
+  return "✅ Recebido e processando...";
 }
 
 export function formatDocProcessed(
@@ -297,10 +297,20 @@ export type NudgePayload = { text: string; templateName: string | null };
 
 const NUDGE_BODY_POOL = [
   "Não deixa o inglês esfriar.",
-  "O cérebro esquece rápido sem prática.",
+  "O cérebro esquece rápido demais sem prática.",
   "Você já começou, o mais difícil já passou.",
   "Consistência é o que separa quem aprende de quem tenta.",
   "Um pouquinho todo dia vale mais que muito de vez em quando.",
+  "Vocabulário sem uso enferruja rápido.",
+  "Prática puxa memória, pausa apaga memória.",
+  "Seu inglês não evolui enquanto você espera.",
+  "A repetição é o que fixa o aprendizado.",
+  "Parar agora custa mais do que continuar depois.",
+  "O que você estudou só fica se for revisado.",
+  "Hábito vale mais que vontade.",
+  "Avançar exige continuar, não recomeçar.",
+  "O progresso depende de manter o ritmo.",
+  "Sem repetição, o que você aprendeu se perde.",
 ];
 
 const NUDGE_CLOSING_POOL = [

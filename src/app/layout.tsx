@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t("title"),
     description: t("description"),
     keywords: t("keywords"),
-    robots: "index, nofollow",
+    robots: "index, follow",
     alternates: {
       canonical: "https://fluizer.com",
       languages: {

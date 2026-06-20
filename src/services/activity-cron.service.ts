@@ -112,7 +112,7 @@ export async function processActivityCron(): Promise<CronResult> {
           if (!entryStep) {
             await updateActivity(activity.id, activity.userId, {
               nextMessageAt: new Date(
-                referenceTime.getTime() + NUDGE_THRESHOLDS_MS.h2,
+                referenceTime.getTime() + NUDGE_THRESHOLDS_MS.h3,
               ),
             });
             skipped++;
@@ -145,7 +145,10 @@ export async function processActivityCron(): Promise<CronResult> {
 
         try {
           if (nudge.templateName) {
-            await sendWhatsAppTemplate(userChannel.channelId, nudge.templateName);
+            await sendWhatsAppTemplate(
+              userChannel.channelId,
+              nudge.templateName,
+            );
           } else {
             await sendWhatsAppMessage(userChannel.channelId, nudge.text);
           }

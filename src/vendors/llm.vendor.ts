@@ -7,7 +7,7 @@ import {
   DocProcessingResult,
   visionSchema,
   VisionResult,
-  sectionQuestionSchema,
+  sectionQuestionsSchema,
   SectionQuestionResult,
   answerEvaluationSchema,
   AnswerEvaluationResult,
@@ -138,7 +138,7 @@ export async function generateSectionQuestions(params: {
   userId: string;
   docId: string;
   sectionId: string;
-}): Promise<SectionQuestionResult | null> {
+}): Promise<SectionQuestionResult[] | null> {
   const {
     sectionType,
     sectionTitle,
@@ -152,7 +152,7 @@ export async function generateSectionQuestions(params: {
   let inputTokens = 0;
   let outputTokens = 0;
   let cachedTokens = 0;
-  let result: SectionQuestionResult | null = null;
+  let result: SectionQuestionResult[] | null = null;
   let rawOutput: string | null = null;
   let logError: string | null = null;
   const startTime = Date.now();
@@ -179,7 +179,7 @@ Nível: {level}`
     outputTokens += llmResult.usage?.outputTokens ?? 0;
     cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
     rawOutput = llmResult.text ?? null;
-    result = sectionQuestionSchema.parse(
+    result = sectionQuestionsSchema.parse(
       parseJsonWithFallback(llmResult.text.trim()),
     );
   } catch (err) {

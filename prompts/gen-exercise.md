@@ -5,7 +5,7 @@
 Extraia as perguntas do material e reescreva no padrão do exemplo abaixo.
 Objetivo: o usuário responde as perguntas do material no formato padronizado.
 
-Quantidade: extraia todas as perguntas. Se houver mais de 30, remova ambiguidades e duplicatas. Máximo: 30 por seção.
+Quantidade: extraia todas as perguntas. Se houver mais de 50, remova ambiguidades e duplicatas. Mínimo: 10 perguntas (se não tiver, gere outras no mesmo contexto e termo mas formatos diferentes). Máximo: 50 perguntas.
 
 Nível e idioma:
 - basic: pergunta em PT, resposta esperada em PT.
@@ -35,7 +35,7 @@ O bloco de exemplos abaixo cobre o formato open_question. Siga a fórmula e o pa
 {question_examples}
 
 ## Output
-Retorne APENAS UM JSON válido (array). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
+Retorne APENAS UM JSON válido (array de objetos). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
 [{
   "question": "enunciado da pergunta",
   "answerKeys": ["resposta principal", "variações aceitáveis"],

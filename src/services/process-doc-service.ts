@@ -40,7 +40,7 @@ import {
 } from "../core/format-loader";
 import { QuestionFormat } from "@prisma/client";
 import { shuffle } from "lodash";
-import { SectionQuestionResult } from "../lib/llm-schemas";
+import { shuffleQuestions } from "../core/utils";
 
 export async function processDoc(docId: string, userId: string): Promise<void> {
   const doc = await findDocById(docId, userId);
@@ -154,47 +154,6 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       sectionId: section.id,
     });
 
-    // TODO: delete
-    // Validação anti-vazamento entre itens adjacentes (só vocabulary).
-    // sourceItem é o "ponteiro" declarado pelo modelo pro item da lista
-    // que ele está cobrindo. Pra ser válido:
-    // - recall_inverted: sourceItem deve aparecer na pergunta (ex: "O que significa 'blanket'?")
-    // - demais formatos: sourceItem deve estar no answerKeys
-    // Se não bater, descarta. sourceItem removido antes de salvar (auditoria).
-    // if (questions && sectionData.sectionType === "vocabulary") {
-    //   const valid = questions
-    //     .filter((q) => {
-    //       const source = q.sourceItem?.toLowerCase().trim();
-    //       if (!source) return false;
-    //       if (q.warning) {
-    //         console.warn(
-    //           `[gen-vocabulary] Pergunta descartada por warning: ${q.warning}. Q: ${q.question} A: ${q.answerKeys}`,
-    //         );
-    //         hasWarning = true;
-    //         return false;
-    //       }
-
-    //       if (q.questionFormat === "recall_inverted") {
-    //         // sourceItem aparece NA pergunta (entre aspas)
-    //         return q.question.toLowerCase().includes(source);
-    //       }
-
-    //       // demais formatos: sourceItem está no answerKeys
-    //       const keys = q.answerKeys.map((k) => k.toLowerCase().trim());
-    //       return keys.includes(source);
-    //     })
-    //     .map(({ sourceItem, ...rest }) => rest);
-
-    //   const discarded = questions.length - valid.length;
-    //   if (discarded > 0) {
-    //     console.warn(
-    //       `[gen-vocabulary] ${discarded}/${questions.length} perguntas descartadas por sourceItem inconsistente`,
-    //     );
-    //   }
-
-    //   questions = valid as SectionQuestionResult;
-    // }
-
     if (questions && questions.length > 0) {
       const { questions: validatedQuestions, hasWarning: validatedHasWarning } =
         validateGeneratedQuestion(questions, sectionData.sectionType);
@@ -203,7 +162,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     }
 
     if (questions && questions.length > 0) {
-      questions = shuffle(questions); // embaralha perguntas dentro da seção pra evitar padrão
+      questions = shuffleQuestions(questions); // embaralha perguntas dentro da seção pra evitar padrão
       await createQuestions(
         activity.id,
         section.id,

@@ -25,7 +25,7 @@ export function FooterSocial() {
         <Linkedin className="h-5 w-5" />
       </a>
 
-      <a
+      {/* <a
         href="https://twitter.com/getfluizer"
         target="_blank"
         rel="noreferrer"
@@ -33,7 +33,7 @@ export function FooterSocial() {
         className="hover:opacity-70 transition"
       >
         <Twitter className="h-5 w-5" />
-      </a>
+      </a> */}
 
       <a
         href="https://facebook.com/fluizer"

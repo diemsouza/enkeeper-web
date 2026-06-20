@@ -5,10 +5,12 @@
 Gere perguntas de prática sobre o texto seguindo exatamente o formato do exemplo abaixo.
 Objetivo: o usuário demonstra compreensão e usa o conteúdo com as próprias palavras.
 
-Quantidade: calibre pelo tamanho do texto.
-Pequeno (até 2 parágrafos): até 5 perguntas.
-Médio (3 a 5 parágrafos): até 10 perguntas.
-Grande (mais de 5 parágrafos): até 15 perguntas.
+Quantidade total de perguntas: calibre pelo tamanho do texto.
+Pequeno (até 2 parágrafos): até 10 perguntas.
+Médio (3 a 5 parágrafos): até 15 perguntas.
+Grande (mais de 5 parágrafos): até 20 perguntas.
+
+Mínimo: 5 perguntas (se não tiver conteúdo suficiente, gere outras no mesmo formato e contexto até ter o mínimo).
 
 Nível e idioma:
 - basic: pergunta em PT, resposta esperada em PT.
@@ -27,7 +29,7 @@ O bloco de exemplos abaixo cobre o formato open_text. Siga a fórmula e o padrã
 {question_examples}
 
 ## Output
-Retorne APENAS UM JSON válido (array). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
+Retorne APENAS UM JSON válido (array de objetos). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
 [{
   "question": "enunciado da pergunta",
   "answerKeys": ["ponto-âncora 1", "ponto-âncora 2"],

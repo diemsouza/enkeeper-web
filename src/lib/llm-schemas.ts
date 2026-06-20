@@ -63,18 +63,18 @@ export const docProcessingSchema = z.object({
 
 export type DocProcessingResult = z.infer<typeof docProcessingSchema>;
 
-export const sectionQuestionSchema = z.array(
-  z.object({
-    sourceItem: z.string().optional(),
-    question: z.string(),
-    answerKeys: z.array(z.string()),
-    questionFormat: z.string().optional(),
-    questionOptions: z.array(z.string()).default([]),
-    warning: z.string().optional(),
-  }),
-);
+export const sectionQuestionSchema = z.object({
+  sourceItem: z.string().optional(),
+  question: z.string(),
+  answerKeys: z.array(z.string()),
+  questionFormat: z.string().optional(),
+  questionOptions: z.array(z.string()).default([]),
+  warning: z.string().optional(),
+});
 
 export type SectionQuestionResult = z.infer<typeof sectionQuestionSchema>;
+
+export const sectionQuestionsSchema = z.array(sectionQuestionSchema);
 
 export const answerEvaluationSchema = z.object({
   status: z.enum(["right", "partial", "wrong"]),

@@ -98,9 +98,9 @@ function looksLikeDoubleQuestion(question: string): boolean {
 }
 
 export function validateGeneratedQuestion(
-  questions: SectionQuestionResult,
+  questions: SectionQuestionResult[],
   sectionType: string,
-): { questions: SectionQuestionResult; hasWarning: boolean } {
+): { questions: SectionQuestionResult[]; hasWarning: boolean } {
   // Validação anti-vazamento entre itens adjacentes (só vocabulary).
   // sourceItem é o "ponteiro" declarado pelo modelo pro item da lista
   // que ele está cobrindo. Pra ser válido:

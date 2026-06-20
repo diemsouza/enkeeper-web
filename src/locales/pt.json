@@ -45,7 +45,7 @@
     "tagline": "Inglês o dia inteiro, no WhatsApp, com o material da sua aula.",
     "cta": "Experimentar grátis",
     "microcopy": "Abre no WhatsApp · Comece grátis · Sem cadastro",
-    "waitlist_microcopy": "Garantir minha vaga · Comece grátis · Sem cadastro",
+    "waitlist_microcopy": "Garanta sua vaga · Comece grátis",
     "waitlist": {
       "cta": "Entrar na lista de espera",
       "modal": {
@@ -110,7 +110,7 @@
     "pricing": {
       "title": "Comece grátis.",
       "subtitle": "Acesso completo por 1 dia. Sem cartão e sem cadastro.",
-      "description": "Envie seu material, pratique o vocabulário, texto, áudio, imagem e PDF. Se fizer sentido, você pode continuar por 19,90/mes.",
+      "description": "Mande qualquer material: texto, áudio, imagem ou PDF. Pratique o vocabulário da sua aula durante o dia. Se fizer sentido, continua por R$19,90/mês.",
       "cta": "Experimentar grátis"
     },
     "features_demo": {

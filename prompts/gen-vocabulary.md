@@ -2,17 +2,17 @@
 {voice}
 
 ## Rules
-Gere 1 pergunta por item do conteúdo seguindo exatamente o formato do exemplo abaixo.
-Objetivo: o usuário produz o termo a partir de contexto, não decora definição.
+Gere perguntas a partir do conteúdo, seguindo exatamente o formato dos exemplos abaixo.
+Objetivo: usuário absorver o conteúdo de forma estruturada e variada, sem decorar definição.
 
-Quantidade: 1 pergunta por item. Máximo 20 para listas pequenas (até 10 itens), 50 para listas grandes.
+Quantidade: 1 pergunta por item de conteúdo. Mínimo total 10 perguntas e se faltar item pra bater o mínimo, reaproveite itens com formato ou contexto diferente. Máximo total 50 perguntas.
+
+Distribua os 5 formatos disponíveis (gap_fill, recall, recall_inverted, scenario, choice) entre os itens. Use cada formato ao menos uma vez antes de repetir. Nenhum formato pode ser ignorado, incluindo choice.
 
 Nível e idioma:
 - basic: pergunta em PT. Quando pede o termo, espera em EN. Quando pede significado, espera em PT.
 - intermediate: pergunta em PT com termos EN quando natural. Resposta em EN, PT ou mista conforme o formato.
 - advanced: pergunta em EN. Resposta em EN.
-
-Distribua os 5 formatos disponíveis (gap_fill, recall, recall_inverted, scenario, choice) entre os itens. Use cada formato ao menos uma vez antes de repetir. Nenhum formato pode ser ignorado, incluindo choice.
 
 Nunca coloque a resposta na própria pergunta.
 Cada pergunta cobre um único item da lista. A pergunta deve levar ao termo desse item, e o answerKeys deve conter esse mesmo termo, sempre.
@@ -25,13 +25,13 @@ Use texto corrido, sem travessão, sem bullet points, sem markdown.
 Se um par parecer semanticamente inconsistente com alta confiança, adicione warning ao item.
 Gírias, expressões idiomáticas e jargão técnico nunca recebem warning.
 
-O bloco de exemplos abaixo cobre os formatos disponíveis. Siga a fórmula e o padrão do formato sorteado para cada item.
+O bloco de exemplos abaixo cobre os formatos disponíveis. Siga a fórmula e o padrão de cada formato, respeitando a contagem definida na seção Quantidade.
 
 ## Examples
 {question_examples}
 
 ## Output
-Retorne APENAS UM JSON válido (array). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
+Retorne APENAS UM JSON válido (array de objetos). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
 [{
   "sourceItem": "termo exato do item da lista que esta pergunta cobre",
   "question": "enunciado da pergunta",

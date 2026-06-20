@@ -264,7 +264,7 @@ Nenhuma mensagem deve soar como notificação de app pedindo atenção. Cada uma
 
 | Step | Tempo desde última resposta | Tipo |
 | ---- | --------------------------- | ---- |
-| h2 | 2 horas | Nudge livre (janela 24h) |
+| h3 | 3 horas | Nudge livre (janela 24h) |
 | h12 | 12 horas | Nudge livre (janela 24h) |
 | h23 | 23 horas | Nudge livre (janela 24h) |
 | d2 | 2 dias | Template Meta — Utility |
@@ -282,7 +282,7 @@ Após d14 sem resposta: usuário entra na lista de abordagem manual. Sem mensage
 
 Usuários que chegaram ao d14 e ficaram mais de 21 dias sem interação são candidatos à abordagem pelo fundador. A saída da lista é automática quando o usuário responde qualquer pergunta.
 
-### Mensagens — nudges livres (h2, h12, h23)
+### Mensagens — nudges livres (h3, h12, h23)
 
 Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 combinações possíveis. Nunca terminam com pergunta — a resposta do usuário é sempre a resposta da pergunta pendente, não uma interação com o nudge.
 
