@@ -4,7 +4,7 @@ import {
   updateDoc,
 } from "../repo/docs.repo";
 import { findDocItemsByDoc } from "../repo/doc-items.repo";
-import { formatInvalidContentMessage } from "../core/validate-content";
+import { formatInvalidContentMessage, validateContent } from "../core/validate-content";
 import { createActivity, updateActivity } from "../repo/activities.repo";
 import { createQuestions } from "../repo/questions.repo";
 import { createSection } from "../repo/sections.repo";
@@ -84,6 +84,27 @@ export async function mergeDoc(
   const consolidatedRaw = validItems
     .map((item) => item.rawContent)
     .join("\n\n");
+
+  const contentValidation = validateContent(consolidatedRaw);
+  if (!contentValidation.isValid) {
+    await updateDoc(docId, userId, {
+      status: "failed",
+      error: contentValidation.invalidReason ?? "Conteúdo inválido.",
+    });
+    const userChannel = await findUserChannelByUserId(userId);
+    if (userChannel) {
+      const msg = formatInvalidContentMessage(contentValidation.invalidReason);
+      await sendWhatsAppMessage(userChannel.channelId, msg);
+      await saveMessage({
+        userId,
+        userChannelId: userChannel.id,
+        role: "assistant",
+        content: msg,
+        intent: "system_error",
+      });
+    }
+    return;
+  }
 
   const result = await generateDocSections({
     rawContent: consolidatedRaw,
