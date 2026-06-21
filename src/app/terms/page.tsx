@@ -3,7 +3,7 @@ import Nav from "@/src/components/home/nav";
 import Footer from "@/src/components/home/footer";
 
 export const metadata: Metadata = {
-  title: "Termos de Uso — Fluizer",
+  title: "Termos de Uso - Fluizer",
   robots: "noindex",
 };
 
@@ -28,8 +28,8 @@ export default function TermsPage() {
           <h2 className="text-lg font-semibold mt-10 mb-3">O serviço</h2>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             O Fluizer é um agente de prática de inglês que opera via WhatsApp. O
-            usuário envia material de estudo — texto, áudio, imagem ou PDF — e
-            recebe perguntas sobre esse conteúdo ao longo do dia para praticar o
+            usuário envia material de estudo - texto, imagem ou PDF e recebe
+            perguntas sobre esse conteúdo ao longo do dia para praticar o
             vocabulário.
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
@@ -83,8 +83,8 @@ export default function TermsPage() {
           </h2>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             Para pleno funcionamento, o usuário deve enviar materiais
-            compatíveis com os formatos suportados (texto, áudio, imagem, PDF) e
-            com conteúdo estruturado e relevante para estudo de inglês.
+            compatíveis com os formatos suportados (texto, imagem, PDF) e com
+            conteúdo estruturado e relevante para estudo de inglês.
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             Em caso de dúvida sobre compatibilidade de material, o usuário pode

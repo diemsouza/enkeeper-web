@@ -13,7 +13,7 @@ export default function Home() {
             applicationCategory: "EducationApplication",
             operatingSystem: "Android, iOS, Web",
             description:
-              "Prática diária de inglês direto no WhatsApp. Manda o material da sua aula e pratica o dia inteiro no seu ritmo.",
+              "Prática diária de inglês direto no WhatsApp. Manda o conteúdo da sua aula e pratica o dia inteiro no seu ritmo.",
             url: "https://fluizer.com",
             offers: {
               "@type": "Offer",

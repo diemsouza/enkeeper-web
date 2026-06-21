@@ -3,6 +3,7 @@ enum DocType {
     audio
     image
     pdf
+    mixed
 }
 
 enum DocStatus {
@@ -11,6 +12,8 @@ enum DocStatus {
     paused
     archived
     failed
+    pending
+    canceled
 }
 
 enum ActivityStatus {
@@ -96,7 +99,7 @@ model Message {
     user        User        @relation(fields: [userId], references: [id])
     userChannel UserChannel @relation(fields: [userChannelId], references: [id])
     activity    Activity?   @relation(fields: [activityId], references: [id])
-    docs        Doc[]
+    docItems    DocItem[]
 
     @@unique([userChannelId, externalId])
     @@index([userId, createdAt])
@@ -107,23 +110,23 @@ model Message {
 model Doc {
     id         String    @id @default(ulid()) @map("id")
     userId     String    @map("user_id")
-    messageId  String?   @map("message_id")
-    title      String    @map("title")
+    title      String?   @map("title")
     docType    DocType   @map("doc_type")
     level      Level     @default(basic) @map("level")
-    rawContent String    @map("raw_content") @db.Text
-    content    String    @map("content") @db.Text
+    rawContent String?   @map("raw_content") @db.Text
+    content    String?   @map("content") @db.Text
     status     DocStatus @default(processing) @map("status")
+    error      String?   @map("error")
     createdAt  DateTime  @default(now()) @map("created_at")
     updatedAt  DateTime  @updatedAt @map("updated_at")
     deletedAt  DateTime? @map("deleted_at")
 
     user       User       @relation(fields: [userId], references: [id])
-    message    Message?   @relation(fields: [messageId], references: [id])
     activities Activity[]
     llmUsages  LlmUsage[]
     sections   Section[]
     llmLogs    LlmLog[]
+    docItems   DocItem[]
 
     @@index([userId])
     @@index([userId, status])
@@ -221,6 +224,27 @@ model Question {
     @@index([activityId, status])
     @@index([sectionId])
     @@map("questions")
+}
+
+model DocItem {
+    id         String   @id @default(ulid()) @map("id")
+    docId      String   @map("doc_id")
+    userId     String   @map("user_id")
+    messageId  String?  @map("message_id")
+    docType    DocType  @map("doc_type")
+    rawContent String   @map("raw_content") @db.Text
+    error      String?  @map("error")
+    order      Int      @map("order")
+    createdAt  DateTime @default(now()) @map("created_at")
+    updatedAt  DateTime @updatedAt @map("updated_at")
+
+    doc     Doc      @relation(fields: [docId], references: [id])
+    user    User     @relation(fields: [userId], references: [id])
+    message Message? @relation(fields: [messageId], references: [id])
+
+    @@index([docId])
+    @@index([userId])
+    @@map("doc_items")
 }
 
 model WeeklyReport {

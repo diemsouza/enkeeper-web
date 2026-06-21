@@ -1,4 +1,4 @@
-# Fluizer — Product Rules
+# Fluizer - Product Rules
 
 > Regras de comportamento do produto e decisões de negócio.
 > Sem código, sem referência de implementação. Para entender o que o sistema faz e por quê.
@@ -7,7 +7,7 @@
 
 ## 1. Activity
 
-Um ciclo de prática vinculado a um material específico. Começa quando o usuário sobe material, termina por inatividade ou substituição. Não tem duração fixa.
+Um ciclo de prática vinculado a um material específico. Começa quando o usuário sobe novo conteúdo, termina por inatividade ou substituição. Não tem duração fixa.
 
 **Engajamento** é definido por ao menos 1 resposta a uma pergunta de prática. Comandos não contam.
 
@@ -15,13 +15,13 @@ Um ciclo de prática vinculado a um material específico. Começa quando o usuá
 
 | Status | Quando ocorre |
 | ------ | ------------- |
-| `active` | Material ativo, prática em andamento |
-| `archived` | Substituído por novo material com ao menos 1 resposta |
-| `cancelled` | Substituído por novo material sem nenhuma resposta |
+| `active` | Atividade ativa, prática em andamento |
+| `archived` | Substituído por nova atividade com ao menos 1 resposta |
+| `cancelled` | Substituído por nova atividade sem nenhuma resposta |
 
-Activity nunca encerra por inatividade. Só muda de status por ação do usuário — troca de material. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
+Activity nunca encerra por inatividade. Só muda de status por ação do usuário - troca de conteúdo. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
 
-### Transições ao subir novo material
+### Transições ao subir novo conteudo
 
 - Anterior teve resposta: vai para `archived`, novo ciclo começa como `active`
 - Anterior não teve resposta: vai para `cancelled`, novo ciclo começa como `active`
@@ -30,14 +30,14 @@ Completar todas as perguntas não altera o status. A activity permanece `active`
 
 ### Resumo ao trocar de material
 
-Quando o usuário sobe material novo e o anterior teve ao menos 1 resposta, o sistema gera e envia um resumo do ciclo anterior antes da primeira pergunta do novo. O resumo é gerado uma única vez por activity — se já foi gerado, não gera novamente.
+Quando o usuário sobe material novo e o anterior teve ao menos 1 resposta, o sistema gera e envia um resumo do ciclo anterior antes da primeira pergunta do novo. O resumo é gerado uma única vez por activity - se já foi gerado, não gera novamente.
 
 **Formato do resumo:**
 
 ```
-Enquanto a próxima pergunta não chega, segue um resumo do material anterior.
+Enquanto a próxima pergunta não chega, segue um resumo da atividade anterior.
 
-Seu material anterior: *{título}*
+Sua atividade anterior: *{título}*
 
 Período: {duração}
 Perguntas: {total gerado}
@@ -49,7 +49,7 @@ Erradas: {erros + parciais}
 {linha de leitura}
 ```
 
-**Linha de leitura** — determinística, sem IA, tom seco:
+**Linha de leitura** - determinística, sem IA, tom seco:
 
 - Menos de 5 respondidas: "Você mal começou esse aqui."
 - 80%+ de acerto: "Mandou bem nesse material."
@@ -78,7 +78,7 @@ Geradas no upload do material, uma por item de vocabulário e por trecho relevan
 | `partial` | Resposta parcialmente correta |
 | `wrong` | Respondida errado |
 
-### Ordem de envio — primeira rodada
+### Ordem de envio - primeira rodada
 
 O sistema prioriza nessa ordem:
 
@@ -89,12 +89,12 @@ O sistema prioriza nessa ordem:
 
 Quando todas as perguntas forem respondidas ao menos uma vez, o sistema avisa e passa para revisão contínua.
 
-### Ordem de envio — revisão contínua
+### Ordem de envio - revisão contínua
 
 1. Perguntas elegíveis pelo SM-2
 2. Erradas e parciais primeiro, depois certas
 
-Sem critério de encerramento — loop infinito natural.
+Sem critério de encerramento - loop infinito natural.
 
 ### Conclusão da primeira rodada
 
@@ -120,7 +120,7 @@ O material é dividido em blocos por tipo antes de gerar as perguntas. Cada bloc
 
 ## 4. Formatos de pergunta
 
-Sete formatos disponíveis. O sorteio de formato para vocabulário acontece antes de gerar — o modelo executa, não decide.
+Sete formatos disponíveis. O sorteio de formato para vocabulário acontece antes de gerar - o modelo executa, não decide.
 
 | Formato | O que faz |
 | ------- | --------- |
@@ -129,7 +129,7 @@ Sete formatos disponíveis. O sorteio de formato para vocabulário acontece ante
 | recall invertido | Dado o termo, trazer o significado ou uso |
 | cenário | Situação realista que leva ao uso do termo |
 | múltipla escolha | 2 a 5 opções, embaralhadas antes de salvar |
-| pergunta aberta | Sobre texto corrido — compreensão, reformulação, inferência |
+| pergunta aberta | Sobre texto corrido - compreensão, reformulação, inferência |
 | pergunta direta | Baseada nas perguntas do próprio material |
 
 ---
@@ -168,9 +168,9 @@ Avaliado contra as respostas esperadas geradas no upload. Tom direto, sem rodeio
 
 ## 7. Repetição espaçada (SM-2 adaptado)
 
-Controla quando cada pergunta volta como revisão prioritária. Não controla o ritmo de envio — isso é a cadência. O SM-2 só decide a ordem e o intervalo de elegibilidade.
+Controla quando cada pergunta volta como revisão prioritária. Não controla o ritmo de envio - isso é a cadência. O SM-2 só decide a ordem e o intervalo de elegibilidade.
 
-**Princípio:** quanto mais o usuário erra, mais rápido a pergunta volta. Quanto mais acerta, mais espaço ganha entre revisões. Teto de 3 dias — ajustado ao ciclo curto de troca de material do produto.
+**Princípio:** quanto mais o usuário erra, mais rápido a pergunta volta. Quanto mais acerta, mais espaço ganha entre revisões. Teto de 3 dias - ajustado ao ciclo curto de troca de material do produto.
 
 **Como o intervalo é calculado a cada resposta:**
 
@@ -204,7 +204,7 @@ O sistema para de enviar perguntas quando o usuário não responde e aguarda ret
 | Comando | O que faz |
 | ------- | --------- |
 | `ajuda` | Lista os comandos disponíveis |
-| `praticar` | Inicia sessão intensiva — perguntas chegam em sequência por 15 minutos |
+| `praticar` | Inicia sessão intensiva - perguntas chegam em sequência por 15 minutos |
 | `pausar` | Para o envio de perguntas |
 | `retomar` | Retoma após pausa |
 | `conteudo` | Lista o material ativo e os anteriores |
@@ -221,7 +221,7 @@ Comandos não atualizam o histórico de prática nem contam como interação.
 ```
 Hi! Bem-vindo ao *Fluizer*. 👋
 
-Manda o material da sua aula de inglês — texto, áudio, foto ou PDF — e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
+Manda o conteúdo da sua aula de inglês - texto, imagem ou PDF - e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
 
 Você tem 24 horas pra sentir na prática. Aproveita!
 
@@ -248,7 +248,7 @@ Dois planos: Trial e Pro. Sem tier gratuito permanente.
 | Cortesia permanente | Sem expiração | Produto completo |
 | Pro | 30 dias renovável | Produto completo |
 
-Após expirar o trial: conta bloqueada até converter. Sem degradação gradual — o produto inteiro ou nada.
+Após expirar o trial: conta bloqueada até converter. Sem degradação gradual - o produto inteiro ou nada.
 
 A regra de acesso é simples: plano ativo com data de expiração no futuro. Independe do tipo de plano.
 
@@ -256,7 +256,7 @@ A regra de acesso é simples: plano ativo com data de expiração no futuro. Ind
 
 ## 12. Nudge de reengajamento
 
-Fluxo automático de mensagens quando o usuário para de responder. O objetivo não é recuperar o usuário para o app — é lembrar que a prática de inglês não deve parar. O Fluizer é o meio, não o fim.
+Fluxo automático de mensagens quando o usuário para de responder. O objetivo não é recuperar o usuário para o app - é lembrar que a prática de inglês não deve parar. O Fluizer é o meio, não o fim.
 
 Nenhuma mensagem deve soar como notificação de app pedindo atenção. Cada uma tem uma razão ligada ao aprendizado.
 
@@ -267,14 +267,14 @@ Nenhuma mensagem deve soar como notificação de app pedindo atenção. Cada uma
 | h3 | 3 horas | Nudge livre (janela 24h) |
 | h12 | 12 horas | Nudge livre (janela 24h) |
 | h23 | 23 horas | Nudge livre (janela 24h) |
-| d2 | 2 dias | Template Meta — Utility |
-| d3 | 3 dias | Template Meta — Utility |
-| d7 | 7 dias | Template Meta — Utility |
-| d14 | 14 dias | Template Meta — Utility |
+| d2 | 2 dias | Template Meta - Utility |
+| d3 | 3 dias | Template Meta - Utility |
+| d7 | 7 dias | Template Meta - Utility |
+| d14 | 14 dias | Template Meta - Utility |
 
 Após d14 sem resposta: usuário entra na lista de abordagem manual. Sem mensagem adicional automática.
 
-**Reset:** qualquer resposta a uma pergunta de prática zera o fluxo completamente — `lastNudgeStep` e `lastNudgeAt` voltam a `null`.
+**Reset:** qualquer resposta a uma pergunta de prática zera o fluxo completamente - `lastNudgeStep` e `lastNudgeAt` voltam a `null`.
 
 **Step inicial baseado no tempo real:** quando `lastNudgeStep` é `null`, o cron não assume h2 automaticamente. Calcula quanto tempo passou desde `lastInteractionAt` e entra diretamente no step correspondente, pulando os já vencidos. Isso evita que um usuário que sumiu há 5 dias receba o nudge de 2h.
 
@@ -282,9 +282,9 @@ Após d14 sem resposta: usuário entra na lista de abordagem manual. Sem mensage
 
 Usuários que chegaram ao d14 e ficaram mais de 21 dias sem interação são candidatos à abordagem pelo fundador. A saída da lista é automática quando o usuário responde qualquer pergunta.
 
-### Mensagens — nudges livres (h3, h12, h23)
+### Mensagens - nudges livres (h3, h12, h23)
 
-Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 combinações possíveis. Nunca terminam com pergunta — a resposta do usuário é sempre a resposta da pergunta pendente, não uma interação com o nudge.
+Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 combinações possíveis. Nunca terminam com pergunta - a resposta do usuário é sempre a resposta da pergunta pendente, não uma interação com o nudge.
 
 **Pool de corpo:**
 - "Não deixa o inglês esfriar."
@@ -300,7 +300,7 @@ Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 c
 - "Pode responder quando quiser."
 - "É só mandar quando estiver pronto."
 
-### Mensagens — templates fixos (d2 a d14)
+### Mensagens - templates fixos (d2 a d14)
 
 **d2:**
 > Já faz 2 dias sem praticar. O vocabulário novo esquece rápido sem repetição. É só responder pra retomar.
@@ -318,7 +318,7 @@ Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 c
 
 ## 13. Relatório semanal
 
-> **Pendente de implementação.** Recurso importante para retenção e percepção de valor — o usuário vê sua evolução real ao longo do tempo. Não existe ainda.
+> **Pendente de implementação.** Recurso importante para retenção e percepção de valor - o usuário vê sua evolução real ao longo do tempo. Não existe ainda.
 
 Quando implementado: gerado aos domingos, agrega todas as interações dos últimos 7 dias independente do status da activity.
 
@@ -341,4 +341,4 @@ Caps invisíveis por usuário por dia: 5 materiais, 30 áudios (máximo 60s cada
 - O sistema não depende de o usuário abrir um app. Toda a prática acontece no WhatsApp.
 - Nenhuma mensagem do sistema deve terminar com pergunta quando a resposta esperada é a de uma pergunta de prática pendente.
 - Copy nunca menciona "IA", "bot" ou "agente". Linguagem tangível: o que o usuário faz e o que recebe.
-- Posicionamento de complemento — não compete com professor, trabalha com ele.
+- Posicionamento de complemento - não compete com professor, trabalha com ele.

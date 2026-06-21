@@ -3,7 +3,7 @@
 ## O que e o projeto
 
 **Fluizer** -- agente de pratica continua de ingles via WhatsApp para o mercado brasileiro.
-O usuario manda o material da aula (texto, audio, imagem ou PDF) e recebe perguntas sobre aquele conteudo durante o dia, no WhatsApp.
+O usuario manda o conteúdo da aula (texto, imagem ou PDF) e recebe perguntas sobre aquele conteudo durante o dia, no WhatsApp.
 
 Fontes de verdade:
 - Produto e regras de negocio e do produto: `docs/Product-Brief.md` e `docs/Product-Rules.md`

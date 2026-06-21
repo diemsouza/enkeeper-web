@@ -1,13 +1,12 @@
 import { DocType, QuestionFormat, QuestionStatus } from "@prisma/client";
 import { parseMessage } from "../core/parser";
 import { canPractice } from "../core/access";
-import { canUploadDoc } from "../core/limits";
+import { canStartActivity, canAddDocItem } from "../core/limits";
 import {
   formatCommandList,
   formatDocsList,
   formatDocConfirmPrompt,
   formatDocReplacePrompt,
-  formatDocReceiving,
   formatPausePrompt,
   formatPauseSuccess,
   formatNoPausableDocs,
@@ -17,7 +16,9 @@ import {
   formatPlanExpired,
   formatSupportRequest,
   formatSupportReceived,
-  formatDailyLimitReached,
+  formatDailyActivityLimitReached,
+  formatDocItemReceived,
+  formatDocItemLimitReached,
   formatNoDocs,
   formatIntensiveModeActivated,
   formatOnboardingMsg1,
@@ -39,8 +40,13 @@ import {
   findDocsByUser,
   findActiveDocsByUser,
   findActiveOrPausedDocsByUser,
+  findPendingDocByUser,
   updateDoc,
 } from "../repo/docs.repo";
+import {
+  createDocItem,
+  countValidDocItemsByDoc,
+} from "../repo/doc-items.repo";
 import {
   findActiveActivitiesByUser,
   findActivitiesForDocsList,
@@ -50,11 +56,11 @@ import {
 } from "../repo/activities.repo";
 import { archiveOrCancelActivitiesByDoc } from "./activity-service";
 import {
-  getTodayUsage,
+  getTodayActivityCount,
   incrementUserMessageCount,
   incrementAgentMessageCount,
 } from "../repo/daily-usage.repo";
-import { publishDocProcessing } from "../lib/qstash";
+import { publishDocMerge } from "../lib/qstash";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
 import { getFeedbackExamples } from "../core/format-loader";
@@ -73,21 +79,16 @@ import {
   formatChoiceQuestion,
 } from "../core/formatters";
 import {
-  validateContent,
-  formatInvalidContentMessage,
-} from "../core/validate-content";
-import {
   MIN_DOC_CHARS,
   INTENSIVE_UNTIL_MIN,
-  ANSWER_EMOJI,
-  MAX_DOCS_PER_DAY,
+  MAX_ACTIVITIES_PER_DAY,
 } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
 import { handleAdminCommand } from "./admin-service";
 import { markWaitlistActive } from "../repo/waitlist.repo";
 import { startOfDay } from "date-fns";
-import { sanitizeText } from "../lib/utils";
+import { validateDocItemInput } from "./doc-item-service";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
@@ -242,7 +243,7 @@ export async function handleIncomingMessage(
     return msgs;
   }
 
-  // ─── Mídia → cria Doc ──────────────────────────────────────────────────────
+  // ─── Mídia → buffer de Doc ───────────────────────────────────────────────
 
   if (
     input.mediaType === "audio" ||
@@ -251,28 +252,7 @@ export async function handleIncomingMessage(
     input.mediaType === "text"
   ) {
     const docType = input.mediaType as DocType;
-    const validation = validateContent(text);
-    if (!validation.isValid) {
-      await saveUserMsg(
-        user.id,
-        userChannel.id,
-        text,
-        "free_text",
-        input,
-        today,
-      );
-      const reply = formatInvalidContentMessage(validation.invalidReason);
-      await saveBotReply(user.id, userChannel.id, reply, today);
-      return [reply];
-    }
-    return checkAndCreateDoc(
-      user.id,
-      userChannel.id,
-      text,
-      today,
-      input,
-      docType,
-    );
+    return handleDocUpload(user.id, userChannel.id, text, docType, today, input);
   }
 
   // ─── Estado pendente ──────────────────────────────────────────────────────
@@ -291,11 +271,13 @@ export async function handleIncomingMessage(
           input,
           today,
         );
-        return checkAndCreateDoc(
+        return createPendingBuffer(
           user.id,
           userChannel.id,
           lastUserMessage!.content,
+          "text",
           today,
+          lastUserMessage!.id,
         );
       }
       await saveUserMsg(user.id, userChannel.id, text, "cancel", input, today);
@@ -315,22 +297,18 @@ export async function handleIncomingMessage(
           input,
           today,
         );
-        const activeDocs = await findActiveDocsByUser(user.id);
-        for (const doc of activeDocs) {
-          await updateDoc(doc.id, user.id, { status: "archived" });
-          await archiveOrCancelActivitiesByDoc(doc.id, user.id);
-        }
         const mt = lastUserMessage!.mediaType;
         const originalDocType: DocType =
           mt === "audio" || mt === "image" || mt === "pdf"
             ? (mt as DocType)
             : "text";
-        return createDocFlow(
+        return createPendingBuffer(
           user.id,
           userChannel.id,
           lastUserMessage!.content,
           originalDocType,
           today,
+          lastUserMessage!.id,
         );
       }
       await saveUserMsg(user.id, userChannel.id, text, "cancel", input, today);
@@ -603,32 +581,84 @@ export async function handleIncomingMessage(
     }
 
     case "confirm":
-    case "cancel":
     case "cancel_no": {
       reply = "Nenhuma ação pendente.";
       messageIntent = "free_text";
       break;
     }
 
+    case "cancel": {
+      const pendingDoc = await findPendingDocByUser(user.id);
+      if (pendingDoc) {
+        await updateDoc(pendingDoc.id, user.id, { status: "canceled" });
+        reply = "Cancelado.";
+      } else {
+        reply = "Nenhuma ação pendente.";
+      }
+      messageIntent = "free_text";
+      break;
+    }
+
     case "free_text": {
       if (text.length >= MIN_DOC_CHARS) {
-        const validation = validateContent(text);
-        if (!validation.isValid) {
-          reply = formatInvalidContentMessage(validation.invalidReason);
+        const pendingDoc = await findPendingDocByUser(user.id);
+        if (pendingDoc) {
+          const validCount = await countValidDocItemsByDoc(pendingDoc.id);
+          if (!canAddDocItem(validCount)) {
+            await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
+            const limitReply = formatDocItemLimitReached();
+            await saveBotReply(user.id, userChannel.id, limitReply, today);
+            return [limitReply];
+          }
+          const itemValidation = validateDocItemInput(text, "text");
+          if (!itemValidation.success) {
+            await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
+            await saveBotReply(user.id, userChannel.id, itemValidation.error, today);
+            return [itemValidation.error];
+          }
+          const savedMsg = await saveMessage({
+            userId: user.id,
+            userChannelId: userChannel.id,
+            role: "user",
+            content: text,
+            intent: "free_text",
+            externalId: input.externalId,
+            mediaType: input.mediaType,
+            mediaId: input.mediaId,
+            metadata: input.mediaMetadata,
+          });
+          await incrementUserMessageCount(user.id, today);
+          const docItem = await createDocItem({
+            docId: pendingDoc.id,
+            userId: user.id,
+            messageId: savedMsg.id,
+            docType: "text",
+            rawContent: text,
+            order: validCount + 1,
+          });
+          await publishDocMerge(pendingDoc.id, user.id, docItem.id);
+          const ackReply = formatDocItemReceived(validCount + 1);
+          await saveBotReply(user.id, userChannel.id, ackReply, today);
+          return [ackReply];
+        }
+
+        const activityCount = await getTodayActivityCount(user.id, today);
+        if (!canStartActivity(activityCount)) {
+          reply = formatDailyActivityLimitReached();
           messageIntent = "free_text";
           break;
         }
-        const todayUsage = await getTodayUsage(user.id, today);
-        if (!canUploadDoc(todayUsage?.docCount ?? 0)) {
-          reply = formatDailyLimitReached();
+        const textValidation = validateDocItemInput(text, "text");
+        if (!textValidation.success) {
+          reply = textValidation.error;
           messageIntent = "free_text";
           break;
         }
         const activeDocs = await findActiveDocsByUser(user.id);
         if (activeDocs.length > 0) {
           reply = formatDocReplacePrompt(
-            activeDocs[0].title,
-            MAX_DOCS_PER_DAY - (todayUsage?.docCount ?? 0),
+            activeDocs[0].title ?? "",
+            MAX_ACTIVITIES_PER_DAY - activityCount,
           );
           messageIntent = "awaiting_doc_replace";
           break;
@@ -678,7 +708,7 @@ export async function handleIncomingMessage(
               answerKeys: pendingQuestion.answerKeys,
               userAnswer: text,
               attemptCount: pendingQuestion.attemptCount,
-              docContent: practiceDoc.content,
+              docContent: practiceDoc.content ?? "",
               feedbackExamples: feedbackExamples,
               questionFormat: pendingQuestion.questionFormat ?? "",
               level: practiceDoc.level,
@@ -981,81 +1011,118 @@ async function saveBotReply(
   await incrementAgentMessageCount(userId, today);
 }
 
-async function checkAndCreateDoc(
-  userId: string,
-  userChannelId: string,
-  content: string,
-  today: Date,
-  input?: Pick<
-    IncomingMessage,
-    "externalId" | "mediaType" | "mediaId" | "mediaMetadata"
-  >,
-  docType: DocType = "text",
-): Promise<string[]> {
-  const todayUsage = await getTodayUsage(userId, today);
-  if (!canUploadDoc(todayUsage?.docCount ?? 0)) {
-    if (input)
-      await saveUserMsg(
-        userId,
-        userChannelId,
-        content,
-        "free_text",
-        input,
-        today,
-      );
-    const reply = formatDailyLimitReached();
-    await saveBotReply(userId, userChannelId, reply, today);
-    return [reply];
-  }
-
-  const activeDocs = await findActiveDocsByUser(userId);
-  if (activeDocs.length > 0) {
-    if (input)
-      await saveUserMsg(
-        userId,
-        userChannelId,
-        content,
-        "awaiting_doc_replace",
-        input,
-        today,
-      );
-    const reply = formatDocReplacePrompt(
-      activeDocs[0].title,
-      MAX_DOCS_PER_DAY - (todayUsage?.docCount ?? 0),
-    );
-    await saveBotReply(userId, userChannelId, reply, today);
-    return [reply];
-  }
-
-  if (input)
-    await saveUserMsg(
-      userId,
-      userChannelId,
-      content,
-      "free_text",
-      input,
-      today,
-    );
-  return createDocFlow(userId, userChannelId, content, docType, today);
-}
-
-async function createDocFlow(
+async function createPendingBuffer(
   userId: string,
   userChannelId: string,
   rawContent: string,
   docType: DocType,
   today: Date,
+  messageId?: string,
 ): Promise<string[]> {
   const doc = await createDoc({
     userId,
-    title: "",
+    docType,
+    status: "pending",
+  });
+  const docItem = await createDocItem({
+    docId: doc.id,
+    userId,
+    messageId,
     docType,
     rawContent,
-    content: "",
-    status: "processing",
+    order: 1,
   });
-  await publishDocProcessing(doc.id, userId);
-  const reply = formatDocReceiving();
+  await publishDocMerge(doc.id, userId, docItem.id);
+  const reply = formatDocItemReceived(1);
   await saveBotReply(userId, userChannelId, reply, today);
   return [reply];
+}
+
+async function handleDocUpload(
+  userId: string,
+  userChannelId: string,
+  rawContent: string,
+  docType: DocType,
+  today: Date,
+  input: Pick<IncomingMessage, "externalId" | "mediaType" | "mediaId" | "mediaMetadata">,
+): Promise<string[]> {
+  const pendingDoc = await findPendingDocByUser(userId);
+  if (pendingDoc) {
+    const validCount = await countValidDocItemsByDoc(pendingDoc.id);
+    if (!canAddDocItem(validCount)) {
+      await saveUserMsg(userId, userChannelId, rawContent, "free_text", input, today);
+      const reply = formatDocItemLimitReached();
+      await saveBotReply(userId, userChannelId, reply, today);
+      return [reply];
+    }
+    const itemValidation = validateDocItemInput(rawContent, docType);
+    const savedMsg = await saveMessage({
+      userId,
+      userChannelId,
+      role: "user",
+      content: rawContent,
+      intent: "free_text",
+      externalId: input.externalId,
+      mediaType: input.mediaType,
+      mediaId: input.mediaId,
+      metadata: input.mediaMetadata,
+    });
+    await incrementUserMessageCount(userId, today);
+    if (!itemValidation.success) {
+      await saveBotReply(userId, userChannelId, itemValidation.error, today);
+      return [itemValidation.error];
+    }
+    const docItem = await createDocItem({
+      docId: pendingDoc.id,
+      userId,
+      messageId: savedMsg.id,
+      docType,
+      rawContent,
+      order: validCount + 1,
+    });
+    await publishDocMerge(pendingDoc.id, userId, docItem.id);
+    const reply = formatDocItemReceived(validCount + 1);
+    await saveBotReply(userId, userChannelId, reply, today);
+    return [reply];
+  }
+
+  const activityCount = await getTodayActivityCount(userId, today);
+  if (!canStartActivity(activityCount)) {
+    await saveUserMsg(userId, userChannelId, rawContent, "free_text", input, today);
+    const reply = formatDailyActivityLimitReached();
+    await saveBotReply(userId, userChannelId, reply, today);
+    return [reply];
+  }
+
+  const itemValidation = validateDocItemInput(rawContent, docType);
+  if (!itemValidation.success) {
+    await saveUserMsg(userId, userChannelId, rawContent, "free_text", input, today);
+    await saveBotReply(userId, userChannelId, itemValidation.error, today);
+    return [itemValidation.error];
+  }
+
+  const activeDocs = await findActiveDocsByUser(userId);
+  if (activeDocs.length > 0) {
+    await saveUserMsg(userId, userChannelId, rawContent, "awaiting_doc_replace", input, today);
+    const reply = formatDocReplacePrompt(
+      activeDocs[0].title ?? "",
+      MAX_ACTIVITIES_PER_DAY - activityCount,
+    );
+    await saveBotReply(userId, userChannelId, reply, today);
+    return [reply];
+  }
+
+  const savedMsg = await saveMessage({
+    userId,
+    userChannelId,
+    role: "user",
+    content: rawContent,
+    intent: "free_text",
+    externalId: input.externalId,
+    mediaType: input.mediaType,
+    mediaId: input.mediaId,
+    metadata: input.mediaMetadata,
+  });
+  await incrementUserMessageCount(userId, today);
+  return createPendingBuffer(userId, userChannelId, rawContent, docType, today, savedMsg.id);
 }

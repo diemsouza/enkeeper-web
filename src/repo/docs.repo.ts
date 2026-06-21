@@ -3,19 +3,21 @@ import { prisma } from "../lib/prisma";
 
 type CreateDocData = {
   userId: string;
-  messageId?: string;
-  title: string;
+  title?: string;
   docType: DocType;
-  rawContent: string;
-  content: string;
+  rawContent?: string;
+  content?: string;
   status?: DocStatus;
 };
 
 type UpdateDocData = {
   title?: string;
   content?: string;
+  rawContent?: string;
   level?: Level;
   status?: DocStatus;
+  docType?: DocType;
+  error?: string;
 };
 
 export async function createDoc(data: CreateDocData): Promise<Doc> {
@@ -75,5 +77,12 @@ export async function softDeleteDoc(id: string, userId: string): Promise<void> {
 export async function countActiveDocsByUser(userId: string): Promise<number> {
   return prisma.doc.count({
     where: { userId, deletedAt: null },
+  });
+}
+
+export async function findPendingDocByUser(userId: string): Promise<Doc | null> {
+  return prisma.doc.findFirst({
+    where: { userId, status: "pending", deletedAt: null },
+    orderBy: { createdAt: "desc" },
   });
 }

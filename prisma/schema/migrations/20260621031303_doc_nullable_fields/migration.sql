@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "docs" ALTER COLUMN "title" DROP NOT NULL,
+ALTER COLUMN "raw_content" DROP NOT NULL,
+ALTER COLUMN "content" DROP NOT NULL;

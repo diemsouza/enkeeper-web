@@ -3,7 +3,7 @@ import Nav from "@/src/components/home/nav";
 import Footer from "@/src/components/home/footer";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidade — Fluizer",
+  title: "Política de Privacidade - Fluizer",
   robots: "noindex",
 };
 
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             <strong>Enviados pelo usuário:</strong> materiais de estudo (texto,
-            áudio, imagem, PDF) e respostas às perguntas de prática.
+            imagem, PDF) e respostas às perguntas de prática.
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             <strong>Gerados pelo sistema:</strong> histórico de perguntas,

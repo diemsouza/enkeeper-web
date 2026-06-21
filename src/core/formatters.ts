@@ -1,5 +1,9 @@
 import { Doc, ActivityStatus } from "@prisma/client";
-import { ANSWER_EMOJI, MAX_DOCS_PER_DAY } from "../lib/constants";
+import {
+  ANSWER_EMOJI,
+  MAX_ACTIVITIES_PER_DAY,
+  MAX_DOC_ITEMS_PER_DOC,
+} from "../lib/constants";
 import { sanitizeText, sanitizeWhatsappContent } from "../lib/utils";
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { shuffle } from "lodash";
@@ -9,7 +13,7 @@ export function formatOnboardingMsg1(): string {
 }
 
 export function formatOnboardingMsg2(): string {
-  return "Manda o material da sua aula de inglês como texto, foto ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo.";
+  return `Manda o conteúdo da sua aula de inglês como texto, imagem ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo. Limite de 3 itens por atividade e ${MAX_ACTIVITIES_PER_DAY} atividades por dia.`;
 }
 
 export function formatOnboardingMsg3(): string {
@@ -35,13 +39,14 @@ export function formatCommandList(): string {
     "*Comandos disponíveis:*",
     "",
     "*ajuda* - ver essa lista de comandos",
+    //"*cancelar* - descartar atividade em andamento",
     "*praticar* - prática intensiva",
     "*pausar* - pausar prática",
     "*retomar* - retomar prática pausada",
     "*conteudo* - seu conteúdo atual",
     "*suporte* - fala com a equipe",
     "",
-    "_Mande um texto, áudio, imagem ou PDF com conteúdo relevante para praticar._",
+    "_Mande um texto, imagem ou PDF com conteúdo relevante para praticar._",
   ].join("\n");
 }
 
@@ -82,7 +87,7 @@ export function formatDocsList(activities: ActivityDocItem[]): string {
 }
 
 export function formatNoDocs(): string {
-  return "Você ainda não tem conteúdos.\nMande um texto, áudio, imagem ou PDF para começar.";
+  return "Você ainda não tem conteúdos.\nMande um texto, imagem ou PDF para começar.";
 }
 
 export function formatDocReceiving(): string {
@@ -97,8 +102,8 @@ export function formatDocProcessed(
   if (hasWarning)
     lines.push("\nAlguns termos pareceram inconsistentes e foram ignorados.");
   if (remaining === 1)
-    lines.push("\n_Você ainda pode enviar mais 1 conteúdo hoje._");
-  if (remaining === 0) lines.push("\n_Esse foi seu último conteúdo do dia._");
+    lines.push("\n_Você ainda pode enviar mais 1 atividade hoje._");
+  if (remaining === 0) lines.push("\n_Essa foi sua última atividade do dia._");
   return lines.join("");
 }
 
@@ -138,8 +143,19 @@ export function formatDocReplacePrompt(
   ].join("\n");
 }
 
-export function formatDailyLimitReached(): string {
-  return `Você atingiu o limite de ${MAX_DOCS_PER_DAY} conteúdos por dia. Tente novamente amanhã.`;
+export function formatDailyActivityLimitReached(): string {
+  return "Você atingiu o limite de atividades de hoje. Volte amanhã pra continuar enviando material novo.";
+}
+
+export function formatDocItemReceived(itemCount: number): string {
+  const suffix =
+    "Use *cancelar* pra descartar e começar de novo, mande o restante do material ou aguarde.";
+  if (itemCount === 1) return `Recebido. ${suffix}`;
+  return `Recebido ${itemCount}/${MAX_DOC_ITEMS_PER_DOC}. ${suffix}`;
+}
+
+export function formatDocItemLimitReached(): string {
+  return `Essa atividade já atingiu o limite de ${MAX_DOC_ITEMS_PER_DOC} conteúdos. Vou seguir com o que já foi enviado.`;
 }
 
 export function formatPausePrompt(docs: Pick<Doc, "id" | "title">[]): string {
@@ -185,7 +201,7 @@ export function formatShortTextWithDocs(): string {
 }
 
 export function formatShortTextNoDocs(): string {
-  return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, áudio, imagem ou PDF.\n\n_Use *ajuda* para ver todos os comandos._";
+  return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, imagem ou PDF.\n\n_Use *ajuda* para ver todos os comandos._";
 }
 
 export function formatPracticeComplete(): string {
@@ -193,7 +209,7 @@ export function formatPracticeComplete(): string {
 }
 
 export function formatImageNoText(): string {
-  return "Não encontrei conteúdo de texto suficiente nessa imagem. Manda o material como texto, áudio ou PDF.";
+  return "Não encontrei conteúdo de texto suficiente nessa imagem. Manda o conteúdo como texto ou PDF.";
 }
 
 export function formatIntensiveModeActivated(): string {
@@ -260,17 +276,17 @@ export function formatPreviousActivitySummary(
 
   let leitura: string;
   if (responses < 5) {
-    leitura = "Você mal começou esse aqui.";
+    leitura = "Você mal começou essa atividade.";
   } else if (taxa >= 0.8) {
-    leitura = "Mandou bem nesse material.";
+    leitura = "Mandou bem nessa atividade.";
   } else if (taxa >= 0.5) {
-    leitura = "Esse material rendeu, dá pra apertar mais.";
+    leitura = "Essa atividade rendeu, dá pra apertar mais.";
   } else {
-    leitura = "Esse travou bastante. Vale revisar.";
+    leitura = "Essa atividade travou bastante. Vale revisar.";
   }
 
   return [
-    `Enquanto a próxima pergunta não chega, segue um resumo do material anterior: *${docTitle}*`,
+    `Enquanto a próxima pergunta não chega, segue um resumo da atividade anterior: *${docTitle}*`,
     "",
     `Período: ${period}`,
     `Perguntas: ${questionCount}`,
@@ -321,7 +337,7 @@ const NUDGE_CLOSING_POOL = [
   "É só mandar quando estiver pronto.",
 ];
 
-// fonte de verdade do texto real dos templates na Meta — alterar aqui antes de atualizar na Meta
+// fonte de verdade do texto real dos templates na Meta - alterar aqui antes de atualizar na Meta
 const NUDGE_TEMPLATE_CONFIG: Record<
   string,
   { templateName: string; text: string }

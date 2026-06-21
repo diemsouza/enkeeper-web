@@ -8,7 +8,7 @@ export async function getTodayUsage(
   return prisma.dailyUsage.findFirst({ where: { userId, date } });
 }
 
-export async function incrementDailyDocCount(
+export async function incrementDailyItemCount(
   userId: string,
   date: Date,
 ): Promise<number> {
@@ -18,6 +18,26 @@ export async function incrementDailyDocCount(
     create: { userId, date, docCount: 1 },
   });
   return result.docCount;
+}
+
+export async function incrementDailyActivityCount(
+  userId: string,
+  date: Date,
+): Promise<number> {
+  const result = await prisma.dailyUsage.upsert({
+    where: { userId_date: { userId, date } },
+    update: { activityCount: { increment: 1 } },
+    create: { userId, date, activityCount: 1 },
+  });
+  return result.activityCount;
+}
+
+export async function getTodayActivityCount(
+  userId: string,
+  date: Date,
+): Promise<number> {
+  const usage = await prisma.dailyUsage.findFirst({ where: { userId, date } });
+  return usage?.activityCount ?? 0;
 }
 
 export async function incrementUserMessageCount(

@@ -3,6 +3,7 @@ import {
   findActiveOrPausedDocsByUser,
   updateDoc,
 } from "../repo/docs.repo";
+import { findDocItemsByDoc } from "../repo/doc-items.repo";
 import { formatInvalidContentMessage } from "../core/validate-content";
 import { createActivity, updateActivity } from "../repo/activities.repo";
 import { createQuestions } from "../repo/questions.repo";
@@ -38,27 +39,65 @@ import {
   getQuestionExamples,
   validateGeneratedQuestion,
 } from "../core/format-loader";
-import { QuestionFormat } from "@prisma/client";
+import { DocType, QuestionFormat } from "@prisma/client";
 import { shuffle } from "lodash";
 import { shuffleQuestions } from "../core/utils";
 
-export async function processDoc(docId: string, userId: string): Promise<void> {
+export async function mergeDoc(
+  docId: string,
+  userId: string,
+  latestDocItemId: string,
+): Promise<void> {
   const doc = await findDocById(docId, userId);
-  if (!doc) {
-    console.warn(`[process-doc] doc not found: ${docId}`);
+  if (!doc || doc.status !== "pending") {
     return;
   }
 
+  const allItems = await findDocItemsByDoc(docId);
+  const lastItem = allItems[allItems.length - 1];
+  if (!lastItem || lastItem.id !== latestDocItemId) {
+    return;
+  }
+
+  const validItems = allItems.filter((item) => !item.error);
+  if (validItems.length === 0) {
+    const error = "Nenhum item válido para processar.";
+    await updateDoc(docId, userId, { status: "failed", error });
+    const userChannel = await findUserChannelByUserId(userId);
+    if (userChannel) {
+      const msg = formatDocNoQuestions();
+      await sendWhatsAppMessage(userChannel.channelId, msg);
+      await saveMessage({
+        userId,
+        userChannelId: userChannel.id,
+        role: "assistant",
+        content: msg,
+        intent: "system_error",
+      });
+    }
+    return;
+  }
+
+  const types = Array.from(new Set(validItems.map((i) => i.docType)));
+  const docType: DocType = types.length === 1 ? types[0] : "mixed";
+
+  const consolidatedRaw = validItems
+    .map((item) => item.rawContent)
+    .join("\n\n");
+
   const result = await generateDocSections({
-    rawContent: doc.rawContent ?? "",
-    docType: doc.docType,
+    rawContent: consolidatedRaw,
+    docType,
     userId,
     docId,
   });
 
   if (!result) {
-    console.error(`[process-doc] AI failed for doc ${docId}`);
-    await updateDoc(docId, userId, { status: "failed" });
+    console.error(`[merge-doc] AI failed for doc ${docId}`);
+    await updateDoc(docId, userId, {
+      status: "failed",
+      error: "Falha na extração de conteúdo.",
+    });
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
       const msg = formatDocProcessingFailed();
@@ -75,7 +114,10 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
   }
 
   if (!result.isValid) {
-    await updateDoc(docId, userId, { status: "failed" });
+    await updateDoc(docId, userId, {
+      status: "failed",
+      error: result.invalidReason ?? "Conteúdo inválido.",
+    });
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
       const msg = formatInvalidContentMessage(result.invalidReason);
@@ -95,9 +137,11 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
 
   await updateDoc(docId, userId, {
     title: result.title,
+    rawContent: consolidatedRaw,
     content: combinedContent,
     level: result.level,
     status: "active",
+    docType,
   });
 
   const otherDocs = await findActiveOrPausedDocsByUser(userId);
@@ -162,7 +206,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     }
 
     if (questions && questions.length > 0) {
-      questions = shuffleQuestions(questions); // embaralha perguntas dentro da seção pra evitar padrão
+      questions = shuffleQuestions(questions);
       await createQuestions(
         activity.id,
         section.id,
@@ -190,7 +234,10 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     const activityCount = await incrementDailyActivityCount(userId, date);
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
-      const msg = formatDocProcessed(hasWarning, MAX_ACTIVITIES_PER_DAY - activityCount);
+      const msg = formatDocProcessed(
+        hasWarning,
+        MAX_ACTIVITIES_PER_DAY - activityCount,
+      );
       const summary = await buildPreviousActivitySummary(userId);
       const messages = summary ? [msg, summary] : [msg];
       await sendWhatsAppMessages(userChannel.channelId, messages);
@@ -204,7 +251,10 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       }
     }
   } else {
-    await updateDoc(docId, userId, { status: "failed" });
+    await updateDoc(docId, userId, {
+      status: "failed",
+      error: "Nenhuma pergunta gerada.",
+    });
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
       const msg = formatDocNoQuestions();

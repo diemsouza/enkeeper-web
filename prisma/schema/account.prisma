@@ -48,6 +48,7 @@ model User {
     dailyUsages   DailyUsage[]
     sections      Section[]
     llmLogs       LlmLog[]
+    docItems      DocItem[]
 
     @@map("users")
 }
@@ -57,6 +58,7 @@ model DailyUsage {
     userId            String   @map("user_id")
     date              DateTime @map("date") @db.Date
     docCount          Int      @default(0) @map("doc_count")
+    activityCount     Int      @default(0) @map("activity_count")
     userMessageCount  Int      @default(0) @map("user_message_count")
     agentMessageCount Int      @default(0) @map("agent_message_count")
     messagesCount     Int      @default(0) @map("messages_count")
