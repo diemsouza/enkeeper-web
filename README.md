@@ -11,7 +11,7 @@ rm -rf prisma/schema/migrations
 npx prisma@7.0.0 migrate reset
 npx prisma@7.0.0 migrate dev --name init
 npx prisma@7.0.0 migrate dev --name name --create-only
-npx prisma@7.0.0 db seed
+npx prisma@7.0.0 db seed (never used)
 
 ## update database
 
