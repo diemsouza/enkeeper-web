@@ -1,4 +1,4 @@
-import { DocType, QuestionFormat, QuestionStatus } from "@prisma/client";
+import { DocType, QuestionFormat, QuestionStatus } from "../lib/prisma";
 import { parseMessage } from "../core/parser";
 import { canPractice } from "../core/access";
 import { canStartActivity, canAddDocItem } from "../core/limits";
@@ -43,10 +43,7 @@ import {
   findPendingDocByUser,
   updateDoc,
 } from "../repo/docs.repo";
-import {
-  createDocItem,
-  countValidDocItemsByDoc,
-} from "../repo/doc-items.repo";
+import { createDocItem, countValidDocItemsByDoc } from "../repo/doc-items.repo";
 import {
   findActiveActivitiesByUser,
   findActivitiesForDocsList,
@@ -252,7 +249,14 @@ export async function handleIncomingMessage(
     input.mediaType === "text"
   ) {
     const docType = input.mediaType as DocType;
-    return handleDocUpload(user.id, userChannel.id, text, docType, today, input);
+    return handleDocUpload(
+      user.id,
+      userChannel.id,
+      text,
+      docType,
+      today,
+      input,
+    );
   }
 
   // ─── Estado pendente ──────────────────────────────────────────────────────
@@ -605,15 +609,34 @@ export async function handleIncomingMessage(
         if (pendingDoc) {
           const validCount = await countValidDocItemsByDoc(pendingDoc.id);
           if (!canAddDocItem(validCount)) {
-            await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
+            await saveUserMsg(
+              user.id,
+              userChannel.id,
+              text,
+              "free_text",
+              input,
+              today,
+            );
             const limitReply = formatDocItemLimitReached();
             await saveBotReply(user.id, userChannel.id, limitReply, today);
             return [limitReply];
           }
           const itemValidation = validateDocItemInput(text, "text");
           if (!itemValidation.success) {
-            await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
-            await saveBotReply(user.id, userChannel.id, itemValidation.error, today);
+            await saveUserMsg(
+              user.id,
+              userChannel.id,
+              text,
+              "free_text",
+              input,
+              today,
+            );
+            await saveBotReply(
+              user.id,
+              userChannel.id,
+              itemValidation.error,
+              today,
+            );
             return [itemValidation.error];
           }
           const savedMsg = await saveMessage({
@@ -804,7 +827,7 @@ export async function handleIncomingMessage(
       }
 
       reply =
-        "Aguarda, a próxima mensagem chega em breve. Se quiser mudar o conteúdo, é só mandar.";
+        "Aguarda, a próxima mensagem chega em breve. Se quiser mudar de atividade, é só mandar um novo conteúdo.";
       break;
     }
   }
@@ -1044,13 +1067,23 @@ async function handleDocUpload(
   rawContent: string,
   docType: DocType,
   today: Date,
-  input: Pick<IncomingMessage, "externalId" | "mediaType" | "mediaId" | "mediaMetadata">,
+  input: Pick<
+    IncomingMessage,
+    "externalId" | "mediaType" | "mediaId" | "mediaMetadata"
+  >,
 ): Promise<string[]> {
   const pendingDoc = await findPendingDocByUser(userId);
   if (pendingDoc) {
     const validCount = await countValidDocItemsByDoc(pendingDoc.id);
     if (!canAddDocItem(validCount)) {
-      await saveUserMsg(userId, userChannelId, rawContent, "free_text", input, today);
+      await saveUserMsg(
+        userId,
+        userChannelId,
+        rawContent,
+        "free_text",
+        input,
+        today,
+      );
       const reply = formatDocItemLimitReached();
       await saveBotReply(userId, userChannelId, reply, today);
       return [reply];
@@ -1088,7 +1121,14 @@ async function handleDocUpload(
 
   const activityCount = await getTodayActivityCount(userId, today);
   if (!canStartActivity(activityCount)) {
-    await saveUserMsg(userId, userChannelId, rawContent, "free_text", input, today);
+    await saveUserMsg(
+      userId,
+      userChannelId,
+      rawContent,
+      "free_text",
+      input,
+      today,
+    );
     const reply = formatDailyActivityLimitReached();
     await saveBotReply(userId, userChannelId, reply, today);
     return [reply];
@@ -1096,14 +1136,28 @@ async function handleDocUpload(
 
   const itemValidation = validateDocItemInput(rawContent, docType);
   if (!itemValidation.success) {
-    await saveUserMsg(userId, userChannelId, rawContent, "free_text", input, today);
+    await saveUserMsg(
+      userId,
+      userChannelId,
+      rawContent,
+      "free_text",
+      input,
+      today,
+    );
     await saveBotReply(userId, userChannelId, itemValidation.error, today);
     return [itemValidation.error];
   }
 
   const activeDocs = await findActiveDocsByUser(userId);
   if (activeDocs.length > 0) {
-    await saveUserMsg(userId, userChannelId, rawContent, "awaiting_doc_replace", input, today);
+    await saveUserMsg(
+      userId,
+      userChannelId,
+      rawContent,
+      "awaiting_doc_replace",
+      input,
+      today,
+    );
     const reply = formatDocReplacePrompt(
       activeDocs[0].title ?? "",
       MAX_ACTIVITIES_PER_DAY - activityCount,
@@ -1124,5 +1178,12 @@ async function handleDocUpload(
     metadata: input.mediaMetadata,
   });
   await incrementUserMessageCount(userId, today);
-  return createPendingBuffer(userId, userChannelId, rawContent, docType, today, savedMsg.id);
+  return createPendingBuffer(
+    userId,
+    userChannelId,
+    rawContent,
+    docType,
+    today,
+    savedMsg.id,
+  );
 }

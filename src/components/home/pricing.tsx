@@ -5,6 +5,7 @@ import { useInView } from "@/src/hooks/use-in-view";
 import { useTranslations } from "next-intl";
 import React from "react";
 import { HomeCTA } from "@/src/components/home/home-cta";
+import { TRIAL_DAYS } from "@/src/lib/constants";
 
 export default function Pricing() {
   const t = useTranslations("home.pricing");
@@ -25,7 +26,7 @@ export default function Pricing() {
           {t("title")}
         </h2>
         <p className="text-[18px] text-muted-foreground mb-6">
-          {t("subtitle")}
+          {t("subtitle", { days: TRIAL_DAYS })}
         </p>
         <p className="text-[17px] text-muted-foreground leading-[1.7] mb-10">
           {t("description")}

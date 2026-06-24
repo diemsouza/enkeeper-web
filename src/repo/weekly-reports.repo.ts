@@ -1,4 +1,4 @@
-import { WeeklyReport, Prisma } from '@prisma/client'
+import { WeeklyReport, Prisma } from '../lib/prisma'
 import { prisma } from '../lib/prisma'
 
 type CreateWeeklyReportData = {

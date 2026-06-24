@@ -1,4 +1,4 @@
-import { ChannelType, PlanCode, PlanStatus, User, UserChannel } from '@prisma/client'
+import { ChannelType, PlanCode, PlanStatus, User, UserChannel } from '../lib/prisma'
 import { prisma } from '../lib/prisma'
 
 type UserWithChannels = User & { channels: UserChannel[] }

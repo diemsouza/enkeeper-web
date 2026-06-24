@@ -1,4 +1,4 @@
-import { Message, MessageRole, Prisma } from "@prisma/client";
+import { Message, MessageRole, Prisma } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type SaveMessageData = {

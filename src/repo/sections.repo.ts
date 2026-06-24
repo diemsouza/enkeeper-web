@@ -1,4 +1,4 @@
-import { Section, SectionStatus, SectionType } from "@prisma/client";
+import { Section, SectionStatus, SectionType } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type CreateSectionData = {

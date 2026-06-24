@@ -1,21 +1,26 @@
-# enkeeper
+# fluizer-web
+
+## Prisma
+
+O Prisma Client e gerado em `prisma/client/` (gitignored). Todos os tipos e enums
+do Prisma sao importados exclusivamente de `src/lib/prisma.ts`.
 
 ## reset database
 
-rm -rf prisma@6.10.1/migrations
-npx prisma@6.10.1 migrate reset
-npx prisma@6.10.1 migrate dev --name init
-npx prisma@6.10.1 migrate dev --name name --create-only
-npx prisma@6.10.1 db seed
+rm -rf prisma/schema/migrations
+npx prisma@7.0.0 migrate reset
+npx prisma@7.0.0 migrate dev --name init
+npx prisma@7.0.0 migrate dev --name name --create-only
+npx prisma@7.0.0 db seed
 
 ## update database
 
-npx prisma@6.10.1 migrate dev --name [update-name]
+npx prisma@7.0.0 migrate dev --name [update-name]
 
 ## deploy database
 
-npx prisma@6.10.1 generate
-npx prisma@6.10.1 migrate deploy
+npx prisma@7.0.0 generate
+npx prisma@7.0.0 migrate deploy
 
 ## Upstash localhost
 

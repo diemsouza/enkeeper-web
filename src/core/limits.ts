@@ -1,4 +1,4 @@
-import { PlanStatus } from '@prisma/client'
+import { PlanStatus } from "../lib/prisma"
 import { canPractice } from './access'
 import { MAX_ACTIVITIES_PER_DAY, MAX_DOC_ITEMS_PER_DOC } from '../lib/constants'
 

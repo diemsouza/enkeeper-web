@@ -1,4 +1,4 @@
-import { PlanStatus } from '@prisma/client'
+import { PlanStatus } from "../lib/prisma"
 
 export function canPractice(user: {
   planStatus: PlanStatus

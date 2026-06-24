@@ -153,15 +153,15 @@ Todos competem com aula. Nós complementamos aula. Eixo diferente - e o aluno do
 
 Dois planos: **Trial** e **Pro**. Sem tier gratuito permanente.
 
-### Trial - 1 dia, experiência completa
+### Trial - 3 dias, experiência completa
 
-Experiência idêntica ao Pro por 1 dia. Após expirar: conta trancada até converter.
+Experiência idêntica ao Pro por 3 dias. Após expirar: conta trancada até converter.
 
 Não é teaser - é o produto inteiro por tempo limitado. Quem sente o valor no dia 1 paga. Quem não sente, não pagaria em nenhum preço.
 
 **Trial estendido como ferramenta de campanha:**
-- Padrão: 1 dia
-- Indicação de professor parceiro: 3 dias
+- Padrão: 3 dias
+- Indicação de professor parceiro: 7 dias
 - Campanha sazonal: 7 dias
 - Beta testers / cortesia permanente: sem expiração (planExpiresAt = 2099-12-31)
 

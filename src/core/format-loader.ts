@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Level, QuestionFormat } from "@prisma/client";
+import { Level, QuestionFormat } from "../lib/prisma";
 import { SectionQuestionResult } from "../lib/llm-schemas";
 
 const VOCABULARY_FORMATS: QuestionFormat[] = [

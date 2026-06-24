@@ -31,7 +31,7 @@ import {
   getNextNudgeStep,
   getEntryNudgeStep,
 } from "../lib/constants";
-import { Activity, QuestionFormat, QuestionStatus } from "@prisma/client";
+import { Activity, QuestionFormat, QuestionStatus } from "../lib/prisma";
 import { startOfDay } from "date-fns";
 
 type CronResult = {

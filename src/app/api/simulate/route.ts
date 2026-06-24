@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { Prisma } from "../../../lib/prisma";
 import { handleIncomingMessage } from "../../../services/message-service";
 import { ChannelType } from "../../../types/domain";
 import { findUserByChannel } from "../../../repo/users.repo";
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
     return NextResponse.json({ reply });
   } catch (err) {
-    if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       console.log(`[SIMULATE] duplicate message ignored ${externalId}`);
       return NextResponse.json({ reply: [] });
     }

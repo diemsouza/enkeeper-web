@@ -1,4 +1,4 @@
-import { Doc, ActivityStatus } from "@prisma/client";
+import { Doc, ActivityStatus } from "../lib/prisma";
 import {
   ANSWER_EMOJI,
   MAX_ACTIVITIES_PER_DAY,
@@ -17,7 +17,7 @@ export function formatOnboardingMsg2(): string {
 }
 
 export function formatOnboardingMsg3(): string {
-  return "Você tem 24 horas pra sentir na prática. Aproveita!";
+  return "Você tem 3 dias pra sentir na prática. Aproveita!";
 }
 
 export function formatOnboardingMsg4(): string {
@@ -313,10 +313,10 @@ export type NudgePayload = { text: string; templateName: string | null };
 
 const NUDGE_BODY_POOL = [
   "Não deixa o inglês esfriar.",
-  "O cérebro esquece rápido demais sem prática.",
+  "Sem prática, o cérebro esquece rápido demais.",
   "Você já começou, o mais difícil já passou.",
   "Consistência é o que separa quem aprende de quem tenta.",
-  "Um pouquinho todo dia vale mais que muito de vez em quando.",
+  "Um pouco por dia vale mais que muito de vez em quando.",
   "Vocabulário sem uso enferruja rápido.",
   "Prática puxa memória, pausa apaga memória.",
   "Seu inglês não evolui enquanto você espera.",
@@ -324,17 +324,17 @@ const NUDGE_BODY_POOL = [
   "Parar agora custa mais do que continuar depois.",
   "O que você estudou só fica se for revisado.",
   "Hábito vale mais que vontade.",
-  "Avançar exige continuar, não recomeçar.",
+  "Só tem duas opcoes: praticar ou esquecer.",
   "O progresso depende de manter o ritmo.",
   "Sem repetição, o que você aprendeu se perde.",
 ];
 
 const NUDGE_CLOSING_POOL = [
   "É só responder.",
-  "Quando puder, é só mandar.",
+  "Quando puder, é só responder.",
   "A pergunta continua aqui te esperando.",
   "Pode responder quando quiser.",
-  "É só mandar quando estiver pronto.",
+  "É só responder que seguimos pra próxima.",
 ];
 
 // fonte de verdade do texto real dos templates na Meta - alterar aqui antes de atualizar na Meta

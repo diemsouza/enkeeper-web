@@ -1,4 +1,7 @@
-import { findWaitlistByPhone, createWaitlistEntry } from "@/src/repo/waitlist.repo";
+import {
+  findWaitlistByPhone,
+  createWaitlistEntry,
+} from "@/src/repo/waitlist.repo";
 import { sendWhatsAppMessage } from "@/src/vendors/whatsapp.vendor";
 
 export async function POST(request: Request): Promise<Response> {
@@ -7,7 +10,10 @@ export async function POST(request: Request): Promise<Response> {
   const phone: string = (body?.phone ?? "").trim();
 
   if (!name || !phone) {
-    return Response.json({ error: "name and phone are required" }, { status: 400 });
+    return Response.json(
+      { error: "name and phone are required" },
+      { status: 400 },
+    );
   }
 
   try {
@@ -21,7 +27,7 @@ export async function POST(request: Request): Promise<Response> {
       try {
         await sendWhatsAppMessage(
           waSupport,
-          `Novo contato na lista de espera.\nNome: ${name}\nTelefone: ${phone}`,
+          `Novo contato na lista de espera.\nNome: ${name}\nTelefone: +${phone.replace("+", "")}`,
         );
       } catch {
         // falha silenciosa

@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { User } from "../lib/prisma";
 import { findActiveActivitiesByUser } from "../repo/activities.repo";
 import {
   findUserByChannel,

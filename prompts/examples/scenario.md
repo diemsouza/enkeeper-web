@@ -4,6 +4,8 @@
 fórmula: situação curta em PT, terminando com pergunta única que nomeia o que se busca (palavra, expressão, nome)
 nota: Uma situação, um item, uma pergunta. A situação deve ser específica o suficiente para apontar ao termo de answerKeys. A pergunta final nomeia o tipo de item buscado. Nunca peça duas informações.
 
+Teste antes de finalizar: se mais de um termo em inglês resolve a situação, ela está genérica demais. Adicione um detalhe concreto até sobrar só um termo válido.
+
 - Você gosta do espaço verde atrás da sua casa, onde tem flores e grama. Qual o nome desse espaço em inglês?
 - Você convida alguém pra sentar e comer com você de manhã. Qual o nome dessa refeição em inglês?
 - Seu amigo chega no almoço de domingo e cumprimenta todo mundo de forma descontraída. Qual expressão ele usaria em inglês?
@@ -33,6 +35,8 @@ partial:
 fórmula: situação curta em PT (ou mista PT/EN), terminando com pergunta única que nomeia o que se busca (expressão, phrasal verb, palavra)
 nota: Uma situação, um item, uma pergunta. A situação deve ser específica o suficiente para apontar ao item de answerKeys. A pergunta final nomeia o tipo de item buscado. Nunca peça duas informações.
 
+Teste antes de finalizar: se mais de um termo em inglês resolve a situação, ela está genérica demais. Adicione um detalhe concreto até sobrar só um termo válido.
+
 - Seu amigo remói um problema já resolvido. Qual expressão você usa pra dizer pra ele largar isso?
 - Você tentou consertar sozinho por horas e não conseguiu. Qual phrasal verb descreve o que você precisa fazer?
 - Sua amiga tem entrevista em uma hora e não se arrumou. O que você diz pra ela se preparar?
@@ -61,6 +65,8 @@ partial:
 ### question
 fórmula: situação curta em EN, terminando com pergunta única que nomeia o que se busca (idiom, expressão, colocação)
 nota: Uma situação, um item, uma pergunta. A situação deve ser específica o suficiente para apontar ao item de answerKeys. A pergunta final nomeia o tipo de item buscado. Nunca peça duas informações.
+
+Teste antes de finalizar: se mais de um termo em inglês resolve a situação, ela está genérica demais. Adicione um detalhe concreto até sobrar só um termo válido.
 
 - Your team debates speed versus quality in every sprint. What expression names that ideal balance?
 - You keep delaying a difficult talk you know you must have. What idiom describes what you need to do?

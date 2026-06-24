@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { NextRequest } from "next/server";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { Prisma } from "../../../../lib/prisma";
 import { handleIncomingMessage } from "../../../../services/message-service";
 import { findOrCreateUserByChannel } from "../../../../services/user-service";
 import {
@@ -228,7 +228,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       await sendWhatsAppMessages(wa_id, replies);
     } catch (err) {
       if (
-        err instanceof PrismaClientKnownRequestError &&
+        err instanceof Prisma.PrismaClientKnownRequestError &&
         err.code === "P2002"
       ) {
         const raw = body as {

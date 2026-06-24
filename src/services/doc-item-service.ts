@@ -1,4 +1,4 @@
-import { DocType } from "@prisma/client";
+import { DocType } from "../lib/prisma";
 
 type DocItemValidationResult =
   | { success: true }

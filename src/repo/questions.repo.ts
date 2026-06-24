@@ -4,7 +4,7 @@ import {
   QuestionStatus,
   AnswerType,
   QuestionType,
-} from "@prisma/client";
+} from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type CreateQuestionData = {

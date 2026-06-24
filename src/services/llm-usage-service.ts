@@ -1,4 +1,4 @@
-import { AiProvider } from "@prisma/client";
+import { AiProvider } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 import { LlmUsageType } from "../types/llm-usage-type";
 

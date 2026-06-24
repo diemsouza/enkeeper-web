@@ -9,13 +9,13 @@ Fontes de verdade:
 - Produto e regras de negocio e do produto: `docs/Product-Brief.md` e `docs/Product-Rules.md`
 - Contexto geral: `README.md`
 
-Stack: Next.js 15 App Router, Prisma 6, Supabase/PostgreSQL, TypeScript strict, Vercel.
+Stack: Next.js 15 App Router, Prisma 7, Supabase/PostgreSQL, TypeScript strict, Vercel.
 
 ## Regras de banco de dados
 
 - Nunca acessar o banco diretamente (psql, db execute, SQL raw)
 - Toda mudanca de schema vai em `prisma/schema/*`
-- Rodar `npx prisma@6.10.1 migrate dev --name <name>` para aplicar; se for complexo ou arriscado, pedir ao usuario via `!`
+- Rodar `npx prisma@7.0.0 migrate dev --name <name>` para aplicar; se for complexo ou arriscado, pedir ao usuario via `!`
 - Nunca criar migration SQL manualmente salvo revisao explicita do dev
 - Siga o padrão do que já existe, id é ulid, nome camelCase e @map("snake_case")
 
@@ -34,12 +34,12 @@ npm start             # Production server
 npm run lint          # ESLint via next lint
 
 # Database (use exact prisma version)
-npx prisma@6.10.1 migrate dev --name <name>        # Create and apply migration
-npx prisma@6.10.1 migrate dev --name <name> --create-only  # Create migration only
-npx prisma@6.10.1 migrate deploy                   # Apply migrations in production
-npx prisma@6.10.1 migrate reset                    # Reset DB and re-apply all migrations
-npx prisma@6.10.1 db seed                          # Seed database
-npx prisma@6.10.1 generate                         # Regenerate Prisma client
+npx prisma@7.0.0 migrate dev --name <name>        # Create and apply migration
+npx prisma@7.0.0 migrate dev --name <name> --create-only  # Create migration only
+npx prisma@7.0.0 migrate deploy                   # Apply migrations in production
+npx prisma@7.0.0 migrate reset                    # Reset DB and re-apply all migrations
+npx prisma@7.0.0 db seed                          # Seed database
+npx prisma@7.0.0 generate                         # Regenerate Prisma client (output: prisma/client/)
 
 # Local queue development
 npx @upstash/qstash-cli@latest dev -port=8081
@@ -66,18 +66,20 @@ src/
   core/           -- logica de dominio pura, zero I/O
   hooks/          -- custom React hooks
   i18n/ + locales/ -- next-intl: pt.json e en.json
-  lib/            -- utilitarios puros: prisma.ts, llm-schemas.ts, prompts.ts, constants.ts
+  lib/            -- utilitarios puros: prisma.ts (unico ponto de acesso ao Prisma Client e tipos), llm-schemas.ts, prompts.ts, constants.ts
   repo/           -- queries Prisma, sem regra de negocio
   services/       -- orquestracao de negocio
   vendors/        -- clientes de APIs externas (llm, whatsapp, storage)
 prisma/schema/    -- schemas por dominio: account.prisma, core.prisma
+prisma/client/    -- Prisma Client gerado (gitignored, gerado via prisma generate)
 prompts/          -- arquivos .md de prompt por etapa LLM
 docs/             -- Product-Brief.md, Product-Rules.md
 ```
 
 ### Camadas e regras
 
-- `src/core/` nunca importa Prisma, fetch ou qualquer modulo Next.js
+- `src/core/` nunca importa diretamente de `@prisma/client` ou do client gerado -- tipos Prisma devem vir de `src/lib/prisma.ts`
+- `src/core/` nunca importa `prisma` (o singleton client), fetch ou qualquer modulo Next.js
 - `src/repo/` nunca contem regra de negocio -- so queries
 - Todo acesso ao banco passa por `src/repo/`
 - Route handlers sao finos: parse request, chama service, retorna response
@@ -220,6 +222,8 @@ Arquivos de prompt ativos:
 - Sem `$queryRaw` salvo necessidade absoluta
 - Sempre escopo por `userId` -- nunca busca sem filtro de usuario
 - Usar `select` para buscar so os campos necessarios
+- Nunca importar diretamente de `prisma/client` ou `@prisma/client` -- usar sempre `src/lib/prisma.ts`
+- `src/lib/prisma.ts` re-exporta todos os tipos, enums e namespace `Prisma` necessarios
 
 ### Comentarios
 

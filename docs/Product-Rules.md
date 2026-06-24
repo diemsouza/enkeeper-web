@@ -242,8 +242,8 @@ Dois planos: Trial e Pro. Sem tier gratuito permanente.
 
 | Plano | Duração | Acesso |
 | ----- | ------- | ------ |
-| Trial padrão | 1 dia | Produto completo |
-| Trial por indicação de professor | 3 dias | Produto completo |
+| Trial padrão | 3 dias | Produto completo |
+| Trial por indicação de professor | 7 dias | Produto completo |
 | Trial por campanha sazonal | 7 dias | Produto completo |
 | Cortesia permanente | Sem expiração | Produto completo |
 | Pro | 30 dias renovável | Produto completo |

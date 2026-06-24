@@ -38,7 +38,7 @@ import {
   getQuestionExamples,
   validateGeneratedQuestion,
 } from "../core/format-loader";
-import { QuestionFormat } from "@prisma/client";
+import { QuestionFormat } from "../lib/prisma";
 import { shuffle } from "lodash";
 import { shuffleQuestions } from "../core/utils";
 

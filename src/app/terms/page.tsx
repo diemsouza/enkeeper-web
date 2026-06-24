@@ -46,7 +46,7 @@ export default function TermsPage() {
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             <strong>Trial:</strong> período inicial gratuito de acesso completo
             ao produto por tempo limitado, sem necessidade de cartão ou
-            pagamento. A duração padrão é de 1 dia, podendo variar conforme
+            pagamento. A duração padrão é de 3 dias, podendo variar conforme
             campanhas e parcerias. Não há renovação automática do trial.
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">

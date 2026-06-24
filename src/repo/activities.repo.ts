@@ -2,7 +2,7 @@ import {
   Activity,
   Doc,
   ActivityStatus,
-} from "@prisma/client";
+} from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type CreateActivityData = {

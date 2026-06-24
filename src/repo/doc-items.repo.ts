@@ -1,4 +1,4 @@
-import { DocItem, DocType } from "@prisma/client";
+import { DocItem, DocType } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type CreateDocItemData = {

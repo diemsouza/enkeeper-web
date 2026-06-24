@@ -1,4 +1,4 @@
-import { Waitlist } from "@prisma/client";
+import { Waitlist } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 export async function findWaitlistByPhone(phone: string): Promise<Waitlist | null> {
