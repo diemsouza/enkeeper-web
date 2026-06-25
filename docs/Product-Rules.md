@@ -21,10 +21,10 @@ Um ciclo de prática vinculado a um material específico. Começa quando o usuá
 
 Activity nunca encerra por inatividade. Só muda de status por ação do usuário - troca de conteúdo. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
 
-### Transições ao subir novo conteudo
+### Transições ao subir novo material (criar nova atividade)
 
-- Anterior teve resposta: vai para `archived`, novo ciclo começa como `active`
-- Anterior não teve resposta: vai para `cancelled`, novo ciclo começa como `active`
+- Atividade anterior teve resposta: vai para `archived`, novo ciclo começa como `active`
+- Atividade anterior não teve resposta: vai para `cancelled`, novo ciclo começa como `active`
 
 Completar todas as perguntas não altera o status. A activity permanece `active` indefinidamente até o usuário trocar de material.
 
@@ -60,7 +60,7 @@ Sem emoji. Sem elogio. Leitura de resultado.
 
 ### Visibilidade ao usuário
 
-O comando `conteudo` exibe apenas activities `active` e `archived`. Os demais status são histórico interno.
+O comando `atividade` exibe apenas activities `active` e `archived`. Os demais status são histórico interno.
 
 ---
 
@@ -207,7 +207,7 @@ O sistema para de enviar perguntas quando o usuário não responde e aguarda ret
 | `praticar` | Inicia sessão intensiva - perguntas chegam em sequência por 15 minutos |
 | `pausar` | Para o envio de perguntas |
 | `retomar` | Retoma após pausa |
-| `conteudo` | Lista o material ativo e os anteriores |
+| `list_docs` | Lista atividade ativa e anteriores |
 | `suporte` | Aciona suporte via WhatsApp do admin |
 
 Comandos não atualizam o histórico de prática nem contam como interação.

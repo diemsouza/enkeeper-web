@@ -11,7 +11,7 @@ export function parseMessage(text: string): ParsedMessage {
   const n = normalize(trimmed);
 
   if (n === "ajuda") return { intent: "list_commands", raw };
-  if (n === "conteudo") return { intent: "list_docs", raw };
+  if (n === "atividade") return { intent: "list_docs", raw };
   if (n === "suporte") return { intent: "support", raw };
 
   if (n === "sim") return { intent: "confirm", raw };

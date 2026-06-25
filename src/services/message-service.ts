@@ -6,7 +6,7 @@ import {
   formatCommandList,
   formatDocsList,
   formatDocConfirmPrompt,
-  formatDocReplacePrompt,
+  formatActivityReplacePrompt,
   formatPausePrompt,
   formatPauseSuccess,
   formatNoPausableDocs,
@@ -677,9 +677,10 @@ export async function handleIncomingMessage(
           messageIntent = "free_text";
           break;
         }
-        const activeDocs = await findActiveDocsByUser(user.id);
-        if (activeDocs.length > 0) {
-          reply = formatDocReplacePrompt(
+        const activeActivities = await findActiveActivitiesByUser(user.id);
+        if (activeActivities.length > 0) {
+          const activeDocs = await findActiveDocsByUser(user.id);
+          reply = formatActivityReplacePrompt(
             activeDocs[0].title ?? "",
             MAX_ACTIVITIES_PER_DAY - activityCount,
           );
@@ -1148,8 +1149,9 @@ async function handleDocUpload(
     return [itemValidation.error];
   }
 
-  const activeDocs = await findActiveDocsByUser(userId);
-  if (activeDocs.length > 0) {
+  const activeActivities = await findActiveActivitiesByUser(userId);
+  if (activeActivities.length > 0) {
+    const activeDocs = await findActiveDocsByUser(userId);
     await saveUserMsg(
       userId,
       userChannelId,
@@ -1158,7 +1160,7 @@ async function handleDocUpload(
       input,
       today,
     );
-    const reply = formatDocReplacePrompt(
+    const reply = formatActivityReplacePrompt(
       activeDocs[0].title ?? "",
       MAX_ACTIVITIES_PER_DAY - activityCount,
     );

@@ -1,12 +1,18 @@
 ## BASIC
 
 ### question
-fórmula: frase em EN com lacuna `______` no meio cobrindo o termo, seguida do significado em PT entre parênteses
-nota: A frase é sempre em EN. A lacuna cai sobre o termo em contexto de uso real, nunca em definição. Use underline longo (`______`). O termo correto vai em answerKeys. Varie o contexto entre exemplos.
+fórmula: duas variações possíveis, escolha conforme o termo.
+
+Variação 1, lacuna parcial: frase em EN com lacuna `______` cobrindo palavra-chave isolável dentro de uma frase maior, seguida do significado em PT entre parênteses. Use quando a palavra pode ser isolada sem perder o sentido.
+
+Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______` em qualquer posição, representando o termo completo como resposta, seguida do significado em PT entre parênteses. Use quando o termo é uma frase inteira sem palavra isolável (ex: "I am ready"). A lacuna é sempre obrigatória. Varie a posição entre exemplos. Em dúvida, use esta variação.
+
+Em ambas, a frase ou pergunta de estímulo é sempre em EN. Use underline longo (`______`). O termo correto vai em answerKeys. Varie o contexto entre exemplos.
 
 - Complete: "I have a ______ behind my house." (jardim)
 - Complete: "She drinks ______ every morning." (café)
-- Complete: "My ______ is a doctor." (mãe)
+- How are you feeling about the trip? ______ (estou pronto)
+- What do people usually do when learning something new? ______ (cometo erros)
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com o termo em EN preenchido
@@ -30,12 +36,18 @@ partial:
 ## INTERMEDIATE
 
 ### question
-fórmula: frase em EN com lacuna `______` cobrindo expressão, phrasal verb ou colocação, seguida do significado em PT entre parênteses
-nota: A frase é sempre em EN. A lacuna pode cobrir mais de uma palavra (expressão multi-word). Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
+fórmula: duas variações possíveis, escolha conforme o termo.
+
+Variação 1, lacuna parcial: frase em EN com lacuna `______` cobrindo expressão ou phrasal verb dentro de uma frase maior, seguida do significado em PT entre parênteses. Use quando a expressão pode ser isolada sem perder o sentido.
+
+Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______` em qualquer posição, representando o termo completo como resposta, seguida do significado em PT entre parênteses. Use quando o termo é uma frase inteira sem expressão isolável. A lacuna é sempre obrigatória. Varie a posição entre exemplos. Em dúvida, use esta variação.
+
+Em ambas, a frase ou pergunta de estímulo é sempre em EN. A lacuna pode cobrir mais de uma palavra (expressão multi-word). Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
 
 - Complete: "Just ______, it's not a big deal." (deixa pra lá)
 - Complete: "I had to ______ trying to fix it alone." (desistir)
 - Complete: "We need to ______ before the meeting." (nos preparar)
+- What would you say to calm someone down about a small mistake? ______ (não se preocupe com isso)
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com a expressão em EN preenchida
@@ -59,12 +71,18 @@ partial:
 ## ADVANCED
 
 ### question
-fórmula: frase em EN com lacuna `______` cobrindo idiom, expressão idiomática ou colocação avançada, seguida do significado em PT entre parênteses
-nota: A frase é sempre em EN. A lacuna cobre o item idiomático. Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
+fórmula: duas variações possíveis, escolha conforme o termo.
+
+Variação 1, lacuna parcial: frase em EN com lacuna `______` cobrindo idiom ou expressão idiomática dentro de uma frase maior, seguida do significado em PT entre parênteses. Use quando o idiom pode ser isolado sem perder o sentido.
+
+Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______` em qualquer posição, representando o termo completo como resposta, seguida do significado em PT entre parênteses. Use quando o termo é uma frase inteira sem idiom isolável. A lacuna é sempre obrigatória. Varie a posição entre exemplos. Em dúvida, use esta variação.
+
+Em ambas, a frase ou pergunta de estímulo é sempre em EN. A lacuna cobre o item idiomático ou a resposta completa. Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
 
 - Complete: "We finally hit the ______ on pricing." (ponto ideal)
 - Complete: "I had to ______ and accept the decision." (engolir o sapo)
 - Complete: "Let's ______ and talk it through." (resolver de uma vez)
+- How would you describe finally finding the ideal balance after negotiating for hours? ______ (acertamos o ponto ideal)
 
 ### feedback
 fórmula: abertura em PT + frase de uso real em EN com a expressão correta preenchida

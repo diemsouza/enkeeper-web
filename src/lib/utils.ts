@@ -28,9 +28,16 @@ export async function safeCall<T>(
 }
 
 export function sanitizeText(text: string): string {
-  return text
-    .replace(/—/g, ",")
-    .replace(/(^|[\s,.:;!?])'([^']+)'([\s,.:;!?]|$)/g, '$1"$2"$3');
+  return (
+    text
+      // Substitui travessão por vírgula
+      .replace(/—/g, ",")
+      // Substitui aspas simples por aspas duplas, mas apenas quando estiverem em torno de palavras ou frases, não em contrações ou possessivos
+      .replace(
+        /(^|[\s,.:;!?])'((?:[^']|'(?=[a-zA-Z]))+?)'(?=[\s,.:;!?]|$)/g,
+        '$1"$2"',
+      )
+  );
 }
 
 export function extractUrls(text: string): string[] {

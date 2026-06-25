@@ -13,7 +13,7 @@ export function formatOnboardingMsg1(): string {
 }
 
 export function formatOnboardingMsg2(): string {
-  return `Manda o material da sua aula de inglês como texto, imagem ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo. Limite de 3 itens por atividade e ${MAX_ACTIVITIES_PER_DAY} atividades por dia.`;
+  return `Manda o material da sua aula de inglês como texto, imagem ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo. Limite de ${MAX_DOC_ITEMS_PER_DOC} materiais por atividade e ${MAX_ACTIVITIES_PER_DAY} atividades por dia.`;
 }
 
 export function formatOnboardingMsg3(): string {
@@ -43,7 +43,7 @@ export function formatCommandList(): string {
     "*praticar* - prática intensiva",
     "*pausar* - pausar prática",
     "*retomar* - retomar prática pausada",
-    "*conteudo* - seu conteúdo atual",
+    "*atividade* - sua atividade atual",
     "*suporte* - fala com a equipe",
     "",
     "_Mande um texto, imagem ou PDF com conteúdo relevante para praticar._",
@@ -68,16 +68,16 @@ export function formatDocsList(activities: ActivityDocItem[]): string {
   const lines: string[] = [];
 
   if (current.length > 0) {
-    lines.push("*Conteúdo atual:*");
+    lines.push("*Atividade atual:*");
     current.forEach((a) => {
-      const label = a.doc.status === "paused" ? "pausado" : "ativo";
+      const label = a.doc.status === "paused" ? "pausada" : "ativa";
       lines.push(`• ${a.doc.title || "(processando...)"} - ${label}`);
     });
   }
 
   if (archived.length > 0) {
     if (lines.length > 0) lines.push("");
-    lines.push("*Arquivados:*");
+    lines.push("*Arquivadas:*");
     archived.forEach((a) => lines.push(`• ${a.doc.title || "(sem título)"}`));
   }
 
@@ -87,7 +87,7 @@ export function formatDocsList(activities: ActivityDocItem[]): string {
 }
 
 export function formatNoDocs(): string {
-  return "Você ainda não tem conteúdos.\nMande um texto, imagem ou PDF para começar.";
+  return "Você ainda não tem atividades.\nMande um texto, imagem ou PDF para começar.";
 }
 
 export function formatDocReceiving(): string {
@@ -112,50 +112,50 @@ export function formatDocProcessingFailed(): string {
 }
 
 export function formatDocNoQuestions(): string {
-  return "Não consegui identificar conteúdo para praticar nesse material. Manda outro.";
+  return "Não foi possível identificar o tipo de conteúdo nesse material. Tente outro material.";
 }
 
 export function formatDocConfirmPrompt(): string {
   return [
-    "Esse parece ser um ótimo conteúdo para estudar. Quer usar?",
+    "Esse parece ser um ótimo conteúdo pra praticar. Quer começar uma nova atividade com esse conteúdo?",
     "",
     "_Use *sim* para confirmar ou *não* para cancelar._",
   ].join("\n");
 }
 
-export function formatDocReplacePrompt(
+export function formatActivityReplacePrompt(
   title: string,
-  remaining: number,
+  activitiesRemaining: number,
 ): string {
   const limitNote =
-    remaining === 1
-      ? "\n_Você ainda pode enviar mais 1 material hoje._"
-      : remaining === 0
-        ? "\n_Esse foi seu último material do dia._"
+    activitiesRemaining === 1
+      ? "\n_Você só pode criar mais uma atividade hoje._"
+      : activitiesRemaining === 0
+        ? "\n_Esse foi sua última atividade do dia._"
         : "";
 
   return [
-    `Você já tem uma atividade ativoa: *"${title}"*.`,
+    `Você já tem uma atividade em andamento: *"${title}"*.`,
     "",
-    "Quer substituir pela nova atividade? O atual será arquivado.",
+    "Deseja arquivar a atual e começar uma nova?",
     "",
-    `_Use *sim* para substituir ou *não* para manter o atual._${limitNote}`,
+    `_Use *sim* para continuar ou *não* para manter o atual._${limitNote}`,
   ].join("\n");
 }
 
 export function formatDailyActivityLimitReached(): string {
-  return "Você atingiu o limite de atividades de hoje. Volte amanhã pra continuar enviando material novo.";
+  return "Você atingiu o limite de atividades de hoje.";
 }
 
 export function formatDocItemReceived(itemCount: number): string {
   const suffix =
-    "Use *cancelar* pra descartar e começar de novo, mande o restante do material ou aguarde.";
+    "Pode mandar mais materiais ou só aguardar. Use *cancelar* se quiser descartar e começar de novo.";
   if (itemCount === 1) return `Recebido. ${suffix}`;
   return `Recebido ${itemCount}/${MAX_DOC_ITEMS_PER_DOC}. ${suffix}`;
 }
 
 export function formatDocItemLimitReached(): string {
-  return `Essa atividade já atingiu o limite de ${MAX_DOC_ITEMS_PER_DOC} conteúdos. Vou seguir com o que já foi enviado.`;
+  return `Essa atividade já atingiu o limite de ${MAX_DOC_ITEMS_PER_DOC} materiais. Continuando com o que já foi enviado...`;
 }
 
 export function formatPausePrompt(docs: Pick<Doc, "id" | "title">[]): string {
@@ -197,7 +197,7 @@ export function formatSupportReceived(): string {
 }
 
 export function formatShortTextWithDocs(): string {
-  return "Já recebi seu material. Te chamo em breve pra praticar. Ou use *ajuda* para ver os comandos disponíveis.";
+  return "Já recebi seu material. Aguarde ou use *ajuda* para ver os comandos disponíveis.";
 }
 
 export function formatShortTextNoDocs(): string {
@@ -205,11 +205,11 @@ export function formatShortTextNoDocs(): string {
 }
 
 export function formatPracticeComplete(): string {
-  return "Você respondeu todas as perguntas dessa rodada. Manda novo material ou continue praticando.";
+  return "Você respondeu todas as perguntas dessa atividade. Envie um novo material ou aguarde para continuar praticando.";
 }
 
 export function formatImageNoText(): string {
-  return "Não encontrei conteúdo de texto suficiente nessa imagem. Manda o material como texto ou PDF.";
+  return "Não foi possível identificar conteúdo suficiente e relevante nessa imagem. Envie outro material como texto, imagem ou PDF.";
 }
 
 export function formatIntensiveModeActivated(): string {
@@ -348,15 +348,15 @@ const NUDGE_TEMPLATE_CONFIG: Record<
   },
   d3: {
     templateName: "nudge_d3",
-    text: "Você não respondeu suas perguntas nos últimos 3 dias. Seu conteúdo segue disponível quando quiser.",
+    text: "Você não respondeu suas perguntas nos últimos 3 dias. Sua atividade continua aqui te esperando. É só responder.",
   },
   d7: {
     templateName: "nudge_d7",
-    text: "Você não respondeu suas perguntas nos últimos 7 dias. Seu conteúdo segue disponível quando quiser.",
+    text: "Você não respondeu suas perguntas nos últimos 7 dias. Sua atividade continua aqui te esperando. É só responder.",
   },
   d14: {
     templateName: "nudge_d14",
-    text: "Você não respondeu suas perguntas nos últimos 14 dias. Seu conteúdo segue disponível quando quiser.",
+    text: "Você não respondeu suas perguntas nos últimos 14 dias. Sua atividade continua aqui te esperando. É só responder.",
   },
 };
 
