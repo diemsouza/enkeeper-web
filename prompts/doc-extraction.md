@@ -18,10 +18,20 @@ level: identifique o nível do material.
 - "advanced": majoritariamente em inglês, vocabulário técnico ou avançado.
 Se o material indicar o nível explicitamente, use o indicado. Se não conseguir determinar, retorne "basic".
 
-Classificação de sectionType:
-- "vocabulary": lista de palavras ou expressões isoladas, com ou sem tradução
-- "text": texto corrido, frase, diálogo, parágrafo, qualquer conteúdo com estrutura gramatical para compreensão e uso
-- "exercise": lista explícita de perguntas, uma ou duas perguntas soltas num texto não qualificam
+Classificação de sectionType (critério é independência entre itens, não tamanho ou idioma):
+
+- "vocabulary": itens isolados e independentes entre si (palavra, expressão ou frase curta), cada um com seu significado, tradução ou uso. Separador entre termo e tradução pode ser hífen, travessão, barra, pipe, seta, parênteses, ou qualquer caractere especial, em inglês-português ou português-inglês, podendo variar item a item. Numeração é só formatação.
+  Ex: "1. I am ready (Estou pronto)" / "Work - trabalho" / "It's up to you / Você que sabe"
+
+  Pode vir sem tradução, só termos soltos em PT ou EN ("Garden / Mundo / Happy"). Nesse caso preserve o content como está, sem inventar tradução.
+
+  Preserve cada item em sua própria linha no campo content, exatamente como aparece no material original. Não una itens em um único bloco de texto corrido, mesmo que estejam próximos visualmente.
+
+- "text": conteúdo corrido onde as partes dependem umas das outras pra manter sentido (diálogo, narrativa, parágrafo). Se houver mais de um bloco de texto corrido com contextos claramente diferentes entre si, mesmo sem separador visual, trate como seções text distintas, na ordem em que aparecem.
+
+- "exercise": lista explícita de perguntas, frases para completar, ou associação entre colunas (A-B, número-letra). Preserve enunciado e instrução junto ao item. Para associação, descreva os pares de forma fiel mesmo sem reproduzir a estrutura visual original. Uma ou duas perguntas soltas num texto corrido não qualificam, isso é text.
+
+Erro comum: lista de pares termo-tradução é vocabulary mesmo com item sendo frase completa, não palavra isolada.
 
 Para cada seção:
 - title: nome curto da seção, extraído ou inferido do material

@@ -13,7 +13,7 @@ export function formatOnboardingMsg1(): string {
 }
 
 export function formatOnboardingMsg2(): string {
-  return `Manda o conteúdo da sua aula de inglês como texto, imagem ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo. Limite de 3 itens por atividade e ${MAX_ACTIVITIES_PER_DAY} atividades por dia.`;
+  return `Manda o material da sua aula de inglês como texto, imagem ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo. Limite de 3 itens por atividade e ${MAX_ACTIVITIES_PER_DAY} atividades por dia.`;
 }
 
 export function formatOnboardingMsg3(): string {
@@ -129,15 +129,15 @@ export function formatDocReplacePrompt(
 ): string {
   const limitNote =
     remaining === 1
-      ? "\n_Você ainda pode enviar mais 1 conteúdo hoje._"
+      ? "\n_Você ainda pode enviar mais 1 material hoje._"
       : remaining === 0
-        ? "\n_Esse foi seu último conteúdo do dia._"
+        ? "\n_Esse foi seu último material do dia._"
         : "";
 
   return [
-    `Você já tem um conteúdo ativo: *"${title}"*.`,
+    `Você já tem uma atividade ativoa: *"${title}"*.`,
     "",
-    "Quer substituir pelo novo conteúdo? O atual será arquivado.",
+    "Quer substituir pela nova atividade? O atual será arquivado.",
     "",
     `_Use *sim* para substituir ou *não* para manter o atual._${limitNote}`,
   ].join("\n");
@@ -162,30 +162,30 @@ export function formatPausePrompt(docs: Pick<Doc, "id" | "title">[]): string {
   const lines = docs.map(
     (d, i) => `${i + 1}. ${d.title || "(processando...)"}`,
   );
-  return `Qual conteúdo você quer pausar?\n\n${lines.join("\n")}\n\n_Digite o número ou use *cancelar*._`;
+  return `Qual atividade você quer pausar?\n\n${lines.join("\n")}\n\n_Digite o número ou use *cancelar*._`;
 }
 
 export function formatPauseSuccess(): string {
-  return "Prática pausada. Use *retomar* quando quiser continuar.";
+  return "Atividade pausada. Use *retomar* quando quiser continuar.";
 }
 
 export function formatNoPausableDocs(): string {
-  return "Nenhum conteúdo ativo no momento.";
+  return "Nenhuma atividade ativa no momento.";
 }
 
 export function formatResumePrompt(docs: Pick<Doc, "id" | "title">[]): string {
   const lines = docs.map(
     (d, i) => `${i + 1}. ${d.title || "(processando...)"}`,
   );
-  return `Qual conteúdo você quer retomar?\n\n${lines.join("\n")}\n\n_Digite o número ou *cancelar*._`;
+  return `Qual atividade você quer retomar?\n\n${lines.join("\n")}\n\n_Digite o número ou *cancelar*._`;
 }
 
 export function formatResumeSuccess(): string {
-  return "Prática retomada. Vamos continuar de onde parou!";
+  return "Atividade retomada. Vamos continuar de onde parou!";
 }
 
 export function formatNoPausedDocs(): string {
-  return "Nenhum conteúdo pausado no momento.";
+  return "Nenhuma atividade pausada no momento.";
 }
 
 export function formatSupportRequest(): string {
@@ -197,19 +197,19 @@ export function formatSupportReceived(): string {
 }
 
 export function formatShortTextWithDocs(): string {
-  return "Já recebi seu conteúdo. Te chamo em breve pra praticar. Ou use *ajuda* para ver os comandos disponíveis.";
+  return "Já recebi seu material. Te chamo em breve pra praticar. Ou use *ajuda* para ver os comandos disponíveis.";
 }
 
 export function formatShortTextNoDocs(): string {
-  return "Adicione um conteúdo para praticarmos durante o dia. Pode ser texto, imagem ou PDF.\n\n_Use *ajuda* para ver todos os comandos._";
+  return "Adicione uma atividade para praticarmos durante o dia. Pode ser texto, imagem ou PDF.\n\n_Use *ajuda* para ver todos os comandos._";
 }
 
 export function formatPracticeComplete(): string {
-  return "Você respondeu todas as perguntas dessa rodada. Manda novo conteúdo ou continue praticando.";
+  return "Você respondeu todas as perguntas dessa rodada. Manda novo material ou continue praticando.";
 }
 
 export function formatImageNoText(): string {
-  return "Não encontrei conteúdo de texto suficiente nessa imagem. Manda o conteúdo como texto ou PDF.";
+  return "Não encontrei conteúdo de texto suficiente nessa imagem. Manda o material como texto ou PDF.";
 }
 
 export function formatIntensiveModeActivated(): string {
