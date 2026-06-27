@@ -153,6 +153,8 @@ model Activity {
     roundCompleted    Boolean        @default(false) @map("round_completed")
     lastQuestionId    String?        @map("last_question_id")
     summary           String?        @map("summary")
+    userLevel         Level          @default(basic) @map("user_level")
+    title             String         @default("") @map("title")
     lastNudgeStep     String?        @map("last_nudge_step")
     lastNudgeAt       DateTime?      @map("last_nudge_at")
     createdAt         DateTime       @default(now()) @map("created_at")

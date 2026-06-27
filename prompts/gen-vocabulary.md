@@ -35,15 +35,19 @@ O bloco de exemplos abaixo cobre os formatos disponíveis. Siga a fórmula e o p
 {question_examples}
 
 ## Output
-Retorne APENAS UM JSON válido (array de objetos). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
-[{
-  "sourceItem": "termo exato do item da lista que esta pergunta cobre",
-  "question": "enunciado da pergunta",
-  "answerKeys": ["resposta principal", "variações aceitáveis"],
-  "questionFormat": "gap_fill | recall | recall_inverted | scenario | choice",
-  "questionOptions": [],
-  "warning": "Termo inconsitente: tradução ou significado errado!"
-}]
+Retorne APENAS UM JSON válido (objeto único). Sem markdown, sem cercas de código (```), sem qualquer texto antes ou depois do JSON.
+{
+  "questions": [
+    {
+      "sourceItem": "termo exato do item da lista que esta pergunta cobre",
+      "question": "enunciado da pergunta",
+      "answerKeys": ["resposta principal", "variações aceitáveis"],
+      "questionFormat": "gap_fill | recall | recall_inverted | scenario | choice",
+      "questionOptions": [],
+      "warning": "Termo inconsitente: tradução ou significado errado!"
+    }
+  ]
+}
 
 Regras do JSON:
 - sourceItem: copie exatamente o termo (em inglês) do item da lista que esta pergunta cobre. A pergunta e o answerKeys devem apontar para esse mesmo termo.

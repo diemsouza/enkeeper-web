@@ -7,6 +7,7 @@ O usuario manda o conteúdo da aula (texto, imagem ou PDF) e recebe perguntas so
 
 Fontes de verdade:
 - Produto e regras de negocio e do produto: `docs/Product-Brief.md` e `docs/Product-Rules.md`
+- Backlog macro: `docs/Product-Backlog.mg`
 - Contexto geral: `README.md`
 
 Stack: Next.js 15 App Router, Prisma 7, Supabase/PostgreSQL, TypeScript strict, Vercel.
@@ -73,7 +74,7 @@ src/
 prisma/schema/    -- schemas por dominio: account.prisma, core.prisma
 prisma/client/    -- Prisma Client gerado (gitignored, gerado via prisma generate)
 prompts/          -- arquivos .md de prompt por etapa LLM
-docs/             -- Product-Brief.md, Product-Rules.md
+docs/             -- Product-Brief.md, Product-Rules.md, Product-Backlog.md
 ```
 
 ### Camadas e regras
@@ -215,7 +216,18 @@ Arquivos de prompt ativos:
 - Single responsibility -- se precisa de comentario pra explicar o que faz, divide
 - Maximo ~30 linhas por funcao
 - Sem side effects em `src/core/` -- mesma entrada sempre produz mesma saida
-- Sempre veja se já tem algo pra ser reutilizado antes de criar ou motificar.
+- Sempre veja se já tem algo pra ser reutilizado antes de criar ou modificar.
+- Antes de criar qualquer helper, grep o projeto para ver como a operacao ja e feita e replicar o mesmo padrao. Nao criar wrappers de uma linha para operacoes que ja tem padrao estabelecido.
+
+### Padrao de mensagem WhatsApp
+
+Sempre que enviar uma mensagem ao usuario, seguir o padrao de tres passos sem desvio:
+```typescript
+const msg = formatX();
+await sendWhatsAppMessage(channelId, msg);
+await saveMessage({ userId, userChannelId, role: "assistant", content: msg, ... });
+```
+Nao encapsular send+save em helpers -- o caller sempre executa os tres passos diretamente.
 
 ### Prisma
 

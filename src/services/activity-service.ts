@@ -45,7 +45,7 @@ export async function buildPreviousActivitySummary(
           : `alguns minutos`;
 
     const text = formatPreviousActivitySummary({
-      docTitle: data.doc.title ?? "",
+      docTitle: data.title ?? "",
       questionCount: data.questions.length,
       right,
       partial,

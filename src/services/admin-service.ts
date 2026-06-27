@@ -1,5 +1,5 @@
 import { User } from "../lib/prisma";
-import { findActiveActivitiesByUser } from "../repo/activities.repo";
+import { countAllActivitiesByUser } from "../repo/activities.repo";
 import {
   findUserByChannel,
   fetchUserStats,
@@ -76,8 +76,8 @@ async function fetchInfo(waId: string): Promise<string> {
 }
 
 async function buildUserInfo(user: User, waId: string): Promise<string> {
-  const activities = await findActiveActivitiesByUser(user.id);
-  return formatAdminUserInfo(user, waId, activities.length);
+  const countActivities = await countAllActivitiesByUser(user.id);
+  return formatAdminUserInfo(user, waId, countActivities);
 }
 
 async function fetchUsersReport(): Promise<string> {

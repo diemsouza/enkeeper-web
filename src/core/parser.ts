@@ -1,17 +1,31 @@
 import { ParsedMessage } from "../types/domain";
+import { Level } from "../lib/prisma";
 
 function normalize(s: string): string {
   // eslint-disable-next-line no-misleading-character-class
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
-export function parseMessage(text: string): ParsedMessage {
+export function parseLevelInput(text: string): Level | "cancel" | null {
+  const n = normalize(text.trim());
+  if (n === "a" || n === "basico") return Level.basic;
+  if (n === "b" || n === "intermediario") return Level.intermediate;
+  if (n === "c" || n === "avancado") return Level.advanced;
+  if (n === "cancelar") return "cancel";
+  return null;
+}
+
+export function parseMessage(
+  text: string,
+  context: { isIntensiveMode?: boolean } = {},
+): ParsedMessage {
   const raw = text;
   const trimmed = text.trim();
   const n = normalize(trimmed);
 
   if (n === "ajuda") return { intent: "list_commands", raw };
-  if (n === "atividade") return { intent: "list_docs", raw };
+  if (n === "atividade") return { intent: "list_activities", raw };
+  if (n === "nivel") return { intent: "set_level", raw };
   if (n === "suporte") return { intent: "support", raw };
 
   if (n === "sim") return { intent: "confirm", raw };
@@ -20,17 +34,27 @@ export function parseMessage(text: string): ParsedMessage {
 
   if (n === "praticar") return { intent: "practice_now", raw };
 
-  if (n === "pausar") return { intent: "pause_doc", raw };
-  if (n.startsWith("pausar ")) {
-    const num = parseInt(n.slice("pausar ".length).trim(), 10);
-    return { intent: "pause_doc", raw, docIndex: isNaN(num) ? undefined : num };
+  if (n === "pausar") {
+    return {
+      intent: context.isIntensiveMode ? "pause_practice" : "pause_activity",
+      raw,
+    };
   }
 
-  if (n === "retomar") return { intent: "resume_doc", raw };
+  if (n.startsWith("pausar ")) {
+    const num = parseInt(n.slice("pausar ".length).trim(), 10);
+    return {
+      intent: "pause_activity",
+      raw,
+      docIndex: isNaN(num) ? undefined : num,
+    };
+  }
+
+  if (n === "retomar") return { intent: "resume_activity", raw };
   if (n.startsWith("retomar ")) {
     const num = parseInt(n.slice("retomar ".length).trim(), 10);
     return {
-      intent: "resume_doc",
+      intent: "resume_activity",
       raw,
       docIndex: isNaN(num) ? undefined : num,
     };

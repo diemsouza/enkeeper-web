@@ -181,7 +181,7 @@ Nível: {level}`
     rawOutput = llmResult.text ?? null;
     result = sectionQuestionsSchema.parse(
       parseJsonWithFallback(llmResult.text.trim()),
-    );
+    )?.questions;
   } catch (err) {
     if (err instanceof Error) logError = err.message;
   }

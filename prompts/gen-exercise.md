@@ -35,13 +35,17 @@ O bloco de exemplos abaixo cobre o formato open_question. Siga a fórmula e o pa
 {question_examples}
 
 ## Output
-Retorne APENAS UM JSON válido (array de objetos). Sem markdown, sem cercas de código (```), sem texto antes ou depois.
-[{
-  "question": "enunciado da pergunta",
-  "answerKeys": ["resposta principal", "variações aceitáveis"],
-  "questionFormat": "open_question",
-  "questionOptions": []
-}]
+Retorne APENAS UM JSON válido (objeto único). Sem markdown, sem cercas de código (```), sem qualquer texto antes ou depois do JSON.
+{
+  "questions": [
+    {
+      "question": "enunciado da pergunta",
+      "answerKeys": ["resposta principal", "variações aceitáveis"],
+      "questionFormat": "open_question",
+      "questionOptions": []
+    }
+  ]
+}
 
 Regras do JSON:
 - questionFormat: sempre "open_question".

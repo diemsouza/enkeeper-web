@@ -7,7 +7,7 @@
 
 ## 1. Activity
 
-Um ciclo de prática vinculado a um material específico. Começa quando o usuário sobe novo conteúdo, termina por inatividade ou substituição. Não tem duração fixa.
+Um ciclo de prática vinculado a um material específico. Começa quando o usuário sobe novo material, termina por substituição (novo material). Não tem duração fixa.
 
 **Engajamento** é definido por ao menos 1 resposta a uma pergunta de prática. Comandos não contam.
 
@@ -19,18 +19,27 @@ Um ciclo de prática vinculado a um material específico. Começa quando o usuá
 | `archived` | Substituído por nova atividade com ao menos 1 resposta |
 | `cancelled` | Substituído por nova atividade sem nenhuma resposta |
 
-Activity nunca encerra por inatividade. Só muda de status por ação do usuário - troca de conteúdo. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
+Activity nunca encerra por inatividade. Só muda de status por ação do usuário - envio de novo material. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
+
+### Recebimento de material (buffer antes da atividade)
+
+O material enviado pelo usuário não vira atividade imediatamente. Existe uma janela de buffer de 45 segundos a partir do primeiro envio, durante a qual o usuário pode mandar mais peças do mesmo material (por exemplo, várias fotos de páginas seguidas) sem que cada envio dispare uma atividade separada.
+
+- Tudo que chega dentro da janela de 45 segundos é tratado como parte do mesmo material.
+- Limite de 3 peças por material dentro dessa janela.
+- O comando `cancelar` aborta o processamento em andamento antes da janela fechar - nesse caso, nenhuma atividade é criada e o material descartado não conta para o cap diário (seção 14).
+- Ao fechar a janela, o material consolidado gera a atividade.
 
 ### Transições ao subir novo material (criar nova atividade)
 
 - Atividade anterior teve resposta: vai para `archived`, novo ciclo começa como `active`
 - Atividade anterior não teve resposta: vai para `cancelled`, novo ciclo começa como `active`
 
-Completar todas as perguntas não altera o status. A activity permanece `active` indefinidamente até o usuário trocar de material.
+Completar todas as perguntas não altera o status. A activity permanece `active` indefinidamente até o usuário enviar outro material.
 
-### Resumo ao trocar de material
+### Resumo ao trocar de material (nova atividade)
 
-Quando o usuário sobe material novo e o anterior teve ao menos 1 resposta, o sistema gera e envia um resumo do ciclo anterior antes da primeira pergunta do novo. O resumo é gerado uma única vez por activity - se já foi gerado, não gera novamente.
+Quando o usuário sobe um novo material é criada uma nova atividade e, se a anterior teve ao menos 1 resposta, o sistema gera e envia um resumo do ciclo anterior antes da primeira pergunta do novo. O resumo é gerado uma única vez por activity - se já foi gerado, não gera novamente.
 
 **Formato do resumo:**
 
@@ -52,9 +61,9 @@ Erradas: {erros + parciais}
 **Linha de leitura** - determinística, sem IA, tom seco:
 
 - Menos de 5 respondidas: "Você mal começou esse aqui."
-- 80%+ de acerto: "Mandou bem nesse material."
-- 50–79% de acerto: "Esse material rendeu, dá pra apertar mais."
-- Abaixo de 50%: "Esse travou bastante. Vale revisar."
+- 80%+ de acerto: "Mandou bem nessa atividade."
+- 50–79% de acerto: "Essa atividade rendeu, dá pra apertar mais."
+- Abaixo de 50%: "Essa atividade travou bastante. Vale revisar."
 
 Sem emoji. Sem elogio. Leitura de resultado.
 
@@ -100,7 +109,7 @@ Sem critério de encerramento - loop infinito natural.
 
 Mensagem enviada ao usuário:
 
-> Você respondeu todas as perguntas dessa rodada. Manda novo conteúdo ou continue praticando.
+> Você respondeu todas as perguntas dessa rodada. Envie novo material ou continue praticando.
 
 ---
 
@@ -136,7 +145,11 @@ Sete formatos disponíveis. O sorteio de formato para vocabulário acontece ante
 
 ## 5. Nível e idioma das perguntas
 
-Detectado automaticamente no upload. Calibra o idioma das perguntas geradas.
+O nível pode vir de duas fontes: informado pelo usuário ou detectado automaticamente no material enviado.
+
+O usuário informa seu nível uma vez (no início do uso, ou quando quiser trocar) e esse nível passa a valer para qualquer atividade futura, tendo prioridade sobre o nível do material. Se o usuário não informar nível, o sistema usa o nível detectado no material enviado.
+
+Cada atividade guarda o nível que foi usado para gerar suas perguntas, então o histórico permanece consistente mesmo se o usuário trocar de nível depois.
 
 | Nível | Idioma da pergunta |
 | ----- | ----------------- |
@@ -144,7 +157,7 @@ Detectado automaticamente no upload. Calibra o idioma das perguntas geradas.
 | Intermediário | Misto PT/EN natural |
 | Avançado | Majoritariamente em EN |
 
-Se o nível não for identificado, assume básico.
+Se nenhum nível for identificado (nem do usuário, nem do material), assume básico.
 
 ---
 
@@ -207,7 +220,9 @@ O sistema para de enviar perguntas quando o usuário não responde e aguarda ret
 | `praticar` | Inicia sessão intensiva - perguntas chegam em sequência por 15 minutos |
 | `pausar` | Para o envio de perguntas |
 | `retomar` | Retoma após pausa |
-| `list_docs` | Lista atividade ativa e anteriores |
+| `atividade` | Lista a atividade ativa e as anteriores |
+| `nivel` | Atualiza o nível de inglês declarado pelo usuário (básico, intermediário ou avançado) |
+| `cancelar` | Aborta o processamento do material em andamento, dentro da janela de buffer (ver Seção 1) |
 | `suporte` | Aciona suporte via WhatsApp do admin |
 
 Comandos não atualizam o histórico de prática nem contam como interação.
@@ -221,7 +236,7 @@ Comandos não atualizam o histórico de prática nem contam como interação.
 ```
 Hi! Bem-vindo ao *Fluizer*. 👋
 
-Manda o conteúdo da sua aula de inglês - texto, imagem ou PDF - e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
+Envie o material da sua aula de inglês - texto, imagem ou PDF - e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
 
 Você tem 24 horas pra sentir na prática. Aproveita!
 
@@ -330,7 +345,9 @@ Conteúdo planejado: materiais enviados, trocas totais, percentual de acerto ger
 
 Áudio, imagem e PDF são processados em memória e descartados após extração. Nada é armazenado além do texto extraído, das seções identificadas e das perguntas geradas.
 
-Caps invisíveis por usuário por dia: 5 materiais, 30 áudios (máximo 60s cada), 10 imagens.
+**Cap diário invisível: 5 atividades por usuário por dia.** O cap conta atividades criadas, não peças de material enviadas - várias fotos ou páginas mandadas dentro da janela de buffer de 45 segundos (Seção 1) formam um único material e consomem uma única vaga do cap. Material abortado via `cancelar` antes do fechamento da janela não consome o cap, porque nenhuma atividade chegou a ser criada.
+
+Caps adicionais por tipo de envio, por usuário por dia: 30 áudios (máximo 60s cada), 10 imagens.
 
 ---
 

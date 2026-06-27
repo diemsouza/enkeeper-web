@@ -24,7 +24,7 @@
   "seo": {
     "home": {
       "title": "Fluizer | Inglês o dia inteiro no WhatsApp, com o material da sua aula.",
-      "description": "Prática diária de inglês direto no WhatsApp. Manda o material da sua aula e pratica o dia inteiro no seu ritmo.",
+      "description": "Prática diária de inglês direto no WhatsApp. Envie o material da sua aula e pratica o dia inteiro no seu ritmo.",
       "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Fluizer",
       "ogImage": "/images/logo.png"
     }
@@ -65,7 +65,7 @@
       "cards": {
         "0": {
           "title": "Aprendi na aula. Na semana seguinte, esqueci.",
-          "description": "Manda o material e recebe perguntas sobre ele ao longo do dia, enquanto o conteúdo ainda está fresco. O que praticou fica. O que não praticou some."
+          "description": "Envie o material e recebe perguntas sobre ele ao longo do dia, enquanto o conteúdo ainda está fresco. O que praticou fica. O que não praticou some."
         },
         "1": {
           "title": "Tentei manter a disciplina. Não consegui.",
@@ -81,7 +81,7 @@
         },
         "4": {
           "title": "Tenho reunião em inglês amanhã. Já travei só de pensar.",
-          "description": "Manda o material do seu contexto, técnico, profissional, do que for, e pratica o que faz sentido pro seu momento. Não cenários genéricos que nunca acontecem na vida real."
+          "description": "Envie o material do seu contexto, técnico, profissional, do que for, e pratica o que faz sentido pro seu momento. Não cenários genéricos que nunca acontecem na vida real."
         },
         "5": {
           "title": "O que aprendo hoje some em dois dias.",
@@ -94,7 +94,7 @@
       "subtitle": "Três passos. Sem configuração.",
       "steps": {
         "0": {
-          "title": "Manda o material da aula",
+          "title": "Envie o material da aula",
           "description": "Texto, foto ou PDF. A lista de vocabulário, o exercício, o PDF que o professor mandou. Qualquer material da sua aula de inglês."
         },
         "1": {

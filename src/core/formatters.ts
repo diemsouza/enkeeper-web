@@ -1,23 +1,20 @@
-import { Doc, ActivityStatus } from "../lib/prisma";
-import {
-  ANSWER_EMOJI,
-  MAX_ACTIVITIES_PER_DAY,
-  MAX_DOC_ITEMS_PER_DOC,
-} from "../lib/constants";
+import { Doc, ActivityStatus, Level } from "../lib/prisma";
+import { ANSWER_EMOJI, MAX_DOC_ITEMS_PER_DOC } from "../lib/constants";
 import { sanitizeText, sanitizeWhatsappContent } from "../lib/utils";
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { shuffle } from "lodash";
+import { format } from "date-fns";
 
 export function formatOnboardingMsg1(): string {
   return "Hi! Bem-vindo a *Fluizer*. 👋";
 }
 
 export function formatOnboardingMsg2(): string {
-  return `Manda o material da sua aula de inglês como texto, imagem ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo. Limite de ${MAX_DOC_ITEMS_PER_DOC} materiais por atividade e ${MAX_ACTIVITIES_PER_DAY} atividades por dia.`;
+  return `Envie o material da sua aula de inglês como texto, imagem ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo.`;
 }
 
 export function formatOnboardingMsg3(): string {
-  return "Você tem 3 dias pra sentir na prática. Aproveita!";
+  return "Você tem 3 dias para praticar a vontade. Aproveite!";
 }
 
 export function formatOnboardingMsg4(): string {
@@ -34,28 +31,61 @@ export function formatPlanExpired(): string {
   ].join("\n");
 }
 
-export function formatCommandList(): string {
+const LEVEL_LABEL: Record<Level, string> = {
+  [Level.basic]: "básico",
+  [Level.intermediate]: "intermediário",
+  [Level.advanced]: "avançado",
+};
+
+export function formatLevelQuestion(): string {
+  return [
+    "Informe a letra que corresponde ao nível do seu inglês.",
+    "",
+    "a) - Básico",
+    "b) - Intermediário",
+    "c) - Avançado",
+    "",
+    "_Use *cancelar* para sair._",
+  ].join("\n");
+}
+
+export function formatLevelConfirmed(): string {
+  return "Nível atualizado com sucesso.";
+}
+
+export function formatLevelCanceled(): string {
+  return "Ok, nenhuma alteração feita.";
+}
+
+export function formatCommandList(level: Level | null): string {
+  const nivelLabel = level
+    ? `atualiza o nível do seu inglês. *${LEVEL_LABEL[level]}*`
+    : "define o nível do seu inglês";
   return [
     "*Comandos disponíveis:*",
     "",
     "*ajuda* - ver essa lista de comandos",
     //"*cancelar* - descartar atividade em andamento",
     "*praticar* - prática intensiva",
-    "*pausar* - pausar prática",
-    "*retomar* - retomar prática pausada",
+    "*pausar* - pausar atividade ou prática intensiva em andamento",
+    "*retomar* - retomar atividade pausada",
     "*atividade* - sua atividade atual",
+    `*nivel* - ${nivelLabel}`,
     "*suporte* - fala com a equipe",
     "",
-    "_Mande um texto, imagem ou PDF com conteúdo relevante para praticar._",
+    "_Envie texto, imagem ou PDF com conteúdo relevante para praticar._",
   ].join("\n");
 }
 
-type ActivityDocItem = {
+type ActivityListItem = {
   status: ActivityStatus;
-  doc: Pick<Doc, "id" | "title" | "status">;
+  title: string;
+  userLevel: Level;
+  updatedAt: Date;
+  doc: Pick<Doc, "id" | "status">;
 };
 
-export function formatDocsList(activities: ActivityDocItem[]): string {
+export function formatActivitiesList(activities: ActivityListItem[]): string {
   const current = activities.filter((a) =>
     ["active", "paused"].includes(a.status),
   );
@@ -68,20 +98,34 @@ export function formatDocsList(activities: ActivityDocItem[]): string {
   const lines: string[] = [];
 
   if (current.length > 0) {
-    lines.push("*Atividade atual:*");
+    lines.push("*Atividade atual:*\n");
     current.forEach((a) => {
       const label = a.doc.status === "paused" ? "pausada" : "ativa";
-      lines.push(`• ${a.doc.title || "(processando...)"} - ${label}`);
+      const displayTitle = a.title || "Sem título";
+      lines.push(`*${displayTitle}* - ${LEVEL_LABEL[a.userLevel]} - ${label}`);
     });
   }
 
   if (archived.length > 0) {
     if (lines.length > 0) lines.push("");
-    lines.push("*Arquivadas:*");
-    archived.forEach((a) => lines.push(`• ${a.doc.title || "(sem título)"}`));
+    lines.push("*Arquivadas:*\n");
+    archived.forEach((a) => {
+      const displayTitle = a.title || "Sem título";
+      lines.push(
+        `_${format(a.updatedAt, "dd/MM")}_ - *${displayTitle}* - ${LEVEL_LABEL[a.userLevel]}`,
+      );
+    });
   }
 
-  lines.push("", "_Use *pausar* ou *retomar* para gerenciar._");
+  const currentStatus = current.length > 0 ? current[0].status : null;
+  let textFooter = "";
+  if (currentStatus === "active")
+    textFooter = "_Use *pausar* para interromper._ ";
+  else if (currentStatus === "paused")
+    textFooter = "_Use *retomar* para continuar._ ";
+  textFooter +=
+    "_Para criar uma atividade, envie um texto, imagem ou PDF com conteúdo relevante._";
+  if (textFooter) lines.push("", textFooter);
 
   return lines.join("\n");
 }
@@ -108,11 +152,15 @@ export function formatDocProcessed(
 }
 
 export function formatDocProcessingFailed(): string {
-  return "Algo deu errado no processamento. Tenta mandar de novo.";
+  return "Algo deu errado no processamento. Tente outro material.";
 }
 
 export function formatDocNoQuestions(): string {
-  return "Não foi possível identificar o tipo de conteúdo nesse material. Tente outro material.";
+  return "Não foi possível gerar perguntas a partir desse material. Tente outro material.";
+}
+
+export function formatIntensiveModeStopped(): string {
+  return "Modo intensivo interrompido. Voltando para o ritmo normal de perguntas.";
 }
 
 export function formatDocConfirmPrompt(): string {
@@ -135,9 +183,7 @@ export function formatActivityReplacePrompt(
         : "";
 
   return [
-    `Você já tem uma atividade em andamento: *"${title}"*.`,
-    "",
-    "Deseja arquivar a atual e começar uma nova?",
+    `Você já tem uma atividade em andamento: *"${title}"*. Deseja arquivar e começar uma nova?`,
     "",
     `_Use *sim* para continuar ou *não* para manter o atual._${limitNote}`,
   ].join("\n");
@@ -149,7 +195,7 @@ export function formatDailyActivityLimitReached(): string {
 
 export function formatDocItemReceived(itemCount: number): string {
   const suffix =
-    "Pode mandar mais materiais ou só aguardar. Use *cancelar* se quiser descartar e começar de novo.";
+    "Você pode enviar mais materiais ou só aguardar. Use *cancelar* se quiser descartar e começar de novo.";
   if (itemCount === 1) return `Recebido. ${suffix}`;
   return `Recebido ${itemCount}/${MAX_DOC_ITEMS_PER_DOC}. ${suffix}`;
 }
@@ -159,9 +205,7 @@ export function formatDocItemLimitReached(): string {
 }
 
 export function formatPausePrompt(docs: Pick<Doc, "id" | "title">[]): string {
-  const lines = docs.map(
-    (d, i) => `${i + 1}. ${d.title || "(processando...)"}`,
-  );
+  const lines = docs.map((d, i) => `${i + 1}. ${d.title || "Sem título"}`);
   return `Qual atividade você quer pausar?\n\n${lines.join("\n")}\n\n_Digite o número ou use *cancelar*._`;
 }
 
@@ -174,9 +218,7 @@ export function formatNoPausableDocs(): string {
 }
 
 export function formatResumePrompt(docs: Pick<Doc, "id" | "title">[]): string {
-  const lines = docs.map(
-    (d, i) => `${i + 1}. ${d.title || "(processando...)"}`,
-  );
+  const lines = docs.map((d, i) => `${i + 1}. ${d.title || "Sem título"}`);
   return `Qual atividade você quer retomar?\n\n${lines.join("\n")}\n\n_Digite o número ou *cancelar*._`;
 }
 
@@ -212,8 +254,22 @@ export function formatImageNoText(): string {
   return "Não foi possível identificar conteúdo suficiente e relevante nessa imagem. Envie outro material como texto, imagem ou PDF.";
 }
 
-export function formatIntensiveModeActivated(): string {
-  return "Modo intensivo ativado! Sua pergunta anterior ainda aguarda resposta.";
+export function formatIntensiveModeActivated({
+  isIntensiveMode,
+  hasPendingQuestion,
+}: {
+  isIntensiveMode: boolean;
+  hasPendingQuestion?: boolean;
+}): string {
+  let msg = isIntensiveMode
+    ? "Você já está no modo intensivo! "
+    : "Modo intensivo ativado. ";
+  if (hasPendingQuestion) {
+    msg += "\n\n⚠️Você tem uma pergunta pendente para responder! ";
+  }
+  msg +=
+    "\n\nAs perguntas chegam uma após a outra, no ritmo da sua resposta. _Use *pausar* para interromper._";
+  return msg;
 }
 
 const START_MESSAGES = [

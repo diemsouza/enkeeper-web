@@ -1,14 +1,12 @@
-import {
-  Activity,
-  Doc,
-  ActivityStatus,
-} from "../lib/prisma";
+import { Activity, Doc, ActivityStatus, Level } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type CreateActivityData = {
   userId: string;
   docId: string;
   date: Date;
+  userLevel: Level;
+  title: string;
   topicIndex?: number;
   nextMessageAt?: Date;
   intervalMinutes?: number;
@@ -64,13 +62,22 @@ export async function findActivityByDocAndDate(
   });
 }
 
-export async function findActiveActivitiesByUser(
+export async function countAllActivitiesByUser(
   userId: string,
-): Promise<Activity[]> {
-  return prisma.activity.findMany({
+): Promise<number> {
+  return await prisma.activity.count({
+    where: { userId, deletedAt: null },
+  });
+}
+
+export async function findLastActivityByUser(
+  userId: string,
+): Promise<Activity | null> {
+  const result = await prisma.activity.findFirst({
     where: { userId, status: "active", deletedAt: null },
     orderBy: { createdAt: "desc" },
   });
+  return result;
 }
 
 export async function findEligibleActivities(limit = 100): Promise<Activity[]> {
@@ -147,10 +154,10 @@ export async function resumeActivitiesByDoc(
 }
 
 export type ActivityWithDoc = Activity & {
-  doc: Pick<Doc, "id" | "title" | "status">;
+  doc: Pick<Doc, "id" | "status">;
 };
 
-export async function findActivitiesForDocsList(
+export async function findActivitiesForList(
   userId: string,
 ): Promise<ActivityWithDoc[]> {
   return prisma.activity.findMany({
@@ -159,7 +166,7 @@ export async function findActivitiesForDocsList(
       status: { in: ["active", "paused", "archived"] },
       deletedAt: null,
     },
-    include: { doc: { select: { id: true, title: true, status: true } } },
+    include: { doc: { select: { id: true, status: true } } },
     orderBy: { createdAt: "desc" },
   }) as Promise<ActivityWithDoc[]>;
 }
@@ -170,14 +177,16 @@ export async function findLatestArchivedActivityForSummary(userId: string) {
     orderBy: { updatedAt: "desc" },
     select: {
       id: true,
+      title: true,
       createdAt: true,
       lastInteractionAt: true,
-      doc: { select: { title: true } },
       questions: {
-        where: { deletedAt: null, status: { in: ["right", "partial", "wrong"] } },
+        where: {
+          deletedAt: null,
+          status: { in: ["right", "partial", "wrong"] },
+        },
         select: { status: true, attemptCount: true },
       },
     },
   });
 }
-

@@ -1,4 +1,4 @@
-import { ChannelType, PlanCode, PlanStatus, User, UserChannel } from '../lib/prisma'
+import { ChannelType, Level, PlanCode, PlanStatus, User, UserChannel } from '../lib/prisma'
 import { prisma } from '../lib/prisma'
 
 type UserWithChannels = User & { channels: UserChannel[] }
@@ -46,6 +46,14 @@ export async function findUserChannelByUserId(
   return prisma.userChannel.findFirst({
     where: { userId, channelType },
   })
+}
+
+export async function updateUserLevel(userId: string, level: Level): Promise<void> {
+  await prisma.user.update({ where: { id: userId }, data: { level } });
+}
+
+export async function updateUserPendingIntent(userId: string, intent: string | null): Promise<void> {
+  await prisma.user.update({ where: { id: userId }, data: { pendingIntent: intent } });
 }
 
 export async function updateUserPlan(

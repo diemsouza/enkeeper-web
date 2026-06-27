@@ -74,7 +74,9 @@ export const sectionQuestionSchema = z.object({
 
 export type SectionQuestionResult = z.infer<typeof sectionQuestionSchema>;
 
-export const sectionQuestionsSchema = z.array(sectionQuestionSchema);
+export const sectionQuestionsSchema = z.object({
+  questions: z.array(sectionQuestionSchema),
+});
 
 export const answerEvaluationSchema = z.object({
   status: z.enum(["right", "partial", "wrong"]),

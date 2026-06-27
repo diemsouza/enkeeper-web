@@ -1,19 +1,24 @@
 import { JSONType } from "./json-type";
 
+function assertObjectRoot(value: unknown): void {
+  if (Array.isArray(value) || typeof value !== "object" || value === null) {
+    throw new Error("Expected object root, got array or primitive");
+  }
+}
+
 export function parseJsonWithFallback<T = any>(raw: string): T {
-  // 1) tentativa direta
   const clean = raw.replace(/```json|```/g, "").trim();
   try {
-    return JSON.parse(clean);
+    const parsed = JSON.parse(clean);
+    assertObjectRoot(parsed);
+    return parsed;
   } catch (err) {
-    // segue para o fallback
     console.warn("[JSON_PARSE_FALLBACK]", {
       message: (err as Error).message,
-      preview: raw.slice(0, 300), // evita log gigante
+      preview: raw.slice(0, 300),
     });
   }
 
-  // 2) fallback: extrair o primeiro JSON válido
   const s = raw.trim();
   const start = s.indexOf("{");
   if (start === -1) {
@@ -40,7 +45,9 @@ export function parseJsonWithFallback<T = any>(raw: string): T {
 
     if (depth === 0) {
       const jsonSlice = s.slice(start, i + 1);
-      return JSON.parse(jsonSlice);
+      const parsed = JSON.parse(jsonSlice);
+      assertObjectRoot(parsed);
+      return parsed;
     }
   }
 
