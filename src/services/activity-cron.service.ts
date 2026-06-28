@@ -2,7 +2,11 @@ import {
   findEligibleActivities,
   updateActivity,
 } from "../repo/activities.repo";
-import { findDocById, findPendingDocByUser, updateDoc } from "../repo/docs.repo";
+import {
+  findDocById,
+  findPendingDocByUser,
+  updateDoc,
+} from "../repo/docs.repo";
 import { saveMessage, findLastActivityMessage } from "../repo/messages.repo";
 import {
   findNextUnansweredQuestion,
@@ -51,6 +55,14 @@ export async function processActivityCron(): Promise<CronResult> {
     try {
       const user = await findUserById(activity.userId);
       if (!user || !canPractice(user)) {
+        skipped++;
+        continue;
+      }
+
+      if (
+        user.pendingIntent === "awaiting_doc_replace" ||
+        user.pendingIntent === "awaiting_doc_confirm"
+      ) {
         skipped++;
         continue;
       }

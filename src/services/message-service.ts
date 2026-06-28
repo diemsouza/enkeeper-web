@@ -101,6 +101,7 @@ const OVERRIDING_INTENTS: MessageIntent[] = [
   "cancel",
   "practice_now",
   "pause_practice",
+  "set_level",
 ];
 
 export async function handleIncomingMessage(
@@ -1292,6 +1293,7 @@ async function handleDocUpload(
 
   const activeActivity = await findLastActivityByUser(userId);
   if (activeActivity) {
+    await updateUserPendingIntent(userId, "awaiting_doc_replace");
     await saveUserMsg(
       userId,
       userChannelId,

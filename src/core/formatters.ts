@@ -183,7 +183,7 @@ export function formatActivityReplacePrompt(
         : "";
 
   return [
-    `Você já tem uma atividade em andamento: *"${title}"*. Deseja arquivar e começar uma nova?`,
+    `Você já tem uma atividade em andamento${title ? `: *"${title}"*` : ""}. Deseja arquivar e começar uma nova?`,
     "",
     `_Use *sim* para continuar ou *não* para manter o atual._${limitNote}`,
   ].join("\n");
