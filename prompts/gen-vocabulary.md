@@ -12,9 +12,7 @@ Enumere os itens do conteúdo na ordem em que aparecem e gere exatamente 1 pergu
 Antes de gerar, enumere mentalmente os itens do conteúdo na ordem em que aparecem. Gere exatamente 1 pergunta por item enumerado, nunca menos. Atribua o formato a cada item seguindo um ciclo fixo dos 5 formatos na ordem (gap_fill, recall, recall_inverted, scenario, choice), repetindo o ciclo se houver mais itens que formatos. Confirme ao final que o total de perguntas geradas é igual ao total de itens (respeitando o mínimo de 10 quando o conteúdo tiver menos itens). Nenhum formato pode ser ignorado, incluindo choice.
 
 Nível e idioma:
-- basic: pergunta em PT. Quando pede o termo, espera em EN. Quando pede significado, espera em PT.
-- intermediate: pergunta em PT com termos EN quando natural. Resposta em EN, PT ou mista conforme o formato.
-- advanced: pergunta em EN. Resposta em EN.
+Cada formato define sua própria regra de idioma por nível nos exemplos abaixo. Em caso de qualquer divergência, a regra do formato prevalece sobre generalizações.
 
 Nunca coloque a resposta na própria pergunta.
 Cada pergunta cobre um único item da lista. A pergunta deve levar ao termo desse item, e o answerKeys deve conter esse mesmo termo, sempre.
@@ -51,7 +49,7 @@ Retorne APENAS UM JSON válido (objeto único). Sem markdown, sem cercas de cód
 
 Regras do JSON:
 - sourceItem: copie exatamente o termo (em inglês) do item da lista que esta pergunta cobre. A pergunta e o answerKeys devem apontar para esse mesmo termo.
-- answerKeys: sempre array com pelo menos 1 item. Inclua variações aceitáveis. Pelo menos uma das chaves deve ser igual a sourceItem. Se sourceItem não tiver tradução no material original, inclua a tradução inferida como chave adicional.
+- answerKeys: sempre array com pelo menos 1 item. Inclua variações aceitáveis. Variações aceitáveis são termos verdadeiramente intercambiáveis na mesma frase sem mudar o sentido. Termos relacionados mas não intercambiáveis no contexto da pergunta não entram. Pelo menos uma das chaves deve ser igual a sourceItem. Se sourceItem não tiver tradução no material original, inclua a tradução inferida como chave adicional.
 - questionOptions: vazio em todos os formatos, exceto choice.
 - Em choice: questionOptions tem 2 a 5 opções (preferência 4). A resposta correta deve estar entre as opções e também em answerKeys. Distratores plausíveis do mesmo campo semântico, sem absurdos.
 - O enunciado da pergunta nunca inclui as opções do choice. As opções vivem só em questionOptions.- warning: string curta em português descrevendo a inconsistência. Omita o campo quando não houver inconsistência.

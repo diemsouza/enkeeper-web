@@ -99,7 +99,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     });
 
     const user = await findUserById(userId);
-    const userLevel = user?.level ?? result.level;
+    const activityLevel = user?.level ?? result.level;
 
     const otherDocs = await findActiveOrPausedDocsByUser(userId);
     for (const other of otherDocs) {
@@ -123,7 +123,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       nextMessageAt,
       intervalMinutes,
       status: "active",
-      userLevel,
+      userLevel: activityLevel,
       title: result.title ?? "",
     });
 
@@ -144,13 +144,16 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       });
 
       const exampleFormats = getFormatsBySectionType(sectionData.sectionType);
-      const questionExamples = getQuestionExamples(exampleFormats, result.level);
+      const questionExamples = getQuestionExamples(
+        exampleFormats,
+        result.level,
+      );
 
       let questions = await generateSectionQuestions({
         sectionType: sectionData.sectionType,
         sectionTitle: sectionData.title,
         sectionContent: sectionData.content,
-        level: result.level,
+        level: activityLevel,
         questionExamples: questionExamples,
         userId,
         docId,
@@ -158,8 +161,10 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       });
 
       if (questions && questions.length > 0) {
-        const { questions: validatedQuestions, hasWarning: validatedHasWarning } =
-          validateGeneratedQuestion(questions, sectionData.sectionType);
+        const {
+          questions: validatedQuestions,
+          hasWarning: validatedHasWarning,
+        } = validateGeneratedQuestion(questions, sectionData.sectionType);
         questions = validatedQuestions;
         hasWarning = hasWarning || validatedHasWarning;
       }
@@ -193,7 +198,10 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       const activityCount = await incrementDailyActivityCount(userId, date);
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
-        const msg = formatDocProcessed(hasWarning, MAX_ACTIVITIES_PER_DAY - activityCount);
+        const msg = formatDocProcessed(
+          hasWarning,
+          MAX_ACTIVITIES_PER_DAY - activityCount,
+        );
         const summary = await buildPreviousActivitySummary(userId);
         const messages = summary ? [msg, summary] : [msg];
         await sendWhatsAppMessages(userChannel.channelId, messages);

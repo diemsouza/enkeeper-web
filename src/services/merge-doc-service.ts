@@ -4,7 +4,10 @@ import {
   updateDoc,
 } from "../repo/docs.repo";
 import { findDocItemsByDoc } from "../repo/doc-items.repo";
-import { formatInvalidContentMessage, validateContent } from "../core/validate-content";
+import {
+  formatInvalidContentMessage,
+  validateContent,
+} from "../core/validate-content";
 import { createActivity, updateActivity } from "../repo/activities.repo";
 import { createQuestions } from "../repo/questions.repo";
 import { createSection } from "../repo/sections.repo";
@@ -16,7 +19,11 @@ import {
   generateDocSections,
   generateSectionQuestions,
 } from "../vendors/llm.vendor";
-import { findUserById, findUserChannelByUserId, updateUserPendingIntent } from "../repo/users.repo";
+import {
+  findUserById,
+  findUserChannelByUserId,
+  updateUserPendingIntent,
+} from "../repo/users.repo";
 import { saveMessage } from "../repo/messages.repo";
 import {
   sendWhatsAppMessage,
@@ -81,7 +88,9 @@ export async function mergeDoc(
 
   const types = Array.from(new Set(validItems.map((i) => i.docType)));
   const docType: DocType = types.length === 1 ? types[0] : "mixed";
-  const consolidatedRaw = validItems.map((item) => item.rawContent).join("\n\n");
+  const consolidatedRaw = validItems
+    .map((item) => item.rawContent)
+    .join("\n\n");
 
   const user = await findUserById(userId);
   if (!user) return;
@@ -113,7 +122,9 @@ export async function mergeDoc(
       });
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
-        const msg = formatInvalidContentMessage(contentValidation.invalidReason);
+        const msg = formatInvalidContentMessage(
+          contentValidation.invalidReason,
+        );
         await sendWhatsAppMessage(userChannel.channelId, msg);
         await saveMessage({
           userId,
@@ -126,14 +137,14 @@ export async function mergeDoc(
       return;
     }
 
-    const result = await generateDocSections({
+    const docSectionResult = await generateDocSections({
       rawContent: consolidatedRaw,
       docType,
       userId,
       docId,
     });
 
-    if (!result) {
+    if (!docSectionResult) {
       console.error(`[merge-doc] AI failed for doc ${docId}`);
       await updateDoc(docId, userId, {
         status: "failed",
@@ -154,14 +165,14 @@ export async function mergeDoc(
       return;
     }
 
-    if (!result.isValid) {
+    if (!docSectionResult.isValid) {
       await updateDoc(docId, userId, {
         status: "failed",
-        error: result.invalidReason ?? "Conteúdo inválido.",
+        error: docSectionResult.invalidReason ?? "Conteúdo inválido.",
       });
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
-        const msg = formatInvalidContentMessage(result.invalidReason);
+        const msg = formatInvalidContentMessage(docSectionResult.invalidReason);
         await sendWhatsAppMessage(userChannel.channelId, msg);
         await saveMessage({
           userId,
@@ -174,18 +185,20 @@ export async function mergeDoc(
       return;
     }
 
-    const combinedContent = result.sections.map((s) => s.content).join("\n\n");
+    const combinedContent = docSectionResult.sections
+      .map((s) => s.content)
+      .join("\n\n");
 
     await updateDoc(docId, userId, {
-      title: result.title,
+      title: docSectionResult.title,
       rawContent: consolidatedRaw,
       content: combinedContent,
-      level: result.level,
+      level: docSectionResult.level,
       status: "active",
       docType,
     });
 
-    const userLevel = user.level ?? result.level;
+    const userLevel = user.level ?? docSectionResult.level;
 
     const otherDocs = await findActiveOrPausedDocsByUser(userId);
     for (const other of otherDocs) {
@@ -210,13 +223,13 @@ export async function mergeDoc(
       intervalMinutes,
       status: "active",
       userLevel,
-      title: result.title ?? "",
+      title: docSectionResult.title ?? "",
     });
 
     let totalQuestions = 0;
     let hasWarning = false;
 
-    for (const sectionData of [...result.sections].sort(
+    for (const sectionData of [...docSectionResult.sections].sort(
       (a, b) => a.order - b.order,
     )) {
       const section = await createSection({
@@ -230,13 +243,13 @@ export async function mergeDoc(
       });
 
       const exampleFormats = getFormatsBySectionType(sectionData.sectionType);
-      const questionExamples = getQuestionExamples(exampleFormats, result.level);
+      const questionExamples = getQuestionExamples(exampleFormats, userLevel);
 
       let questions = await generateSectionQuestions({
         sectionType: sectionData.sectionType,
         sectionTitle: sectionData.title,
         sectionContent: sectionData.content,
-        level: result.level,
+        level: userLevel,
         questionExamples: questionExamples,
         userId,
         docId,
@@ -244,8 +257,10 @@ export async function mergeDoc(
       });
 
       if (questions && questions.length > 0) {
-        const { questions: validatedQuestions, hasWarning: validatedHasWarning } =
-          validateGeneratedQuestion(questions, sectionData.sectionType);
+        const {
+          questions: validatedQuestions,
+          hasWarning: validatedHasWarning,
+        } = validateGeneratedQuestion(questions, sectionData.sectionType);
         questions = validatedQuestions;
         hasWarning = hasWarning || validatedHasWarning;
       }
@@ -274,7 +289,7 @@ export async function mergeDoc(
     if (totalQuestions > 0) {
       await updateActivity(activity.id, userId, {
         questionCount: totalQuestions,
-        sectionCount: result.sections.length,
+        sectionCount: docSectionResult.sections.length,
       });
       const activityCount = await incrementDailyActivityCount(userId, date);
       const userChannel = await findUserChannelByUserId(userId);

@@ -59,7 +59,7 @@ export function formatLevelCanceled(): string {
 
 export function formatCommandList(level: Level | null): string {
   const nivelLabel = level
-    ? `atualiza o nível do seu inglês. *${LEVEL_LABEL[level]}*`
+    ? `atualiza o nível do seu inglês. atual: ${LEVEL_LABEL[level]}`
     : "define o nível do seu inglês";
   return [
     "*Comandos disponíveis:*",
@@ -160,7 +160,7 @@ export function formatDocNoQuestions(): string {
 }
 
 export function formatIntensiveModeStopped(): string {
-  return "Modo intensivo interrompido. Voltando para o ritmo normal de perguntas.";
+  return "Modo de prática intensiva pausado. Voltando para o ritmo normal de perguntas.";
 }
 
 export function formatDocConfirmPrompt(): string {
@@ -262,8 +262,8 @@ export function formatIntensiveModeActivated({
   hasPendingQuestion?: boolean;
 }): string {
   let msg = isIntensiveMode
-    ? "Você já está no modo intensivo! "
-    : "Modo intensivo ativado. ";
+    ? "Você já está no modo prática intensiva! "
+    : "Modo prática intensiva ativado. ";
   if (hasPendingQuestion) {
     msg += "\n\n⚠️Você tem uma pergunta pendente para responder! ";
   }
@@ -305,7 +305,7 @@ export function formatChoiceQuestion(
 }
 
 type PreviousActivitySummaryData = {
-  docTitle: string;
+  activityTitle: string;
   questionCount: number;
   right: number;
   partial: number;
@@ -319,7 +319,7 @@ export function formatPreviousActivitySummary(
   data: PreviousActivitySummaryData,
 ): string {
   const {
-    docTitle,
+    activityTitle,
     questionCount,
     right,
     partial,
@@ -342,7 +342,7 @@ export function formatPreviousActivitySummary(
   }
 
   return [
-    `Enquanto a próxima pergunta não chega, segue um resumo da atividade anterior: *${docTitle}*`,
+    `Enquanto a próxima pergunta não chega, segue um resumo da atividade anterior: *${activityTitle}*`,
     "",
     `Período: ${period}`,
     `Perguntas: ${questionCount}`,

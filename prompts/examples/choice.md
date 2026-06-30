@@ -1,8 +1,8 @@
 ## BASIC
 
 ### question
-fórmula: pergunta curta em PT sobre uma palavra, expressão ou frase em EN
-nota: As opções vão em questionOptions, a correta em answerKeys. As opções não aparecem no enunciado da pergunta. O item perguntado pode ser palavra solta, expressão ou frase curta. Siga o que o material do aluno traz.
+fórmula: pergunta curta em PT, direta e mecânica, sobre uma palavra, expressão ou frase em EN
+nota: As opções vão em questionOptions, a correta em answerKeys. As opções não aparecem no enunciado da pergunta. Pergunta sempre pede o item certo de forma direta. O item perguntado pode ser palavra solta, expressão ou frase curta. Siga o que o material do aluno traz.
 
 - Qual palavra significa "jardim" em inglês?
 - Como se diz "bom dia, pessoal" em inglês?
@@ -10,62 +10,62 @@ nota: As opções vão em questionOptions, a correta em answerKeys. As opções 
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com o item correto. Nunca explicação. Nunca tradução.
-nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
+nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo, mesmo em perguntas que pedem a opção errada ou identificam exceção. Nunca explicação ou tradução, mesmo quando a pergunta é sobre o que a opção NÃO significa. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
 
 right:
 - Boa! "My garden is beautiful."
-- Correto! "She likes the garden."
-- Exato! "The dog is in the garden."
+- Correto! "Good morning, everyone."
+- Exato! "Have a good day, see you tomorrow."
 
 wrong:
-- Errado! "garden". "My garden is beautiful."
-- Hmmm, errou! "Garden". "She likes the garden."
-- Ops, errado! "Garden". "The dog is in the garden."
+- Errado! "Garden". "My garden is beautiful."
+- Hmmm, errou! "Good morning, everyone". "Good morning, everyone."
+- Ops, errado! "Have a good day, see you tomorrow". "Have a good day, see you tomorrow."
 
 ## INTERMEDIATE
 
 ### question
-fórmula: pergunta em PT com termos EN naturais, sobre expressão, phrasal verb, frase feita ou colocação em EN
-nota: As opções vão em questionOptions, a correta em answerKeys. As opções não aparecem no enunciado da pergunta. Varie entre pedir o item certo, identificar o errado ou escolher o que cabe no contexto.
+fórmula: pergunta em inglês básico (nível A2), variando entre pedir o item certo, identificar o errado ou escolher o que cabe num contexto descrito, sobre expressão, phrasal verb, frase feita ou colocação em EN
+nota: As opções vão em questionOptions, a correta em answerKeys. As opções não aparecem no enunciado da pergunta. Diferente do básico, que é em PT e só pede o item certo direto, aqui a pergunta é em inglês básico (nível A2) e sempre varia entre as três formas de perguntar (pedir certo, identificar errado, contexto).
 
-- Qual expressão usaria pra dizer "deixa pra lá"?
-- Qual phrasal verb significa "desistir"?
-- Qual dessas frases está errada pra pedir desculpa formalmente?
+- Which expression means "deixa pra lá"?
+- Which of these options does NOT mean "desistir"?
+- You want to apologize very formally. Which sentence would you use?
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com a expressão correta. Nunca explicação. Nunca tradução.
-nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
+nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo, mesmo em perguntas que pedem a opção errada ou identificam exceção. Nunca explicação ou tradução, mesmo quando a pergunta é sobre o que a opção NÃO significa. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
 
 right:
 - Boa! "Never mind, it's not a big deal."
-- Correto! "Just say never mind and move on."
-- Perfeito! "She told me never mind when I apologized."
+- Correto! "Don't give up now."
+- Perfeito! "I sincerely apologize for the inconvenience."
 
 wrong:
-- Errado! "never mind". "Never mind, it's not a big deal."
-- Hmmm, errou! "Never mind". "Just say never mind and move on."
-- Ops, errado! "Never mind". "She told me never mind when I apologized."
+- Errado! "Never mind". "Never mind, it's not a big deal."
+- Hmmm, errou! "Give up". "Don't give up now."
+- Ops, errado! "I sincerely apologize for the inconvenience". "I sincerely apologize for the inconvenience."
 
 ## ADVANCED
 
 ### question
-fórmula: abertura em PT + frase de uso real em EN com a expressão correta. Nunca explicação. Nunca tradução.
-nota: As opções vão em questionOptions, a correta em answerKeys. As opções não aparecem no enunciado da pergunta. Varie entre pedir o item certo, identificar o errado ou escolher o que cabe no contexto.
+fórmula: pergunta em inglês intermediário (nível B1-B2), sempre descrevendo um contexto, situação ou nuance antes de pedir a opção, sobre idiom, expressão idiomática ou colocação em EN
+nota: As opções vão em questionOptions, a correta em answerKeys. As opções não aparecem no enunciado da pergunta. A pergunta sempre nasce de uma situação ou nuance descrita, nunca um pedido cru, em inglês intermediário (nível B1-B2).
 
-- Which expression describes the ideal balance between two factors?
-- Which sentence sounds most natural when declining politely?
-- Which idiom doesn't fit when describing accepting bad news?
+- Your team can't decide between moving fast and getting it perfect. Which expression names that ideal balance?
+- A friend invites you somewhere you'd rather skip. Which sentence declines without sounding rude?
+- You're stuck doing something unpleasant but unavoidable. Which idiom fits best here?
 
 ### feedback
-fórmula: abertura + frase de uso real em EN com o item correto. Nunca explicação. Nunca tradução.
-nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo. Nunca explicação ou tradução. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
+fórmula: abertura em PT + frase de uso real em EN com o item correto. Nunca explicação. Nunca tradução.
+nota: Aceita letra (a-e) ou texto da opção como resposta. Choice é binário, nunca usar partial. Sempre frase de uso real com o termo, mesmo em perguntas que pedem a opção errada ou identificam exceção. Nunca explicação ou tradução, mesmo quando a pergunta é sobre o que a opção NÃO significa. Aceita apenas a opção que bate com answerKeys (por letra ou texto exato). Sinônimos e equivalentes semânticos não são aceitos.
 
 right:
 - Boa! "That's the sweet spot between speed and quality."
-- Correto! "We've finally hit the sweet spot on pricing."
-- Perfeito! "Finding the sweet spot took months of testing."
+- Correto! "I appreciate the offer, but I'll have to pass."
+- Perfeito! "I had to bite the bullet and accept the decision."
 
 wrong:
-- Errado! "sweet spot". "That's the sweet spot between speed and quality."
-- Hmmm, errou! "Sweet spot". "We've finally hit the sweet spot on pricing."
-- Ops, errado! "Sweet spot". "Finding the sweet spot took months of testing."
+- Errado! "Sweet spot". "That's the sweet spot between speed and quality."
+- Hmmm, errou! "I appreciate the offer, but I'll have to pass". "I appreciate the offer, but I'll have to pass."
+- Ops, errado! "Bite the bullet". "I had to bite the bullet and accept the decision."

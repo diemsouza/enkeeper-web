@@ -1,86 +1,86 @@
 ## BASIC
 
 ### question
-fórmula: pergunta curta em PT pedindo significado ou uso de um termo em EN
-nota: O termo aparece em EN entre aspas na pergunta. Resposta esperada em PT, significado ou explicação curta. answerKeys aceita variações de tradução. Varie o fraseado entre exemplos.
+fórmula: pergunta curta em PT pedindo significado do termo EN, sempre especificando "em português"
+nota: O termo aparece em EN entre aspas na pergunta. Resposta esperada em PT. answerKeys contém o significado em PT, não o termo EN. Varie entre "O que significa" e "O que quer dizer", nunca use "explicar" ou equivalente.
 
-- O que significa "garden"?
-- O que quer dizer "breakfast"?
-- Como você explicaria "friend"?
+- O que significa "garden" em português?
+- O que quer dizer "breakfast" em português?
+- O que significa "friend" em português?
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com o termo em EN
-nota: Sempre frase de uso real contendo o termo em contexto. Em wrong e partial, mostre o termo em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+nota: Em wrong e partial, o destaque é o significado em PT (o answerKey), nunca o termo EN que já estava na pergunta. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "My garden is beautiful."
-- Correto! "She likes the garden."
-- Exato! "The dog is in the garden."
+- Correto! "Breakfast is ready."
+- Exato! "He's my best friend."
 
 wrong:
-- Errado! "Garden". "My garden is beautiful."
-- Hmmm, errou! "Garden". "She likes the garden."
-- Ops, errado! "Garden". "The dog is in the garden."
+- Errado! "Jardim". "My garden is beautiful."
+- Hmmm, errou! "Café da manhã". "Breakfast is ready."
+- Ops, errado! "Amigo". "He's my best friend."
 
 partial:
-- Quase! "Garden". "My garden is beautiful."
-- Por pouco! "Garden". "She likes the garden."
-- Quase lá! "Garden". "The dog is in the garden."
+- Quase! "Jardim". "My garden is beautiful."
+- Por pouco! "Café da manhã". "Breakfast is ready."
+- Quase lá! "Amigo". "He's my best friend."
 
 ## INTERMEDIATE
 
 ### question
-fórmula: pergunta em PT ou EN sobre o significado ou uso de uma expressão, phrasal verb ou colocação em EN
-nota: O termo aparece em EN entre aspas. Resposta esperada pode ser explicação em PT, em EN, ou exemplo de uso. answerKeys cobre as variações aceitáveis.
+fórmula: pergunta direta em EN, estrutura simples e mecânica, pedindo o significado em PT, sempre fechando com "in Portuguese?"
+nota: Pergunta mecânica e direta, tipo "What does X mean in Portuguese?", em inglês básico (nível A2). O termo aparece em EN entre aspas. Resposta esperada em PT. answerKeys contém o significado em PT, não o termo EN.
 
-- What does "never mind" mean?
-- Em que situação você usaria "give up"?
-- Como você usaria "get ready" numa frase?
+- What does "never mind" mean in Portuguese?
+- What's the meaning of "give up" in Portuguese?
+- What does "get ready" mean in Portuguese?
 
 ### feedback
-fórmula: abertura + frase de uso real em EN com a expressão em EN
-nota: Sempre frase de uso real contendo o termo em contexto. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+fórmula: abertura + frase de uso real em EN com o termo em EN
+nota: Em wrong e partial, o destaque é o significado em PT (o answerKey), nunca o termo EN que já estava na pergunta. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "Never mind, it's not a big deal."
-- Correto! "Just say never mind and move on."
-- Perfeito! "She told me never mind when I apologized."
+- Correto! "Don't give up now."
+- Perfeito! "Get ready, we're leaving."
 
 wrong:
-- Errado! "Never mind". "Never mind, it's not a big deal."
-- Hmmm, errou! "Never mind". "Just say never mind and move on."
-- Ops, errado! "Never mind". "She told me never mind when I apologized."
+- Errado! "Deixa pra lá". "Never mind, it's not a big deal."
+- Hmmm, errou! "Desistir". "Don't give up now."
+- Ops, errado! "Se preparar". "Get ready, we're leaving."
 
 partial:
-- Quase! "Never mind". "Never mind, it's not a big deal."
-- Por pouco! "Never mind". "Just say never mind and move on."
-- Quase lá! "Never mind". "She told me never mind when I apologized."
+- Quase! "Deixa pra lá". "Never mind, it's not a big deal."
+- Por pouco! "Desistir". "Don't give up now."
+- Quase lá! "Se preparar". "Get ready, we're leaving."
 
 ## ADVANCED
 
 ### question
-fórmula: pergunta em EN pedindo uso, nuance ou contexto de um idiom, expressão idiomática ou colocação
-nota: O termo aparece em EN entre aspas. Resposta esperada em EN: frase de uso, explicação ou exemplo de contexto. answerKeys cobre variações aceitáveis.
+fórmula: pergunta em EN, formulação fluida e natural (não mecânica), pedindo o significado em PT de um idiom ou expressão idiomática, sempre fechando com "in Portuguese?"
+nota: Em vez de pedido mecânico tipo "what does X mean", formule como alguém pensaria a pergunta numa conversa real, buscando entender o sentido, em inglês intermediário (nível B1-B2). O termo aparece em EN entre aspas. Resposta esperada em PT. answerKeys contém o significado em PT, não o termo EN.
 
-- How would you use "sweet spot" in a sentence?
-- When would you say "bite the bullet"?
-- What's the nuance behind "hold on" in a conversation?
+- If someone tells you they hit the "sweet spot" on pricing, what are they saying in Portuguese?
+- When someone says they had to "bite the bullet", what does that mean in Portuguese?
+- If a colleague tells you to "hold on" for a second, what are they asking in Portuguese?
 
 ### feedback
-fórmula: abertura em PT + frase de uso real em EN com a expressão
-nota: Sempre frase de uso real contendo o termo em contexto. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+fórmula: abertura em PT + frase de uso real em EN com o termo em EN
+nota: Em wrong e partial, o destaque é o significado em PT (o answerKey), nunca o termo EN que já estava na pergunta. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "That's the sweet spot between speed and quality."
-- Correto! "We've finally hit the sweet spot on pricing."
-- Perfeito! "Finding the sweet spot took months of testing."
+- Correto! "Just bite the bullet and get it done."
+- Perfeito! "Hold on, I'll be right back."
 
 wrong:
-- Errado! "Sweet spot". "That's the sweet spot between speed and quality."
-- Hmmm, errou! "Sweet spot". "We've finally hit the sweet spot on pricing."
-- Ops, errado! "Sweet spot". "Finding the sweet spot took months of testing."
+- Errado! "Ponto ideal". "That's the sweet spot between speed and quality."
+- Hmmm, errou! "Encarar de vez". "Just bite the bullet and get it done."
+- Ops, errado! "Espera". "Hold on, I'll be right back."
 
 partial:
-- Quase! "Sweet spot". "That's the sweet spot between speed and quality."
-- Por pouco! "Sweet spot". "We've finally hit the sweet spot on pricing."
-- Quase lá! "Sweet spot". "Finding the sweet spot took months of testing."
+- Quase! "Ponto ideal". "That's the sweet spot between speed and quality."
+- Por pouco! "Encarar de vez". "Just bite the bullet and get it done."
+- Quase lá! "Espera". "Hold on, I'll be right back."

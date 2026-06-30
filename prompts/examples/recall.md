@@ -1,86 +1,86 @@
 ## BASIC
 
 ### question
-fórmula: pergunta curta em PT pedindo o termo em EN a partir do significado
-nota: O termo correto vai em answerKeys. Varie o fraseado entre exemplos, mantendo a intenção de pedir o termo em EN.
+fórmula: pergunta curta em PT pedindo o termo em EN a partir do significado, terminando em "em inglês?"
+nota: O termo correto vai em answerKeys. Varie o fraseado entre exemplos, mantendo a intenção de pedir o termo, sempre fechando com "em inglês?".
 
 - Como se diz "jardim" em inglês?
-- Qual é a palavra para "café da manhã"?
+- Qual é a palavra para "café da manhã" em inglês?
 - Como falar "amigo" em inglês?
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com o termo em EN
-nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre o termo em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+nota: Em wrong e partial, mostre o termo em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "My garden is beautiful."
-- Correto! "She likes the garden."
-- Exato! "The dog is in the garden."
+- Correto! "Breakfast is ready."
+- Exato! "He's my best friend."
 
 wrong:
 - Errado! "Garden". "My garden is beautiful."
-- Hmmm, errou! "Garden". "She likes the garden."
-- Ops, errado! "Garden". "The dog is in the garden."
+- Hmmm, errou! "Breakfast". "Breakfast is ready."
+- Ops, errado! "Friend". "He's my best friend."
 
 partial:
 - Quase! "Garden". "My garden is beautiful."
-- Por pouco! "Garden". "She likes the garden."
-- Quase lá! "Garden". "The dog is in the garden."
+- Por pouco! "Breakfast". "Breakfast is ready."
+- Quase lá! "Friend". "He's my best friend."
 
 ## INTERMEDIATE
 
 ### question
-fórmula: pergunta em PT (ou mista PT/EN) pedindo expressão, phrasal verb ou colocação em EN
-nota: O termo correto vai em answerKeys. Varie o fraseado entre exemplos, podendo usar "What's the expression for..." quando soar natural.
+fórmula: pergunta direta em EN, estrutura simples e mecânica, pedindo o termo em EN a partir do significado em PT, terminando em "in English?"
+nota: Pergunta mecânica e direta, tipo pedido cru de tradução, em inglês básico (nível A2). O termo aparece em PT entre aspas. Sempre fechando com "in English?".
 
-- Qual expressão usaria pra dizer "deixa pra lá"?
-- What's the phrasal verb for "desistir"?
-- Como diria "estou exausto" de forma natural?
+- How do you say "deixa pra lá" in English?
+- What's the phrasal verb for "desistir" in English?
+- How would you say "estou exausto" in English?
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com a expressão em EN
-nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+nota: Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "Never mind, it's not a big deal."
-- Correto! "Just say never mind and move on."
-- Perfeito! "She told me never mind when I apologized."
+- Correto! "Don't give up now."
+- Perfeito! "I'm exhausted after that meeting."
 
 wrong:
 - Errado! "Never mind". "Never mind, it's not a big deal."
-- Hmmm, errou! "Never mind". "Just say never mind and move on."
-- Ops, errado! "Never mind". "She told me never mind when I apologized."
+- Hmmm, errou! "Give up". "Don't give up now."
+- Ops, errado! "Exhausted". "I'm exhausted after that meeting."
 
 partial:
 - Quase! "Never mind". "Never mind, it's not a big deal."
-- Por pouco! "Never mind". "Just say never mind and move on."
-- Quase lá! "Never mind". "She told me never mind when I apologized."
+- Por pouco! "Give up". "Don't give up now."
+- Quase lá! "Exhausted". "I'm exhausted after that meeting."
 
 ## ADVANCED
 
 ### question
-fórmula: pergunta em EN descrevendo situação ou nuance, pedindo idiom, expressão ou colocação em EN
-nota: O termo correto vai em answerKeys. Varie o fraseado entre exemplos: descrição de situação, descrição de função, pedido direto.
+fórmula: pergunta em EN, formulação fluida e natural (não mecânica), pedindo o termo em EN a partir do significado em PT, terminando em "in English?"
+nota: Em vez de pedido mecânico, formule como alguém pensaria a pergunta numa conversa real, buscando a palavra certa, em inglês intermediário (nível B1-B2). O termo aparece em PT entre aspas. Sempre fechando com "in English?".
 
-- What do you say when you want someone to wait a moment?
-- What expression describes the ideal balance between two factors?
-- How would you tell someone to accept an unwanted outcome?
+- What's the word you'd use instead of "deixa pra lá" when talking to a friend, in English?
+- How would a native speaker express "desistir" in this context, in English?
+- What would you say if you wanted to express "estou exausto" casually, in English?
 
 ### feedback
 fórmula: abertura em PT + frase de uso real em EN com a expressão correta
-nota: Frase de uso construída de forma natural e curta. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+nota: Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "Hold on, let me check that for you."
-- Correto! "Just hold on a second, I'll be right back."
-- Perfeito! "Hold on, I think I know the answer."
+- Correto! "That's the sweet spot between speed and quality."
+- Perfeito! "Just bite the bullet and get it done."
 
 wrong:
 - Errado! "Hold on". "Hold on, let me check that for you."
-- Hmmm, errou! "Hold on". "Just hold on a second, I'll be right back."
-- Ops, errado! "Hold on". "Hold on, I think I know the answer."
+- Hmmm, errou! "Sweet spot". "That's the sweet spot between speed and quality."
+- Ops, errado! "Bite the bullet". "Just bite the bullet and get it done."
 
 partial:
 - Quase! "Hold on". "Hold on, let me check that for you."
-- Por pouco! "Hold on". "Just hold on a second, I'll be right back."
-- Quase lá! "Hold on". "Hold on, I think I know the answer."
+- Por pouco! "Sweet spot". "That's the sweet spot between speed and quality."
+- Quase lá! "Bite the bullet". "Just bite the bullet and get it done."
