@@ -28,6 +28,7 @@ import {
   formatOnboardingMsg4,
   humanizeFeedback,
   formatIntensiveModeStopped,
+  formatGuideAfterFirstFeedback,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import {
@@ -83,6 +84,7 @@ import {
   MIN_DOC_CHARS,
   INTENSIVE_UNTIL_MIN,
   MAX_ACTIVITIES_PER_DAY,
+  AFTER_FEEDBACK_WA_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
@@ -90,6 +92,7 @@ import { handleAdminCommand } from "./admin-service";
 import { markWaitlistActive } from "../repo/waitlist.repo";
 import { startOfDay } from "date-fns";
 import { validateDocItemInput } from "./doc-item-service";
+import { MessagePart } from "../types/message-parts";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
@@ -106,7 +109,7 @@ const OVERRIDING_INTENTS: MessageIntent[] = [
 
 export async function handleIncomingMessage(
   input: IncomingMessage,
-): Promise<string[]> {
+): Promise<MessagePart[]> {
   const rawText = (input.text ?? "").trim();
   const user = await findOrCreateUserByChannel(
     input.channelType,
@@ -853,6 +856,7 @@ export async function handleIncomingMessage(
                   )
                 : pendingQuestion.question;
 
+            // TODO: refactory - avoid pass all docContent to LLM, maybe pass only the relevant section content
             const evaluation = await generateAnswerEvaluation({
               question: questionForEval,
               answerKeys: pendingQuestion.answerKeys,
@@ -904,9 +908,10 @@ export async function handleIncomingMessage(
             const isPracticingSessionActive =
               activeActivity.intensiveUntil &&
               activeActivity.intensiveUntil > new Date();
+            const interactionCount = activeActivity.interactionCount + 1;
             await updateActivity(activeActivity.id, user.id, {
               waitingUser: false,
-              interactionCount: activeActivity.interactionCount + 1,
+              interactionCount,
               lastInteractionAt: new Date(),
               nextMessageAt: new Date(
                 Date.now() + activeActivity.intervalMinutes * 60 * 1000,
@@ -945,7 +950,30 @@ export async function handleIncomingMessage(
                 activeActivity.executionCount,
                 today,
               );
-              if (replies.length > 0) return [feedback, ...replies];
+              if (replies.length > 0)
+                return [
+                  feedback,
+                  { delay: AFTER_FEEDBACK_WA_MESSAGE_INTERVAL_SEC },
+                  ...replies,
+                ];
+            }
+
+            if (interactionCount == 1) {
+              const guideMsg = formatGuideAfterFirstFeedback();
+              await saveMessage({
+                userId: user.id,
+                userChannelId: userChannel.id,
+                activityId: activeActivity.id,
+                role: "assistant",
+                content: guideMsg,
+                intent: "guide_after_first_feedback",
+              });
+              await incrementAgentMessageCount(user.id, today);
+              return [
+                feedback,
+                { delay: AFTER_FEEDBACK_WA_MESSAGE_INTERVAL_SEC },
+                guideMsg,
+              ];
             }
 
             return [feedback];

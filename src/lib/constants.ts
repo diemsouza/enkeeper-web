@@ -16,6 +16,7 @@ export const MAX_DOC_ITEMS_PER_DOC = 3;
 export const DOC_BUFFER_DELAY_SEC = 45;
 export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 export const SEQUENCE_WA_MESSAGE_INTERVAL_SEC = 2;
+export const AFTER_FEEDBACK_WA_MESSAGE_INTERVAL_SEC = 5;
 export const NUDGE_STEPS = [
   "h3",
   "h12",

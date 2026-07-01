@@ -1,4 +1,5 @@
 import { SEQUENCE_WA_MESSAGE_INTERVAL_SEC } from "../lib/constants";
+import { MessagePart } from "../types/message-parts";
 
 type MediaDownloadResult = {
   buffer: Buffer;
@@ -41,14 +42,20 @@ export async function sendWhatsAppMessage(
 
 export async function sendWhatsAppMessages(
   to: string,
-  texts: string[],
+  parts: MessagePart[],
 ): Promise<void> {
-  for (let i = 0; i < texts.length; i++) {
-    if (i > 0)
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (typeof part === "object") {
+      await new Promise((resolve) => setTimeout(resolve, part.delay * 1000));
+      continue;
+    }
+    if (i > 0 && typeof parts[i - 1] === "string") {
       await new Promise((resolve) =>
         setTimeout(resolve, SEQUENCE_WA_MESSAGE_INTERVAL_SEC * 1000),
       );
-    await sendWhatsAppMessage(to, texts[i]);
+    }
+    await sendWhatsAppMessage(to, part);
   }
 }
 

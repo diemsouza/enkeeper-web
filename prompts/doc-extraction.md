@@ -33,6 +33,8 @@ Classificação de sectionType (critério é independência entre itens, não ta
 
 Erro comum: lista de pares termo-tradução é vocabulary mesmo com item sendo frase completa, não palavra isolada.
 
+Erro comum inverso: uma lista com lacuna explícita pra completar (ex: "I ___ tired (estou)", "She ___ happy (está)") não é vocabulary mesmo tendo parênteses com tradução. A presença de lacuna ("___", "______", ou instrução tipo "complete") indica exercise, porque o item pede ação de preenchimento, não é par isolado de termo-tradução.
+
 Para cada seção:
 - title: nome curto da seção, extraído ou inferido do material
 - sectionType: conforme classificação acima

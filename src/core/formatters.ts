@@ -1,5 +1,10 @@
 import { Doc, ActivityStatus, Level } from "../lib/prisma";
-import { ANSWER_EMOJI, MAX_DOC_ITEMS_PER_DOC } from "../lib/constants";
+import {
+  ANSWER_EMOJI,
+  INTENSIVE_UNTIL_MIN,
+  MAX_DOC_ITEMS_PER_DOC,
+  TRIAL_DAYS,
+} from "../lib/constants";
 import { sanitizeText, sanitizeWhatsappContent } from "../lib/utils";
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { shuffle } from "lodash";
@@ -14,7 +19,7 @@ export function formatOnboardingMsg2(): string {
 }
 
 export function formatOnboardingMsg3(): string {
-  return "Você tem 3 dias para praticar a vontade. Aproveite!";
+  return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} para praticar a vontade. Aproveite!`;
 }
 
 export function formatOnboardingMsg4(): string {
@@ -151,6 +156,10 @@ export function formatDocProcessed(
   return lines.join("");
 }
 
+export function formatGuideAfterFirstFeedback(): string {
+  return "A próxima pergunta chega mais tarde, no ritmo normal. Se quiser, use *praticar* e ative o modo intensivo agora.";
+}
+
 export function formatDocProcessingFailed(): string {
   return "Algo deu errado no processamento. Tente outro material.";
 }
@@ -190,7 +199,7 @@ export function formatActivityReplacePrompt(
 }
 
 export function formatDailyActivityLimitReached(): string {
-  return "Você atingiu o limite de atividades de hoje.";
+  return "⚠️ Você atingiu o limite de atividades de hoje.";
 }
 
 export function formatDocItemReceived(itemCount: number): string {
@@ -201,7 +210,7 @@ export function formatDocItemReceived(itemCount: number): string {
 }
 
 export function formatDocItemLimitReached(): string {
-  return `Essa atividade já atingiu o limite de ${MAX_DOC_ITEMS_PER_DOC} materiais. Continuando com o que já foi enviado...`;
+  return `⚠️ Essa atividade já atingiu o limite de ${MAX_DOC_ITEMS_PER_DOC} materiais. Continuando com o que já foi enviado...`;
 }
 
 export function formatPausePrompt(docs: Pick<Doc, "id" | "title">[]): string {
@@ -262,13 +271,12 @@ export function formatIntensiveModeActivated({
   hasPendingQuestion?: boolean;
 }): string {
   let msg = isIntensiveMode
-    ? "Você já está no modo prática intensiva! "
-    : "Modo prática intensiva ativado. ";
+    ? "O modo prática intensiva já está ativado. "
+    : "Modo prática intensiva ativado. Perguntas chegam uma após a outra, no seu ritmo. ";
   if (hasPendingQuestion) {
-    msg += "\n\n⚠️Você tem uma pergunta pendente para responder! ";
+    msg += "\n\n⚠️ Você tem uma pergunta pendente para responder! ";
   }
-  msg +=
-    "\n\nAs perguntas chegam uma após a outra, no ritmo da sua resposta. _Use *pausar* para interromper._";
+  msg += `\n\n_Pare usando *pausar* ou após ${INTENSIVE_UNTIL_MIN} minutos sem resposta._`;
   return msg;
 }
 
@@ -292,7 +300,7 @@ export function formatSectionTransition(
 ): string {
   const pool = isFirst ? START_MESSAGES : CONTINUE_MESSAGES;
   const prefix = pool[Math.floor(Math.random() * pool.length)];
-  return `${prefix} *${sanitizeWhatsappContent(title)}*`;
+  return `📘 ${prefix} *${sanitizeWhatsappContent(title)}*`;
 }
 
 export function formatChoiceQuestion(
@@ -342,7 +350,7 @@ export function formatPreviousActivitySummary(
   }
 
   return [
-    `Enquanto a próxima pergunta não chega, segue um resumo da atividade anterior: *${activityTitle}*`,
+    `📊 Atividade anterior: *${activityTitle}*`,
     "",
     `Período: ${period}`,
     `Perguntas: ${questionCount}`,
@@ -377,7 +385,7 @@ const NUDGE_BODY_POOL = [
   "Prática puxa memória, pausa apaga memória.",
   "Seu inglês não evolui enquanto você espera.",
   "A repetição é o que fixa o aprendizado.",
-  "Parar agora custa mais do que continuar depois.",
+  "Quanto mais tempo parado, mais difícil retomar.",
   "O que você estudou só fica se for revisado.",
   "Hábito vale mais que vontade.",
   "Só tem duas opcoes: praticar ou esquecer.",

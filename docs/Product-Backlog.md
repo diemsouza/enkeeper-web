@@ -159,3 +159,37 @@ Gatilho de upgrade: a cadência reduzida de áudio no plano padrão pode se torn
 **Objeção**
 
 Custo de TTS é recorrente e escala linearmente com volume de mensagens e usuários, diferente de uma feature que se paga uma vez no desenvolvimento. Mesmo com rollout limitado a 1 em X perguntas, vale medir a taxa de resposta e o feedback qualitativo nesse primeiro grupo antes de expandir a frequência ou pensar em segmentar por plano, dado que a margem bruta hoje já é o número central da viabilidade financeira (Seção 10 e 11 do Product-Brief).
+
+---
+
+## 5) Pool diário de práticas com controle de custo
+
+**Contexto**
+
+Modo prática intensiva (Seção 8, Product-Rules) hoje só limita por inatividade (15 minutos sem resposta). Ao testar, identificamos que um usuário respondendo rápido pode esgotar dezenas de perguntas em poucos minutos, sem nenhum teto de volume. Cadência normal também não tem limite diário. Avaliação de resposta é a fatia mais cara do custo variável por usuário (Seção 10, Product-Brief, R$1,20-1,80/mês na média), e esse custo é por resposta processada, não por tempo de sessão.
+
+**Problema**
+
+Sem limite de volume, o custo real por usuário pode escalar bem acima da média projetada na Seção 10 e 11 do Brief, que assume uso moderado ao longo do mês. Usuário hiperfocado, testando os limites, ou simplesmente muito engajado, pode consumir volume de avaliações desproporcional ao que a mensalidade de R$19,90 sustenta, furando a margem individual mesmo pagando o mesmo preço de todo mundo.
+*Exemplo:* usuário responde em modo intensivo a cada 5 segundos por 1 hora seguida, 4 vezes no dia, trocando de material 5 vezes, cada resposta avaliada via LLM. Custo desse usuário no dia pode superar o custo médio mensal projetado pra ele inteiro.
+
+**Solução**
+
+Pool único e diário de práticas (perguntas avaliadas) por usuário, consumido tanto pela cadência normal quanto pelo modo intensivo, sem distinção de origem. Modo intensivo passa a ter também um teto estrutural de sessão (15 minutos, hard stop, reinício manual via comando), como camada adicional de dosagem dentro do mesmo pool.
+
+**Como**
+
+Pool conta respostas avaliadas (`right`, `wrong`, `partial`), independente de terem vindo de cadência normal, modo intensivo ou fallback de revisão. Um único contador, resetado diariamente.
+*Exemplo:* usuário com pool de 60 práticas/dia pode gastar tudo em 20 minutos de intensivo, ou espalhar ao longo do dia normal, ou misturar os dois, o número final consumido é o mesmo em qualquer combinação.
+
+Modo intensivo ganha teto de sessão de 15 minutos contados da ativação (hard stop, não mais só por inatividade). Ao encerrar por esse motivo, mensagem avisa e orienta reativação via `praticar`, diferente do encerramento por inatividade, que permanece silencioso.
+*Exemplo:* usuário ativo, respondendo rápido, sessão bate 15 minutos, sistema envia "Sessão intensiva encerrada. Use *praticar* de novo quando quiser continuar." e para de enviar novas perguntas até nova ativação.
+
+Nomenclatura de produto: unidade do pool é "prática", não "pergunta". "Pergunta" é termo técnico que não carrega valor e aproxima o produto de commodities (flashcard, GPT genérico). "Prática" já é a palavra usada na tagline, no resumo executivo e no nome do produto (Fluizer, fluência via prática), e comunica melhor tanto o valor quanto o limite.
+*Exemplo:* mensagem de teto atingido usa "Você usou sua prática de hoje. Amanhã tem mais.", sem tom de escassez artificial tipo jogo (sem "parabéns", sem gatilho de recompensa variável), alinhado à Seção 12 do Brief de nunca soar como notificação de app pedindo atenção.
+
+Caps de atividade e material por atividade (Seção 14, Product-Rules, hoje 5 atividades/dia e até 3 materiais por troca) protegem o custo de processamento (doc-extraction, Vision, Whisper), que é camada de custo diferente da avaliação. Revisar se os números atuais ainda fazem sentido depois que o pool de prática estiver calibrado, são proteções complementares, não redundantes.
+
+**Objeção**
+
+Número do pool (quantidade de práticas/dia) não pode ser definido sem dado real de custo por resposta em produção, precisa calibrar com uso real antes de travar o valor final. Risco de calibrar baixo demais e o usuário engajado (perfil que mais queremos reter) sentir o produto curto logo na fase em que mais precisa provar valor.

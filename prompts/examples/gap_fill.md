@@ -9,10 +9,13 @@ Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______`
 
 Em ambas, a frase ou pergunta de estímulo é sempre em EN. Use underline longo (`______`). O termo correto vai em answerKeys. Varie o contexto entre exemplos.
 
+exemplos:
 - Complete: "I have a ______ behind my house." (jardim)
 - Complete: "She drinks ______ every morning." (café)
 - How are you feeling about the trip? ______ (estou pronto)
 - What do people usually do when learning something new? ______ (cometo erros)
+
+validação: o `______` está presente exatamente uma vez, cobrindo o termo inteiro do answerKeys (não parte dele). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com o termo em EN preenchido
@@ -47,10 +50,13 @@ Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______`
 
 Em ambas, a frase de estímulo é sempre em EN. A lacuna pode cobrir mais de uma palavra (expressão multi-word). Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
 
+exemplos:
 - Complete: "Just ______, it's not a big deal." (deixa pra lá)
 - Complete: "I had to ______ trying to fix it alone." (desistir)
 - Complete: "We need to ______ before the meeting." (nos preparar)
 - What would you say to calm someone down about a small mistake? ______ (não se preocupe com isso)
+
+validação: o `______` está presente exatamente uma vez, cobrindo a expressão inteira do answerKeys (não só parte dela, ex: não pode deixar "the" fora da lacuna se o termo for "the sweet spot"). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com a expressão em EN preenchida
@@ -85,10 +91,13 @@ Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______`
 
 Em ambas, a frase de estímulo é em inglês intermediário (nível B1-B2), podendo ter estrutura um pouco mais elaborada que o nível anterior. A lacuna cobre o item idiomático ou a resposta completa. Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
 
+exemplos:
 - Complete: "We negotiated for hours, and we finally hit the ______ on pricing." (ponto ideal)
 - Complete: "I didn't want to, but I had to ______ and accept the decision." (engolir o sapo)
 - Complete: "Instead of arguing, let's ______ and talk it through." (resolver de uma vez)
 - The negotiation dragged on, but they finally found common ground. How would you describe that outcome? ______ (acertamos o ponto ideal)
+
+validação: o `______` está presente exatamente uma vez, cobrindo o idiom ou expressão inteira do answerKeys (não só parte dela). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase, incluindo a oração que vem antes ou depois da lacuna na mesma frase de duas cláusulas. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
 fórmula: abertura em PT + frase de uso real em EN com a expressão correta preenchida

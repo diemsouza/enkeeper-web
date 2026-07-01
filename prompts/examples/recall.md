@@ -4,9 +4,12 @@
 fórmula: pergunta curta em PT pedindo o termo em EN a partir do significado, terminando em "em inglês?"
 nota: O termo correto vai em answerKeys. Varie o fraseado entre exemplos, mantendo a intenção de pedir o termo, sempre fechando com "em inglês?".
 
+exemplos:
 - Como se diz "jardim" em inglês?
 - Qual é a palavra para "café da manhã" em inglês?
 - Como falar "amigo" em inglês?
+
+validação: a pergunta termina exatamente com "em inglês?" e o termo em EN (a resposta esperada) não aparece em nenhum lugar do enunciado. Se algum dos dois falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com o termo em EN
@@ -33,9 +36,12 @@ partial:
 fórmula: pergunta direta em EN, estrutura simples e mecânica, pedindo o termo em EN a partir do significado em PT, terminando em "in English?"
 nota: Pergunta mecânica e direta, tipo pedido cru de tradução, em inglês básico (nível A2). O termo aparece em PT entre aspas. Sempre fechando com "in English?".
 
+exemplos:
 - How do you say "deixa pra lá" in English?
 - What's the phrasal verb for "desistir" in English?
 - How would you say "estou exausto" in English?
+
+validação: a pergunta termina exatamente com "in English?" e o termo em EN (a resposta esperada) não aparece em nenhum lugar do enunciado, só o termo em PT entre aspas. Se algum dos dois falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
 fórmula: abertura + frase de uso real em EN com a expressão em EN
@@ -62,25 +68,28 @@ partial:
 fórmula: pergunta em EN, formulação fluida e natural (não mecânica), pedindo o termo em EN a partir do significado em PT, terminando em "in English?"
 nota: Em vez de pedido mecânico, formule como alguém pensaria a pergunta numa conversa real, buscando a palavra certa, em inglês intermediário (nível B1-B2). O termo aparece em PT entre aspas. Sempre fechando com "in English?".
 
+exemplos:
 - What's the word you'd use instead of "deixa pra lá" when talking to a friend, in English?
 - How would a native speaker express "desistir" in this context, in English?
 - What would you say if you wanted to express "estou exausto" casually, in English?
+
+validação: a pergunta termina exatamente com "in English?" e o termo em EN (a resposta esperada) não aparece em nenhum lugar do enunciado, só o termo em PT entre aspas. Se algum dos dois falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
 fórmula: abertura em PT + frase de uso real em EN com a expressão correta
 nota: Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
-- Boa! "Hold on, let me check that for you."
-- Correto! "That's the sweet spot between speed and quality."
-- Perfeito! "Just bite the bullet and get it done."
+- Boa! "Never mind, it's not a big deal."
+- Correto! "I'm not giving up on this."
+- Perfeito! "I'm exhausted after that meeting."
 
 wrong:
-- Errado! "Hold on". "Hold on, let me check that for you."
-- Hmmm, errou! "Sweet spot". "That's the sweet spot between speed and quality."
-- Ops, errado! "Bite the bullet". "Just bite the bullet and get it done."
+- Errado! "Never mind". "Never mind, it's not a big deal."
+- Hmmm, errou! "Give up". "I'm not giving up on this."
+- Ops, errado! "Exhausted". "I'm exhausted after that meeting."
 
 partial:
-- Quase! "Hold on". "Hold on, let me check that for you."
-- Por pouco! "Sweet spot". "That's the sweet spot between speed and quality."
-- Quase lá! "Bite the bullet". "Just bite the bullet and get it done."
+- Quase! "Never mind". "Never mind, it's not a big deal."
+- Por pouco! "Give up". "I'm not giving up on this."
+- Quase lá! "Exhausted". "I'm exhausted after that meeting."

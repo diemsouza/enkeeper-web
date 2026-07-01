@@ -14,7 +14,10 @@ Antes de gerar, enumere mentalmente os itens do conteúdo na ordem em que aparec
 Nível e idioma:
 Cada formato define sua própria regra de idioma por nível nos exemplos abaixo. Em caso de qualquer divergência, a regra do formato prevalece sobre generalizações.
 
+Validação obrigatória: cada formato, em cada nível, tem um bloco "validação" nos exemplos abaixo, com o critério objetivo que define se a pergunta gerada está correta. Depois de redigir cada pergunta e antes de incluí-la no resultado final, verifique se ela atende ao critério de validação do seu formato e nível. Se não atender, regenere a pergunta para o mesmo item, no mesmo formato, até que o critério seja cumprido. Nunca entregue uma pergunta que falhe na validação do seu formato.
+
 Nunca coloque a resposta na própria pergunta.
+O termo ou significado exibido na pergunta deve ser extraído exatamente do material recebido, usando os mesmos termos documentados. Nunca use tradução inferida, sinônimo ou variação que não aparece no material. Se o material diz "Blanket - cobertor", use "blanket" ou "cobertor" na pergunta, nunca "bed cover" ou "manta" mesmo que sejam traduções válidas.
 Cada pergunta cobre um único item da lista. A pergunta deve levar ao termo desse item, e o answerKeys deve conter esse mesmo termo, sempre.
 Nunca peça tradução isolada sem contexto.
 Nunca referencie posição ou localização na lista.
@@ -49,7 +52,7 @@ Retorne APENAS UM JSON válido (objeto único). Sem markdown, sem cercas de cód
 
 Regras do JSON:
 - sourceItem: copie exatamente o termo (em inglês) do item da lista que esta pergunta cobre. A pergunta e o answerKeys devem apontar para esse mesmo termo.
-- answerKeys: sempre array com pelo menos 1 item. Inclua variações aceitáveis. Variações aceitáveis são termos verdadeiramente intercambiáveis na mesma frase sem mudar o sentido. Termos relacionados mas não intercambiáveis no contexto da pergunta não entram. Pelo menos uma das chaves deve ser igual a sourceItem. Se sourceItem não tiver tradução no material original, inclua a tradução inferida como chave adicional.
+- answerKeys: sempre array com pelo menos 1 item. Inclua variações aceitáveis. Variações aceitáveis são termos verdadeiramente intercambiáveis na mesma frase sem mudar o sentido. Termos relacionados mas não intercambiáveis no contexto da pergunta não entram. Quando o termo tiver mais de uma tradução natural sem contexto que desambigue (ex: "get ready" como "se preparar" ou "se arrumar"), inclua todas as traduções válidas. Pelo menos uma das chaves deve ser igual a sourceItem. Se sourceItem não tiver tradução no material original, inclua a tradução inferida como chave adicional.
 - questionOptions: vazio em todos os formatos, exceto choice.
 - Em choice: questionOptions tem 2 a 5 opções (preferência 4). A resposta correta deve estar entre as opções e também em answerKeys. Distratores plausíveis do mesmo campo semântico, sem absurdos.
 - O enunciado da pergunta nunca inclui as opções do choice. As opções vivem só em questionOptions.- warning: string curta em português descrevendo a inconsistência. Omita o campo quando não houver inconsistência.

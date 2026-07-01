@@ -4,9 +4,12 @@
 fórmula: pergunta em PT sobre o conteúdo do texto, variando entre compreensão, reformulação, produção ou inferência
 nota: A pergunta deve ser ancorada no material do aluno, nunca referenciando posição ou localização no texto. Resposta esperada em PT (com termos EN quando natural). answerKeys cobre as variações aceitáveis de resposta. Varie o tipo de pergunta entre exemplos (compreensão, reformulação, produção, inferência).
 
+exemplos:
 - O que o texto diz sobre a importância de praticar todo dia?
 - Como você explicaria com suas palavras a ideia principal do texto?
 - O que aconteceria se alguém parasse de praticar por semanas?
+
+validação: a pergunta é sobre conteúdo real do texto, não uma generalidade que poderia ser respondida sem ter lido o material. Não referencia posição (primeiro parágrafo, linha X). O answerKeys é âncora de avaliação, não cópia literal de uma frase do texto. Se algo disso falhar, gere outra.
 
 ### feedback
 fórmula: abertura + reformulação enxuta da resposta correta
@@ -30,41 +33,47 @@ partial:
 ## INTERMEDIATE
 
 ### question
-fórmula: pergunta em PT (ou mista PT/EN) sobre o conteúdo, variando entre compreensão, reformulação, produção ou inferência
-nota: A pergunta deve ser ancorada no material. Resposta esperada pode misturar PT e EN, ou ser totalmente em EN. answerKeys cobre variações. Varie o tipo de pergunta entre exemplos.
+fórmula: pergunta em inglês básico (nível A2) sobre o conteúdo, variando entre compreensão, reformulação, produção ou inferência
+nota: A pergunta deve ser ancorada no material, escrita em inglês básico (nível A2). Resposta esperada em EN. answerKeys cobre variações. Varie o tipo de pergunta entre exemplos.
 
-- Como você explicaria "sweet spot" com suas próprias palavras?
-- O que o texto sugere sobre encontrar o equilíbrio entre velocidade e qualidade?
-- Use "sweet spot" numa frase sobre seu próprio trabalho.
+exemplos:
+- How would you explain "sweet spot" in your own words?
+- What does the text suggest about finding the balance between speed and quality?
+- Use "sweet spot" in a sentence about your own work.
+
+validação: a pergunta está em inglês básico (A2), ancorada num conteúdo real do texto. Quando um termo do texto aparece na pergunta como ponto de discussão, a explicação ou uso esperado dele não está na própria pergunta. O answerKeys é âncora de avaliação, não cópia literal do texto. Se algo disso falhar, gere outra.
 
 ### feedback
 fórmula: abertura + reformulação enxuta da resposta correta, com termo em EN quando aplicável
-nota: Em wrong e partial, traga a resposta certa de forma direta. Pode misturar PT e EN naturalmente.
+nota: Em wrong e partial, traga a resposta certa de forma direta, em EN.
 
 right:
 - Boa! "Sweet spot" is that perfect point where things click.
-- Correto! É o ponto onde velocidade e qualidade se equilibram.
+- Correto! It's the point where speed and quality balance out.
 - Perfeito! "That's the sweet spot for my workflow."
 
 wrong:
-- Errado! "Sweet spot" é o ponto onde tudo se encaixa. "That's the sweet spot."
-- Hmmm, errou! O texto fala do equilíbrio ideal entre dois fatores. "Sweet spot."
-- Ops, errado! "Sweet spot" descreve o ponto perfeito de equilíbrio.
+- Errado! "Sweet spot" is the point where everything fits. "That's the sweet spot."
+- Hmmm, errou! The text talks about the ideal balance between two factors. "Sweet spot."
+- Ops, errado! "Sweet spot" describes the perfect point of balance.
 
 partial:
-- Quase! A ideia está certa, mas faltou o termo: "sweet spot".
-- Por pouco! Você captou o conceito. Só faltou nomear como "sweet spot".
-- Quase lá! Está perto, mas o termo central é "sweet spot".
+- Quase! The idea is right, but you missed the term: "sweet spot".
+- Por pouco! You got the concept. Just missing the name "sweet spot".
+- Quase lá! Close, but the key term is "sweet spot".
 
 ## ADVANCED
 
 ### question
-fórmula: pergunta em EN sobre o conteúdo, variando entre compreensão, reformulação, produção ou inferência
-nota: A pergunta deve ser ancorada no material. Resposta esperada em EN. answerKeys cobre variações aceitáveis. Varie o tipo de pergunta entre exemplos.
+fórmula: pergunta em inglês intermediário (nível B1-B2) sobre o conteúdo, variando entre compreensão, reformulação, produção ou inferência
+nota: A pergunta deve ser ancorada no material, em inglês intermediário, podendo ter estrutura um pouco mais elaborada que o nível anterior. Resposta esperada em EN. answerKeys cobre variações aceitáveis. Varie o tipo de pergunta entre exemplos.
 
+exemplos:
 - What does the text suggest about the relationship between consistency and progress?
 - How would you rephrase the main argument in your own words?
 - What's an example from your own work where this idea applies?
+
+validação: a pergunta está em inglês intermediário (B1-B2), ancorada num conteúdo real do texto. O answerKeys é âncora de avaliação, não cópia literal do texto. Se algo disso falhar, gere outra.
 
 ### feedback
 fórmula: abertura em PT + reformulação enxuta da resposta correta em EN

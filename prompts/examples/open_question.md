@@ -4,9 +4,12 @@
 fórmula: pergunta direta em PT extraída ou baseada nos exercícios do material, com resposta objetiva esperada
 nota: A pergunta deve ser ancorada no material do aluno, reescrita no padrão direto. Resposta esperada em PT (com termos EN quando natural). answerKeys cobre variações aceitáveis. Varie o tipo de pergunta entre exemplos (fato, causa, consequência).
 
+exemplos:
 - O que acontece quando você pratica vocabulário todo dia?
 - Por que a repetição diária é importante no aprendizado?
 - Qual é o principal benefício de estudar pouco e com frequência?
+
+validação: a pergunta está ancorada num conteúdo real do material, não inventa fato fora do que foi extraído. A resposta esperada não aparece na própria pergunta. Se algo disso falhar, gere outra.
 
 ### feedback
 fórmula: abertura + reformulação enxuta da resposta correta
@@ -30,41 +33,47 @@ partial:
 ## INTERMEDIATE
 
 ### question
-fórmula: pergunta direta em PT ou EN, baseada nos exercícios do material, com resposta objetiva esperada
-nota: A pergunta deve ser ancorada no material. Resposta esperada pode misturar PT e EN, ou ser totalmente em EN. answerKeys cobre variações. Varie o tipo de pergunta entre exemplos.
+fórmula: pergunta direta em inglês básico (nível A2), extraída ou baseada nos exercícios do material, com resposta objetiva esperada
+nota: A pergunta deve ser ancorada no material, escrita em inglês básico (nível A2), curta e direta. Resposta esperada em EN. answerKeys cobre variações. Varie o tipo de pergunta entre exemplos.
 
-- What happens when you find the sweet spot in your studies?
-- Por que encontrar o equilíbrio entre velocidade e qualidade importa?
-- How does finding your sweet spot change your daily routine?
+exemplos:
+- What happens when you practice vocabulary every day?
+- Why does daily repetition matter for learning?
+- What's the main benefit of studying a little but often?
+
+validação: a pergunta está em inglês básico (A2), ancorada num conteúdo real do material. A resposta esperada não aparece na própria pergunta. Se algo disso falhar, gere outra.
 
 ### feedback
-fórmula: abertura + reformulação enxuta da resposta correta, em PT, EN ou misto conforme natural
-nota: Em wrong e partial, traga a resposta certa de forma direta.
+fórmula: abertura + reformulação enxuta da resposta correta em EN
+nota: Em wrong e partial, traga a resposta certa de forma direta, em EN.
 
 right:
-- Boa! Learning becomes more efficient and consistent.
-- Correto! Você produz mais com menos esforço quando acha o "sweet spot".
-- Perfeito! It makes the process feel natural instead of forced.
+- Boa! Vocabulary sticks more easily with daily practice.
+- Correto! Repetition is what consolidates long-term memory.
+- Perfeito! Small daily sessions beat one long session.
 
 wrong:
-- Errado! Finding the sweet spot makes learning more efficient.
-- Hmmm, errou! O equilíbrio importa porque evita esforço sem retorno.
-- Ops, errado! Hitting the sweet spot turns effort into steady progress.
+- Errado! Practicing every day helps vocabulary stick.
+- Hmmm, errou! Daily repetition is what consolidates learning.
+- Ops, errado! Studying a little often beats studying a lot occasionally.
 
 partial:
-- Quase! Você captou parte. Completa com o ganho de eficiência.
-- Por pouco! A ideia está certa, faltou o ponto sobre consistência.
-- Quase lá! Está perto. A chave é o equilíbrio entre esforço e retorno.
+- Quase! You got part of it. Add the point about consolidation.
+- Por pouco! Close, but you missed the effect of consistency.
+- Quase lá! The idea is right, just missing the part about repetition.
 
 ## ADVANCED
 
 ### question
-fórmula: pergunta direta em EN, baseada nos exercícios do material, com resposta objetiva esperada
-nota: A pergunta deve ser ancorada no material. Resposta esperada em EN. answerKeys cobre variações aceitáveis. Varie o tipo de pergunta entre exemplos.
+fórmula: pergunta direta em inglês intermediário (nível B1-B2), extraída ou baseada nos exercícios do material, com resposta objetiva esperada
+nota: A pergunta deve ser ancorada no material, em inglês intermediário, podendo ter estrutura um pouco mais elaborada que o nível anterior. Resposta esperada em EN. answerKeys cobre variações aceitáveis. Varie o tipo de pergunta entre exemplos.
 
+exemplos:
 - Why is consistency more effective than intensity when learning a language?
 - What's the main risk of relying on occasional intense study sessions?
 - How does daily exposure shape long-term language retention?
+
+validação: a pergunta está em inglês intermediário (B1-B2), ancorada num conteúdo real do material. A resposta esperada não aparece na própria pergunta. Se algo disso falhar, gere outra.
 
 ### feedback
 fórmula: abertura em PT + reformulação enxuta da resposta correta em EN
