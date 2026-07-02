@@ -3,6 +3,8 @@
 > Regras de comportamento do produto e decisões de negócio.
 > Sem código, sem referência de implementação. Para entender o que o sistema faz e por quê.
 
+**Sobre a natureza deste documento:** este arquivo registra regras de negócio, não copy nem código. Qualquer texto de mensagem, nome de comando ou trecho ilustrativo aqui presente é exemplo de como a regra se manifesta hoje, não especificação a ser mantida palavra por palavra. Copy muda com frequência conforme o produto evolui, regra de negócio muda raramente e com decisão deliberada. Quando um exemplo for crítico o suficiente para não poder variar sem quebrar a regra, isso é sinalizado explicitamente como exceção dentro da seção correspondente.
+
 ---
 
 ## 1. Activity
@@ -19,7 +21,7 @@ Um ciclo de prática vinculado a um material específico. Começa quando o usuá
 | `archived` | Substituído por nova atividade com ao menos 1 resposta |
 | `cancelled` | Substituído por nova atividade sem nenhuma resposta |
 
-Activity nunca encerra por inatividade. Só muda de status por ação do usuário - envio de novo material. O fluxo de nudge (seção 13) cuida do reengajamento enquanto a activity permanece `active`.
+Activity nunca encerra por inatividade. Só muda de status por ação do usuário - envio de novo material. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
 
 ### Recebimento de material (buffer antes da atividade)
 
@@ -27,7 +29,7 @@ O material enviado pelo usuário não vira atividade imediatamente. Existe uma j
 
 - Tudo que chega dentro da janela de 45 segundos é tratado como parte do mesmo material.
 - Limite de 3 peças por material dentro dessa janela.
-- O comando `cancelar` aborta o processamento em andamento antes da janela fechar - nesse caso, nenhuma atividade é criada e o material descartado não conta para o cap diário (seção 15).
+- O comando `cancelar` aborta o processamento em andamento antes da janela fechar - nesse caso, nenhuma atividade é criada e o material descartado não conta para o cap diário (seção 14).
 - Ao fechar a janela, o material consolidado gera a atividade.
 
 ### Transições ao subir novo material (criar nova atividade)
@@ -65,17 +67,7 @@ Erradas: {erros + parciais}
 - 50–79% de acerto: "Essa atividade rendeu, dá pra apertar mais."
 - Abaixo de 50%: "Essa atividade travou bastante. Vale revisar."
 
-Sem emoji no texto do resumo. Sem elogio. Leitura de resultado. O emoji de marcação estrutural que abre a mensagem segue a regra da Seção 7 (Padrões visuais).
-
-### Orientação após primeira resposta
-
-Na primeira resposta de uma nova activity, além do feedback normal, o sistema envia uma mensagem extra orientando o usuário sobre o que esperar a seguir: a próxima pergunta chega no ritmo normal da cadência, ou o usuário pode ativar o modo prática intensiva para responder em sequência imediata.
-
-Critério: não exige campo de estado novo. Verifica se a resposta processada é a primeira resposta (`right`, `wrong` ou `partial`) daquela activity. Dispara uma única vez por activity.
-
-Mensagem:
-
-> A próxima pergunta chega mais tarde, no ritmo normal. Se quiser, use *praticar* e ative o modo intensivo agora.
+Sem emoji. Sem elogio. Leitura de resultado.
 
 ### Visibilidade ao usuário
 
@@ -101,7 +93,7 @@ Geradas no upload do material, uma por item de vocabulário e por trecho relevan
 
 O sistema prioriza nessa ordem:
 
-1. Perguntas elegíveis para revisão pelo SM-2 (ver Seção 8)
+1. Perguntas elegíveis para revisão pelo SM-2 (ver Seção 7)
 2. Perguntas ainda não enviadas
 3. Perguntas erradas ou parciais
 4. Qualquer pergunta por ordem de atualização
@@ -186,29 +178,10 @@ Avaliado contra as respostas esperadas geradas no upload. Tom direto, sem rodeio
 - Repetir ou parafrasear a pergunta
 - Encerrar com pergunta
 - Usar travessão como separador
-- Usar emoji fora do padrão definido na Seção 7
 
 ---
 
-## 7. Padrões visuais
-
-Produto é só texto, sem imagem, áudio de interface ou botão nativo. Emoji é usado de forma restrita, só como marcador estrutural em pontos onde a mensagem se perde no meio do fluxo de texto corrido, nunca como decoração.
-
-Três marcadores fixos:
-
-| Emoji | Uso | Onde aparece |
-| ----- | --- | ------------- |
-| 📘 | Início ou continuação de atividade/seção | Mensagem de transição ao começar a praticar um novo bloco de conteúdo |
-| 📊 | Fechamento com números | Resumo da atividade anterior (Seção 1) |
-| ⚠️ | Limite atingido ou estado que trava o fluxo | Limite diário de atividades, limite de materiais por atividade, pergunta pendente ao ativar modo intensivo |
-
-Fora esses três casos, destaque de texto é feito com `*negrito*` (comandos, títulos) e `_itálico_` (instruções secundárias), nunca com emoji novo. Dicas de comando pontuais, mensagens de menu e nudges de reengajamento (Seção 13) não usam emoji - nudge em especial depende de variação textual, não de marcador fixo, para não perder a naturalidade do sorteio de combinações.
-
-Onboarding (Seção 11) mantém o emoji já em uso (👋) como exceção histórica de abertura, não como parte deste padrão.
-
----
-
-## 8. Repetição espaçada (SM-2 adaptado)
+## 7. Repetição espaçada (SM-2 adaptado)
 
 Controla quando cada pergunta volta como revisão prioritária. Não controla o ritmo de envio - isso é a cadência. O SM-2 só decide a ordem e o intervalo de elegibilidade.
 
@@ -231,24 +204,30 @@ Perguntas respondidas várias vezes no mesmo dia pelo fallback não recalculam o
 
 ---
 
-## 9. Cadência e sessão intensiva
+## 8. Cadência e sessão intensiva
 
 Sem janela de horário fixa. Mensagens enviadas 24h, respeitando o ritmo do usuário.
 
 O sistema para de enviar perguntas quando o usuário não responde e aguarda retomada via nudge.
 
-**Sessão intensiva** (`praticar`): perguntas chegam em sequência imediata, uma após a outra, sem esperar a cadência. Encerra por dois motivos: uso do comando `pausar`, ou 15 minutos sem resposta do usuário. Não interfere no SM-2.
+**Sessão intensiva** (`praticar`): perguntas chegam em sequência imediata, uma após a outra, sem esperar a cadência. Dura 15 minutos de inatividade. Não interfere no SM-2.
 
-Entre o feedback de uma resposta e o envio da próxima pergunta, existe um pequeno intervalo (poucos segundos) antes do disparo. Isso evita que o usuário receba a próxima pergunta antes de processar o feedback da anterior, mantendo o modo intensivo fluido sem virar disparo instantâneo sem pausa nenhuma.
+### 8.1 Supressão de mensagens concorrentes
+
+Enquanto o sistema está processando uma mensagem do usuário e ainda não enviou resposta, qualquer nova mensagem recebida nesse intervalo é ignorada, silenciosamente, sem retorno ao usuário. Isso vale para qualquer tipo de mensagem, resposta de prática ou comando, não só para o par pergunta-resposta.
+
+Objetivo: evitar avaliação duplicada quando o usuário corrige uma resposta digitada errado em sequência rápida, e evitar que um comando enviado durante o processamento de uma resposta anterior gere resposta fora de ordem.
+
+Janela de segurança: intervalo curto, medido em segundos, que também serve como proteção contra falha silenciosa. Se o processamento de uma mensagem travar ou não retornar, o bloqueio expira sozinho após esse intervalo, liberando o usuário para nova tentativa sem necessidade de intervenção manual.
 
 ---
 
-## 10. Comandos disponíveis
+## 9. Comandos disponíveis
 
 | Comando | O que faz |
 | ------- | --------- |
 | `ajuda` | Lista os comandos disponíveis |
-| `praticar` | Inicia sessão intensiva - perguntas chegam em sequência até pausar ou 15 minutos sem resposta |
+| `praticar` | Inicia sessão intensiva - perguntas chegam em sequência por 15 minutos |
 | `pausar` | Para o envio de perguntas |
 | `retomar` | Retoma após pausa |
 | `atividade` | Lista a atividade ativa e as anteriores |
@@ -260,18 +239,20 @@ Comandos não atualizam o histórico de prática nem contam como interação.
 
 ---
 
-## 11. Onboarding
+## 10. Onboarding
 
-**Primeiro contato** (4 mensagens em sequência):
+Sequência fixa de 4 mensagens no primeiro contato. A estrutura (quatro mensagens, ordem fixa, prazo de trial declarado antes de qualquer ação) é regra de negócio. O texto abaixo é exemplo da versão atual, sujeito a revisão de copy sem que isso altere a estrutura:
+
+**Primeiro contato** (4 mensagens em sequência, exemplo do texto atual):
 
 ```
-Hi! Bem-vindo ao *Fluizer*. 👋
+Hi 👋 Bem-vindo ao *Fluizer*.
 
-Envie o material da sua aula de inglês - texto, imagem ou PDF - e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
+Envie qualquer material de inglês que você está estudando: texto, foto de uma página, lista de vocabulário, PDF de aula.
 
-Você tem 24 horas pra sentir na prática. Aproveita!
+Estude o material enviado, porque ao longo do dia chegam perguntas sobre ele, aqui mesmo.
 
-Mande agora pra começar. Ou use ajuda pra ver os comandos disponíveis.
+Você tem {TRIAL_DAYS} dias pra sentir o produto. Mande o material agora pra começar, ou use *ajuda* pra ver os comandos disponíveis.
 ```
 
 **Após primeiro material:**
@@ -282,7 +263,7 @@ Em alguns minutos chega a primeira pergunta.
 
 ---
 
-## 12. Planos e acesso
+## 11. Planos e acesso
 
 Dois planos: Trial e Pro. Sem tier gratuito permanente.
 
@@ -300,7 +281,7 @@ A regra de acesso é simples: plano ativo com data de expiração no futuro. Ind
 
 ---
 
-## 13. Nudge de reengajamento
+## 12. Nudge de reengajamento
 
 Fluxo automático de mensagens quando o usuário para de responder. O objetivo não é recuperar o usuário para o app - é lembrar que a prática de inglês não deve parar. O Fluizer é o meio, não o fim.
 
@@ -330,9 +311,21 @@ Usuários que chegaram ao d14 e ficaram mais de 21 dias sem interação são can
 
 ### Mensagens - nudges livres (h3, h12, h23)
 
-Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente entre pools de texto. Nunca terminam com pergunta - a resposta do usuário é sempre a resposta da pergunta pendente, não uma interação com o nudge. Sem emoji, conforme Seção 7.
+Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 combinações possíveis. Nunca terminam com pergunta - a resposta do usuário é sempre a resposta da pergunta pendente, não uma interação com o nudge.
 
-Texto dos pools não é regra fixa de produto, pode ser ajustado a qualquer momento sem impacto estrutural. Exemplos de corpo: "Não deixa o inglês esfriar.", "Consistência é o que separa quem aprende de quem tenta.", "A repetição é o que fixa o aprendizado.". Exemplos de encerramento: "É só responder.", "A pergunta continua aqui te esperando.", "Pode responder quando quiser.".
+**Pool de corpo:**
+- "Não deixa o inglês esfriar."
+- "O cérebro esquece rápido sem prática."
+- "Você já começou, o mais difícil já passou."
+- "Consistência é o que separa quem aprende de quem tenta."
+- "Um pouquinho todo dia vale mais que muito de vez em quando."
+
+**Pool de encerramento:**
+- "É só responder."
+- "Quando puder, é só mandar."
+- "A pergunta continua aqui te esperando."
+- "Pode responder quando quiser."
+- "É só mandar quando estiver pronto."
 
 ### Mensagens - templates fixos (d2 a d14)
 
@@ -350,7 +343,7 @@ Texto dos pools não é regra fixa de produto, pode ser ajustado a qualquer mome
 
 ---
 
-## 14. Relatório semanal
+## 13. Relatório semanal
 
 > **Pendente de implementação.** Recurso importante para retenção e percepção de valor - o usuário vê sua evolução real ao longo do tempo. Não existe ainda.
 
@@ -360,7 +353,7 @@ Conteúdo planejado: materiais enviados, trocas totais, percentual de acerto ger
 
 ---
 
-## 15. Processamento de material
+## 14. Processamento de material
 
 Áudio, imagem e PDF são processados em memória e descartados após extração. Nada é armazenado além do texto extraído, das seções identificadas e das perguntas geradas.
 
@@ -370,7 +363,7 @@ Caps adicionais por tipo de envio, por usuário por dia: 30 áudios (máximo 60s
 
 ---
 
-## 16. Princípios de produto
+## 15. Princípios de produto
 
 - Produto focado em inglês. A arquitetura suporta expansão para outros idiomas e matérias, mas expansão só após validação e churn controlado.
 - Janela de 24h do WhatsApp é regra de ouro. Mais de 85% das mensagens devem ser enviadas dentro dela.
@@ -378,3 +371,4 @@ Caps adicionais por tipo de envio, por usuário por dia: 30 áudios (máximo 60s
 - Nenhuma mensagem do sistema deve terminar com pergunta quando a resposta esperada é a de uma pergunta de prática pendente.
 - Copy nunca menciona "IA", "bot" ou "agente". Linguagem tangível: o que o usuário faz e o que recebe.
 - Posicionamento de complemento - não compete com professor, trabalha com ele.
+- O sistema orienta ativamente o usuário sobre o que fazer, seja no primeiro contato ou sempre que algo crítico de entendimento acontecer no meio do uso. Silêncio ou resposta genérica em ponto de ambiguidade real é falha de produto, não neutralidade. Onde já aplicado: mensagem que orienta o uso de um comando usa imperativo direto ("Use *praticar* para..."), nunca fraseado condicional ("se quiser", "quando quiser"), porque fraseado condicional convida resposta em linguagem natural que o sistema não reconhece como comando.

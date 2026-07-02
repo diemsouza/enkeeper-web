@@ -35,6 +35,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
+  const receivedAt = new Date();
   const { valid, rawBody } = await verifyMetaSignature(req);
   if (!valid) return new Response(null, { status: 403 });
 
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         channelType: "whatsapp",
         externalId: message.id,
         contactName,
+        receivedAt,
       };
 
       if (message.type === "audio" && message.audio) {

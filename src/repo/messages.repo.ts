@@ -13,6 +13,7 @@ type SaveMessageData = {
   metadata?: Record<string, string | number | null>;
   activityId?: string;
   questionId?: string;
+  receivedAt?: Date;
 };
 
 export async function saveMessage(data: SaveMessageData): Promise<Message> {
@@ -32,6 +33,7 @@ export async function saveMessage(data: SaveMessageData): Promise<Message> {
           : undefined,
       activityId: data.activityId,
       questionId: data.questionId,
+      createdAt: data.receivedAt,
     },
   });
 }
@@ -83,7 +85,9 @@ export async function findLastMessageByIntent(
   });
 }
 
-export async function findLastUserMessageByActivity(activityId: string): Promise<Message | null> {
+export async function findLastUserMessageByActivity(
+  activityId: string,
+): Promise<Message | null> {
   return prisma.message.findFirst({
     where: { activityId, role: "user" },
     orderBy: { createdAt: "desc" },

@@ -38,7 +38,7 @@ function mapApiMessages(raw: ApiMessage[]): Message[] {
   }));
 }
 
-const POLL_INTERVAL_MS = 3000;
+const SECRET = process.env.NEXT_PUBLIC_SIMULATE_SECRET ?? "";
 
 export default function SimulatorPage() {
   if (process.env.NODE_ENV !== "development") notFound();
@@ -46,11 +46,11 @@ export default function SimulatorPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [channelId, setChannelId] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const { containerRef, endRef, scrollToBottom } = useScrollToBottom();
   const inputRef = useRef<HTMLInputElement>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("simulator_channelId");
@@ -61,42 +61,82 @@ export default function SimulatorPage() {
     if (channelId) localStorage.setItem("simulator_channelId", channelId);
   }, [channelId]);
 
-  useEffect(() => {
-    if (!loading) inputRef.current?.focus();
-  }, [loading]);
-
   const fetchAll = useCallback(async (): Promise<void> => {
     if (!channelId) return;
     try {
       const res = (await http(
         `/api/dev/messages?channelId=${encodeURIComponent(channelId)}&after=${encodeURIComponent(startOfDay(new Date()).toISOString())}`,
       )) as { messages: ApiMessage[] };
-      const mapped = mapApiMessages(res.messages);
-      setMessages(mapped);
+      setMessages(mapApiMessages(res.messages));
       scrollToBottom("instant");
     } catch {
       // ignore
     }
   }, [channelId, scrollToBottom]);
 
-  // Inicia poll assim que channelId estiver disponível
   useEffect(() => {
     if (!channelId) return;
     fetchAll();
-    pollRef.current = setInterval(fetchAll, POLL_INTERVAL_MS);
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+
+    const url = `/api/dev/sse?channelId=${encodeURIComponent(channelId)}&secret=${encodeURIComponent(SECRET)}`;
+    const es = new EventSource(url);
+
+    es.onmessage = (e: MessageEvent) => {
+      const data = JSON.parse(e.data as string) as { type: string; text?: string; time?: string };
+      if (data.type === "message" && data.text && data.time) {
+        setMessages((prev) => [
+          ...prev,
+          { from: "bot", text: data.text!, time: formatTime(data.time!) },
+        ]);
+        scrollToBottom("smooth");
+      }
+      if (data.type === "done") {
+        fetchAll();
+      }
     };
-  }, [channelId, fetchAll]);
+
+    return () => es.close();
+  }, [channelId, fetchAll, scrollToBottom]);
 
   async function sendMessage() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text && !selectedFile) return;
+
+    if (selectedFile) {
+      const file = selectedFile;
+      setSelectedFile(null);
+      setInput("");
+
+      const mediaType = file.type.startsWith("image/") ? "image" : "pdf";
+      setMessages((prev) => [
+        ...prev,
+        { from: "user", text: `[${mediaType === "image" ? "Imagem" : "PDF"}: ${file.name}]`, time: nowTime() },
+      ]);
+      scrollToBottom("smooth");
+
+      const formData = new FormData();
+      formData.append("channelId", channelId);
+      formData.append("channelCode", channelId);
+      formData.append("channelType", "whatsapp");
+      formData.append("mediaType", mediaType);
+      formData.append("file", file);
+
+      try {
+        await fetch("/api/simulate", {
+          method: "POST",
+          headers: { "x-simulate-secret": SECRET },
+          body: formData,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Erro desconhecido";
+        setMessages((prev) => [...prev, { from: "bot", text: `⚠️ ${msg}`, time: nowTime() }]);
+      }
+      return;
+    }
 
     setInput("");
     setMessages((prev) => [...prev, { from: "user", text, time: nowTime() }]);
     scrollToBottom("smooth");
-    setLoading(true);
 
     try {
       await http("/api/simulate", {
@@ -106,31 +146,26 @@ export default function SimulatorPage() {
           channelCode: channelId,
           channelType: "whatsapp",
           text,
-          audioUrl: null,
-          imageUrl: null,
         }),
-        headers: {
-          "x-simulate-secret": process.env.NEXT_PUBLIC_SIMULATE_SECRET ?? "",
-        },
+        headers: { "x-simulate-secret": SECRET },
       });
-      await fetchAll();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido";
-      setMessages((prev) => [
-        ...prev,
-        { from: "bot", text: `⚠️ ${msg}`, time: nowTime() },
-      ]);
-    } finally {
-      setLoading(false);
-      scrollToBottom("smooth");
+      setMessages((prev) => [...prev, { from: "bot", text: `⚠️ ${msg}`, time: nowTime() }]);
     }
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       e.preventDefault();
-      sendMessage();
+      void sendMessage();
     }
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setSelectedFile(file);
+    if (e.target) e.target.value = "";
   }
 
   return (
@@ -165,8 +200,6 @@ export default function SimulatorPage() {
         </div>
       )}
 
-      {loading && <p className="text-xs text-gray-400 -mt-1">digitando...</p>}
-
       <div className="flex items-center gap-2">
         <button
           onClick={() => void fetch("/api/cron/develop-activity")}
@@ -176,7 +209,37 @@ export default function SimulatorPage() {
         </button>
       </div>
 
+      {selectedFile && (
+        <div className="flex items-center gap-2 text-xs text-gray-500 bg-white border border-gray-200 rounded-full px-3 py-1">
+          <span>{selectedFile.name}</span>
+          <button
+            onClick={() => setSelectedFile(null)}
+            className="text-gray-400 hover:text-gray-600"
+            aria-label="Remover arquivo"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center gap-2 w-full md:max-w-[480px]">
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          onChange={handleFileSelect}
+          className="hidden"
+          ref={fileInputRef}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+          aria-label="Anexar arquivo"
+          title="Enviar imagem ou PDF"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <path fillRule="evenodd" d="M18.97 3.659a2.25 2.25 0 00-3.182 0l-10.94 10.94a3.75 3.75 0 105.304 5.303l7.693-7.693a.75.75 0 011.06 1.06l-7.693 7.693a5.25 5.25 0 11-7.424-7.424l10.939-10.94a3.75 3.75 0 115.303 5.304L9.097 18.835l-.008.008-.007.007-.002.002-.003.002A2.25 2.25 0 015.91 15.66l7.81-7.81a.75.75 0 011.061 1.06l-7.81 7.81a.75.75 0 001.054 1.068L18.97 6.84a2.25 2.25 0 000-3.182z" clipRule="evenodd" />
+          </svg>
+        </button>
         <input
           ref={inputRef}
           type="text"
@@ -184,13 +247,12 @@ export default function SimulatorPage() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           autoFocus
-          placeholder="Digite uma mensagem..."
-          disabled={loading}
-          className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 disabled:opacity-50"
+          placeholder={selectedFile ? "Pressione Enter para enviar o arquivo..." : "Digite uma mensagem..."}
+          className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
         />
         <button
-          onClick={sendMessage}
-          disabled={loading || !input.trim()}
+          onClick={() => void sendMessage()}
+          disabled={!input.trim() && !selectedFile}
           className="bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white rounded-full w-9 h-9 flex items-center justify-center transition-colors shrink-0"
           aria-label="Enviar"
         >

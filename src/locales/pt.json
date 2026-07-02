@@ -77,7 +77,7 @@
         },
         "3": {
           "title": "Estudo faz meses. Não sinto que evoluí.",
-          "description": "Cada material que você manda vira prática do dia. Com o tempo, dá pra ver o que fixou, o que ainda trava e o quanto avançou desde o começo."
+          "description": "Cada material que você envia vira prática do dia. Com o tempo, dá pra ver o que fixou, o que ainda trava e o quanto avançou desde o começo."
         },
         "4": {
           "title": "Tenho reunião em inglês amanhã. Já travei só de pensar.",
@@ -103,19 +103,19 @@
         },
         "2": {
           "title": "As perguntas chegam no WhatsApp",
-          "description": "Ao longo do dia, no seu ritmo, o Fluizer manda perguntas sobre aquele vocabulário. Você responde de cabeça. O sistema avalia, dá feedback e registra o que travou."
+          "description": "Ao longo do dia, no seu ritmo, o Fluizer envia perguntas sobre aquele vocabulário. Você responde de cabeça. O sistema avalia, dá feedback e registra o que travou."
         }
       }
     },
     "pricing": {
       "title": "Comece grátis.",
       "subtitle": "Acesso completo por 3 dias. Sem cartão e sem cadastro.",
-      "description": "Mande qualquer material: texto, imagem ou PDF. Pratique o vocabulário da sua aula durante o dia. Se fizer sentido, continua por R$19,90/mês.",
+      "description": "Envie qualquer material: texto, imagem ou PDF. Pratique o vocabulário da sua aula durante o dia. Se fizer sentido, continua por R$19,90/mês.",
       "cta": "Experimentar grátis"
     },
     "features_demo": {
       "title": "Na prática.",
-      "subtitle": "Você manda o material. As perguntas chegam durante o dia.",
+      "subtitle": "Você envia o material. As perguntas chegam durante o dia.",
       "blocks": {
         "0": {
           "title": "As perguntas saem do seu material de estudo.",

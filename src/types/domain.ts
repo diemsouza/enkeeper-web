@@ -40,4 +40,5 @@ export type IncomingMessage = {
   mediaType?: string;
   mediaId?: string;
   mediaMetadata?: Record<string, string | number | null>;
+  receivedAt: Date;
 };

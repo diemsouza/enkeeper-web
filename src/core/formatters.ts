@@ -23,7 +23,7 @@ export function formatOnboardingMsg3(): string {
 }
 
 export function formatOnboardingMsg4(): string {
-  return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra sentir o produto. Mande o material agora pra começar, ou use *ajuda* pra ver os comandos disponíveis.`;
+  return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra sentir o produto. Envie o material agora pra começar, ou use *ajuda* pra ver os comandos disponíveis.`;
 }
 
 export function formatPlanExpired(): string {
@@ -136,7 +136,13 @@ export function formatActivitiesList(activities: ActivityListItem[]): string {
 }
 
 export function formatNoDocs(): string {
-  return "Você ainda não tem atividades.\nMande um texto, imagem ou PDF para começar.";
+  return [
+    "Você ainda não tem atividade ativa.",
+    "",
+    "Envie o material que está estudando: texto, foto ou PDF.",
+    "",
+    "_Use *ajuda* para ver os comandos disponíveis._",
+  ].join("\n");
 }
 
 export function formatDocReceiving(): string {
@@ -433,6 +439,54 @@ export function formatNudgeMessage(step: string): NudgePayload {
   const closing =
     NUDGE_CLOSING_POOL[Math.floor(Math.random() * NUDGE_CLOSING_POOL.length)];
   return { text: `${body} ${closing}`, templateName: null };
+}
+
+export function formatCanceled(): string {
+  return "Cancelado.";
+}
+
+export function formatLevelUpdateCanceled(): string {
+  return "Atualização de nível cancelada.";
+}
+
+export function formatDocReplaceCanceled(): string {
+  return "Ok, seguindo com a atividade atual.";
+}
+
+export function formatInvalidPauseIndex(): string {
+  return "Número inválido. Use pausar para ver seus conteúdos ativos.";
+}
+
+export function formatInvalidResumeIndex(): string {
+  return "Número inválido. Use retomar para ver seus conteúdos pausados.";
+}
+
+export function formatNoActiveActivity(): string {
+  return "Nenhuma atividade ativa no momento.";
+}
+
+export function formatAllQuestionsAnswered(): string {
+  return "Todas as perguntas já foram respondidas corretamente.";
+}
+
+export function formatNoPendingAction(): string {
+  return "Nenhuma ação pendente.";
+}
+
+export function formatEvaluationFailed(): string {
+  return "Não consegui avaliar sua resposta!";
+}
+
+export function formatPracticeWaiting(): string {
+  return "Aguarde, a próxima mensagem chega em breve. Se quiser mudar de atividade, é só mandar um novo conteúdo.";
+}
+
+export function formatInternalSupportMessage(
+  channelCode: string,
+  planLabel: string,
+  text: string,
+): string {
+  return `*Suporte*\n\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`;
 }
 
 export function humanizeFeedback(
