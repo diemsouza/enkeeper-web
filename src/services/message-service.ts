@@ -36,6 +36,8 @@ import {
   updateUserPlanStatus,
   updateUserName,
   updateUserPendingIntent,
+  updateUserLastRequest,
+  updateUserLastResponse,
 } from "../repo/users.repo";
 import { processLevelResponse } from "./level-capture-service";
 import { findOrCreateUserByChannel } from "./user-service";
@@ -85,6 +87,7 @@ import {
   INTENSIVE_UNTIL_MIN,
   MAX_ACTIVITIES_PER_DAY,
   AFTER_FEEDBACK_WA_MESSAGE_INTERVAL_SEC,
+  MESSAGE_SUPPRESSION_SEC,
 } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
@@ -123,7 +126,29 @@ export async function handleIncomingMessage(
 
   const text = input.text ?? "";
   const today = startOfDay(new Date());
+  const messageId = input.externalId ?? "";
 
+  const isLocked =
+    user.lastRequestAt != null &&
+    (user.lastResponseAt == null || user.lastResponseAt < user.lastRequestAt) &&
+    Date.now() - user.lastRequestAt.getTime() < MESSAGE_SUPPRESSION_SEC * 1000;
+
+  if (isLocked) {
+    await saveMessage({
+      userId: user.id,
+      userChannelId: userChannel.id,
+      role: "user",
+      content: rawText,
+      intent: "ignored",
+      externalId: input.externalId,
+      metadata: { reason: "duplicate_within_window" },
+    });
+    return [];
+  }
+
+  await updateUserLastRequest(user.id, messageId);
+
+  try {
   if (/^admin(\s|$)/i.test(rawText)) {
     if (input.channelId !== process.env.WA_SUPPORT) return [];
     const reply = await handleAdminCommand(rawText);
@@ -1007,6 +1032,9 @@ export async function handleIncomingMessage(
   await saveBotReply(user.id, userChannel.id, reply, today);
 
   return [reply];
+  } finally {
+    await updateUserLastResponse(user.id, messageId);
+  }
 }
 
 // ─── Question selection helpers ──────────────────────────────────────────────

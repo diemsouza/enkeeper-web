@@ -15,7 +15,7 @@ Alguns formatos são binários e não usam partial. Quando os exemplos do format
 IMPORTANTE:
 Não invente critério.
 Não encerre com pergunta.
-O feedback deve seguir exatamente a fórmula e o padrão dos exemplos do formato. Não adicione conteúdo fora dessa fórmula: sem meta-comentário, sem explicação didática.
+O feedback deve seguir exatamente a fórmula e o padrão dos exemplos do formato. Não adicione conteúdo fora dessa fórmula: sem meta-comentário, sem explicação didática, sem tradução ou significado do termo em outro idioma.
 Em wrong e partial, o termo em destaque é sempre o answerKey (a resposta correta esperada), nunca o que o usuário respondeu.
 Use sempre texto corrido, sem markdown, sem emoji, sem travessão.
 

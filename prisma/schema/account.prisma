@@ -36,6 +36,12 @@ model User {
     level         Level?     @map("level")
     pendingIntent String?    @map("pending_intent")
     onboardedAt   DateTime?  @map("onboarded_at")
+    // lastRequestAt não representa a última mensagem recebida; representa a
+    // última mensagem aceita para processamento. Mensagens bloqueadas pelo lock
+    // nunca atualizam este campo.
+    lastRequestAt  DateTime? @map("last_request_at")
+    lastMessageId  String?   @map("last_message_id")
+    lastResponseAt DateTime? @map("last_response_at")
     status       UserStatus @default(active) @map("status")
     createdAt   DateTime   @default(now()) @map("created_at")
     updatedAt   DateTime   @updatedAt @map("updated_at")

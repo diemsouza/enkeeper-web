@@ -104,6 +104,20 @@ export async function fetchUserStats(): Promise<UserStat> {
   };
 }
 
+export async function updateUserLastRequest(userId: string, messageId: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { lastRequestAt: new Date(), lastMessageId: messageId, lastResponseAt: null },
+  });
+}
+
+export async function updateUserLastResponse(userId: string, messageId: string): Promise<void> {
+  await prisma.user.updateMany({
+    where: { id: userId, lastMessageId: messageId },
+    data: { lastResponseAt: new Date() },
+  });
+}
+
 export async function createUserWithChannel(
   channelType: ChannelType,
   channelId: string,

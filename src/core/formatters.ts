@@ -11,19 +11,19 @@ import { shuffle } from "lodash";
 import { format } from "date-fns";
 
 export function formatOnboardingMsg1(): string {
-  return "Hi! Bem-vindo a *Fluizer*. 👋";
+  return "Hi 👋 Bem-vindo a *Fluizer*.";
 }
 
 export function formatOnboardingMsg2(): string {
-  return `Envie o material da sua aula de inglês como texto, imagem ou PDF e recebe perguntas sobre ele ao longo do dia, aqui mesmo.`;
+  return `Envie qualquer material de inglês que você está estudando: texto, foto de uma página, lista de vocabulário, PDF de aula.`;
 }
 
 export function formatOnboardingMsg3(): string {
-  return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} para praticar a vontade. Aproveite!`;
+  return `Estude o material enviado, porque ao longo do dia chegam perguntas sobre ele, aqui mesmo.`;
 }
 
 export function formatOnboardingMsg4(): string {
-  return "Mande agora pra começar. Ou use *ajuda* pra ver os comandos disponíveis.";
+  return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra sentir o produto. Mande o material agora pra começar, ou use *ajuda* pra ver os comandos disponíveis.`;
 }
 
 export function formatPlanExpired(): string {
@@ -157,7 +157,7 @@ export function formatDocProcessed(
 }
 
 export function formatGuideAfterFirstFeedback(): string {
-  return "A próxima pergunta chega mais tarde, no ritmo normal. Se quiser, use *praticar* e ative o modo intensivo agora.";
+  return "A próxima pergunta chega mais tarde, no ritmo normal. Use *praticar* e ative o modo intensivo agora.";
 }
 
 export function formatDocProcessingFailed(): string {
@@ -169,7 +169,7 @@ export function formatDocNoQuestions(): string {
 }
 
 export function formatIntensiveModeStopped(): string {
-  return "Modo de prática intensiva pausado. Voltando para o ritmo normal de perguntas.";
+  return "Modo prática intensiva pausado. Voltando para o ritmo normal.";
 }
 
 export function formatDocConfirmPrompt(): string {
@@ -204,7 +204,7 @@ export function formatDailyActivityLimitReached(): string {
 
 export function formatDocItemReceived(itemCount: number): string {
   const suffix =
-    "Você pode enviar mais materiais ou só aguardar. Use *cancelar* se quiser descartar e começar de novo.";
+    "Você pode enviar mais materiais ou só aguardar. Use *cancelar* para descartar e começar de novo.";
   if (itemCount === 1) return `Recebido. ${suffix}`;
   return `Recebido ${itemCount}/${MAX_DOC_ITEMS_PER_DOC}. ${suffix}`;
 }
@@ -219,7 +219,7 @@ export function formatPausePrompt(docs: Pick<Doc, "id" | "title">[]): string {
 }
 
 export function formatPauseSuccess(): string {
-  return "Atividade pausada. Use *retomar* quando quiser continuar.";
+  return "Atividade pausada. Use *retomar* para continuar.";
 }
 
 export function formatNoPausableDocs(): string {
