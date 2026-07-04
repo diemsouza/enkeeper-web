@@ -15,8 +15,9 @@ export const MAX_ACTIVITIES_PER_DAY = 5;
 export const MAX_DOC_ITEMS_PER_DOC = 3;
 export const DOC_BUFFER_DELAY_SEC = 45;
 export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
-export const SEQUENCE_WA_MESSAGE_INTERVAL_SEC = 3;
-export const AFTER_FEEDBACK_WA_MESSAGE_INTERVAL_SEC = 8;
+export const ONBOARDING_MESSAGE_INTERVAL_SEC = 2;
+export const DEFAULT_MESSAGE_INTERVAL_SEC = 3;
+export const AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC = 8;
 export const NUDGE_STEPS = [
   "h3",
   "h12",

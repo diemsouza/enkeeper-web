@@ -12,8 +12,8 @@ exemplos:
 validação: remova o parêntese e leia a frase. Se ela ainda fizer sentido completo sozinha, ou se a palavra do parêntese aparecer escrita por extenso em qualquer outro ponto da frase, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura + frase de uso real em EN com o termo em EN
-nota: Nunca explicação ou tradução. Em wrong e partial, termo correto entre aspas antes da frase. Termo entre aspas, frase entre aspas.
+fórmula: abertura + frase que completa o cenário da pergunta, em EN, com o termo correto
+nota: Use sempre a situação original completada, nunca crie cenário novo. Nunca explicação ou tradução. Em wrong e partial, termo correto entre aspas antes da frase. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "I forgot my umbrella again."
@@ -47,8 +47,8 @@ exemplos:
 validação: remova o parêntese e leia a frase. Se ela ainda fizer sentido completo sozinha, ou se a palavra do parêntese aparecer escrita por extenso em qualquer outro ponto da frase, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura + frase de uso real em EN com o termo em EN
-nota: Nunca explicação ou tradução. Em wrong e partial, termo correto entre aspas antes da frase. Termo entre aspas, frase entre aspas.
+fórmula: abertura + frase que completa o cenário da pergunta, em EN, com o termo correto
+nota: Use sempre a situação original completada, nunca crie cenário novo. Nunca explicação ou tradução. Em wrong e partial, termo correto entre aspas antes da frase. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "I forgot my umbrella again."
@@ -82,8 +82,8 @@ exemplos:
 validação: remova o parêntese e leia a frase. Se ela ainda fizer sentido completo sozinha, ou se a palavra do parêntese aparecer escrita por extenso em qualquer outro ponto da frase, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura em PT + frase de uso real em EN com o termo correto
-nota: Nunca explicação ou tradução. Em wrong e partial, termo correto entre aspas antes da frase. Termo entre aspas, frase entre aspas.
+fórmula: abertura em PT + frase que completa o cenário da pergunta, em EN, com o termo correto
+nota: Use sempre a situação original completada, nunca crie cenário novo. Nunca explicação ou tradução. Em wrong e partial, termo correto entre aspas antes da frase. Termo entre aspas, frase entre aspas.
 
 right:
 - Boa! "I forgot my umbrella, so I ended up soaked."

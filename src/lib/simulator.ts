@@ -1,4 +1,4 @@
-import { SEQUENCE_WA_MESSAGE_INTERVAL_SEC } from "./constants";
+import { DEFAULT_MESSAGE_INTERVAL_SEC } from "./constants";
 import { MessagePart } from "../types/message-parts";
 import { emitToSession } from "./simulator-emitter";
 
@@ -14,7 +14,7 @@ export async function sendSimulatorMessages(
     }
     if (i > 0 && typeof parts[i - 1] === "string") {
       await new Promise((r) =>
-        setTimeout(r, SEQUENCE_WA_MESSAGE_INTERVAL_SEC * 1000),
+        setTimeout(r, DEFAULT_MESSAGE_INTERVAL_SEC * 1000),
       );
     }
     emitToSession(channelId, {

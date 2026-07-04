@@ -21,15 +21,15 @@ Um ciclo de prática vinculado a um material específico. Começa quando o usuá
 | `archived` | Substituído por nova atividade com ao menos 1 resposta |
 | `cancelled` | Substituído por nova atividade sem nenhuma resposta |
 
-Activity nunca encerra por inatividade. Só muda de status por ação do usuário - envio de novo material. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
+Activity nunca encerra por inatividade. Só muda de status por ação do usuário, envio de novo material. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
 
 ### Recebimento de material (buffer antes da atividade)
 
-O material enviado pelo usuário não vira atividade imediatamente. Existe uma janela de buffer de 45 segundos a partir do primeiro envio, durante a qual o usuário pode mandar mais peças do mesmo material (por exemplo, várias fotos de páginas seguidas) sem que cada envio dispare uma atividade separada.
+O material enviado pelo usuário não vira atividade imediatamente. Existe uma janela de buffer de 45 segundos a partir do primeiro envio, durante a qual o usuário pode enviar mais peças do mesmo material (por exemplo, várias fotos de páginas seguidas) sem que cada envio dispare uma atividade separada.
 
 - Tudo que chega dentro da janela de 45 segundos é tratado como parte do mesmo material.
 - Limite de 3 peças por material dentro dessa janela.
-- O comando `cancelar` aborta o processamento em andamento antes da janela fechar - nesse caso, nenhuma atividade é criada e o material descartado não conta para o cap diário (seção 14).
+- O comando `cancelar` aborta o processamento em andamento antes da janela fechar, nesse caso, nenhuma atividade é criada e o material descartado não conta para o cap diário (seção 14).
 - Ao fechar a janela, o material consolidado gera a atividade.
 
 ### Transições ao subir novo material (criar nova atividade)
@@ -41,7 +41,7 @@ Completar todas as perguntas não altera o status. A activity permanece `active`
 
 ### Resumo ao trocar de material (nova atividade)
 
-Quando o usuário sobe um novo material é criada uma nova atividade e, se a anterior teve ao menos 1 resposta, o sistema gera e envia um resumo do ciclo anterior antes da primeira pergunta do novo. O resumo é gerado uma única vez por activity - se já foi gerado, não gera novamente.
+Quando o usuário sobe um novo material é criada uma nova atividade e, se a anterior teve ao menos 1 resposta, o sistema gera e envia um resumo do ciclo anterior antes da primeira pergunta do novo. O resumo é gerado uma única vez por activity, se já foi gerado, não gera novamente.
 
 **Formato do resumo:**
 
@@ -60,11 +60,11 @@ Erradas: {erros + parciais}
 {linha de leitura}
 ```
 
-**Linha de leitura** - determinística, sem IA, tom seco:
+**Linha de leitura**, determinística, sem IA, tom seco:
 
 - Menos de 5 respondidas: "Você mal começou esse aqui."
 - 80%+ de acerto: "Mandou bem nessa atividade."
-- 50–79% de acerto: "Essa atividade rendeu, dá pra apertar mais."
+- 50 a 79% de acerto: "Essa atividade rendeu, dá pra apertar mais."
 - Abaixo de 50%: "Essa atividade travou bastante. Vale revisar."
 
 Sem emoji. Sem elogio. Leitura de resultado.
@@ -89,7 +89,7 @@ Geradas no upload do material, uma por item de vocabulário e por trecho relevan
 | `partial` | Resposta parcialmente correta |
 | `wrong` | Respondida errado |
 
-### Ordem de envio - primeira rodada
+### Ordem de envio, primeira rodada
 
 O sistema prioriza nessa ordem:
 
@@ -100,12 +100,12 @@ O sistema prioriza nessa ordem:
 
 Quando todas as perguntas forem respondidas ao menos uma vez, o sistema avisa e passa para revisão contínua.
 
-### Ordem de envio - revisão contínua
+### Ordem de envio, revisão contínua
 
 1. Perguntas elegíveis pelo SM-2
 2. Erradas e parciais primeiro, depois certas
 
-Sem critério de encerramento - loop infinito natural.
+Sem critério de encerramento, loop infinito natural.
 
 ### Conclusão da primeira rodada
 
@@ -131,7 +131,7 @@ O material é dividido em blocos por tipo antes de gerar as perguntas. Cada bloc
 
 ## 4. Formatos de pergunta
 
-Sete formatos disponíveis. O sorteio de formato para vocabulário acontece antes de gerar - o modelo executa, não decide.
+Sete formatos disponíveis. O sorteio de formato para vocabulário acontece antes de gerar, o modelo executa, não decide.
 
 | Formato | O que faz |
 | ------- | --------- |
@@ -140,7 +140,7 @@ Sete formatos disponíveis. O sorteio de formato para vocabulário acontece ante
 | recall invertido | Dado o termo, trazer o significado ou uso |
 | cenário | Situação realista que leva ao uso do termo |
 | múltipla escolha | 2 a 5 opções, embaralhadas antes de salvar |
-| pergunta aberta | Sobre texto corrido - compreensão, reformulação, inferência |
+| pergunta aberta | Sobre texto corrido, compreensão, reformulação, inferência |
 | pergunta direta | Baseada nas perguntas do próprio material |
 
 ---
@@ -183,9 +183,9 @@ Avaliado contra as respostas esperadas geradas no upload. Tom direto, sem rodeio
 
 ## 7. Repetição espaçada (SM-2 adaptado)
 
-Controla quando cada pergunta volta como revisão prioritária. Não controla o ritmo de envio - isso é a cadência. O SM-2 só decide a ordem e o intervalo de elegibilidade.
+Controla quando cada pergunta volta como revisão prioritária. Não controla o ritmo de envio, isso é a cadência. O SM-2 só decide a ordem e o intervalo de elegibilidade.
 
-**Princípio:** quanto mais o usuário erra, mais rápido a pergunta volta. Quanto mais acerta, mais espaço ganha entre revisões. Teto de 3 dias - ajustado ao ciclo curto de troca de material do produto.
+**Princípio:** quanto mais o usuário erra, mais rápido a pergunta volta. Quanto mais acerta, mais espaço ganha entre revisões. Teto de 3 dias, ajustado ao ciclo curto de troca de material do produto.
 
 **Como o intervalo é calculado a cada resposta:**
 
@@ -227,7 +227,7 @@ Janela de segurança: intervalo curto, medido em segundos, que também serve com
 | Comando | O que faz |
 | ------- | --------- |
 | `ajuda` | Lista os comandos disponíveis |
-| `praticar` | Inicia sessão intensiva - perguntas chegam em sequência por 15 minutos |
+| `praticar` | Inicia sessão intensiva, perguntas chegam em sequência por 15 minutos |
 | `pausar` | Para o envio de perguntas |
 | `retomar` | Retoma após pausa |
 | `atividade` | Lista a atividade ativa e as anteriores |
@@ -237,29 +237,38 @@ Janela de segurança: intervalo curto, medido em segundos, que também serve com
 
 Comandos não atualizam o histórico de prática nem contam como interação.
 
+Usuário sem nenhuma atividade criada recebe, junto da resposta ao comando `ajuda`, orientação sobre o que enviar como material (ver Seção 10). É a mesma orientação usada no onboarding e no fallback de mensagem sem atividade (ver Seção 10.1), com uma única fonte de conteúdo para as três situações, evitando que a mesma regra fique escrita de formas diferentes em pontos distintos do produto.
+
 ---
 
 ## 10. Onboarding
 
-Sequência fixa de 4 mensagens no primeiro contato. A estrutura (quatro mensagens, ordem fixa, prazo de trial declarado antes de qualquer ação) é regra de negócio. O texto abaixo é exemplo da versão atual, sujeito a revisão de copy sem que isso altere a estrutura:
+Sequência fixa de mensagens no primeiro contato. A estrutura, sequência com ordem fixa e prazo de trial declarado antes de qualquer ação, é regra de negócio. A quantidade de mensagens não é regra fixa, pode variar conforme necessidade de copy, desde que a ordem lógica seja preservada: saudação, proposta de valor, instrução de envio, o que acontece depois do envio, prazo de trial e comandos disponíveis.
 
-**Primeiro contato** (4 mensagens em sequência, exemplo do texto atual):
+Mensagens da sequência não são enviadas simultaneamente. Existe intervalo deliberado entre uma e outra, simulando envio natural e evitando que o usuário receba um bloco único de texto. O valor exato do intervalo é parâmetro de configuração, não regra de negócio, e pode ser ajustado sem necessidade de atualizar este documento.
 
-```
-Hi 👋 Bem-vindo ao *Fluizer*.
+O texto abaixo é exemplo da versão atual, sujeito a revisão de copy sem que isso altere a estrutura:
 
-Envie qualquer material de inglês que você está estudando: texto, foto de uma página, lista de vocabulário, PDF de aula.
-
-Estude o material enviado, porque ao longo do dia chegam perguntas sobre ele, aqui mesmo.
-
-Você tem {TRIAL_DAYS} dias pra sentir o produto. Mande o material agora pra começar, ou use *ajuda* pra ver os comandos disponíveis.
-```
-
-**Após primeiro material:**
+**Primeiro contato** (exemplo do texto atual, em sequência):
 
 ```
-Em alguns minutos chega a primeira pergunta.
+Hi 👋 Bem-vindo a *Fluizer*.
+
+Pratique inglês no seu ritmo, com o material que fizer sentido pra você.
+
+Envie imagem, PDF ou texto com conteúdo em inglês: algo que esteja lendo,
+página de livro, post nas redes sociais ou material de aula.
+
+Estude o que você enviar. Ao longo do dia, chegam perguntas sobre ele,
+aqui mesmo.
+
+Você tem {TRIAL_DAYS} dias pra sentir o produto. Envie o material agora
+pra começar, ou use *ajuda* pra ver os comandos disponíveis.
 ```
+
+### 10.1 Usuário sem material enviado
+
+Usuário que passou pelo onboarding e, em qualquer momento posterior, envia algo que não seja material válido, ou aciona `ajuda` sem nenhuma atividade criada, recebe a mesma orientação de material usada no onboarding, adaptada ao contexto de quem já iniciou e ainda não enviou nada. Fonte de conteúdo única com o item de onboarding correspondente, sem redação divergente entre as duas situações.
 
 ---
 
@@ -275,7 +284,7 @@ Dois planos: Trial e Pro. Sem tier gratuito permanente.
 | Cortesia permanente | Sem expiração | Produto completo |
 | Pro | 30 dias renovável | Produto completo |
 
-Após expirar o trial: conta bloqueada até converter. Sem degradação gradual - o produto inteiro ou nada.
+Após expirar o trial: conta bloqueada até converter. Sem degradação gradual, o produto inteiro ou nada.
 
 A regra de acesso é simples: plano ativo com data de expiração no futuro. Independe do tipo de plano.
 
@@ -283,7 +292,9 @@ A regra de acesso é simples: plano ativo com data de expiração no futuro. Ind
 
 ## 12. Nudge de reengajamento
 
-Fluxo automático de mensagens quando o usuário para de responder. O objetivo não é recuperar o usuário para o app - é lembrar que a prática de inglês não deve parar. O Fluizer é o meio, não o fim.
+Fluxo automático de mensagens quando o usuário para de responder. O objetivo não é recuperar o usuário para o app, é lembrar que a prática de inglês não deve parar. O Fluizer é o meio, não o fim.
+
+Este fluxo se aplica a usuário com ao menos uma Activity ativa, é reengajamento em torno de pergunta pendente. Usuário que nunca enviou material não entra neste fluxo, esse caso é tratado pela Seção 10.1.
 
 Nenhuma mensagem deve soar como notificação de app pedindo atenção. Cada uma tem uma razão ligada ao aprendizado.
 
@@ -301,7 +312,7 @@ Nenhuma mensagem deve soar como notificação de app pedindo atenção. Cada uma
 
 Após d14 sem resposta: usuário entra na lista de abordagem manual. Sem mensagem adicional automática.
 
-**Reset:** qualquer resposta a uma pergunta de prática zera o fluxo completamente - `lastNudgeStep` e `lastNudgeAt` voltam a `null`.
+**Reset:** qualquer resposta a uma pergunta de prática zera o fluxo completamente, `lastNudgeStep` e `lastNudgeAt` voltam a `null`.
 
 **Step inicial baseado no tempo real:** quando `lastNudgeStep` é `null`, o cron não assume h2 automaticamente. Calcula quanto tempo passou desde `lastInteractionAt` e entra diretamente no step correspondente, pulando os já vencidos. Isso evita que um usuário que sumiu há 5 dias receba o nudge de 2h.
 
@@ -309,9 +320,9 @@ Após d14 sem resposta: usuário entra na lista de abordagem manual. Sem mensage
 
 Usuários que chegaram ao d14 e ficaram mais de 21 dias sem interação são candidatos à abordagem pelo fundador. A saída da lista é automática quando o usuário responde qualquer pergunta.
 
-### Mensagens - nudges livres (h3, h12, h23)
+### Mensagens, nudges livres (h3, h12, h23)
 
-Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 combinações possíveis. Nunca terminam com pergunta - a resposta do usuário é sempre a resposta da pergunta pendente, não uma interação com o nudge.
+Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 combinações possíveis. Nunca terminam com pergunta, a resposta do usuário é sempre a resposta da pergunta pendente, não uma interação com o nudge.
 
 **Pool de corpo:**
 - "Não deixa o inglês esfriar."
@@ -327,7 +338,7 @@ Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 c
 - "Pode responder quando quiser."
 - "É só mandar quando estiver pronto."
 
-### Mensagens - templates fixos (d2 a d14)
+### Mensagens, templates fixos (d2 a d14)
 
 **d2:**
 > Já faz 2 dias sem praticar. O vocabulário novo esquece rápido sem repetição. É só responder pra retomar.
@@ -345,7 +356,7 @@ Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 c
 
 ## 13. Relatório semanal
 
-> **Pendente de implementação.** Recurso importante para retenção e percepção de valor - o usuário vê sua evolução real ao longo do tempo. Não existe ainda.
+> **Pendente de implementação.** Recurso importante para retenção e percepção de valor, o usuário vê sua evolução real ao longo do tempo. Não existe ainda.
 
 Quando implementado: gerado aos domingos, agrega todas as interações dos últimos 7 dias independente do status da activity.
 
@@ -357,7 +368,7 @@ Conteúdo planejado: materiais enviados, trocas totais, percentual de acerto ger
 
 Áudio, imagem e PDF são processados em memória e descartados após extração. Nada é armazenado além do texto extraído, das seções identificadas e das perguntas geradas.
 
-**Cap diário invisível: 5 atividades por usuário por dia.** O cap conta atividades criadas, não peças de material enviadas - várias fotos ou páginas mandadas dentro da janela de buffer de 45 segundos (Seção 1) formam um único material e consomem uma única vaga do cap. Material abortado via `cancelar` antes do fechamento da janela não consome o cap, porque nenhuma atividade chegou a ser criada.
+**Cap diário invisível: 5 atividades por usuário por dia.** O cap conta atividades criadas, não peças de material enviadas, várias fotos ou páginas enviadas dentro da janela de buffer de 45 segundos (Seção 1) formam um único material e consomem uma única vaga do cap. Material abortado via `cancelar` antes do fechamento da janela não consome o cap, porque nenhuma atividade chegou a ser criada.
 
 Caps adicionais por tipo de envio, por usuário por dia: 30 áudios (máximo 60s cada), 10 imagens.
 
@@ -370,5 +381,8 @@ Caps adicionais por tipo de envio, por usuário por dia: 30 áudios (máximo 60s
 - O sistema não depende de o usuário abrir um app. Toda a prática acontece no WhatsApp.
 - Nenhuma mensagem do sistema deve terminar com pergunta quando a resposta esperada é a de uma pergunta de prática pendente.
 - Copy nunca menciona "IA", "bot" ou "agente". Linguagem tangível: o que o usuário faz e o que recebe.
-- Posicionamento de complemento - não compete com professor, trabalha com ele.
+- Posicionamento de complemento, não compete com professor, trabalha com ele.
 - O sistema orienta ativamente o usuário sobre o que fazer, seja no primeiro contato ou sempre que algo crítico de entendimento acontecer no meio do uso. Silêncio ou resposta genérica em ponto de ambiguidade real é falha de produto, não neutralidade. Onde já aplicado: mensagem que orienta o uso de um comando usa imperativo direto ("Use *praticar* para..."), nunca fraseado condicional ("se quiser", "quando quiser"), porque fraseado condicional convida resposta em linguagem natural que o sistema não reconhece como comando.
+- **O sistema nunca se personifica.** Copy não usa framing de agente em primeira pessoa ("eu vou avaliar seu material", "eu te ajudo", "eu aviso"), nem trata o produto como personagem com vontade própria. Mensagens descrevem o que acontece, não o que "eu" faço. Essa regra já existia em relação a "eu paro", "eu pauso" no contexto de comandos, passa a cobrir qualquer construção de primeira pessoa em qualquer mensagem do sistema, não só as ligadas a comandos.
+- **Verbo padrão para envio de conteúdo é "enviar", não "mandar".** "Mandar" é registro mais informal e não é usado em nenhuma copy do produto. Vale para qualquer mensagem do sistema, onboarding, comandos ou fallback.
+- Emoji só é usado em mensagens formatadas diretamente no código, nunca em texto gerado por LLM (feedback de avaliação, resumo de atividade quando tiver componente gerado, qualquer resposta que passe por geração de texto livre). Dentro das mensagens de código, emoji é estratégico, não decorativo, cada um carrega um significado fixo e reconhecível. Vocabulário atual: 📘 início de atividade ou seção, 📊 resumo numérico, ⚠️ limite ou bloqueio. Novo emoji só entra no vocabulário quando resolve ambiguidade real de leitura rápida, não para variar visual ou suavizar tom.

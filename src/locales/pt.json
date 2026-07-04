@@ -23,8 +23,8 @@
   },
   "seo": {
     "home": {
-      "title": "Fluizer | Inglês o dia inteiro no WhatsApp, com o material da sua aula.",
-      "description": "Prática diária de inglês direto no WhatsApp. Envie o material da sua aula e pratica o dia inteiro no seu ritmo.",
+      "title": "Fluizer | Inglês o dia inteiro no WhatsApp, com o material que você enviar.",
+      "description": "Prática diária de inglês direto no WhatsApp. Envie o material que fizer sentido pra você e pratica o dia inteiro no seu ritmo.",
       "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Fluizer",
       "ogImage": "/images/logo.png"
     }
@@ -42,7 +42,7 @@
       "4": "Você não esquece por falta de esforço. <strong>Esquece por falta de prática.</strong>",
       "5": "30 minutos de aula. <strong>23 horas e meia em português.</strong>"
     },
-    "tagline": "Inglês o dia inteiro, no WhatsApp, com o material da sua aula.",
+    "tagline": "Inglês o dia inteiro, no WhatsApp, com o material que fizer sentido pra você.",
     "cta": "Experimentar grátis",
     "microcopy": "Abre no WhatsApp · Comece grátis · Sem cadastro",
     "waitlist_microcopy": "Garanta sua vaga · Comece grátis",
@@ -94,12 +94,12 @@
       "subtitle": "Três passos. Sem configuração.",
       "steps": {
         "0": {
-          "title": "Envie o material da aula",
-          "description": "Texto, foto ou PDF. A lista de vocabulário, o exercício, o PDF que o professor mandou. Qualquer material da sua aula de inglês."
+          "title": "Envie um material em inglês",
+          "description": "Texto, foto ou PDF. Lista de vocabulário, exercício, página de livro ou material de aula. Qualquer conteúdo em inglês que fizer sentido pra você."
         },
         "1": {
           "title": "O Fluizer gera as perguntas",
-          "description": "Extrai o vocabulário e os pontos centrais do material e monta as perguntas em cima do que você mandou, não de cenários genéricos."
+          "description": "Extrai o vocabulário e os pontos centrais do material e monta as perguntas em cima do que você enviou, não de cenários genéricos."
         },
         "2": {
           "title": "As perguntas chegam no WhatsApp",
@@ -110,7 +110,7 @@
     "pricing": {
       "title": "Comece grátis.",
       "subtitle": "Acesso completo por 3 dias. Sem cartão e sem cadastro.",
-      "description": "Envie qualquer material: texto, imagem ou PDF. Pratique o vocabulário da sua aula durante o dia. Se fizer sentido, continua por R$19,90/mês.",
+      "description": "Envie qualquer material com conteúdo em inglês: texto, imagem ou PDF. Pratique durante o dia. Se fizer sentido, continua por R$19,90/mês.",
       "cta": "Experimentar grátis"
     },
     "features_demo": {
@@ -130,7 +130,7 @@
             },
             {
               "from": "bot",
-              "text": "Recebi! Em breve começa a prática.",
+              "text": "Material recebido. Em breve começa a prática.",
               "time": "08:10"
             },
             {

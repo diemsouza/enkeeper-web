@@ -25,7 +25,7 @@ import {
   formatDailyActivityLimitReached,
   formatDocItemReceived,
   formatDocItemLimitReached,
-  formatNoDocs,
+  formatNoActivity,
   formatIntensiveModeActivated,
   formatOnboardingMsg1,
   formatOnboardingMsg2,
@@ -45,6 +45,7 @@ import {
   formatEvaluationFailed,
   formatPracticeWaiting,
   formatInternalSupportMessage,
+  formatOnboardingMsg5,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import {
@@ -102,8 +103,9 @@ import {
   MIN_DOC_CHARS,
   INTENSIVE_UNTIL_MIN,
   MAX_ACTIVITIES_PER_DAY,
-  AFTER_FEEDBACK_WA_MESSAGE_INTERVAL_SEC,
+  AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
   MESSAGE_SUPPRESSION_SEC,
+  ONBOARDING_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
@@ -325,12 +327,18 @@ export async function handleIncomingMessage(
         formatOnboardingMsg2(),
         formatOnboardingMsg3(),
         formatOnboardingMsg4(),
+        formatOnboardingMsg5(),
       ];
 
+      const returnMsgs = [];
       for (const msg of msgs) {
         await saveBotReply(user.id, userChannel.id, msg, today);
+        if (returnMsgs.length > 0) {
+          returnMsgs.push({ delay: ONBOARDING_MESSAGE_INTERVAL_SEC });
+        }
+        returnMsgs.push(msg);
       }
-      return msgs;
+      return returnMsgs;
     }
 
     // ─── Mídia → buffer de Doc ───────────────────────────────────────────────
@@ -916,7 +924,7 @@ export async function handleIncomingMessage(
         }
 
         if (!activeActivity) {
-          reply = formatNoDocs();
+          reply = formatNoActivity();
           break;
         }
 
@@ -1049,7 +1057,7 @@ export async function handleIncomingMessage(
                 if (replies.length > 0)
                   return [
                     feedback,
-                    { delay: AFTER_FEEDBACK_WA_MESSAGE_INTERVAL_SEC },
+                    { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
                     ...replies,
                   ];
               }
@@ -1067,7 +1075,7 @@ export async function handleIncomingMessage(
                 await incrementAgentMessageCount(user.id, today);
                 return [
                   feedback,
-                  { delay: AFTER_FEEDBACK_WA_MESSAGE_INTERVAL_SEC },
+                  { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
                   guideMsg,
                 ];
               }

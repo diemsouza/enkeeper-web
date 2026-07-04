@@ -18,7 +18,7 @@ exemplos:
 validação: o `______` está presente exatamente uma vez, cobrindo o termo inteiro do answerKeys (não parte dele). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura + frase de uso real em EN com o termo em EN preenchido
+fórmula: abertura + frase que completa a pergunta, em EN, com o termo em EN preenchido
 nota: Use sempre a frase original completada, nunca crie frase nova. Em wrong e partial, mostre o termo em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
@@ -59,7 +59,7 @@ exemplos:
 validação: o `______` está presente exatamente uma vez, cobrindo a expressão inteira do answerKeys (não só parte dela, ex: não pode deixar "the" fora da lacuna se o termo for "the sweet spot"). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura + frase de uso real em EN com a expressão em EN preenchida
+fórmula: abertura + frase que completa a pergunta, em EN, com a expressão em EN preenchida
 nota: Use sempre a frase original completada, nunca crie frase nova. A frase de estímulo é em inglês básico (nível A2), curta e direta. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:
@@ -100,7 +100,7 @@ exemplos:
 validação: o `______` está presente exatamente uma vez, cobrindo o idiom ou expressão inteira do answerKeys (não só parte dela). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase, incluindo a oração que vem antes ou depois da lacuna na mesma frase de duas cláusulas. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura em PT + frase de uso real em EN com a expressão correta preenchida
+fórmula: abertura em PT + frase que completa a pergunta, em EN, com a expressão correta preenchida
 nota: Use sempre a frase original completada, nunca crie frase nova. A frase de estímulo é em inglês intermediário (nível B1-B2), podendo ter estrutura um pouco mais elaborada que o nível anterior. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
 
 right:

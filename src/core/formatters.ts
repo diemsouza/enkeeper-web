@@ -15,15 +15,33 @@ export function formatOnboardingMsg1(): string {
 }
 
 export function formatOnboardingMsg2(): string {
-  return `Envie qualquer material de inglês que você está estudando: texto, foto de uma página, lista de vocabulário, PDF de aula.`;
+  return "Pratique inglês no seu ritmo, com o material que fizer sentido pra você.";
 }
 
 export function formatOnboardingMsg3(): string {
-  return `Estude o material enviado, porque ao longo do dia chegam perguntas sobre ele, aqui mesmo.`;
+  return "Envie imagem, PDF ou texto com conteúdo em inglês: algo que esteja lendo, página de livro, post nas redes sociais ou material de aula.";
 }
 
 export function formatOnboardingMsg4(): string {
+  return "Estude o que você enviar. Ao longo do dia, chegam perguntas sobre ele, aqui mesmo.";
+}
+
+export function formatOnboardingMsg5(): string {
   return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra sentir o produto. Envie o material agora pra começar, ou use *ajuda* pra ver os comandos disponíveis.`;
+}
+
+export function formatMaterialGuidance(): string {
+  return `Sem ideia do que enviar? Precisa ter texto em inglês suficiente para virar prática.\n\nFoto de página de livro, captura de tela de conversa, letra de música, post nas redes sociais, material de aula ou PDF.`;
+}
+
+export function formatNoActivity(): string {
+  return [
+    "Você ainda não tem atividade ativa.",
+    "",
+    formatMaterialGuidance(),
+    "",
+    "_Use *ajuda* para ver os comandos disponíveis._",
+  ].join("\n");
 }
 
 export function formatPlanExpired(): string {
@@ -78,7 +96,9 @@ export function formatCommandList(level: Level | null): string {
     `*nivel* - ${nivelLabel}`,
     "*suporte* - fala com a equipe",
     "",
-    "_Envie texto, imagem ou PDF com conteúdo relevante para praticar._",
+    "_Envie texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._",
+    ,
+    ,
   ].join("\n");
 }
 
@@ -98,7 +118,7 @@ export function formatActivitiesList(activities: ActivityListItem[]): string {
     .filter((a) => a.status === "archived")
     .slice(0, 3);
 
-  if (current.length === 0 && archived.length === 0) return formatNoDocs();
+  if (current.length === 0 && archived.length === 0) return formatNoActivity();
 
   const lines: string[] = [];
 
@@ -129,20 +149,10 @@ export function formatActivitiesList(activities: ActivityListItem[]): string {
   else if (currentStatus === "paused")
     textFooter = "_Use *retomar* para continuar._ ";
   textFooter +=
-    "_Para criar uma atividade, envie um texto, imagem ou PDF com conteúdo relevante._";
+    "_Para criar uma atividade, envie texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._";
   if (textFooter) lines.push("", textFooter);
 
   return lines.join("\n");
-}
-
-export function formatNoDocs(): string {
-  return [
-    "Você ainda não tem atividade ativa.",
-    "",
-    "Envie o material que está estudando: texto, foto ou PDF.",
-    "",
-    "_Use *ajuda* para ver os comandos disponíveis._",
-  ].join("\n");
 }
 
 export function formatDocReceiving(): string {
@@ -180,7 +190,7 @@ export function formatIntensiveModeStopped(): string {
 
 export function formatDocConfirmPrompt(): string {
   return [
-    "Esse parece ser um ótimo conteúdo pra praticar. Quer começar uma nova atividade com esse conteúdo?",
+    "Esse material parece bom pra praticar. Quer começar uma nova atividade com ele?",
     "",
     "_Use *sim* para confirmar ou *não* para cancelar._",
   ].join("\n");
@@ -238,7 +248,7 @@ export function formatResumePrompt(docs: Pick<Doc, "id" | "title">[]): string {
 }
 
 export function formatResumeSuccess(): string {
-  return "Atividade retomada. Vamos continuar de onde parou!";
+  return "Atividade retomada, de onde parou.";
 }
 
 export function formatNoPausedDocs(): string {
@@ -254,11 +264,11 @@ export function formatSupportReceived(): string {
 }
 
 export function formatShortTextWithDocs(): string {
-  return "Já recebi seu material. Aguarde ou use *ajuda* para ver os comandos disponíveis.";
+  return "Material recebido. Aguarde ou use *ajuda* para ver os comandos disponíveis.";
 }
 
 export function formatShortTextNoDocs(): string {
-  return "Adicione uma atividade para praticarmos durante o dia. Pode ser texto, imagem ou PDF.\n\n_Use *ajuda* para ver todos os comandos._";
+  return "Envie um material para praticar durante o dia. Pode ser texto, imagem ou PDF.\n\n_Use *ajuda* para ver todos os comandos._";
 }
 
 export function formatPracticeComplete(): string {
@@ -266,7 +276,7 @@ export function formatPracticeComplete(): string {
 }
 
 export function formatImageNoText(): string {
-  return "Não foi possível identificar conteúdo suficiente e relevante nessa imagem. Envie outro material como texto, imagem ou PDF.";
+  return "Não foi possível identificar texto em inglês suficiente nessa imagem. Envie outro material como texto, imagem ou PDF.";
 }
 
 export function formatIntensiveModeActivated({
@@ -394,7 +404,7 @@ const NUDGE_BODY_POOL = [
   "Quanto mais tempo parado, mais difícil retomar.",
   "O que você estudou só fica se for revisado.",
   "Hábito vale mais que vontade.",
-  "Só tem duas opcoes: praticar ou esquecer.",
+  "Só tem duas opções: praticar ou esquecer.",
   "O progresso depende de manter o ritmo.",
   "Sem repetição, o que você aprendeu se perde.",
 ];
@@ -454,11 +464,11 @@ export function formatDocReplaceCanceled(): string {
 }
 
 export function formatInvalidPauseIndex(): string {
-  return "Número inválido. Use pausar para ver seus conteúdos ativos.";
+  return "Número inválido. Use pausar para ver suas atividades ativas.";
 }
 
 export function formatInvalidResumeIndex(): string {
-  return "Número inválido. Use retomar para ver seus conteúdos pausados.";
+  return "Número inválido. Use retomar para ver suas atividades pausadas.";
 }
 
 export function formatNoActiveActivity(): string {
@@ -474,11 +484,11 @@ export function formatNoPendingAction(): string {
 }
 
 export function formatEvaluationFailed(): string {
-  return "Não consegui avaliar sua resposta!";
+  return "Não foi possível avaliar essa resposta.";
 }
 
 export function formatPracticeWaiting(): string {
-  return "Aguarde, a próxima mensagem chega em breve. Se quiser mudar de atividade, é só mandar um novo conteúdo.";
+  return "Aguarde, a próxima mensagem chega em breve. Para mudar de atividade, envie um novo material.";
 }
 
 export function formatInternalSupportMessage(
@@ -512,7 +522,7 @@ export function humanizeFeedback(
 
     // substitui só a abertura, mantém o resto do feedback intacto
     return feedback.replace(
-      /^(Errado!|Hmmm, errou!|Ops, errado!|Infelizmente não!|Hmmm, errou!)/,
+      /^(Errado!|Hmmm, errou!|Ops, errado!|Infelizmente não!)/,
       opening,
     );
   }

@@ -10,6 +10,8 @@ Critérios para o status:
 - wrong: errada, em branco, "não sei" ou "não lembro".
 - partial: ideia certa mas incompleta ou imprecisa. Inclui grafia muito próxima quando é claramente o mesmo termo com erro de digitação ou acento. Palavras diferentes com grafia parecida são wrong, mesmo que relacionadas, incluindo quando uma é a outra mais um sufixo que muda o significado (ex: "shelve" no lugar de "shelf" é wrong; "brief" no lugar de "briefing" é wrong, mesmo sendo a mesma raiz).
 
+Se o termo avaliado tiver mais de um sentido de uso comum, o exemplo de uso no feedback deve corresponder ao sentido correto do termo, aquele contra o qual a resposta foi avaliada. Nunca gere exemplo de um sentido genérico ou de um sentido diferente do que fundamentou a avaliação.
+
 Alguns formatos são binários e não usam partial. Quando os exemplos do formato não trazem partial, use apenas right ou wrong.
 
 IMPORTANTE:
