@@ -6,7 +6,7 @@ import {
 } from "../lib/prisma";
 import { parseMessage } from "../core/parser";
 import { canPractice } from "../core/access";
-import { canStartActivity, canAddDocItem } from "../core/limits";
+import { canStartActivity, canAddDocItem, canPracticeToday } from "../core/limits";
 import {
   formatCommandList,
   formatActivitiesList,
@@ -46,6 +46,8 @@ import {
   formatPracticeWaiting,
   formatInternalSupportMessage,
   formatOnboardingMsg5,
+  formatDailyPracticeLimitReached,
+  formatIntensiveDailyLimitReached,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import {
@@ -78,8 +80,10 @@ import {
 import { archiveOrCancelActivitiesByDoc } from "./activity-service";
 import {
   getTodayActivityCount,
+  getTodayUsage,
   incrementUserMessageCount,
   incrementAgentMessageCount,
+  incrementDailyPracticeCount,
 } from "../repo/daily-usage.repo";
 import { publishDocMerge, publishDocProcessing } from "../lib/qstash";
 import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
@@ -106,6 +110,7 @@ import {
   AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
   MESSAGE_SUPPRESSION_SEC,
   ONBOARDING_MESSAGE_INTERVAL_SEC,
+  DAILY_PRACTICE_LIMIT,
 } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
 import { completeRoundZero } from "./activity-cron.service";
@@ -736,6 +741,15 @@ export async function handleIncomingMessage(
           messageIntent = "free_text";
           break;
         }
+        const practiceNowUsage = await getTodayUsage(user.id, today);
+        if (!canPracticeToday(practiceNowUsage?.practiceCount ?? 0, practiceNowUsage?.intensiveCount ?? 0, true)) {
+          const limitMsg = (practiceNowUsage?.practiceCount ?? 0) >= DAILY_PRACTICE_LIMIT
+            ? formatDailyPracticeLimitReached()
+            : formatIntensiveDailyLimitReached();
+          await saveUserMsg(user.id, userChannel.id, text, "practice_now", input, today);
+          await saveBotReply(user.id, userChannel.id, limitMsg, today);
+          return [limitMsg];
+        }
         const intensiveUntil = new Date(
           Date.now() + INTENSIVE_UNTIL_MIN * 60 * 1000,
         );
@@ -1009,7 +1023,14 @@ export async function handleIncomingMessage(
               if (pendingQuestion.sectionId) {
                 await recalcSectionStatus(pendingQuestion.sectionId);
               }
+              const updatedCounts = await incrementDailyPracticeCount(user.id, today, isIntensiveMode);
+              const canContinueIntensive = canPracticeToday(
+                updatedCounts.practiceCount,
+                updatedCounts.intensiveCount,
+                isIntensiveMode,
+              );
               const isPracticingSessionActive =
+                canContinueIntensive &&
                 activeActivity.intensiveUntil &&
                 activeActivity.intensiveUntil > new Date();
               const interactionCount = activeActivity.interactionCount + 1;
@@ -1041,6 +1062,23 @@ export async function handleIncomingMessage(
                 questionId: pendingQuestion.id,
               });
               await incrementAgentMessageCount(user.id, today);
+
+              if (isIntensiveMode && !canContinueIntensive) {
+                const limitMsg = updatedCounts.practiceCount >= DAILY_PRACTICE_LIMIT
+                  ? formatDailyPracticeLimitReached()
+                  : formatIntensiveDailyLimitReached();
+                await updateActivity(activeActivity.id, user.id, { intensiveUntil: null });
+                await saveMessage({
+                  userId: user.id,
+                  userChannelId: userChannel.id,
+                  activityId: activeActivity.id,
+                  role: "assistant",
+                  content: limitMsg,
+                  intent: "practice_feedback",
+                });
+                await incrementAgentMessageCount(user.id, today);
+                return [feedback, { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC }, limitMsg];
+              }
 
               if (isPracticingSessionActive) {
                 const replies = await handleIntensiveNextQuestion(

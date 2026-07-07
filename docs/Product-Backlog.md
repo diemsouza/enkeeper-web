@@ -162,34 +162,32 @@ Custo de TTS é recorrente e escala linearmente com volume de mensagens e usuár
 
 ---
 
-## 5) Pool diário de práticas com controle de custo
+## 5) Pool diário de práticas com controle de custo (Já foi implementado)
 
 **Contexto**
 
-Modo prática intensiva (Seção 8, Product-Rules) hoje só limita por inatividade (15 minutos sem resposta). Ao testar, identificamos que um usuário respondendo rápido pode esgotar dezenas de perguntas em poucos minutos, sem nenhum teto de volume. Cadência normal também não tem limite diário. Avaliação de resposta é a fatia mais cara do custo variável por usuário (Seção 10, Product-Brief, R$1,20-1,80/mês na média), e esse custo é por resposta processada, não por tempo de sessão.
+Modo prática intensiva (Seção 8, Product-Rules) só limitava por inatividade (15 minutos sem resposta). Cadência normal não tinha limite diário. Avaliação de resposta é a fatia mais cara do custo variável por usuário (Seção 10, Product-Brief), e esse custo é por resposta processada, não por tempo de sessão.
 
 **Problema**
 
-Sem limite de volume, o custo real por usuário pode escalar bem acima da média projetada na Seção 10 e 11 do Brief, que assume uso moderado ao longo do mês. Usuário hiperfocado, testando os limites, ou simplesmente muito engajado, pode consumir volume de avaliações desproporcional ao que a mensalidade de R$19,90 sustenta, furando a margem individual mesmo pagando o mesmo preço de todo mundo.
-*Exemplo:* usuário responde em modo intensivo a cada 5 segundos por 1 hora seguida, 4 vezes no dia, trocando de material 5 vezes, cada resposta avaliada via LLM. Custo desse usuário no dia pode superar o custo médio mensal projetado pra ele inteiro.
+Sem limite de volume, o custo real por usuário podia escalar bem acima da média projetada. Usuário hiperfocado ou muito engajado podia consumir volume de avaliações desproporcional ao que a mensalidade sustenta.
 
 **Solução**
 
-Pool único e diário de práticas (perguntas avaliadas) por usuário, consumido tanto pela cadência normal quanto pelo modo intensivo, sem distinção de origem. Modo intensivo passa a ter também um teto estrutural de sessão (15 minutos, hard stop, reinício manual via comando), como camada adicional de dosagem dentro do mesmo pool.
+Limite diário único de 60 práticas avaliadas por usuário, cadência e intensivo somados, com reserva fixa de 24 práticas garantidas para cadência. Intensivo consome no máximo 36 do total, protegendo a cadência de ser zerada por uma sessão isolada.
 
-**Como**
+**Como foi implementado**
 
-Pool conta respostas avaliadas (`right`, `wrong`, `partial`), independente de terem vindo de cadência normal, modo intensivo ou fallback de revisão. Um único contador, resetado diariamente.
-*Exemplo:* usuário com pool de 60 práticas/dia pode gastar tudo em 20 minutos de intensivo, ou espalhar ao longo do dia normal, ou misturar os dois, o número final consumido é o mesmo em qualquer combinação.
+Reaproveitada a tabela `DailyUsage`, já usada para os demais contadores diários (atividades, imagens, áudios). Dois campos novos: `practiceCount` (total do dia) e `intensiveCount` (subconjunto de prática originada de sessão intensiva).
 
-Modo intensivo ganha teto de sessão de 15 minutos contados da ativação (hard stop, não mais só por inatividade). Ao encerrar por esse motivo, mensagem avisa e orienta reativação via `praticar`, diferente do encerramento por inatividade, que permanece silencioso.
-*Exemplo:* usuário ativo, respondendo rápido, sessão bate 15 minutos, sistema envia "Sessão intensiva encerrada. Use *praticar* de novo quando quiser continuar." e para de enviar novas perguntas até nova ativação.
+Constantes de código, não campo no banco: `DAILY_PRACTICE_LIMIT = 60`, `CADENCE_RESERVE = 24`, `INTENSIVE_LIMIT` calculado como a diferença entre os dois (36). Sem diferenciação entre Trial e Pro.
 
-Nomenclatura de produto: unidade do pool é "prática", não "pergunta". "Pergunta" é termo técnico que não carrega valor e aproxima o produto de commodities (flashcard, GPT genérico). "Prática" já é a palavra usada na tagline, no resumo executivo e no nome do produto (Fluizer, fluência via prática), e comunica melhor tanto o valor quanto o limite.
-*Exemplo:* mensagem de teto atingido usa "Você usou sua prática de hoje. Amanhã tem mais.", sem tom de escassez artificial tipo jogo (sem "parabéns", sem gatilho de recompensa variável), alinhado à Seção 12 do Brief de nunca soar como notificação de app pedindo atenção.
+Checagem acontece antes de avaliar a resposta, não depois. Se o total do dia já atingiu o limite, a prática não é avaliada, o sistema retorna a mensagem de limite direto. Se for intensivo e o subcontador de intensivo já atingiu o teto, mesma lógica, mas só para o canal intensivo, cadência segue liberada.
 
-Caps de atividade e material por atividade (Seção 14, Product-Rules, hoje 5 atividades/dia e até 3 materiais por troca) protegem o custo de processamento (doc-extraction, Vision, Whisper), que é camada de custo diferente da avaliação. Revisar se os números atuais ainda fazem sentido depois que o pool de prática estiver calibrado, são proteções complementares, não redundantes.
+Reset é automático pela chave composta usuário e data, sem cron dedicado, mesmo mecanismo já usado nos demais contadores diários.
+
+Hard stop de 15 minutos por tempo de sessão intensiva foi removido. Controle é só por volume.
 
 **Objeção**
 
-Número do pool (quantidade de práticas/dia) não pode ser definido sem dado real de custo por resposta em produção, precisa calibrar com uso real antes de travar o valor final. Risco de calibrar baixo demais e o usuário engajado (perfil que mais queremos reter) sentir o produto curto logo na fase em que mais precisa provar valor.
+Número do limite (60 total, 36 intensivo) foi calibrado por estimativa de custo por resposta avaliada, sem dado real de produção ainda. Precisa de medição real de custo por resposta antes de qualquer ajuste definitivo, para cima ou para baixo. Vale reavaliar de novo quando a geração de perguntas migrar de lote para sob demanda, porque isso muda a estrutura de custo por interação e invalida a estimativa atual.

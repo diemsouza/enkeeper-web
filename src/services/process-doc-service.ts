@@ -21,7 +21,7 @@ import {
   sendWhatsAppMessage,
   sendWhatsAppMessages,
 } from "../vendors/whatsapp.vendor";
-import { incrementDailyActivityCount } from "../repo/daily-usage.repo";
+import { incrementDailyActivityCount, incrementDailyDocCount } from "../repo/daily-usage.repo";
 import {
   formatDocProcessed,
   formatDocProcessingFailed,
@@ -196,6 +196,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
         sectionCount: result.sections.length,
       });
       const activityCount = await incrementDailyActivityCount(userId, date);
+      await incrementDailyDocCount(userId, date);
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatDocProcessed(

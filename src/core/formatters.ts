@@ -137,7 +137,7 @@ export function formatActivitiesList(activities: ActivityListItem[]): string {
     archived.forEach((a) => {
       const displayTitle = a.title || "Sem título";
       lines.push(
-        `_${format(a.updatedAt, "dd/MM")}_ - *${displayTitle}* - ${LEVEL_LABEL[a.userLevel]}`,
+        `_${format(a.updatedAt, "dd/MM")}_ - *${displayTitle}* \n${LEVEL_LABEL[a.userLevel]}`,
       );
     });
   }
@@ -186,6 +186,14 @@ export function formatDocNoQuestions(): string {
 
 export function formatIntensiveModeStopped(): string {
   return "Modo prática intensiva pausado. Voltando para o ritmo normal.";
+}
+
+export function formatDailyPracticeLimitReached(): string {
+  return "Você usou toda sua prática disponível de hoje, mas amanhã tem mais.";
+}
+
+export function formatIntensiveDailyLimitReached(): string {
+  return "Você atingiu o limite diário de prática intensiva. Sua prática ao longo do dia continua normal.";
 }
 
 export function formatDocConfirmPrompt(): string {

@@ -10,6 +10,9 @@ export const DEFAULT_LOCALE = "pt-BR";
 export const DEFAULT_CURRENCY = "BRL";
 export const WHATSAPP_NUMBER = "551153069000";
 export const INTENSIVE_UNTIL_MIN = 15;
+export const DAILY_PRACTICE_LIMIT = 60;
+export const CADENCE_RESERVE = 24;
+export const INTENSIVE_LIMIT = DAILY_PRACTICE_LIMIT - CADENCE_RESERVE;
 export const TRIAL_DAYS = 3;
 export const MAX_ACTIVITIES_PER_DAY = 5;
 export const MAX_DOC_ITEMS_PER_DOC = 3;
@@ -19,7 +22,7 @@ export const ONBOARDING_MESSAGE_INTERVAL_SEC = 2;
 export const DEFAULT_MESSAGE_INTERVAL_SEC = 3;
 export const AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC = 8;
 export const NUDGE_STEPS = [
-  "h3",
+  "h4",
   "h12",
   "h23",
   "d2",
@@ -30,7 +33,7 @@ export const NUDGE_STEPS = [
 export type NudgeStep = (typeof NUDGE_STEPS)[number];
 
 export const NUDGE_THRESHOLDS_MS: Record<NudgeStep, number> = {
-  h3: 3 * 60 * 60 * 1000,
+  h4: 4 * 60 * 60 * 1000, // 4 hours porque após 1h usuário recebe nova pergunta, isso vai dar 3h depois da ultima msg (esperado)
   h12: 12 * 60 * 60 * 1000,
   h23: 23 * 60 * 60 * 1000,
   d2: 2 * 24 * 60 * 60 * 1000,
@@ -40,7 +43,7 @@ export const NUDGE_THRESHOLDS_MS: Record<NudgeStep, number> = {
 };
 
 export function getNextNudgeStep(current: string | null): NudgeStep | null {
-  if (!current) return "h3";
+  if (!current) return "h4";
   const idx = NUDGE_STEPS.indexOf(current as NudgeStep);
   return idx >= 0 && idx < NUDGE_STEPS.length - 1 ? NUDGE_STEPS[idx + 1] : null;
 }

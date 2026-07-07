@@ -67,6 +67,8 @@ model DailyUsage {
     date              DateTime @map("date") @db.Date
     docCount          Int      @default(0) @map("doc_count")
     activityCount     Int      @default(0) @map("activity_count")
+    practiceCount     Int      @default(0) @map("practice_count")
+    intensiveCount    Int      @default(0) @map("intensive_count")
     userMessageCount  Int      @default(0) @map("user_message_count")
     agentMessageCount Int      @default(0) @map("agent_message_count")
     messagesCount     Int      @default(0) @map("messages_count")
