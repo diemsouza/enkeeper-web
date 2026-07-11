@@ -1,5 +1,3 @@
-import { DEFAULT_MESSAGE_INTERVAL_SEC } from "../lib/constants";
-import { MessagePart } from "../types/message-parts";
 
 type MediaDownloadResult = {
   buffer: Buffer;
@@ -14,8 +12,6 @@ export async function sendWhatsAppMessage(
 ): Promise<void> {
   const token = process.env.WABA_TOKEN;
   const phoneNumberId = process.env.WABA_PHONE_ID;
-
-  if (process.env.SIMULATOR_MODE === "true") return;
 
   const res = await fetch(
     `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
@@ -40,33 +36,12 @@ export async function sendWhatsAppMessage(
   }
 }
 
-export async function sendWhatsAppMessages(
-  to: string,
-  parts: MessagePart[],
-): Promise<void> {
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-    if (typeof part === "object") {
-      await new Promise((resolve) => setTimeout(resolve, part.delay * 1000));
-      continue;
-    }
-    if (i > 0 && typeof parts[i - 1] === "string") {
-      await new Promise((resolve) =>
-        setTimeout(resolve, DEFAULT_MESSAGE_INTERVAL_SEC * 1000),
-      );
-    }
-    await sendWhatsAppMessage(to, part);
-  }
-}
-
 export async function sendWhatsAppTemplate(
   to: string,
   templateName: string,
 ): Promise<void> {
   const token = process.env.WABA_TOKEN;
   const phoneNumberId = process.env.WABA_PHONE_ID;
-
-  if (process.env.SIMULATOR_MODE === "true") return;
 
   const res = await fetch(
     `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,

@@ -1,4 +1,5 @@
 import {
+  Activity,
   DocType,
   Message,
   QuestionFormat,
@@ -6,7 +7,11 @@ import {
 } from "../lib/prisma";
 import { parseMessage } from "../core/parser";
 import { canPractice } from "../core/access";
-import { canStartActivity, canAddDocItem, canPracticeToday } from "../core/limits";
+import {
+  canStartActivity,
+  canAddDocItem,
+  canPracticeToday,
+} from "../core/limits";
 import {
   formatCommandList,
   formatActivitiesList,
@@ -27,10 +32,6 @@ import {
   formatDocItemLimitReached,
   formatNoActivity,
   formatIntensiveModeActivated,
-  formatOnboardingMsg1,
-  formatOnboardingMsg2,
-  formatOnboardingMsg3,
-  formatOnboardingMsg4,
   humanizeFeedback,
   formatIntensiveModeStopped,
   formatGuideAfterFirstFeedback,
@@ -48,6 +49,10 @@ import {
   formatOnboardingMsg5,
   formatDailyPracticeLimitReached,
   formatIntensiveDailyLimitReached,
+  formatOnboardingMsg1,
+  formatOnboardingMsg2,
+  formatOnboardingMsg3,
+  formatOnboardingMsg4,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import {
@@ -113,12 +118,16 @@ import {
   DAILY_PRACTICE_LIMIT,
 } from "../lib/constants";
 import { IncomingMessage, MessageIntent } from "../types/domain";
-import { completeRoundZero } from "./activity-cron.service";
+import {
+  completeRoundZero,
+  generateQuestionIfPoolNotFull,
+} from "./activity-cron.service";
 import { handleAdminCommand } from "./admin-service";
 import { markWaitlistActive } from "../repo/waitlist.repo";
 import { startOfDay } from "date-fns";
 import { validateDocItemInput } from "./doc-item-service";
-import { MessagePart } from "../types/message-parts";
+import { OutMessage } from "../types/out-message";
+import { MessageChannel } from "../types/message-channel";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
@@ -135,7 +144,8 @@ const OVERRIDING_INTENTS: MessageIntent[] = [
 
 export async function handleIncomingMessage(
   input: IncomingMessage,
-): Promise<MessagePart[]> {
+  channel: MessageChannel,
+): Promise<void> {
   const rawText = (input.text ?? "").trim();
   const user = await findOrCreateUserByChannel(
     input.channelType,
@@ -167,17 +177,18 @@ export async function handleIncomingMessage(
       metadata: { reason: "duplicate_within_window" },
       receivedAt: input.receivedAt,
     });
-    return [];
+    return;
   }
 
   await updateUserLastRequest(user.id, messageId);
 
   try {
     if (/^admin(\s|$)/i.test(rawText)) {
-      if (input.channelId !== process.env.WA_SUPPORT) return [];
+      if (input.channelId !== process.env.WA_SUPPORT) return;
       const reply = await handleAdminCommand(rawText);
       await saveBotReply(user.id, userChannel.id, reply, today);
-      return [reply];
+      await channel.sendMessage(userChannel.channelId, reply);
+      return;
     }
 
     // Atualiza nome do usuário se veio pelo canal e ainda não está salvo
@@ -233,7 +244,8 @@ export async function handleIncomingMessage(
         );
         const supportReply = formatSupportReceived();
         await saveBotReply(user.id, userChannel.id, supportReply, today);
-        return [supportReply];
+        await channel.sendMessage(userChannel.channelId, supportReply);
+        return;
       }
       if (
         parsed.intent === "list_commands" ||
@@ -249,7 +261,8 @@ export async function handleIncomingMessage(
         );
         const cmdReply = formatCommandList(user.level ?? null);
         await saveBotReply(user.id, userChannel.id, cmdReply, today);
-        return [cmdReply];
+        await channel.sendMessage(userChannel.channelId, cmdReply);
+        return;
       }
 
       if (parsed.intent === "list_activities") {
@@ -264,7 +277,8 @@ export async function handleIncomingMessage(
         const activities = await findActivitiesForList(user.id);
         const activitiesReply = formatActivitiesList(activities);
         await saveBotReply(user.id, userChannel.id, activitiesReply, today);
-        return [activitiesReply];
+        await channel.sendMessage(userChannel.channelId, activitiesReply);
+        return;
       }
 
       if (parsed.intent === "support") {
@@ -278,7 +292,8 @@ export async function handleIncomingMessage(
         );
         const supportPrompt = formatSupportRequest();
         await saveBotReply(user.id, userChannel.id, supportPrompt, today);
-        return [supportPrompt];
+        await channel.sendMessage(userChannel.channelId, supportPrompt);
+        return;
       }
 
       if (parsed.intent === "cancel" || parsed.intent === "cancel_no") {
@@ -292,7 +307,8 @@ export async function handleIncomingMessage(
         );
         const cancelReply = formatCanceled();
         await saveBotReply(user.id, userChannel.id, cancelReply, today);
-        return [cancelReply];
+        await channel.sendMessage(userChannel.channelId, cancelReply);
+        return;
       }
 
       await saveUserMsg(
@@ -305,7 +321,8 @@ export async function handleIncomingMessage(
       );
       const expiredReply = formatPlanExpired();
       await saveBotReply(user.id, userChannel.id, expiredReply, today);
-      return [expiredReply];
+      await channel.sendMessage(userChannel.channelId, expiredReply);
+      return;
     }
 
     // ─── Onboarding ──────────────────────────────────────────────────────────
@@ -335,15 +352,16 @@ export async function handleIncomingMessage(
         formatOnboardingMsg5(),
       ];
 
-      const returnMsgs = [];
+      const outMsgs: OutMessage[] = [];
       for (const msg of msgs) {
         await saveBotReply(user.id, userChannel.id, msg, today);
-        if (returnMsgs.length > 0) {
-          returnMsgs.push({ delay: ONBOARDING_MESSAGE_INTERVAL_SEC });
+        if (outMsgs.length > 0) {
+          outMsgs.push({ delay: ONBOARDING_MESSAGE_INTERVAL_SEC });
         }
-        returnMsgs.push(msg);
+        outMsgs.push(msg);
       }
-      return returnMsgs;
+      await channel.sendMessage(userChannel.channelId, outMsgs);
+      return;
     }
 
     // ─── Mídia → buffer de Doc ───────────────────────────────────────────────
@@ -355,7 +373,7 @@ export async function handleIncomingMessage(
       input.mediaType === "text"
     ) {
       const docType = input.mediaType as DocType;
-      return handleDocUpload(
+      const msgs = await handleDocUpload(
         user.id,
         userChannel.id,
         text,
@@ -363,6 +381,9 @@ export async function handleIncomingMessage(
         today,
         input,
       );
+      if (msgs.length > 0)
+        await channel.sendMessage(userChannel.channelId, msgs);
+      return;
     }
 
     // ─── Estado pendente ──────────────────────────────────────────────────────
@@ -376,7 +397,8 @@ export async function handleIncomingMessage(
       }
       const cancelledReply = formatLevelUpdateCanceled();
       await saveBotReply(user.id, userChannel.id, cancelledReply, today);
-      return [cancelledReply];
+      await channel.sendMessage(userChannel.channelId, cancelledReply);
+      return;
     }
 
     const isOverriding = OVERRIDING_INTENTS.includes(parsed.intent);
@@ -395,13 +417,13 @@ export async function handleIncomingMessage(
             today,
           );
           const levelMsg = formatLevelQuestion();
-          await sendWhatsAppMessage(userChannel.channelId, levelMsg);
+          await channel.sendMessage(userChannel.channelId, levelMsg);
           await saveBotReply(user.id, userChannel.id, levelMsg, today);
-          return [];
+          return;
         }
 
         const { outcome, message } = await processLevelResponse(text, user.id);
-        await sendWhatsAppMessage(userChannel.channelId, message);
+        await channel.sendMessage(userChannel.channelId, message);
         await saveBotReply(user.id, userChannel.id, message, today);
 
         if (outcome === "captured") {
@@ -418,7 +440,7 @@ export async function handleIncomingMessage(
           if (pendingDocToResume) {
             await publishDocProcessing(pendingDocToResume.id, user.id);
           }
-          return [];
+          return;
         }
 
         const levelIntent: MessageIntent =
@@ -431,7 +453,7 @@ export async function handleIncomingMessage(
           input,
           today,
         );
-        return [];
+        return;
       }
 
       // Aguardando sim ou não após texto longo
@@ -447,7 +469,7 @@ export async function handleIncomingMessage(
             input,
             today,
           );
-          return createPendingBuffer(
+          const msgs = await createPendingBuffer(
             user.id,
             userChannel.id,
             lastUserMessage!.content,
@@ -455,6 +477,9 @@ export async function handleIncomingMessage(
             today,
             lastUserMessage!.id,
           );
+          if (msgs.length > 0)
+            await channel.sendMessage(userChannel.channelId, msgs);
+          return;
         }
 
         await saveUserMsg(
@@ -467,7 +492,8 @@ export async function handleIncomingMessage(
         );
         const reply = formatCanceled();
         await saveBotReply(user.id, userChannel.id, reply, today);
-        return [reply];
+        await channel.sendMessage(userChannel.channelId, reply);
+        return;
       }
 
       // Aguardando sim ou não para substituir doc ativo
@@ -489,7 +515,7 @@ export async function handleIncomingMessage(
             mt === "audio" || mt === "image" || mt === "pdf"
               ? (mt as DocType)
               : "text";
-          return createPendingBuffer(
+          const replaceMsgs = await createPendingBuffer(
             user.id,
             userChannel.id,
             lastUserMessage!.content,
@@ -497,6 +523,9 @@ export async function handleIncomingMessage(
             today,
             lastUserMessage!.id,
           );
+          if (replaceMsgs.length > 0)
+            await channel.sendMessage(userChannel.channelId, replaceMsgs);
+          return;
         }
 
         await saveUserMsg(
@@ -509,7 +538,8 @@ export async function handleIncomingMessage(
         );
         const reply = formatDocReplaceCanceled();
         await saveBotReply(user.id, userChannel.id, reply, today);
-        return [reply];
+        await channel.sendMessage(userChannel.channelId, reply);
+        return;
       }
 
       // TODO: refactory (maybe do not need this anymore our need change to activity)
@@ -527,7 +557,8 @@ export async function handleIncomingMessage(
         if (parsed.intent === "cancel" || parsed.intent === "cancel_no") {
           const reply = formatCanceled();
           await saveBotReply(user.id, userChannel.id, reply, today);
-          return [reply];
+          await channel.sendMessage(userChannel.channelId, reply);
+          return;
         }
         const idx = parseInt(text.trim(), 10);
         const activeDocs = await findActiveDocsByUser(user.id);
@@ -540,7 +571,8 @@ export async function handleIncomingMessage(
             })()
           : formatInvalidPauseIndex();
         await saveBotReply(user.id, userChannel.id, reply, today);
-        return [reply];
+        await channel.sendMessage(userChannel.channelId, reply);
+        return;
       }
 
       // TODO: refactory (maybe do not need this anymore our need change to activity)
@@ -558,7 +590,8 @@ export async function handleIncomingMessage(
         if (parsed.intent === "cancel" || parsed.intent === "cancel_no") {
           const reply = formatCanceled();
           await saveBotReply(user.id, userChannel.id, reply, today);
-          return [reply];
+          await channel.sendMessage(userChannel.channelId, reply);
+          return;
         }
         const idx = parseInt(text.trim(), 10);
         const allDocs = await findDocsByUser(user.id);
@@ -579,7 +612,8 @@ export async function handleIncomingMessage(
             })()
           : formatInvalidResumeIndex();
         await saveBotReply(user.id, userChannel.id, reply, today);
-        return [reply];
+        await channel.sendMessage(userChannel.channelId, reply);
+        return;
       }
 
       // Aguardando mensagem de suporte
@@ -607,7 +641,8 @@ export async function handleIncomingMessage(
         );
         const reply = formatSupportReceived();
         await saveBotReply(user.id, userChannel.id, reply, today);
-        return [reply];
+        await channel.sendMessage(userChannel.channelId, reply);
+        return;
       }
     }
 
@@ -648,9 +683,9 @@ export async function handleIncomingMessage(
           today,
         );
         const levelMsg = formatLevelQuestion();
-        await sendWhatsAppMessage(userChannel.channelId, levelMsg);
+        await channel.sendMessage(userChannel.channelId, levelMsg);
         await saveBotReply(user.id, userChannel.id, levelMsg, today);
-        return [];
+        return;
       }
 
       case "support": {
@@ -742,13 +777,28 @@ export async function handleIncomingMessage(
           break;
         }
         const practiceNowUsage = await getTodayUsage(user.id, today);
-        if (!canPracticeToday(practiceNowUsage?.practiceCount ?? 0, practiceNowUsage?.intensiveCount ?? 0, true)) {
-          const limitMsg = (practiceNowUsage?.practiceCount ?? 0) >= DAILY_PRACTICE_LIMIT
-            ? formatDailyPracticeLimitReached()
-            : formatIntensiveDailyLimitReached();
-          await saveUserMsg(user.id, userChannel.id, text, "practice_now", input, today);
+        if (
+          !canPracticeToday(
+            practiceNowUsage?.practiceCount ?? 0,
+            practiceNowUsage?.intensiveCount ?? 0,
+            true,
+          )
+        ) {
+          const limitMsg =
+            (practiceNowUsage?.practiceCount ?? 0) >= DAILY_PRACTICE_LIMIT
+              ? formatDailyPracticeLimitReached()
+              : formatIntensiveDailyLimitReached();
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "practice_now",
+            input,
+            today,
+          );
           await saveBotReply(user.id, userChannel.id, limitMsg, today);
-          return [limitMsg];
+          await channel.sendMessage(userChannel.channelId, limitMsg);
+          return;
         }
         const intensiveUntil = new Date(
           Date.now() + INTENSIVE_UNTIL_MIN * 60 * 1000,
@@ -764,12 +814,13 @@ export async function handleIncomingMessage(
             input,
             today,
           );
-          const reply = formatIntensiveModeActivated({
+          const pendingReply = formatIntensiveModeActivated({
             isIntensiveMode,
             hasPendingQuestion: true,
           });
-          await saveBotReply(user.id, userChannel.id, reply, today);
-          return [reply];
+          await saveBotReply(user.id, userChannel.id, pendingReply, today);
+          await channel.sendMessage(userChannel.channelId, pendingReply);
+          return;
         }
         const practiceDoc = await findDocById(activeActivity.docId, user.id);
         if (!practiceDoc) {
@@ -777,12 +828,18 @@ export async function handleIncomingMessage(
           messageIntent = "free_text";
           break;
         }
-        const nextQ = await resolveNextQuestion(
+        let nextQ = await resolveNextQuestion(
           activeActivity.docId,
           activeActivity.lastQuestionId,
           activeActivity.roundCompleted,
           activeActivity.id,
         );
+        if (!nextQ && !activeActivity.roundCompleted) {
+          const outcome = await generateQuestionIfPoolNotFull(activeActivity);
+          if (!outcome.poolExhausted && outcome.question) {
+            nextQ = outcome.question;
+          }
+        }
         if (!nextQ) {
           reply = formatAllQuestionsAnswered();
           messageIntent = "free_text";
@@ -794,7 +851,7 @@ export async function handleIncomingMessage(
         });
         await saveBotReply(user.id, userChannel.id, replyActivation, today);
 
-        const replies = await sendIntensiveQuestion(
+        const intensiveReplies = await sendIntensiveQuestion(
           nextQ,
           activeActivity.id,
           user.id,
@@ -811,7 +868,11 @@ export async function handleIncomingMessage(
           input,
           today,
         );
-        return [replyActivation, ...replies];
+        await channel.sendMessage(userChannel.channelId, [
+          replyActivation,
+          ...intensiveReplies,
+        ]);
+        return;
       }
 
       case "pause_practice": {
@@ -864,7 +925,8 @@ export async function handleIncomingMessage(
               );
               const limitReply = formatDocItemLimitReached();
               await saveBotReply(user.id, userChannel.id, limitReply, today);
-              return [limitReply];
+              await channel.sendMessage(userChannel.channelId, limitReply);
+              return;
             }
             const itemValidation = validateDocItemInput(text, "text");
             if (!itemValidation.success) {
@@ -882,7 +944,11 @@ export async function handleIncomingMessage(
                 itemValidation.error,
                 today,
               );
-              return [itemValidation.error];
+              await channel.sendMessage(
+                userChannel.channelId,
+                itemValidation.error,
+              );
+              return;
             }
             const savedMsg = await saveMessage({
               userId: user.id,
@@ -908,7 +974,8 @@ export async function handleIncomingMessage(
             await publishDocMerge(pendingDoc.id, user.id, docItem.id);
             const ackReply = formatDocItemReceived(validCount + 1);
             await saveBotReply(user.id, userChannel.id, ackReply, today);
-            return [ackReply];
+            await channel.sendMessage(userChannel.channelId, ackReply);
+            return;
           }
 
           const activityCount = await getTodayActivityCount(user.id, today);
@@ -974,7 +1041,6 @@ export async function handleIncomingMessage(
                     )
                   : pendingQuestion.question;
 
-              // TODO: refactory - avoid pass all docContent to LLM, maybe pass only the relevant section content
               const evaluation = await generateAnswerEvaluation({
                 question: questionForEval,
                 answerKeys: pendingQuestion.answerKeys,
@@ -1023,7 +1089,11 @@ export async function handleIncomingMessage(
               if (pendingQuestion.sectionId) {
                 await recalcSectionStatus(pendingQuestion.sectionId);
               }
-              const updatedCounts = await incrementDailyPracticeCount(user.id, today, isIntensiveMode);
+              const updatedCounts = await incrementDailyPracticeCount(
+                user.id,
+                today,
+                isIntensiveMode,
+              );
               const canContinueIntensive = canPracticeToday(
                 updatedCounts.practiceCount,
                 updatedCounts.intensiveCount,
@@ -1064,10 +1134,13 @@ export async function handleIncomingMessage(
               await incrementAgentMessageCount(user.id, today);
 
               if (isIntensiveMode && !canContinueIntensive) {
-                const limitMsg = updatedCounts.practiceCount >= DAILY_PRACTICE_LIMIT
-                  ? formatDailyPracticeLimitReached()
-                  : formatIntensiveDailyLimitReached();
-                await updateActivity(activeActivity.id, user.id, { intensiveUntil: null });
+                const limitMsg =
+                  updatedCounts.practiceCount >= DAILY_PRACTICE_LIMIT
+                    ? formatDailyPracticeLimitReached()
+                    : formatIntensiveDailyLimitReached();
+                await updateActivity(activeActivity.id, user.id, {
+                  intensiveUntil: null,
+                });
                 await saveMessage({
                   userId: user.id,
                   userChannelId: userChannel.id,
@@ -1077,27 +1150,29 @@ export async function handleIncomingMessage(
                   intent: "practice_feedback",
                 });
                 await incrementAgentMessageCount(user.id, today);
-                return [feedback, { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC }, limitMsg];
+                await channel.sendMessage(userChannel.channelId, [
+                  feedback,
+                  { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
+                  limitMsg,
+                ]);
+                return;
               }
 
               if (isPracticingSessionActive) {
                 const replies = await handleIntensiveNextQuestion(
-                  activeActivity.docId,
-                  activeActivity.lastQuestionId,
-                  activeActivity.roundCompleted,
-                  activeActivity.id,
+                  activeActivity,
                   user.id,
                   userChannel.id,
-                  activeActivity.intervalMinutes,
-                  activeActivity.executionCount,
                   today,
                 );
-                if (replies.length > 0)
-                  return [
+                if (replies.length > 0) {
+                  await channel.sendMessage(userChannel.channelId, [
                     feedback,
                     { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
                     ...replies,
-                  ];
+                  ]);
+                  return;
+                }
               }
 
               if (interactionCount == 1) {
@@ -1111,14 +1186,16 @@ export async function handleIncomingMessage(
                   intent: "guide_after_first_feedback",
                 });
                 await incrementAgentMessageCount(user.id, today);
-                return [
+                await channel.sendMessage(userChannel.channelId, [
                   feedback,
                   { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
                   guideMsg,
-                ];
+                ]);
+                return;
               }
 
-              return [feedback];
+              await channel.sendMessage(userChannel.channelId, feedback);
+              return;
             }
           }
         }
@@ -1153,8 +1230,8 @@ export async function handleIncomingMessage(
       today,
     );
     await saveBotReply(user.id, userChannel.id, reply, today);
-
-    return [reply];
+    await channel.sendMessage(userChannel.channelId, reply);
+    return;
   } finally {
     await updateUserLastResponse(user.id, messageId);
   }
@@ -1189,16 +1266,19 @@ export async function resolveNextQuestion(
 }
 
 async function handleIntensiveNextQuestion(
-  docId: string,
-  lastQuestionId: string | null,
-  roundCompleted: boolean,
-  activityId: string,
+  activity: Activity,
   userId: string,
   userChannelId: string,
-  intervalMinutes: number,
-  executionCount: number,
   today: Date,
 ): Promise<string[]> {
+  const {
+    id: activityId,
+    docId,
+    lastQuestionId,
+    roundCompleted,
+    intervalMinutes,
+    executionCount,
+  } = activity;
   const lastId = lastQuestionId;
 
   if (!roundCompleted) {
@@ -1214,6 +1294,23 @@ async function handleIntensiveNextQuestion(
         today,
       );
     }
+
+    const outcome = await generateQuestionIfPoolNotFull(activity);
+    if (!outcome.poolExhausted) {
+      if (outcome.question) {
+        return sendIntensiveQuestion(
+          outcome.question,
+          activityId,
+          userId,
+          userChannelId,
+          executionCount,
+          intervalMinutes,
+          today,
+        );
+      }
+      return [];
+    }
+
     const openRemains = await hasWrongOrPartial(docId);
     if (openRemains) {
       const next = await findNextGeneralQuestion(activityId, lastId);
@@ -1237,7 +1334,6 @@ async function handleIntensiveNextQuestion(
       userChannelId,
       intervalMinutes,
     );
-
     return [completionMsg];
   }
 

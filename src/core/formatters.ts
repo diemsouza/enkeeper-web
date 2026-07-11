@@ -189,7 +189,7 @@ export function formatIntensiveModeStopped(): string {
 }
 
 export function formatDailyPracticeLimitReached(): string {
-  return "Você usou toda sua prática disponível de hoje, mas amanhã tem mais.";
+  return "Você usou toda sua prática intesiva disponível de hoje, mas amanhã tem mais.";
 }
 
 export function formatIntensiveDailyLimitReached(): string {
@@ -484,7 +484,7 @@ export function formatNoActiveActivity(): string {
 }
 
 export function formatAllQuestionsAnswered(): string {
-  return "Todas as perguntas já foram respondidas corretamente.";
+  return "Todas as perguntas já foram respondidas.";
 }
 
 export function formatNoPendingAction(): string {
@@ -507,35 +507,75 @@ export function formatInternalSupportMessage(
   return `*Suporte*\n\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`;
 }
 
+type EvaluationStatus = "right" | "wrong" | "partial";
+
+const STATUS_OPENINGS: Record<EvaluationStatus, string[]> = {
+  right: ["Exato!", "Correto!", "Perfeito!", "Boa!", "Isso!"],
+  wrong: [
+    "Errado!",
+    "Infelizmente não!",
+    "Ops, errado!",
+    "Ops, não é isso!",
+    "Hmmm, errou!",
+    "Humm, não!",
+  ],
+  partial: ["Quase!", "Quase lá!", "Por pouco!"],
+};
+
+const USER_UNKNOW_OPENINGS: string[] = [
+  "Tudo bem!",
+  "Acontece!",
+  "Sem problemas!",
+  "Tranquilo!",
+  "Não se preocupe!",
+];
+
+export function getFeedbackOpening(
+  status: EvaluationStatus,
+  userUnknown: boolean,
+): string {
+  const openings = userUnknown ? USER_UNKNOW_OPENINGS : STATUS_OPENINGS[status];
+  return shuffle(openings).pop() ?? openings[0];
+}
+
 export function humanizeFeedback(
   feedbackResult: AnswerEvaluationResult,
 ): string {
   const {
     status: evalStatus,
     feedback: agentFeedback,
+    right_answer: rightAnswer,
     user_unknown: userUnknown,
   } = feedbackResult;
-  let feedback = sanitizeText(agentFeedback);
 
   // humaniza feedback de "errado" para "não sei" quando o usuário indicou que não sabia a resposta
-  if (evalStatus === "wrong" && userUnknown) {
-    const openings = [
-      "Tudo bem!",
-      "Acontece!",
-      "Sem problemas!",
-      "Tranquilo!",
-      "Não se preocupe!",
-    ];
-    const opening = shuffle(openings).pop() ?? openings[0];
+  // if (evalStatus === "wrong" && userUnknown) {
+  //   const openings = [
+  //     "Tudo bem!",
+  //     "Acontece!",
+  //     "Sem problemas!",
+  //     "Tranquilo!",
+  //     "Não se preocupe!",
+  //   ];
+  //   const opening = shuffle(openings).pop() ?? openings[0];
 
-    // substitui só a abertura, mantém o resto do feedback intacto
-    return feedback.replace(
-      /^(Errado!|Hmmm, errou!|Ops, errado!|Infelizmente não!)/,
-      opening,
-    );
-  }
+  //   // substitui só a abertura, mantém o resto do feedback intacto
+  //   return feedback.replace(
+  //     /^(Errado!|Hmmm, errou!|Ops, errado!|Infelizmente não!)/,
+  //     opening,
+  //   );
+  // }
 
-  feedback = `${ANSWER_EMOJI[evalStatus]} ${feedback}`;
+  const feedback = sanitizeText(agentFeedback);
+  const emoji = ANSWER_EMOJI[evalStatus];
+  const opening = getFeedbackOpening(evalStatus, !!userUnknown);
 
-  return feedback;
+  const result = [];
+  if (emoji) result.push(emoji);
+  if (opening) result.push(opening);
+  if (evalStatus !== "right" && rightAnswer) result.push(`"${rightAnswer}".`);
+  if (feedback)
+    result.push(feedback.indexOf('"') === -1 ? `"${feedback}"` : feedback);
+
+  return result.join(" ");
 }

@@ -7,7 +7,7 @@ import {
   DocProcessingResult,
   visionSchema,
   VisionResult,
-  sectionQuestionsSchema,
+  sectionQuestionSchema,
   SectionQuestionResult,
   answerEvaluationSchema,
   AnswerEvaluationResult,
@@ -23,7 +23,8 @@ import {
   GEN_TEXT_PROMPT,
   GEN_EXERCISE_PROMPT,
 } from "../lib/prompts";
-import { QuestionFormat } from "../lib/prisma";
+import { QuestionFormat, SectionType } from "../lib/prisma";
+import { RetryContext } from "../types/retry-context";
 
 const MODEL_MINI = "gpt-4.1-mini";
 const MODEL_ANTHROPIC = "claude-haiku-4-5-20251001";
@@ -129,48 +130,62 @@ const SECTION_PROMPTS: Record<string, string> = {
   exercise: GEN_EXERCISE_PROMPT,
 };
 
-export async function generateSectionQuestions(params: {
-  sectionType: "vocabulary" | "text" | "exercise";
+export async function generateNextQuestion(params: {
+  sectionType: SectionType;
   sectionTitle: string;
   sectionContent: string;
   level: string;
+  format: QuestionFormat;
   questionExamples: string;
+  questionFocus?: string;
   userId: string;
   docId: string;
   sectionId: string;
-}): Promise<SectionQuestionResult[] | null> {
+  retryContext?: string;
+}): Promise<SectionQuestionResult | null> {
   const {
     sectionType,
     sectionTitle,
     sectionContent,
     level,
+    format,
     questionExamples,
+    questionFocus,
     userId,
     docId,
     sectionId,
+    retryContext,
   } = params;
   let inputTokens = 0;
   let outputTokens = 0;
   let cachedTokens = 0;
-  let result: SectionQuestionResult[] | null = null;
+  let result: SectionQuestionResult | null = null;
   let rawOutput: string | null = null;
   let logError: string | null = null;
   const startTime = Date.now();
 
   const systemPrompt = SECTION_PROMPTS[sectionType]
     .replace("{voice}", VOICE_PROMPT)
-    .replace("{question_examples}", questionExamples);
+    .replace("{question_examples}", questionExamples)
+    .replace("{format}", format)
+    .replace("{question_focus}", questionFocus ?? "")
+    .replace("{level}", level);
 
-  const userPrompt = `Seção: {section_title}
+  let userPrompt = `Seção: {section_title}
 Conteúdo: {section_content}
 Nível: {level}`
     .replace("{section_title}", sectionTitle)
     .replace("{section_content}", sectionContent)
     .replace("{level}", level);
 
+  if (retryContext) {
+    userPrompt += `\n\nEvite o erro da tentativa anterior que foi rejeitada: ${retryContext}`;
+  }
+
   try {
     const llmResult = await generateText({
       model: getStandardLanguageModel(),
+      output: Output.object({ schema: sectionQuestionSchema }),
       system: systemPrompt,
       temperature: 0.2,
       prompt: userPrompt,
@@ -179,9 +194,14 @@ Nível: {level}`
     outputTokens += llmResult.usage?.outputTokens ?? 0;
     cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
     rawOutput = llmResult.text ?? null;
-    result = sectionQuestionsSchema.parse(
+    const parsed = sectionQuestionSchema.parse(
       parseJsonWithFallback(llmResult.text.trim()),
-    )?.questions;
+    );
+    result = {
+      ...parsed,
+      questionFormat:
+        sectionType === "vocabulary" ? format : parsed.questionFormat,
+    };
   } catch (err) {
     if (err instanceof Error) logError = err.message;
   }
@@ -392,7 +412,16 @@ export async function extractTextFromImage(
     rawOutput = llmResult.text ?? null;
     result = llmResult.output as VisionResult;
   } catch (err) {
-    if (err instanceof Error) logError = err.message;
+    if (NoObjectGeneratedError.isInstance(err) && err.text) {
+      rawOutput = err.text;
+      try {
+        result = visionSchema.parse(parseJsonWithFallback(err.text.trim()));
+      } catch {
+        // structured parse failed after NoObjectGeneratedError
+      }
+    } else if (err instanceof Error) {
+      logError = err.message;
+    }
   }
 
   const durationMs = Date.now() - startTime;

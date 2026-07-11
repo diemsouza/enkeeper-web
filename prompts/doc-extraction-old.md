@@ -25,15 +25,11 @@ Classificação de sectionType (critério é independência entre itens, não ta
 
   Pode vir sem tradução, só termos soltos em PT ou EN ("Garden / Mundo / Happy"). Nesse caso preserve o content como está, sem inventar tradução.
 
-  Separe cada item por uma linha em branco no content. Um item pode ter mais de uma linha internamente (termo, tradução, exemplo de uso), preserve essas linhas internas como aparecem no original, sem uni-las numa linha só.
+  Preserve cada item em sua própria linha no campo content, exatamente como aparece no material original. Não una itens em um único bloco de texto corrido, mesmo que estejam próximos visualmente.
 
 - "text": conteúdo corrido onde as partes dependem umas das outras pra manter sentido (diálogo, narrativa, parágrafo). Se houver mais de um bloco de texto corrido com contextos claramente diferentes entre si, mesmo sem separador visual, trate como seções text distintas, na ordem em que aparecem.
 
-  Separe cada parágrafo por uma linha em branco no content, mesmo quando pertencem ao mesmo contexto e permanecem na mesma seção.
-
 - "exercise": lista explícita de perguntas, frases para completar, ou associação entre colunas (A-B, número-letra). Preserve enunciado e instrução junto ao item. Para associação, descreva os pares de forma fiel mesmo sem reproduzir a estrutura visual original. Uma ou duas perguntas soltas num texto corrido não qualificam, isso é text.
-
-  Separe cada pergunta por uma linha em branco no content. Se houver gabarito, mantenha pergunta e gabarito juntos no mesmo item, sem linha em branco entre eles.
 
 Erro comum: lista de pares termo-tradução é vocabulary mesmo com item sendo frase completa, não palavra isolada.
 
@@ -43,7 +39,7 @@ Para cada seção:
 - title: nome curto da seção, extraído ou inferido do material
 - sectionType: conforme classificação acima
 - order: ordem de aparição no material, começando em 1
-- content: conteúdo limpo e fiel ao original, com itens separados por linha em branco conforme regra acima. Remove ruído (cabeçalho, numeração de página, instruções de prova) mas preserva o conteúdo pedagógico intacto. Se exercise com gabarito, mantém pergunta e gabarito juntos no mesmo item.
+- content: conteúdo limpo e fiel ao original. Remove ruído (cabeçalho, numeração de página, instruções de prova) mas preserva o conteúdo pedagógico intacto. Se exercise com gabarito, mantém perguntas e respostas juntas e claramente separadas.
 
 Só cria seções separadas quando o tipo muda, ou quando o material tem separação explícita de seções, título, numeração, linha divisória. Sem separação explícita e mesmo tipo, agrupa tudo em uma seção só.
 

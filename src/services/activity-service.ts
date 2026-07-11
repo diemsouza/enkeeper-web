@@ -46,7 +46,7 @@ export async function buildPreviousActivitySummary(
 
     const text = formatPreviousActivitySummary({
       activityTitle: data.title ?? "Sem título",
-      questionCount: data.questions.length,
+      questionCount: data.questionLimit,
       right,
       partial,
       wrong,

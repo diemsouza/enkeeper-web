@@ -12,23 +12,23 @@ exemplos:
 validação: a pergunta é sobre conteúdo real do texto, não uma generalidade que poderia ser respondida sem ter lido o material. Não referencia posição (primeiro parágrafo, linha X). O answerKeys é âncora de avaliação, não cópia literal de uma frase do texto. Se algo disso falhar, gere outra.
 
 ### feedback
-fórmula: abertura + reformulação enxuta da resposta correta
-nota: Em wrong e partial, traga a resposta certa de forma direta, sem repetir a pergunta. Resposta em PT no basic.
+fórmula: reformulação enxuta da resposta correta
+nota: Em wrong e partial, traga a resposta certa de forma direta, sem repetir a pergunta. Resposta em PT no basic. Este formato não usa right_answer, a resposta correta já está embutida no corpo do feedback.
 
 right:
-- Boa! Praticar todo dia é o que faz o vocabulário fixar de verdade.
-- Correto! A constância é mais importante que a intensidade.
-- Exato! Pequenas práticas diárias acumulam mais que uma sessão longa.
+- Praticar todo dia é o que faz o vocabulário fixar de verdade.
+- A constância é mais importante que a intensidade.
+- Pequenas práticas diárias acumulam mais que uma sessão longa.
 
 wrong:
-- Errado! O texto fala sobre praticar todo dia pra fixar o vocabulário.
-- Hmmm, errou! A ideia central é que constância vale mais que intensidade.
-- Ops, errado! O texto mostra que prática diária consolida o aprendizado.
+- O texto fala sobre praticar todo dia pra fixar o vocabulário.
+- A ideia central é que constância vale mais que intensidade.
+- O texto mostra que prática diária consolida o aprendizado.
 
 partial:
-- Quase! Faltou mencionar que a repetição diária é o que consolida.
-- Por pouco! A ideia está certa, mas faltou o ponto da constância.
-- Quase lá! Você captou parte. Completa com a importância da repetição.
+- Faltou mencionar que a repetição diária é o que consolida.
+- A ideia está certa, mas faltou o ponto da constância.
+- Você captou parte. Completa com a importância da repetição.
 
 ## INTERMEDIATE
 
@@ -44,23 +44,23 @@ exemplos:
 validação: a pergunta está em inglês básico (A2), ancorada num conteúdo real do texto. Quando um termo do texto aparece na pergunta como ponto de discussão, a explicação ou uso esperado dele não está na própria pergunta. O answerKeys é âncora de avaliação, não cópia literal do texto. Se algo disso falhar, gere outra.
 
 ### feedback
-fórmula: abertura + reformulação enxuta da resposta correta, com termo em EN quando aplicável
-nota: Em wrong e partial, traga a resposta certa de forma direta, em EN.
+fórmula: reformulação enxuta da resposta correta, com termo em EN quando aplicável
+nota: Em wrong e partial, traga a resposta certa de forma direta, em EN. Este formato não usa right_answer, a resposta correta já está embutida no corpo do feedback.
 
 right:
-- Boa! "Sweet spot" is that perfect point where things click.
-- Correto! It's the point where speed and quality balance out.
-- Perfeito! "That's the sweet spot for my workflow."
+- "Sweet spot" is that perfect point where things click.
+- It's the point where speed and quality balance out.
+- "That's the sweet spot for my workflow."
 
 wrong:
-- Errado! "Sweet spot" is the point where everything fits. "That's the sweet spot."
-- Hmmm, errou! The text talks about the ideal balance between two factors. "Sweet spot."
-- Ops, errado! "Sweet spot" describes the perfect point of balance.
+- "Sweet spot" is the point where everything fits. "That's the sweet spot."
+- The text talks about the ideal balance between two factors. "Sweet spot."
+- "Sweet spot" describes the perfect point of balance.
 
 partial:
-- Quase! The idea is right, but you missed the term: "sweet spot".
-- Por pouco! You got the concept. Just missing the name "sweet spot".
-- Quase lá! Close, but the key term is "sweet spot".
+- The idea is right, but you missed the term: "sweet spot".
+- You got the concept. Just missing the name "sweet spot".
+- Close, but the key term is "sweet spot".
 
 ## ADVANCED
 
@@ -76,20 +76,20 @@ exemplos:
 validação: a pergunta está em inglês intermediário (B1-B2), ancorada num conteúdo real do texto. O answerKeys é âncora de avaliação, não cópia literal do texto. Se algo disso falhar, gere outra.
 
 ### feedback
-fórmula: abertura em PT + reformulação enxuta da resposta correta em EN
-nota: Em wrong e partial, traga a resposta certa de forma direta em EN.
+fórmula: reformulação enxuta da resposta correta em EN
+nota: Em wrong e partial, traga a resposta certa de forma direta em EN. Este formato não usa right_answer, a resposta correta já está embutida no corpo do feedback.
 
 right:
-- Boa! Consistency is what turns occasional effort into real progress.
-- Correto! The text argues that small daily efforts compound over time.
-- Perfeito! Steady practice beats intensity in the long run.
+- Consistency is what turns occasional effort into real progress.
+- The text argues that small daily efforts compound over time.
+- Steady practice beats intensity in the long run.
 
 wrong:
-- Errado! The text argues that consistency, not intensity, drives real progress.
-- Hmmm, errou! The main point is that daily effort compounds over time.
-- Ops, errado! The text emphasizes consistency over intense bursts of work.
+- The text argues that consistency, not intensity, drives real progress.
+- The main point is that daily effort compounds over time.
+- The text emphasizes consistency over intense bursts of work.
 
 partial:
-- Quase! You got the idea, but the text emphasizes consistency over intensity.
-- Por pouco! The key point is that consistency drives progress.
-- Quase lá! The text frames consistency as the real driver.
+- You got the idea, but the text emphasizes consistency over intensity.
+- The key point is that consistency drives progress.
+- The text frames consistency as the real driver.

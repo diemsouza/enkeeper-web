@@ -5,22 +5,15 @@ import {
 } from "../repo/docs.repo";
 import { formatInvalidContentMessage } from "../core/validate-content";
 import { createActivity, updateActivity } from "../repo/activities.repo";
-import { createQuestions } from "../repo/questions.repo";
 import { createSection } from "../repo/sections.repo";
 import {
   archiveOrCancelActivitiesByDoc,
   buildPreviousActivitySummary,
 } from "./activity-service";
-import {
-  generateDocSections,
-  generateSectionQuestions,
-} from "../vendors/llm.vendor";
+import { generateDocSections } from "../vendors/llm.vendor";
 import { findUserById, findUserChannelByUserId } from "../repo/users.repo";
 import { saveMessage } from "../repo/messages.repo";
-import {
-  sendWhatsAppMessage,
-  sendWhatsAppMessages,
-} from "../vendors/whatsapp.vendor";
+import { MessageChannel } from "../types/message-channel";
 import { incrementDailyActivityCount, incrementDailyDocCount } from "../repo/daily-usage.repo";
 import {
   formatDocProcessed,
@@ -33,16 +26,10 @@ import {
   MAX_ACTIVITIES_PER_DAY,
 } from "../lib/constants";
 import { sanitizeText } from "../lib/utils";
-import {
-  getFormatsBySectionType,
-  getQuestionExamples,
-  validateGeneratedQuestion,
-} from "../core/format-loader";
-import { QuestionFormat } from "../lib/prisma";
-import { shuffle } from "lodash";
-import { shuffleQuestions } from "../core/utils";
+import { calculatePoolSize } from "../core/pool-size";
+import { SectionType } from "../lib/prisma";
 
-export async function processDoc(docId: string, userId: string): Promise<void> {
+export async function processDoc(docId: string, userId: string, channel: MessageChannel): Promise<void> {
   const doc = await findDocById(docId, userId);
   if (!doc || doc.status !== "pending") return;
 
@@ -60,7 +47,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatDocProcessingFailed();
-        await sendWhatsAppMessage(userChannel.channelId, msg);
+        await channel.sendMessage(userChannel.channelId, msg);
         await saveMessage({
           userId,
           userChannelId: userChannel.id,
@@ -77,7 +64,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatInvalidContentMessage(result.invalidReason);
-        await sendWhatsAppMessage(userChannel.channelId, msg);
+        await channel.sendMessage(userChannel.channelId, msg);
         await saveMessage({
           userId,
           userChannelId: userChannel.id,
@@ -116,6 +103,16 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     );
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+    const questionLimit = result.sections.reduce(
+      (sum, s) =>
+        sum +
+        calculatePoolSize({
+          sectionType: s.sectionType as SectionType,
+          content: sanitizeText(s.content),
+        }),
+      0,
+    );
+
     const activity = await createActivity({
       userId,
       docId,
@@ -125,15 +122,13 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       status: "active",
       userLevel: activityLevel,
       title: result.title ?? "",
+      questionLimit,
     });
-
-    let totalQuestions = 0;
-    let hasWarning = false;
 
     for (const sectionData of [...result.sections].sort(
       (a, b) => a.order - b.order,
     )) {
-      const section = await createSection({
+      await createSection({
         userId,
         docId,
         activityId: activity.id,
@@ -142,70 +137,20 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
         content: sanitizeText(sectionData.content),
         order: sectionData.order,
       });
-
-      const exampleFormats = getFormatsBySectionType(sectionData.sectionType);
-      const questionExamples = getQuestionExamples(
-        exampleFormats,
-        result.level,
-      );
-
-      let questions = await generateSectionQuestions({
-        sectionType: sectionData.sectionType,
-        sectionTitle: sectionData.title,
-        sectionContent: sectionData.content,
-        level: activityLevel,
-        questionExamples: questionExamples,
-        userId,
-        docId,
-        sectionId: section.id,
-      });
-
-      if (questions && questions.length > 0) {
-        const {
-          questions: validatedQuestions,
-          hasWarning: validatedHasWarning,
-        } = validateGeneratedQuestion(questions, sectionData.sectionType);
-        questions = validatedQuestions;
-        hasWarning = hasWarning || validatedHasWarning;
-      }
-
-      if (questions && questions.length > 0) {
-        questions = shuffleQuestions(questions);
-        await createQuestions(
-          activity.id,
-          section.id,
-          questions.map((q) => {
-            return {
-              question: sanitizeText(q.question),
-              answerKeys: q.answerKeys.map((k) => sanitizeText(k)),
-              questionFormat: q.questionFormat as QuestionFormat,
-              questionOptions: q.questionFormat
-                ? shuffle(q.questionOptions.map((o) => sanitizeText(o)))
-                : undefined,
-            };
-          }),
-        );
-
-        totalQuestions += questions.length;
-      }
     }
 
-    if (totalQuestions > 0) {
+    if (result.sections.length > 0) {
       await updateActivity(activity.id, userId, {
-        questionCount: totalQuestions,
         sectionCount: result.sections.length,
       });
       const activityCount = await incrementDailyActivityCount(userId, date);
       await incrementDailyDocCount(userId, date);
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
-        const msg = formatDocProcessed(
-          hasWarning,
-          MAX_ACTIVITIES_PER_DAY - activityCount,
-        );
+        const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
         const summary = await buildPreviousActivitySummary(userId);
         const messages = summary ? [msg, summary] : [msg];
-        await sendWhatsAppMessages(userChannel.channelId, messages);
+        await channel.sendMessage(userChannel.channelId, messages);
         for (const content of messages) {
           await saveMessage({
             userId,
@@ -220,7 +165,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatDocNoQuestions();
-        await sendWhatsAppMessage(userChannel.channelId, msg);
+        await channel.sendMessage(userChannel.channelId, msg);
         await saveMessage({
           userId,
           userChannelId: userChannel.id,
@@ -239,7 +184,7 @@ export async function processDoc(docId: string, userId: string): Promise<void> {
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
       const msg = formatDocProcessingFailed();
-      await sendWhatsAppMessage(userChannel.channelId, msg);
+      await channel.sendMessage(userChannel.channelId, msg);
       await saveMessage({
         userId,
         userChannelId: userChannel.id,

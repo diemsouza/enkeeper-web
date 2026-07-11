@@ -110,6 +110,23 @@ export async function findPendingQuestion(
   });
 }
 
+export async function findQuestionById(id: string): Promise<Question | null> {
+  return prisma.question.findFirst({ where: { id, deletedAt: null } });
+}
+
+export async function countQuestionsForSection(sectionId: string): Promise<number> {
+  return prisma.question.count({ where: { sectionId, deletedAt: null } });
+}
+
+export async function findLatestUnansweredInSection(
+  sectionId: string,
+): Promise<Question | null> {
+  return prisma.question.findFirst({
+    where: { sectionId, status: null, deletedAt: null },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export async function updateQuestion(
   id: string,
   data: {

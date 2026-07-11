@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Level, QuestionFormat } from "../lib/prisma";
 import { SectionQuestionResult } from "../lib/llm-schemas";
+import { RetryContext } from "../types/retry-context";
 
 const VOCABULARY_FORMATS: QuestionFormat[] = [
   QuestionFormat.gap_fill,
@@ -98,63 +99,19 @@ function looksLikeDoubleQuestion(question: string): boolean {
 }
 
 export function validateGeneratedQuestion(
-  questions: SectionQuestionResult[],
+  question: SectionQuestionResult,
   sectionType: string,
-): { questions: SectionQuestionResult[]; hasWarning: boolean } {
-  // Validação anti-vazamento entre itens adjacentes (só vocabulary).
-  // sourceItem é o "ponteiro" declarado pelo modelo pro item da lista
-  // que ele está cobrindo. Pra ser válido:
-  // - recall_inverted: sourceItem deve aparecer na pergunta (ex: "O que significa 'blanket'?")
-  // - demais formatos: sourceItem deve estar no answerKeys
-  // Se não bater, descarta. sourceItem removido antes de salvar (auditoria).
-
-  let hasWarning = false;
-  let valid = [...questions];
-  if (!!valid.length && sectionType === "vocabulary") {
-    valid = valid
-      .filter((q) => {
-        const source = q.sourceItem?.toLowerCase().trim();
-        if (!source) return false;
-        if (q.warning) {
-          console.warn(
-            `[gen-vocabulary] Pergunta descartada por warning: ${q.warning}. Q: ${q.question} A: ${q.answerKeys}`,
-          );
-          hasWarning = true;
-          return false;
-        }
-
-        if (q.questionFormat === "recall_inverted") {
-          // sourceItem aparece NA pergunta (entre aspas)
-          return q.question.toLowerCase().includes(source);
-        }
-
-        // demais formatos: sourceItem está no answerKeys
-        const keys = q.answerKeys.map((k) => k.toLowerCase().trim());
-        return keys.includes(source);
-      })
-      .map(({ sourceItem, ...rest }) => rest);
-
-    const discarded = questions.length - valid.length;
-    if (discarded > 0) {
-      console.warn(
-        `[gen-vocabulary] ${discarded}/${questions.length} perguntas descartadas por sourceItem inconsistente`,
-      );
-    }
+): string | undefined {
+  if (question.warning) {
+    console.warn(`[${sectionType}] ${question.warning}`);
+    return question.warning;
   }
 
-  // Cenário: se não tiver conseguido validar por sourceItem, pelo menos tenta filtrar perguntas que parecem conter mais de uma pergunta (só cenário, que é o mais propenso a isso).
-  if (!!valid.length && sectionType === "scenario") {
-    valid = valid.filter((q) => {
-      if (looksLikeDoubleQuestion(q.question)) {
-        console.warn(
-          `[gen-scenario] Pergunta descartada por parecer conter mais de uma pergunta: Q: ${q.question} A: ${q.answerKeys}`,
-        );
-        hasWarning = true;
-        return false;
-      }
-      return true;
-    });
+  if (looksLikeDoubleQuestion(question.question)) {
+    const warning = `Pergunta descartada por parecer conter mais de uma pergunta: Q: ${question.question} A: ${question.answerKeys}`;
+    console.warn(`[${sectionType}] ${warning}`);
+    return warning;
   }
 
-  return { questions: valid, hasWarning };
+  return undefined;
 }

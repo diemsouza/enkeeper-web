@@ -12,7 +12,7 @@ export const WHATSAPP_NUMBER = "551153069000";
 export const INTENSIVE_UNTIL_MIN = 15;
 export const DAILY_PRACTICE_LIMIT = 60;
 export const CADENCE_RESERVE = 24;
-export const INTENSIVE_LIMIT = DAILY_PRACTICE_LIMIT - CADENCE_RESERVE;
+export const INTENSIVE_LIMIT = 60 - 24; // 36
 export const TRIAL_DAYS = 3;
 export const MAX_ACTIVITIES_PER_DAY = 5;
 export const MAX_DOC_ITEMS_PER_DOC = 3;
@@ -67,3 +67,5 @@ export const ANSWER_EMOJI = {
 } as const;
 
 export const MESSAGE_SUPPRESSION_SEC = 10;
+export const MAX_RETRY_ATTEMPTS = 3;
+export const RETRY_DELAY_MS = 1000;

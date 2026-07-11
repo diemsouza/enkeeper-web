@@ -14,29 +14,52 @@ import {
   findSm2EligibleQuestion,
   hasWrongOrPartial,
   updateQuestion,
+  countQuestionsForSection,
+  createQuestions,
+  findQuestionById,
+  findLatestUnansweredInSection,
 } from "../repo/questions.repo";
 import { findUserChannelByUserId, findUserById } from "../repo/users.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
-import {
-  sendWhatsAppMessage,
-  sendWhatsAppTemplate,
-} from "../vendors/whatsapp.vendor";
+import { MessageChannel } from "../types/message-channel";
 import {
   formatChoiceQuestion,
   formatNudgeMessage,
   formatPracticeComplete,
   formatSectionTransition,
 } from "../core/formatters";
-import { findSectionById } from "../repo/sections.repo";
+import {
+  findSectionById,
+  getSectionsByActivityId,
+} from "../repo/sections.repo";
 import { canPractice } from "../core/access";
 import {
   DOC_PROCESSING_TIMEOUT_MS,
   NUDGE_THRESHOLDS_MS,
   getNextNudgeStep,
   getEntryNudgeStep,
+  MAX_RETRY_ATTEMPTS,
+  RETRY_DELAY_MS,
 } from "../lib/constants";
-import { Activity, QuestionFormat, QuestionStatus } from "../lib/prisma";
+import {
+  Activity,
+  Question,
+  QuestionFormat,
+  QuestionStatus,
+} from "../lib/prisma";
+import { calculatePoolSize, splitContentIntoBlocks } from "../core/pool-size";
+import { pickNextFormat } from "../core/question-format-picker";
+import { generateNextQuestion } from "../vendors/llm.vendor";
+import { SectionQuestionResult } from "../lib/llm-schemas";
+import {
+  getFormatsBySectionType,
+  getQuestionExamples,
+  validateGeneratedQuestion,
+} from "../core/format-loader";
+import { shuffle } from "lodash";
+import { sanitizeText } from "../lib/utils";
 import { startOfDay } from "date-fns";
+import { RetryContext } from "../types/retry-context";
 
 type CronResult = {
   processed: number;
@@ -44,7 +67,9 @@ type CronResult = {
   errors: number;
 };
 
-export async function processActivityCron(): Promise<CronResult> {
+export async function processActivityCron(
+  channel: MessageChannel,
+): Promise<CronResult> {
   const activities = await findEligibleActivities(100);
 
   let processed = 0;
@@ -87,7 +112,7 @@ export async function processActivityCron(): Promise<CronResult> {
           if (userChannel) {
             const msg =
               "Não consegui processar seu conteúdo. Tenta mandar de novo.";
-            await sendWhatsAppMessage(userChannel.channelId, msg);
+            await channel.sendMessage(userChannel.channelId, msg);
             await saveMessage({
               userId: activity.userId,
               userChannelId: userChannel.id,
@@ -130,7 +155,7 @@ export async function processActivityCron(): Promise<CronResult> {
           if (!entryStep) {
             await updateActivity(activity.id, activity.userId, {
               nextMessageAt: new Date(
-                referenceTime.getTime() + NUDGE_THRESHOLDS_MS.h3,
+                referenceTime.getTime() + NUDGE_THRESHOLDS_MS.h4,
               ),
             });
             skipped++;
@@ -163,12 +188,12 @@ export async function processActivityCron(): Promise<CronResult> {
 
         try {
           if (nudge.templateName) {
-            await sendWhatsAppTemplate(
+            await channel.sendTemplate(
               userChannel.channelId,
               nudge.templateName,
             );
           } else {
-            await sendWhatsAppMessage(userChannel.channelId, nudge.text);
+            await channel.sendMessage(userChannel.channelId, nudge.text);
           }
         } catch (err) {
           console.error(`[activity-cron] nudge send error (${nextStep}):`, err);
@@ -220,6 +245,7 @@ export async function processActivityCron(): Promise<CronResult> {
         today,
         userChannel.channelId,
         userChannel.id,
+        channel,
       );
       if (!question) {
         skipped++;
@@ -233,7 +259,7 @@ export async function processActivityCron(): Promise<CronResult> {
             section.title,
             activity.executionCount === 0,
           );
-          await sendWhatsAppMessage(userChannel.channelId, transitionMsg);
+          await channel.sendMessage(userChannel.channelId, transitionMsg);
           await saveMessage({
             userId: activity.userId,
             userChannelId: userChannel.id,
@@ -252,7 +278,7 @@ export async function processActivityCron(): Promise<CronResult> {
           ? formatChoiceQuestion(question.question, question.questionOptions)
           : question.question;
 
-      await sendWhatsAppMessage(userChannel.channelId, questionText);
+      await channel.sendMessage(userChannel.channelId, questionText);
       await saveMessage({
         userId: activity.userId,
         userChannelId: userChannel.id,
@@ -291,6 +317,7 @@ async function selectNextQuestion(
   today: Date,
   channelId: string,
   userChannelId: string,
+  channel: MessageChannel,
 ): Promise<{
   id: string;
   question: string;
@@ -308,6 +335,12 @@ async function selectNextQuestion(
     const unanswered = await findNextUnansweredQuestion(activity.docId, lastId);
     if (unanswered) return unanswered;
 
+    const outcome = await generateQuestionIfPoolNotFull(activity);
+    if (!outcome.poolExhausted) {
+      if (outcome.question) return outcome.question;
+      return null;
+    }
+
     const openRemains = await hasWrongOrPartial(activity.docId);
     if (openRemains) {
       return findNextGeneralQuestion(activity.id, lastId);
@@ -320,11 +353,138 @@ async function selectNextQuestion(
       userChannelId,
       activity.intervalMinutes,
     );
-    await sendWhatsAppMessage(channelId, msg);
+    await channel.sendMessage(channelId, msg);
     return findNextGeneralQuestion(activity.id, lastId);
   }
 
   return findNextGeneralQuestion(activity.id, lastId);
+}
+
+const TEXT_FOCUS_CYCLE = [
+  "comprehension",
+  "rephrase",
+  "production",
+  "inference",
+] as const;
+
+export type GenerateOutcome =
+  | { poolExhausted: true }
+  | { poolExhausted: false; question: Question | null };
+
+export async function generateQuestionIfPoolNotFull(
+  activity: Activity,
+): Promise<GenerateOutcome> {
+  if (
+    activity.questionLimit > 0 &&
+    activity.questionCount >= activity.questionLimit
+  ) {
+    return { poolExhausted: true };
+  }
+
+  const sections = await getSectionsByActivityId(activity.id);
+
+  let targetSection: (typeof sections)[number] | null = null;
+  let sectionQuestionCount = 0;
+  for (const section of sections) {
+    const count = await countQuestionsForSection(section.id);
+    const poolSize = calculatePoolSize(section);
+    if (count < poolSize) {
+      targetSection = section;
+      sectionQuestionCount = count;
+      break;
+    }
+  }
+
+  if (!targetSection) return { poolExhausted: true };
+
+  let lastFormat: QuestionFormat | null = null;
+  if (activity.lastQuestionId) {
+    const lastQuestion = await findQuestionById(activity.lastQuestionId);
+    lastFormat = lastQuestion?.questionFormat ?? null;
+  }
+
+  const format =
+    targetSection.sectionType === "vocabulary"
+      ? pickNextFormat(lastFormat)
+      : targetSection.sectionType === "text"
+        ? QuestionFormat.open_text
+        : QuestionFormat.open_question;
+
+  const questionExamples = getQuestionExamples(
+    targetSection.sectionType === "vocabulary"
+      ? [format]
+      : getFormatsBySectionType(targetSection.sectionType),
+    activity.userLevel,
+  );
+
+  const blocks = splitContentIntoBlocks(targetSection.content);
+  let sectionContent: string;
+  let questionFocus: string | undefined;
+
+  if (targetSection.sectionType === "text") {
+    sectionContent = targetSection.content;
+    questionFocus =
+      TEXT_FOCUS_CYCLE[sectionQuestionCount % TEXT_FOCUS_CYCLE.length];
+  } else {
+    sectionContent = blocks[sectionQuestionCount % blocks.length];
+  }
+
+  const genParams = {
+    sectionType: targetSection.sectionType,
+    sectionTitle: targetSection.title,
+    sectionContent,
+    level: activity.userLevel,
+    format,
+    questionExamples,
+    questionFocus,
+    userId: activity.userId,
+    docId: activity.docId,
+    sectionId: targetSection.id,
+    retryContext: undefined as string | undefined,
+  };
+
+  let validated: SectionQuestionResult | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+    const generated = await generateNextQuestion(genParams);
+    if (!generated) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      continue;
+    }
+
+    genParams.retryContext = validateGeneratedQuestion(
+      generated,
+      targetSection.sectionType,
+    );
+    if (genParams.retryContext) {
+      continue;
+    }
+    validated = generated;
+  }
+
+  if (!validated) return { poolExhausted: false, question: null };
+
+  const q = validated;
+  await createQuestions(activity.id, targetSection.id, [
+    {
+      question: sanitizeText(q.question),
+      answerKeys: q.answerKeys.map((k) => sanitizeText(k)),
+      questionFormat: q.questionFormat as QuestionFormat,
+      questionOptions:
+        q.questionFormat === QuestionFormat.choice
+          ? shuffle(q.questionOptions.map((o) => sanitizeText(o)))
+          : [],
+    },
+  ]);
+
+  await updateActivity(activity.id, activity.userId, {
+    questionCount: activity.questionCount + 1,
+  });
+
+  return {
+    poolExhausted: false,
+    question: await findLatestUnansweredInSection(targetSection.id),
+  };
 }
 
 export async function completeRoundZero(

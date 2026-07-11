@@ -12,23 +12,23 @@ exemplos:
 validação: a pergunta termina exatamente com "em inglês?" e o termo em EN (a resposta esperada) não aparece em nenhum lugar do enunciado. Se algum dos dois falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura + frase de uso real em EN com o termo em EN
-nota: Em wrong e partial, mostre o termo em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+fórmula: frase de uso real em EN com o termo em EN
+nota: O termo usado na frase deve ter grafia idêntica à que será retornada em right_answer. Frase entre aspas.
 
 right:
-- Boa! "My garden is beautiful."
-- Correto! "Breakfast is ready."
-- Exato! "He's my best friend."
+- "My garden is beautiful."
+- "Breakfast is ready."
+- "He's my best friend."
 
 wrong:
-- Errado! "Garden". "My garden is beautiful."
-- Hmmm, errou! "Breakfast". "Breakfast is ready."
-- Ops, errado! "Friend". "He's my best friend."
+- "My garden is beautiful."
+- "Breakfast is ready."
+- "He's my best friend."
 
 partial:
-- Quase! "Garden". "My garden is beautiful."
-- Por pouco! "Breakfast". "Breakfast is ready."
-- Quase lá! "Friend". "He's my best friend."
+- "My garden is beautiful."
+- "Breakfast is ready."
+- "He's my best friend."
 
 ## INTERMEDIATE
 
@@ -44,23 +44,23 @@ exemplos:
 validação: a pergunta termina exatamente com "in English?" e o termo em EN (a resposta esperada) não aparece em nenhum lugar do enunciado, só o termo em PT entre aspas. Se algum dos dois falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura + frase de uso real em EN com a expressão em EN
-nota: Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+fórmula: frase de uso real em EN com a expressão em EN
+nota: O termo usado na frase deve ter grafia idêntica à que será retornada em right_answer. Frase entre aspas.
 
 right:
-- Boa! "Never mind, it's not a big deal."
-- Correto! "Don't give up now."
-- Perfeito! "I'm exhausted after that meeting."
+- "Never mind, it's not a big deal."
+- "Don't give up now."
+- "I'm exhausted after that meeting."
 
 wrong:
-- Errado! "Never mind". "Never mind, it's not a big deal."
-- Hmmm, errou! "Give up". "Don't give up now."
-- Ops, errado! "Exhausted". "I'm exhausted after that meeting."
+- "Never mind, it's not a big deal."
+- "Don't give up now."
+- "I'm exhausted after that meeting."
 
 partial:
-- Quase! "Never mind". "Never mind, it's not a big deal."
-- Por pouco! "Give up". "Don't give up now."
-- Quase lá! "Exhausted". "I'm exhausted after that meeting."
+- "Never mind, it's not a big deal."
+- "Don't give up now."
+- "I'm exhausted after that meeting."
 
 ## ADVANCED
 
@@ -76,20 +76,20 @@ exemplos:
 validação: a pergunta termina exatamente com "in English?" e o termo em EN (a resposta esperada) não aparece em nenhum lugar do enunciado, só o termo em PT entre aspas. Se algum dos dois falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura em PT + frase de uso real em EN com a expressão correta
-nota: Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+fórmula: frase de uso real em EN com a expressão correta
+nota: O termo usado na frase deve ter grafia idêntica à que será retornada em right_answer. Frase entre aspas.
 
 right:
-- Boa! "Never mind, it's not a big deal."
-- Correto! "I'm not giving up on this."
-- Perfeito! "I'm exhausted after that meeting."
+- "Never mind, it's not a big deal."
+- "I'm not giving up on this."
+- "I'm exhausted after that meeting."
 
 wrong:
-- Errado! "Never mind". "Never mind, it's not a big deal."
-- Hmmm, errou! "Give up". "I'm not giving up on this."
-- Ops, errado! "Exhausted". "I'm exhausted after that meeting."
+- "Never mind, it's not a big deal."
+- "I'm not giving up on this."
+- "I'm exhausted after that meeting."
 
 partial:
-- Quase! "Never mind". "Never mind, it's not a big deal."
-- Por pouco! "Give up". "I'm not giving up on this."
-- Quase lá! "Exhausted". "I'm exhausted after that meeting."
+- "Never mind, it's not a big deal."
+- "I'm not giving up on this."
+- "I'm exhausted after that meeting."

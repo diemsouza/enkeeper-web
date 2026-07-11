@@ -13,6 +13,7 @@ type CreateActivityData = {
   status?: ActivityStatus;
   roundCompleted?: boolean;
   questionCount?: number;
+  questionLimit?: number;
   sectionCount?: number;
 };
 
@@ -178,6 +179,7 @@ export async function findLatestArchivedActivityForSummary(userId: string) {
     select: {
       id: true,
       title: true,
+      questionLimit: true,
       createdAt: true,
       lastInteractionAt: true,
       questions: {

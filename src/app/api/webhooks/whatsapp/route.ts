@@ -3,11 +3,7 @@ import { NextRequest } from "next/server";
 import { Prisma } from "../../../../lib/prisma";
 import { handleIncomingMessage } from "../../../../services/message-service";
 import { findOrCreateUserByChannel } from "../../../../services/user-service";
-import {
-  downloadMedia,
-  sendWhatsAppMessage,
-  sendWhatsAppMessages,
-} from "../../../../vendors/whatsapp.vendor";
+import { downloadMedia } from "../../../../vendors/whatsapp.vendor";
 import { transcribeAudio } from "../../../../vendors/whisper.vendor";
 import {
   extractTextFromImage,
@@ -25,6 +21,7 @@ import {
   verifyMetaSignature,
   verifyWebhookToken,
 } from "@/src/lib/whatsapp-verify";
+import { WhatsAppChannel } from "../../../../lib/channels/whatsapp-channel";
 
 export async function GET(req: NextRequest): Promise<Response> {
   const { searchParams } = req.nextUrl;
@@ -49,6 +46,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   //console.log("[WA WEBHOOK] received payload", body);
 
   after(async () => {
+    const channel = new WhatsAppChannel();
     try {
       const payload = body as {
         entry?: Array<{
@@ -96,7 +94,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         if (!isVoiceNote) {
           const user = await findOrCreateUserByChannel("whatsapp", wa_id);
           if (!canUseAudio(user)) {
-            await sendWhatsAppMessage(wa_id, formatUpgradePrompt("audio"));
+            await channel.sendMessage(wa_id, formatUpgradePrompt("audio"));
             return;
           }
         }
@@ -125,15 +123,14 @@ export async function POST(req: NextRequest): Promise<Response> {
               },
             };
 
-        const replies = await handleIncomingMessage(input);
-        await sendWhatsAppMessages(wa_id, replies);
+        await handleIncomingMessage(input, channel);
         return;
       }
 
       if (message.type === "image" && message.image) {
         const user = await findOrCreateUserByChannel("whatsapp", wa_id);
         if (!canUseImage(user)) {
-          await sendWhatsAppMessage(wa_id, formatUpgradePrompt("image"));
+          await channel.sendMessage(wa_id, formatUpgradePrompt("image"));
           return;
         }
         const { buffer, mimeType, fileSize } = await downloadMedia(
@@ -142,7 +139,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         const visionResult = await extractTextFromImage(buffer, user.id);
 
         if (visionResult.transcription_type === "description") {
-          await sendWhatsAppMessage(wa_id, formatImageNoText());
+          await channel.sendMessage(wa_id, formatImageNoText());
           return;
         }
 
@@ -159,8 +156,7 @@ export async function POST(req: NextRequest): Promise<Response> {
             format,
           },
         };
-        const replies = await handleIncomingMessage(input);
-        await sendWhatsAppMessages(wa_id, replies);
+        await handleIncomingMessage(input, channel);
         return;
       }
 
@@ -169,7 +165,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       if (message.type === "document" && message.document) {
         const docUser = await findOrCreateUserByChannel("whatsapp", wa_id);
         if (!canPractice(docUser)) {
-          await sendWhatsAppMessage(wa_id, formatPlanExpired());
+          await channel.sendMessage(wa_id, formatPlanExpired());
           return;
         }
 
@@ -188,8 +184,7 @@ export async function POST(req: NextRequest): Promise<Response> {
             mediaId: message.document.id,
             mediaMetadata: { media_type: "text" },
           };
-          const replies = await handleIncomingMessage(input);
-          await sendWhatsAppMessages(wa_id, replies);
+          await handleIncomingMessage(input, channel);
           return;
         }
 
@@ -203,8 +198,7 @@ export async function POST(req: NextRequest): Promise<Response> {
             mediaId: message.document.id,
             mediaMetadata: { media_type: "pdf", size_bytes: fileSize ?? null },
           };
-          const replies = await handleIncomingMessage(input);
-          await sendWhatsAppMessages(wa_id, replies);
+          await handleIncomingMessage(input, channel);
           return;
         }
 
@@ -226,8 +220,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         return;
       }
 
-      const replies = await handleIncomingMessage(input);
-      await sendWhatsAppMessages(wa_id, replies);
+      await handleIncomingMessage(input, channel);
     } catch (err) {
       if (
         err instanceof Prisma.PrismaClientKnownRequestError &&

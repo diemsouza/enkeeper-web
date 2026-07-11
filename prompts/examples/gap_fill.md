@@ -7,7 +7,7 @@ Variação 1, lacuna parcial: frase em EN com lacuna `______` cobrindo palavra-c
 
 Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______` em qualquer posição, representando o termo completo como resposta, seguida do significado em PT entre parênteses. Use quando o termo é uma frase inteira sem palavra isolável (ex: "I am ready"). A lacuna é sempre obrigatória. Varie a posição entre exemplos. Em dúvida, use esta variação.
 
-Em ambas, a frase ou pergunta de estímulo é sempre em EN. Use underline longo (`______`). O termo correto vai em answerKeys. Varie o contexto entre exemplos.
+Em ambas, a frase ou pergunta de estímulo é sempre em EN, com no máximo 15 palavras (sem contar o parêntese de tradução). Use underline longo (`______`). O termo correto vai em answerKeys. Varie o contexto entre exemplos.
 
 exemplos:
 - Complete: "I have a ______ behind my house." (jardim)
@@ -15,29 +15,29 @@ exemplos:
 - How are you feeling about the trip? ______ (estou pronto)
 - What do people usually do when learning something new? ______ (cometo erros)
 
-validação: o `______` está presente exatamente uma vez, cobrindo o termo inteiro do answerKeys (não parte dele). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
+validação: a frase de estímulo, sem contar o parêntese de tradução, tem no máximo 15 palavras. O `______` está presente exatamente uma vez, cobrindo o termo inteiro do answerKeys (não parte dele). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura + frase que completa a pergunta, em EN, com o termo em EN preenchido
-nota: Use sempre a frase original completada, nunca crie frase nova. Em wrong e partial, mostre o termo em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+fórmula: frase que completa a pergunta, em EN, com o termo em EN preenchido
+nota: Use sempre a frase original completada, nunca crie frase nova. O termo preenchido na frase deve ter grafia idêntica à que será retornada em right_answer. Frase entre aspas.
 
 right:
-- Boa! "I have a garden behind my house."
-- Correto! "She drinks coffee every morning."
-- Exato! "I'm ready."
-- Perfeito! "I make mistakes."
+- "I have a garden behind my house."
+- "She drinks coffee every morning."
+- "I'm ready."
+- "I make mistakes."
 
 wrong:
-- Errado! "Garden". "I have a garden behind my house."
-- Hmmm, errou! "Coffee". "She drinks coffee every morning."
-- Ops, errado! "I'm ready". "I'm ready."
-- Que pena! "I make mistakes". "I make mistakes."
+- "I have a garden behind my house."
+- "She drinks coffee every morning."
+- "I'm ready."
+- "I make mistakes."
 
 partial:
-- Quase! "Garden". "I have a garden behind my house."
-- Por pouco! "Coffee". "She drinks coffee every morning."
-- Quase lá! "I'm ready". "I'm ready."
-- Quase! "I make mistakes". "I make mistakes."
+- "I have a garden behind my house."
+- "She drinks coffee every morning."
+- "I'm ready."
+- "I make mistakes."
 
 ## INTERMEDIATE
 
@@ -48,7 +48,7 @@ Variação 1, lacuna parcial: frase em EN com lacuna `______` cobrindo expressã
 
 Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______` em qualquer posição, representando o termo completo como resposta, seguida do significado em PT entre parênteses. Use quando o termo é uma frase inteira sem expressão isolável. A lacuna é sempre obrigatória. Varie a posição entre exemplos. Em dúvida, use esta variação.
 
-Em ambas, a frase de estímulo é sempre em EN. A lacuna pode cobrir mais de uma palavra (expressão multi-word). Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
+Em ambas, a frase de estímulo é sempre em EN, com no máximo 15 palavras (sem contar o parêntese de tradução). A lacuna pode cobrir mais de uma palavra (expressão multi-word). Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
 
 exemplos:
 - Complete: "Just ______, it's not a big deal." (deixa pra lá)
@@ -56,29 +56,29 @@ exemplos:
 - Complete: "We need to ______ before the meeting." (nos preparar)
 - What would you say to calm someone down about a small mistake? ______ (não se preocupe com isso)
 
-validação: o `______` está presente exatamente uma vez, cobrindo a expressão inteira do answerKeys (não só parte dela, ex: não pode deixar "the" fora da lacuna se o termo for "the sweet spot"). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
+validação: a frase de estímulo, sem contar o parêntese de tradução, tem no máximo 20 palavras. O `______` está presente exatamente uma vez, cobrindo a expressão inteira do answerKeys (não só parte dela, ex: não pode deixar "the" fora da lacuna se o termo for "the sweet spot"). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura + frase que completa a pergunta, em EN, com a expressão em EN preenchida
-nota: Use sempre a frase original completada, nunca crie frase nova. A frase de estímulo é em inglês básico (nível A2), curta e direta. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+fórmula: frase que completa a pergunta, em EN, com a expressão em EN preenchida
+nota: Use sempre a frase original completada, nunca crie frase nova. A frase de estímulo é em inglês básico (nível A2), curta e direta. A expressão preenchida na frase deve ter grafia idêntica à que será retornada em right_answer. Frase entre aspas.
 
 right:
-- Boa! "Just never mind, it's not a big deal."
-- Correto! "I had to give up trying to fix it alone."
-- Perfeito! "We need to get ready before the meeting."
-- Exato! "Don't worry about it."
+- "Just never mind, it's not a big deal."
+- "I had to give up trying to fix it alone."
+- "We need to get ready before the meeting."
+- "Don't worry about it."
 
 wrong:
-- Errado! "Never mind". "Just never mind, it's not a big deal."
-- Hmmm, errou! "Give up". "I had to give up trying to fix it alone."
-- Ops, errado! "Get ready". "We need to get ready before the meeting."
-- Que pena! "Don't worry about it". "Don't worry about it."
+- "Just never mind, it's not a big deal."
+- "I had to give up trying to fix it alone."
+- "We need to get ready before the meeting."
+- "Don't worry about it."
 
 partial:
-- Quase! "Never mind". "Just never mind, it's not a big deal."
-- Por pouco! "Give up". "I had to give up trying to fix it alone."
-- Quase lá! "Get ready". "We need to get ready before the meeting."
-- Quase! "Don't worry about it". "Don't worry about it."
+- "Just never mind, it's not a big deal."
+- "I had to give up trying to fix it alone."
+- "We need to get ready before the meeting."
+- "Don't worry about it."
 
 ## ADVANCED
 
@@ -89,7 +89,7 @@ Variação 1, lacuna parcial: frase em EN com lacuna `______` cobrindo idiom ou 
 
 Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______` em qualquer posição, representando o termo completo como resposta, seguida do significado em PT entre parênteses. Use quando o termo é uma frase inteira sem idiom isolável. A lacuna é sempre obrigatória. Varie a posição entre exemplos. Em dúvida, use esta variação.
 
-Em ambas, a frase de estímulo é em inglês intermediário (nível B1-B2), podendo ter estrutura um pouco mais elaborada que o nível anterior. A lacuna cobre o item idiomático ou a resposta completa. Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
+Em ambas, a frase de estímulo é em inglês intermediário (nível B1-B2), podendo ter estrutura um pouco mais elaborada que o nível anterior, com no máximo 25 palavras (sem contar o parêntese de tradução). A lacuna cobre o item idiomático ou a resposta completa. Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
 
 exemplos:
 - Complete: "We negotiated for hours, and we finally hit the ______ on pricing." (ponto ideal)
@@ -97,26 +97,26 @@ exemplos:
 - Complete: "Instead of arguing, let's ______ and talk it through." (resolver de uma vez)
 - The negotiation dragged on, but they finally found common ground. How would you describe that outcome? ______ (acertamos o ponto ideal)
 
-validação: o `______` está presente exatamente uma vez, cobrindo o idiom ou expressão inteira do answerKeys (não só parte dela). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase, incluindo a oração que vem antes ou depois da lacuna na mesma frase de duas cláusulas. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
+validação: a frase de estímulo, sem contar o parêntese de tradução, tem no máximo 25 palavras. O `______` está presente exatamente uma vez, cobrindo o idiom ou expressão inteira do answerKeys (não só parte dela). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase, incluindo a oração que vem antes ou depois da lacuna na mesma frase de duas cláusulas. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
 
 ### feedback
-fórmula: abertura em PT + frase que completa a pergunta, em EN, com a expressão correta preenchida
-nota: Use sempre a frase original completada, nunca crie frase nova. A frase de estímulo é em inglês intermediário (nível B1-B2), podendo ter estrutura um pouco mais elaborada que o nível anterior. Em wrong e partial, mostre a expressão em destaque antes da frase. O termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu. Termo entre aspas, frase entre aspas.
+fórmula: frase que completa a pergunta, em EN, com a expressão correta preenchida
+nota: Use sempre a frase original completada, nunca crie frase nova. A frase de estímulo é em inglês intermediário (nível B1-B2), podendo ter estrutura um pouco mais elaborada que o nível anterior. A expressão preenchida na frase deve ter grafia idêntica à que será retornada em right_answer. Frase entre aspas.
 
 right:
-- Boa! "We negotiated for hours, and we finally hit the sweet spot on pricing."
-- Correto! "I didn't want to, but I had to bite the bullet and accept the decision."
-- Perfeito! "Instead of arguing, let's sort it out and talk it through."
-- Exato! "We hit the sweet spot."
+- "We negotiated for hours, and we finally hit the sweet spot on pricing."
+- "I didn't want to, but I had to bite the bullet and accept the decision."
+- "Instead of arguing, let's sort it out and talk it through."
+- "We hit the sweet spot."
 
 wrong:
-- Errado! "Sweet spot". "We negotiated for hours, and we finally hit the sweet spot on pricing."
-- Hmmm, errou! "Bite the bullet". "I didn't want to, but I had to bite the bullet and accept the decision."
-- Ops, errado! "Sort it out". "Instead of arguing, let's sort it out and talk it through."
-- Que pena! "We hit the sweet spot". "We hit the sweet spot."
+- "We negotiated for hours, and we finally hit the sweet spot on pricing."
+- "I didn't want to, but I had to bite the bullet and accept the decision."
+- "Instead of arguing, let's sort it out and talk it through."
+- "We hit the sweet spot."
 
 partial:
-- Quase! "Sweet spot". "We negotiated for hours, and we finally hit the sweet spot on pricing."
-- Por pouco! "Bite the bullet". "I didn't want to, but I had to bite the bullet and accept the decision."
-- Quase lá! "Sort it out". "Instead of arguing, let's sort it out and talk it through."
-- Quase! "We hit the sweet spot". "We hit the sweet spot."
+- "We negotiated for hours, and we finally hit the sweet spot on pricing."
+- "I didn't want to, but I had to bite the bullet and accept the decision."
+- "Instead of arguing, let's sort it out and talk it through."
+- "We hit the sweet spot."

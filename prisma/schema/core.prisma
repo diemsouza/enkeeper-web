@@ -149,6 +149,7 @@ model Activity {
     completedAt       DateTime?      @map("completed_at")
     intensiveUntil    DateTime?      @map("intensive_until")
     questionCount     Int            @default(0) @map("question_count")
+    questionLimit     Int            @default(0) @map("question_limit")
     sectionCount      Int            @default(0) @map("section_count")
     roundCompleted    Boolean        @default(false) @map("round_completed")
     lastQuestionId    String?        @map("last_question_id")

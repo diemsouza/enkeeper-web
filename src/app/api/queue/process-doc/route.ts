@@ -5,6 +5,7 @@ import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 import { ZodError, z } from "zod";
 import { getErrorMessage } from "@/src/lib/custom-errors";
 import { processDoc } from "@/src/services/process-doc-service";
+import { resolveChannel } from "@/src/lib/channels/resolve-channel";
 
 const ProcessDocPayloadSchema = z.object({
   docId: z.string().min(1, "docId is required"),
@@ -15,7 +16,7 @@ export const POST = verifySignatureAppRouter(async (req: Request) => {
   try {
     const body = await req.json();
     const payload = ProcessDocPayloadSchema.parse(body);
-    await processDoc(payload.docId, payload.userId);
+    await processDoc(payload.docId, payload.userId, resolveChannel());
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     let message = error instanceof Error ? error.message : "Process doc error!";

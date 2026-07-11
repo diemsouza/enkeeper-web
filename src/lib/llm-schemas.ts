@@ -64,7 +64,6 @@ export const docProcessingSchema = z.object({
 export type DocProcessingResult = z.infer<typeof docProcessingSchema>;
 
 export const sectionQuestionSchema = z.object({
-  sourceItem: z.string().optional(),
   question: z.string(),
   answerKeys: z.array(z.string()),
   questionFormat: z.string().optional(),
@@ -81,6 +80,7 @@ export const sectionQuestionsSchema = z.object({
 export const answerEvaluationSchema = z.object({
   status: z.enum(["right", "partial", "wrong"]),
   feedback: z.string(),
+  right_answer: z.string().optional(),
   user_unknown: z.boolean().optional(),
 });
 

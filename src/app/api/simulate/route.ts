@@ -4,13 +4,13 @@ import { Prisma } from "../../../lib/prisma";
 import { handleIncomingMessage } from "../../../services/message-service";
 import { findOrCreateUserByChannel } from "../../../services/user-service";
 import { ChannelType } from "../../../types/domain";
-import { sendSimulatorMessages } from "../../../lib/simulator";
 import { emitToSession } from "../../../lib/simulator-emitter";
 import {
   extractTextFromImage,
   extractTextFromPdf,
 } from "../../../vendors/llm.vendor";
 import { formatImageNoText } from "../../../core/formatters";
+import { SimulatorChannel } from "../../../lib/channels/simulator-channel";
 
 const jsonSchema = z.object({
   channelId: z.string().min(1),
@@ -96,16 +96,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     try {
-      const replies = await handleIncomingMessage({
-        channelId,
-        channelCode: typeof channelCode === "string" ? channelCode : undefined,
-        channelType: channelType as ChannelType,
-        text: extractedText,
-        externalId: typeof externalId === "string" ? externalId : undefined,
-        mediaType: mediaType ?? undefined,
-        receivedAt,
-      });
-      void sendSimulatorMessages(channelId, replies);
+      const channel = new SimulatorChannel();
+      void (async () => {
+        await handleIncomingMessage({
+          channelId,
+          channelCode: typeof channelCode === "string" ? channelCode : undefined,
+          channelType: channelType as ChannelType,
+          text: extractedText,
+          externalId: typeof externalId === "string" ? externalId : undefined,
+          mediaType: mediaType ?? undefined,
+          receivedAt,
+        }, channel);
+        emitToSession(channelId, { type: "done" });
+      })();
       return NextResponse.json({ ok: true });
     } catch (err) {
       if (
@@ -135,16 +138,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     parsed.data;
 
   try {
-    const replies = await handleIncomingMessage({
-      channelId,
-      channelCode: channelCode ?? undefined,
-      channelType: channelType as ChannelType,
-      text: text ?? undefined,
-      externalId: externalId ?? undefined,
-      mediaType: mediaType ?? undefined,
-      receivedAt,
-    });
-    void sendSimulatorMessages(channelId, replies);
+    const channel = new SimulatorChannel();
+    void (async () => {
+      await handleIncomingMessage({
+        channelId,
+        channelCode: channelCode ?? undefined,
+        channelType: channelType as ChannelType,
+        text: text ?? undefined,
+        externalId: externalId ?? undefined,
+        mediaType: mediaType ?? undefined,
+        receivedAt,
+      }, channel);
+      emitToSession(channelId, { type: "done" });
+    })();
     return NextResponse.json({ ok: true });
   } catch (err) {
     if (

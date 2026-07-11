@@ -26,6 +26,16 @@ export async function findSectionById(id: string): Promise<Section | null> {
   return prisma.section.findFirst({ where: { id, deletedAt: null } });
 }
 
+export async function getSectionsByActivityId(
+  activityId: string,
+): Promise<Pick<Section, "id" | "sectionType" | "content" | "title" | "order">[]> {
+  return prisma.section.findMany({
+    where: { activityId, deletedAt: null },
+    select: { id: true, sectionType: true, content: true, title: true, order: true },
+    orderBy: { order: "asc" },
+  });
+}
+
 export async function recalcSectionStatus(sectionId: string): Promise<void> {
   const total = await prisma.question.count({
     where: { sectionId, deletedAt: null },
