@@ -12,7 +12,6 @@ import {
   findNextUnansweredQuestion,
   findNextGeneralQuestion,
   findSm2EligibleQuestion,
-  hasWrongOrPartial,
   updateQuestion,
   countQuestionsForSection,
   createQuestions,
@@ -25,7 +24,7 @@ import { MessageChannel } from "../types/message-channel";
 import {
   formatChoiceQuestion,
   formatNudgeMessage,
-  formatPracticeComplete,
+  formatQuestion,
   formatSectionTransition,
 } from "../core/formatters";
 import {
@@ -60,6 +59,7 @@ import { shuffle } from "lodash";
 import { sanitizeText } from "../lib/utils";
 import { startOfDay } from "date-fns";
 import { RetryContext } from "../types/retry-context";
+import { buildRoundCompletedSummary } from "./activity-service";
 
 type CronResult = {
   processed: number;
@@ -341,11 +341,6 @@ async function selectNextQuestion(
       return null;
     }
 
-    const openRemains = await hasWrongOrPartial(activity.docId);
-    if (openRemains) {
-      return findNextGeneralQuestion(activity.id, lastId);
-    }
-
     const msg = await completeRoundZero(
       activity.id,
       activity.userId,
@@ -354,7 +349,6 @@ async function selectNextQuestion(
       activity.intervalMinutes,
     );
     await channel.sendMessage(channelId, msg);
-    return findNextGeneralQuestion(activity.id, lastId);
   }
 
   return findNextGeneralQuestion(activity.id, lastId);
@@ -464,17 +458,8 @@ export async function generateQuestionIfPoolNotFull(
 
   if (!validated) return { poolExhausted: false, question: null };
 
-  const q = validated;
   await createQuestions(activity.id, targetSection.id, [
-    {
-      question: sanitizeText(q.question),
-      answerKeys: q.answerKeys.map((k) => sanitizeText(k)),
-      questionFormat: q.questionFormat as QuestionFormat,
-      questionOptions:
-        q.questionFormat === QuestionFormat.choice
-          ? shuffle(q.questionOptions.map((o) => sanitizeText(o)))
-          : [],
-    },
+    formatQuestion(validated),
   ]);
 
   await updateActivity(activity.id, activity.userId, {
@@ -496,12 +481,13 @@ export async function completeRoundZero(
 ): Promise<string> {
   await updateActivity(activityId, userId, {
     roundCompleted: true,
-    intensiveUntil: null,
     waitingUser: false,
     nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),
     lastQuestionId: null,
   });
-  const msg = formatPracticeComplete();
+
+  const msg = await buildRoundCompletedSummary(activityId);
+
   await saveMessage({
     userId: userId,
     userChannelId,

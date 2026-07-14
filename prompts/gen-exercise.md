@@ -2,32 +2,26 @@
 {voice}
 
 ## Rules
-Extraia uma pergunta do material abaixo e reescreva no padrão do exemplo fornecido.
-Objetivo: o usuário responde as perguntas do material no formato padronizado.
+Extraia uma pergunta dos exercícios do material e reescreva no padrão do exemplo fornecido.
+Objetivo: o usuário responde as perguntas do próprio material, em formato padronizado.
 
-Nível: {level}
+O material chega como pergunta, com ou sem resposta, com ou sem gabarito. A pergunta é o requisito mínimo. Identifique qual dos três casos se aplica:
 
-Identifique se o material tem gabarito explícito, contexto para inferir resposta, ou nenhum dos dois:
+Com gabarito explícito: use o gabarito como resposta principal, fiel ao material, sem reescrever. Acrescente como variações apenas formulações equivalentes da mesma resposta.
 
-Com gabarito explícito:
-- Use o gabarito como answerKeys. Fiel ao material, sem reescrever.
+Sem gabarito, com contexto suficiente no material para determinar a resposta: derive a resposta principal desse contexto e acrescente as variações aceitas.
 
-Sem gabarito mas com contexto:
-- Gere answerKeys baseadas no contexto do material. Inclua variações aceitas.
+Sem gabarito e sem contexto: infira a resposta mais natural e correta para a pergunta, e use essa inferência como resposta principal, como se fizesse parte do material. Quando a pergunta admitir mais de uma resposta correta, inclua todas como variações.
 
-Sem gabarito e sem contexto:
-- Gere uma ou mais respostas plausíveis como answerKeys.
-
+A pergunta gerada vem sempre de um exercício real do material, nunca de assunto inventado fora dele. Reescreva o enunciado no padrão direto quando o original for truncado, numerado ou dependente de instrução de bloco, de modo que a pergunta se sustente sozinha.
 Nunca coloque a resposta na própria pergunta.
 Nunca faça duas perguntas na mesma frase.
 Use texto corrido, sem travessão, sem bullet points, sem markdown.
+Respeite o limite de palavras definido no bloco de exemplos.
 
-Validação obrigatória: o exemplo abaixo tem um bloco "validação" com o critério objetivo que define se a pergunta gerada está correta para esse nível. Depois de redigir a pergunta e antes de retornar, verifique se ela atende a esse critério. Se não atender, regenere até que o critério seja cumprido.
+Validação obrigatória: o bloco de exemplos traz um item "validação" com os critérios objetivos que definem se a pergunta está correta para esse nível. Depois de redigir a pergunta e antes de retornar, verifique cada critério. Se algum falhar, regenere até que todos sejam cumpridos.
 
-O bloco de exemplo abaixo cobre o formato open_question no nível desta geração. Siga a fórmula e o padrão exatos.
-
-## Examples
-{question_examples}
+Se o gabarito do material estiver claramente errado para a pergunta, gere a resposta correta e adicione warning.
 
 ## Output
 Retorne APENAS UM JSON válido (objeto único). Sem markdown, sem cercas de código (```), sem qualquer texto antes ou depois do JSON.
@@ -35,10 +29,19 @@ Retorne APENAS UM JSON válido (objeto único). Sem markdown, sem cercas de cód
   "question": "enunciado da pergunta",
   "answerKeys": ["resposta principal", "variações aceitáveis"],
   "questionFormat": "open_question",
-  "questionOptions": []
+  "questionOptions": [],
+  "warning": ""
 }
 
 Regras do JSON:
+- answerKeys: array com pelo menos 1 item. A primeira chave é sempre a resposta principal, definida pelos três casos acima. As demais são formulações equivalentes aceitas na avaliação.
 - questionFormat: sempre "open_question".
-- questionOptions: sempre vazio.
-- answerKeys: array com a resposta principal e variações aceitáveis. Conteúdo definido pelos 3 cenários acima (gabarito explícito, contexto, ou plausível). Quando o termo tiver mais de uma tradução natural sem contexto que desambigue, inclua todas as traduções válidas.
+- questionOptions: sempre array vazio.
+- warning: string curta em português descrevendo o gabarito inconsistente. Omita o campo quando não houver inconsistência.
+
+Nível: {level}
+
+O bloco de exemplos abaixo cobre esse nível. Siga a fórmula, a nota e o padrão exatos.
+
+## Examples
+{question_examples}

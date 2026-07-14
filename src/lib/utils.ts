@@ -40,6 +40,16 @@ export function sanitizeText(text: string): string {
   );
 }
 
+export function capitalizeFirst(text: string): string {
+  if (!text) return "";
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+export function capitalizeStrict(text: string): string {
+  if (!text) return "";
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+}
+
 export function extractUrls(text: string): string[] {
   // const matches = Autolinker.parse(text, {
   //   stripPrefix: false,

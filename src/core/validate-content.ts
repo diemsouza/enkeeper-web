@@ -20,8 +20,8 @@ export function formatInvalidContentMessage(
   const translated = invalidReason
     ? (REASON_TRANSLATIONS[invalidReason] ?? invalidReason)
     : null;
-  const reasonPart = translated ? `${translated} ` : "";
-  return `Não consegui usar esse material. ${reasonPart}Funciona melhor com lista de palavras, texto corrido ou exercícios em inglês. Envie novamente ou tenta outro formato.`;
+  const reasonPart = translated ? `\n${translated} ` : "";
+  return `Não foi possível usar esse material. ${reasonPart}\n\n_Tente uma lista de palavras, texto corrido ou exercícios em inglês. Envie novamente ou tente outro formato._`;
 }
 
 export function validateContent(text: string): ValidationResult {

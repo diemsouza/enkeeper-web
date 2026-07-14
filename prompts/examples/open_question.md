@@ -1,95 +1,140 @@
 ## BASIC
 
 ### question
-fórmula: pergunta direta em PT extraída ou baseada nos exercícios do material, com resposta objetiva esperada
-nota: A pergunta deve ser ancorada no material do aluno, reescrita no padrão direto. Resposta esperada em PT (com termos EN quando natural). answerKeys cobre variações aceitáveis. Varie o tipo de pergunta entre exemplos (fato, causa, consequência).
+fórmula: pergunta em PT (até 15 palavras), extraída do exercício do material e reescrita no padrão direto, com resposta objetiva esperada em PT.
+
+nota: A pergunta vem de um exercício real do material, nunca de um assunto inventado fora dele. Reescreva no padrão direto quando o enunciado original for truncado, numerado ou dependente de instrução de bloco ("responda as questões abaixo", "item 3"). A primeira chave de answerKeys é a resposta modelo, as demais são formulações aceitas da mesma resposta. Termos em EN aparecem na resposta quando forem naturais.
 
 exemplos:
-- O que acontece quando você pratica vocabulário todo dia?
-- Por que a repetição diária é importante no aprendizado?
-- Qual é o principal benefício de estudar pouco e com frequência?
+- Qual é o plural de "child" em inglês?
+- Quando se usa "much" em vez de "many"?
+- O que muda no verbo com he, she e it?
 
-validação: a pergunta está ancorada num conteúdo real do material, não inventa fato fora do que foi extraído. A resposta esperada não aparece na própria pergunta. Se algo disso falhar, gere outra.
+validação:
+- A pergunta corresponde a um exercício real do material, sem inventar conteúdo.
+- A pergunta se sustenta sozinha, sem depender de numeração ou de outro item do material.
+- A resposta esperada não aparece na própria pergunta.
+- A pergunta é única, sem duas perguntas na mesma frase.
+- Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: reformulação enxuta da resposta correta
-nota: Em wrong e partial, traga a resposta certa de forma direta, sem repetir a pergunta. Resposta em PT no basic. Este formato não usa right_answer, a resposta correta já está embutida no corpo do feedback.
+fórmula: neste formato o corpo do feedback varia por status, diferente dos formatos de termo isolado.
+- right: confirmação enxuta da resposta correta, em uma frase.
+- wrong: a resposta correta, dita de forma direta, sem repetir a pergunta.
+- partial: o que faltou na resposta do usuário, apontado de forma direta.
 
-right:
-- O vocabulário fixa com mais facilidade.
-- A repetição é o que consolida a memória de longo prazo.
-- Pequenas sessões diárias rendem mais que uma longa.
+nota: Resposta livre, sem termo isolado, então este formato não usa right_answer, a resposta correta vive no corpo do feedback. Em partial, apontar a lacuna é a função do feedback e não conta como meta-comentário. Uma frase, sem repetir a pergunta, sem explicação didática. A abertura de resultado é resolvida fora deste prompt.
 
-wrong:
-- Praticar todo dia faz o vocabulário fixar.
-- A repetição diária é o que consolida o aprendizado.
-- Estudar pouco e com frequência supera estudar muito de vez em quando.
+exemplo (plural irregular):
+- right: O plural é "children", irregular.
+- wrong: O plural de "child" é "children", forma irregular.
+- partial: Certo que é irregular, faltou a forma "children".
 
-partial:
-- Faltou mencionar que a repetição é o que consolida.
-- Você captou parte. Completa com o efeito da constância.
-- A ideia está certa, faltou citar a consolidação pela repetição.
+exemplo (much vs many):
+- right: "Much" vai com incontáveis, "many" com contáveis.
+- wrong: "Much" acompanha incontáveis, "many" acompanha contáveis.
+- partial: Você acertou "much", faltou dizer que "many" é contável.
+
+exemplo (terceira pessoa do singular):
+- right: Ganha "s" no final na terceira pessoa.
+- wrong: O verbo ganha "s" no final com he, she e it.
+- partial: Faltou dizer que isso vale só na terceira pessoa.
+
+validação:
+- O feedback entrega a resposta ou aponta a lacuna, nunca explica o raciocínio por trás dela.
+- Não pode ser reescrito como "isso acontece porque..." ou "a ideia é que...".
+- Se qualquer critério falhar, regenere o feedback com a correção.
 
 ## INTERMEDIATE
 
 ### question
-fórmula: pergunta direta em inglês básico (nível A2), extraída ou baseada nos exercícios do material, com resposta objetiva esperada
-nota: A pergunta deve ser ancorada no material, escrita em inglês básico (nível A2), curta e direta. Resposta esperada em EN. answerKeys cobre variações. Varie o tipo de pergunta entre exemplos.
+fórmula: pergunta em EN A2-B1 (até 18 palavras), extraída do exercício do material e reescrita no padrão direto, com resposta objetiva esperada em EN.
+
+nota: A pergunta vem de um exercício real do material, nunca de um assunto inventado fora dele. Reescreva no padrão direto quando o enunciado original for truncado, numerado ou dependente de instrução de bloco ("answer the questions below", "item 3"). A primeira chave de answerKeys é a resposta modelo, as demais são formulações aceitas da mesma resposta. O enunciado fica um passo abaixo do conteúdo em foco, o esforço do aluno é o exercício, não decodificar a pergunta.
 
 exemplos:
-- What happens when you practice vocabulary every day?
-- Why does daily repetition matter for learning?
-- What's the main benefit of studying a little but often?
+- When do you use the present perfect instead of the simple past?
+- What's the difference between "used to" and "would" for past habits?
+- Why does this sentence need "have been" and not "am"?
 
-validação: a pergunta está em inglês básico (A2), ancorada num conteúdo real do material. A resposta esperada não aparece na própria pergunta. Se algo disso falhar, gere outra.
+validação:
+- A pergunta corresponde a um exercício real do material, sem inventar conteúdo.
+- A pergunta se sustenta sozinha, sem depender de numeração ou de outro item do material.
+- A resposta esperada não aparece na própria pergunta.
+- A pergunta é única, sem duas perguntas na mesma frase.
+- Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: reformulação enxuta da resposta correta em EN
-nota: Em wrong e partial, traga a resposta certa de forma direta, em EN. Este formato não usa right_answer, a resposta correta já está embutida no corpo do feedback.
+fórmula: neste formato o corpo do feedback varia por status, diferente dos formatos de termo isolado.
+- right: confirmação enxuta da resposta correta, em uma frase.
+- wrong: a resposta correta, dita de forma direta, sem repetir a pergunta.
+- partial: o que faltou na resposta do usuário, apontado de forma direta.
 
-right:
-- Vocabulary sticks more easily with daily practice.
-- Repetition is what consolidates long-term memory.
-- Small daily sessions beat one long session.
+nota: Resposta livre, sem termo isolado, então este formato não usa right_answer, a resposta correta vive no corpo do feedback. Em partial, apontar a lacuna é a função do feedback e não conta como meta-comentário. Uma frase em EN, sem repetir a pergunta, sem explicação didática. A abertura de resultado é resolvida fora deste prompt.
 
-wrong:
-- Practicing every day helps vocabulary stick.
-- Daily repetition is what consolidates learning.
-- Studying a little often beats studying a lot occasionally.
+exemplo (present perfect vs simple past):
+- right: Present perfect connects the past to now, with no finished time.
+- wrong: Present perfect links the past to now, when the time is not finished.
+- partial: Right about the past link, missing the unfinished time.
 
-partial:
-- You got part of it. Add the point about consolidation.
-- Close, but you missed the effect of consistency.
-- The idea is right, just missing the part about repetition.
+exemplo (used to vs would):
+- right: "Used to" works for states, "would" only for repeated actions.
+- wrong: "Used to" covers past states, "would" only repeated past actions.
+- partial: You got "used to", but not the limit on "would".
+
+exemplo (have been vs am):
+- right: The action started in the past and still continues.
+- wrong: It needs "have been" because the action is still going on.
+- partial: Close, but the point is that it still continues now.
+
+validação:
+- O feedback entrega a resposta ou aponta a lacuna, nunca explica o raciocínio por trás dela.
+- Não pode ser reescrito como "isso acontece porque..." ou "a ideia é que...".
+- Se qualquer critério falhar, regenere o feedback com a correção.
 
 ## ADVANCED
 
 ### question
-fórmula: pergunta direta em inglês intermediário (nível B1-B2), extraída ou baseada nos exercícios do material, com resposta objetiva esperada
-nota: A pergunta deve ser ancorada no material, em inglês intermediário, podendo ter estrutura um pouco mais elaborada que o nível anterior. Resposta esperada em EN. answerKeys cobre variações aceitáveis. Varie o tipo de pergunta entre exemplos.
+fórmula: pergunta em EN B1-B2 (até 21 palavras), extraída do exercício do material e reescrita no padrão direto, com resposta objetiva esperada em EN.
+
+nota: A pergunta vem de um exercício real do material, nunca de um assunto inventado fora dele. Reescreva no padrão direto quando o enunciado original for truncado, numerado ou dependente de instrução de bloco ("answer the questions below", "item 3"). A primeira chave de answerKeys é a resposta modelo, as demais são formulações aceitas da mesma resposta. O enunciado fica um passo abaixo do conteúdo em foco, o esforço do aluno é o exercício, não decodificar a pergunta.
 
 exemplos:
-- Why is consistency more effective than intensity when learning a language?
-- What's the main risk of relying on occasional intense study sessions?
-- How does daily exposure shape long-term language retention?
+- Why does the third conditional change the meaning of this sentence entirely?
+- What effect does the passive voice have on who takes responsibility here?
+- How would the meaning shift if you replaced "must have" with "might have"?
 
-validação: a pergunta está em inglês intermediário (B1-B2), ancorada num conteúdo real do material. A resposta esperada não aparece na própria pergunta. Se algo disso falhar, gere outra.
+validação:
+- A pergunta corresponde a um exercício real do material, sem inventar conteúdo.
+- A pergunta se sustenta sozinha, sem depender de numeração ou de outro item do material.
+- A resposta esperada não aparece na própria pergunta, nem parafraseada.
+- A pergunta é única, sem duas perguntas na mesma frase.
+- Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: reformulação enxuta da resposta correta em EN
-nota: Em wrong e partial, traga a resposta certa de forma direta em EN. Este formato não usa right_answer, a resposta correta já está embutida no corpo do feedback.
+fórmula: neste formato o corpo do feedback varia por status, diferente dos formatos de termo isolado.
+- right: confirmação enxuta da resposta correta, em uma frase.
+- wrong: a resposta correta, dita de forma direta, sem repetir a pergunta.
+- partial: o que faltou na resposta do usuário, apontado de forma direta.
 
-right:
-- Consistent practice builds long-term retention better than occasional intense sessions.
-- Daily exposure compounds over time in a way that bursts of effort don't.
-- Steady habits outperform short bursts when it comes to language retention.
+nota: Resposta livre, sem termo isolado, então este formato não usa right_answer, a resposta correta vive no corpo do feedback. Em partial, apontar a lacuna é a função do feedback e não conta como meta-comentário. Uma frase em EN, sem repetir a pergunta, sem explicação didática. A abertura de resultado é resolvida fora deste prompt.
 
-wrong:
-- Consistency beats intensity because it reinforces memory over time.
-- The main risk is forgetting most of what you studied between sessions.
-- Daily exposure builds retention through repeated, contextual reinforcement.
+exemplo (third conditional):
+- right: It describes something that never happened, so the result is hypothetical.
+- wrong: The third conditional describes an unreal past, making the result hypothetical.
+- partial: Right that it is unreal, missing that the result is hypothetical.
 
-partial:
-- You got the idea. Add the point about long-term retention.
-- Consistency wins because it compounds over time.
-- The key is that daily practice reinforces memory better.
+exemplo (passive voice):
+- right: The passive removes the agent, so no one is held responsible.
+- wrong: The passive hides the agent, so responsibility disappears from the sentence.
+- partial: You caught the passive, missing that it hides the agent.
+
+exemplo (must have vs might have):
+- right: "Must have" means near certainty, "might have" only a possibility.
+- wrong: "Must have" is near certainty, "might have" is only possible.
+- partial: Close, but the gap is certainty versus possibility.
+
+validação:
+- O feedback entrega a resposta ou aponta a lacuna, nunca explica o raciocínio por trás dela.
+- Não pode ser reescrito como "isso acontece porque..." ou "a ideia é que...".
+- Se qualquer critério falhar, regenere o feedback com a correção.

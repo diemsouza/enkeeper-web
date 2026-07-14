@@ -1,122 +1,113 @@
 ## BASIC
 
 ### question
-fórmula: duas variações possíveis, escolha conforme o termo.
+fórmula: `Complete: "<frase em EN com ______>" (<tradução em PT do primeiro termo de answerKeys>)`. As três partes são obrigatórias: prefixo, frase entre aspas, parêntese de tradução ao final.
 
-Variação 1, lacuna parcial: frase em EN com lacuna `______` cobrindo palavra-chave isolável dentro de uma frase maior, seguida do significado em PT entre parênteses. Use quando a palavra pode ser isolada sem perder o sentido.
-
-Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______` em qualquer posição, representando o termo completo como resposta, seguida do significado em PT entre parênteses. Use quando o termo é uma frase inteira sem palavra isolável (ex: "I am ready"). A lacuna é sempre obrigatória. Varie a posição entre exemplos. Em dúvida, use esta variação.
-
-Em ambas, a frase ou pergunta de estímulo é sempre em EN, com no máximo 15 palavras (sem contar o parêntese de tradução). Use underline longo (`______`). O termo correto vai em answerKeys. Varie o contexto entre exemplos.
+nota: A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não entram na pergunta. Se o primeiro termo é uma frase completa (sujeito e verbo), a lacuna representa a resposta inteira. Se não é, a lacuna cobre o termo por inteiro dentro de uma frase maior. Em ambos os casos: frase em EN A1-A2, até 15 palavras sem contar o parêntese, underline longo (`______`). A posição da lacuna é livre, início, meio ou fim, determinada pela construção natural da frase, nunca escolhida para variar. A frase de estímulo fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a frase ao redor. Se a frase não couber na banda sem perder naturalidade ou o contexto necessário para a lacuna, use o nível mínimo que ela exigir. Varie o contexto entre exemplos.
 
 exemplos:
 - Complete: "I have a ______ behind my house." (jardim)
-- Complete: "She drinks ______ every morning." (café)
-- How are you feeling about the trip? ______ (estou pronto)
-- What do people usually do when learning something new? ______ (cometo erros)
+- Complete: "______ arrives at eight every day." (o ônibus)
+- Complete: "How are you feeling about the trip? ______" (estou pronto)
 
-validação: a frase de estímulo, sem contar o parêntese de tradução, tem no máximo 15 palavras. O `______` está presente exatamente uma vez, cobrindo o termo inteiro do answerKeys (não parte dele). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
+validação:
+- Prefixo `Complete:` presente, frase entre aspas, parêntese de tradução ao final.
+- `______` aparece exatamente uma vez e cobre o primeiro termo de answerKeys por inteiro.
+- O parêntese é a tradução literal do primeiro termo de answerKeys, não uma descrição, paráfrase ou explicação.
+- O primeiro termo de answerKeys não aparece escrito nem parafraseado em nenhum outro ponto da frase.
+- Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: frase que completa a pergunta, em EN, com o termo em EN preenchido
-nota: Use sempre a frase original completada, nunca crie frase nova. O termo preenchido na frase deve ter grafia idêntica à que será retornada em right_answer. Frase entre aspas.
+fórmula: se a lacuna era a resposta inteira, o feedback é a própria resposta. Se a lacuna era parcial, é a frase original da pergunta completada com o primeiro termo de answerKeys.
 
-right:
-- "I have a garden behind my house."
-- "She drinks coffee every morning."
-- "I'm ready."
-- "I make mistakes."
+nota: Nunca crie frase nova, o feedback vem sempre da frase da pergunta que foi de fato gerada, completada com o termo. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
 
-wrong:
-- "I have a garden behind my house."
-- "She drinks coffee every morning."
-- "I'm ready."
-- "I make mistakes."
+exemplo (bus):
+- The bus was late again.
 
-partial:
-- "I have a garden behind my house."
-- "She drinks coffee every morning."
-- "I'm ready."
-- "I make mistakes."
+exemplo (tired):
+- After the trip, I felt tired.
+
+exemplo (garden):
+- Her garden is full of roses.
+
+validação:
+- A frase é a mesma da pergunta gerada, com a lacuna preenchida, nunca uma frase nova.
+- Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- Se qualquer critério falhar, gere outro feedback com a correção.
 
 ## INTERMEDIATE
 
 ### question
-fórmula: duas variações possíveis, escolha conforme o termo.
+fórmula: `Complete: "<frase em EN com ______>" (<tradução em PT do primeiro termo de answerKeys>)`. As três partes são obrigatórias: prefixo, frase entre aspas, parêntese de tradução ao final.
 
-Variação 1, lacuna parcial: frase em EN com lacuna `______` cobrindo expressão ou phrasal verb dentro de uma frase maior, seguida do significado em PT entre parênteses. Use quando a expressão pode ser isolada sem perder o sentido.
-
-Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______` em qualquer posição, representando o termo completo como resposta, seguida do significado em PT entre parênteses. Use quando o termo é uma frase inteira sem expressão isolável. A lacuna é sempre obrigatória. Varie a posição entre exemplos. Em dúvida, use esta variação.
-
-Em ambas, a frase de estímulo é sempre em EN, com no máximo 15 palavras (sem contar o parêntese de tradução). A lacuna pode cobrir mais de uma palavra (expressão multi-word). Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
+nota: A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não entram na pergunta. Se o primeiro termo é uma frase completa (sujeito e verbo), a lacuna representa a resposta inteira. Se não é, a lacuna cobre a expressão ou phrasal verb por inteiro dentro de uma frase maior, incluindo artigos e preposições que fazem parte do termo. Em ambos os casos: frase em EN A2-B1, até 20 palavras sem contar o parêntese, underline longo (`______`). A posição da lacuna é livre, início, meio ou fim, determinada pela construção natural da frase, nunca escolhida para variar. A frase de estímulo fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a frase ao redor. Se a frase não couber na banda sem perder naturalidade ou o contexto necessário para a lacuna, use o nível mínimo que ela exigir. Varie o tipo de item entre exemplos.
 
 exemplos:
 - Complete: "Just ______, it's not a big deal." (deixa pra lá)
-- Complete: "I had to ______ trying to fix it alone." (desistir)
-- Complete: "We need to ______ before the meeting." (nos preparar)
-- What would you say to calm someone down about a small mistake? ______ (não se preocupe com isso)
+- Complete: "______ before the meeting starts." (se preparar)
+- Complete: "They shook hands. ______ And the meeting was over." (combinado)
 
-validação: a frase de estímulo, sem contar o parêntese de tradução, tem no máximo 20 palavras. O `______` está presente exatamente uma vez, cobrindo a expressão inteira do answerKeys (não só parte dela, ex: não pode deixar "the" fora da lacuna se o termo for "the sweet spot"). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
+validação:
+- Prefixo `Complete:` presente, frase entre aspas, parêntese de tradução ao final.
+- `______` aparece exatamente uma vez e cobre o primeiro termo de answerKeys por inteiro, não só parte dele (ex: não deixar "the" fora da lacuna se o termo for "the sweet spot").
+- O parêntese é a tradução literal do primeiro termo de answerKeys, não uma descrição, paráfrase ou explicação.
+- O primeiro termo de answerKeys não aparece escrito nem parafraseado em nenhum outro ponto da frase.
+- Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: frase que completa a pergunta, em EN, com a expressão em EN preenchida
-nota: Use sempre a frase original completada, nunca crie frase nova. A frase de estímulo é em inglês básico (nível A2), curta e direta. A expressão preenchida na frase deve ter grafia idêntica à que será retornada em right_answer. Frase entre aspas.
+fórmula: se a lacuna era a resposta inteira, o feedback é a própria resposta. Se a lacuna era parcial, é a frase original da pergunta completada com o primeiro termo de answerKeys.
 
-right:
-- "Just never mind, it's not a big deal."
-- "I had to give up trying to fix it alone."
-- "We need to get ready before the meeting."
-- "Don't worry about it."
+nota: Nunca crie frase nova, o feedback vem sempre da frase da pergunta que foi de fato gerada, completada com o termo. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
 
-wrong:
-- "Just never mind, it's not a big deal."
-- "I had to give up trying to fix it alone."
-- "We need to get ready before the meeting."
-- "Don't worry about it."
+exemplo (crowded):
+- The train was crowded this morning.
 
-partial:
-- "Just never mind, it's not a big deal."
-- "I had to give up trying to fix it alone."
-- "We need to get ready before the meeting."
-- "Don't worry about it."
+exemplo (postpone):
+- We had to postpone the trip.
+
+exemplo (never mind):
+- Never mind, it happens to everyone.
+
+validação:
+- A frase é a mesma da pergunta gerada, com a lacuna preenchida, nunca uma frase nova.
+- Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- Se qualquer critério falhar, gere outro feedback com a correção.
 
 ## ADVANCED
 
 ### question
-fórmula: duas variações possíveis, escolha conforme o termo.
+fórmula: `Complete: "<frase em EN com ______>" (<tradução em PT do primeiro termo de answerKeys>)`. As três partes são obrigatórias: prefixo, frase entre aspas, parêntese de tradução ao final.
 
-Variação 1, lacuna parcial: frase em EN com lacuna `______` cobrindo idiom ou expressão idiomática dentro de uma frase maior, seguida do significado em PT entre parênteses. Use quando o idiom pode ser isolado sem perder o sentido.
-
-Variação 2, lacuna como resposta inteira: frase ou diálogo em EN com `______` em qualquer posição, representando o termo completo como resposta, seguida do significado em PT entre parênteses. Use quando o termo é uma frase inteira sem idiom isolável. A lacuna é sempre obrigatória. Varie a posição entre exemplos. Em dúvida, use esta variação.
-
-Em ambas, a frase de estímulo é em inglês intermediário (nível B1-B2), podendo ter estrutura um pouco mais elaborada que o nível anterior, com no máximo 25 palavras (sem contar o parêntese de tradução). A lacuna cobre o item idiomático ou a resposta completa. Use underline longo (`______`). O termo correto vai em answerKeys. Varie o tipo de item entre exemplos.
+nota: A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não entram na pergunta. Se o primeiro termo é uma frase completa (sujeito e verbo), a lacuna representa a resposta inteira. Se não é, a lacuna cobre o idiom ou expressão idiomática por inteiro dentro de uma frase maior. Em ambos os casos: frase em EN B1-B2, até 25 palavras sem contar o parêntese, underline longo (`______`). A posição da lacuna é livre, início, meio ou fim, determinada pela construção natural da frase, nunca escolhida para variar. A frase de estímulo fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a frase ao redor. Se a frase não couber na banda sem perder naturalidade ou o contexto necessário para a lacuna, use o nível mínimo que ela exigir. Varie o tipo de item entre exemplos.
 
 exemplos:
 - Complete: "We negotiated for hours, and we finally hit the ______ on pricing." (ponto ideal)
-- Complete: "I didn't want to, but I had to ______ and accept the decision." (engolir o sapo)
-- Complete: "Instead of arguing, let's ______ and talk it through." (resolver de uma vez)
-- The negotiation dragged on, but they finally found common ground. How would you describe that outcome? ______ (acertamos o ponto ideal)
+- Complete: "______ and we can move on to the next item." (resolver de uma vez)
+- Complete: "Both sides pushed hard on pricing, and after hours of back and forth, ______." (acertamos o ponto ideal)
 
-validação: a frase de estímulo, sem contar o parêntese de tradução, tem no máximo 25 palavras. O `______` está presente exatamente uma vez, cobrindo o idiom ou expressão inteira do answerKeys (não só parte dela). O termo correto não aparece escrito por extenso em nenhum outro ponto da frase, incluindo a oração que vem antes ou depois da lacuna na mesma frase de duas cláusulas. O parêntese é a tradução literal do answerKeys, não uma descrição ou paráfrase do conceito. Se algo disso falhar, a pergunta é inválida. Gere outra.
+validação:
+- Prefixo `Complete:` presente, frase entre aspas, parêntese de tradução ao final.
+- `______` aparece exatamente uma vez e cobre o primeiro termo de answerKeys por inteiro, não só parte dele.
+- O parêntese é a tradução literal do primeiro termo de answerKeys, não uma descrição, paráfrase ou explicação.
+- O primeiro termo de answerKeys não aparece escrito nem parafraseado em nenhum outro ponto da frase, incluindo a oração que vem antes ou depois da lacuna na mesma frase de duas cláusulas.
+- Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: frase que completa a pergunta, em EN, com a expressão correta preenchida
-nota: Use sempre a frase original completada, nunca crie frase nova. A frase de estímulo é em inglês intermediário (nível B1-B2), podendo ter estrutura um pouco mais elaborada que o nível anterior. A expressão preenchida na frase deve ter grafia idêntica à que será retornada em right_answer. Frase entre aspas.
+fórmula: se a lacuna era a resposta inteira, o feedback é a própria resposta. Se a lacuna era parcial, é a frase original da pergunta completada com o primeiro termo de answerKeys.
 
-right:
-- "We negotiated for hours, and we finally hit the sweet spot on pricing."
-- "I didn't want to, but I had to bite the bullet and accept the decision."
-- "Instead of arguing, let's sort it out and talk it through."
-- "We hit the sweet spot."
+nota: Nunca crie frase nova, o feedback vem sempre da frase da pergunta que foi de fato gerada, completada com o termo. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
 
-wrong:
-- "We negotiated for hours, and we finally hit the sweet spot on pricing."
-- "I didn't want to, but I had to bite the bullet and accept the decision."
-- "Instead of arguing, let's sort it out and talk it through."
-- "We hit the sweet spot."
+exemplo (reluctant):
+- She was reluctant to sign.
 
-partial:
-- "We negotiated for hours, and we finally hit the sweet spot on pricing."
-- "I didn't want to, but I had to bite the bullet and accept the decision."
-- "Instead of arguing, let's sort it out and talk it through."
-- "We hit the sweet spot."
+exemplo (overwhelmed):
+- He felt overwhelmed by the deadline.
+
+exemplo (bite the bullet):
+- We had to bite the bullet.
+
+validação:
+- A frase é a mesma da pergunta gerada, com a lacuna preenchida, nunca uma frase nova.
+- Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- Se qualquer critério falhar, gere outro feedback com a correção.

@@ -103,13 +103,15 @@ export function validateGeneratedQuestion(
   sectionType: string,
 ): string | undefined {
   if (question.warning) {
-    console.warn(`[${sectionType}] ${question.warning}`);
+    console.warn(
+      `[validateGeneratedQuestion] ${sectionType}: ${question.warning}`,
+    );
     return question.warning;
   }
 
   if (looksLikeDoubleQuestion(question.question)) {
     const warning = `Pergunta descartada por parecer conter mais de uma pergunta: Q: ${question.question} A: ${question.answerKeys}`;
-    console.warn(`[${sectionType}] ${warning}`);
+    console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
     return warning;
   }
 

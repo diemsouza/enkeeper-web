@@ -1,9 +1,14 @@
 import {
   findActivitiesByDoc,
+  findActivityForSummary,
   findLatestArchivedActivityForSummary,
   updateActivity,
 } from "../repo/activities.repo";
-import { formatPreviousActivitySummary } from "../core/formatters";
+import {
+  formatPreviousActivitySummary,
+  formatRoundCompletedFallback,
+  formatRoundCompletedSummary,
+} from "../core/formatters";
 
 export async function archiveOrCancelActivitiesByDoc(
   docId: string,
@@ -59,5 +64,29 @@ export async function buildPreviousActivitySummary(
     return text;
   } catch {
     return null;
+  }
+}
+
+export async function buildRoundCompletedSummary(
+  activityId: string,
+): Promise<string> {
+  try {
+    const data = await findActivityForSummary(activityId);
+    if (!data) return formatRoundCompletedFallback();
+    if (data.questions.length === 0) return formatRoundCompletedFallback();
+
+    const right = data.questions.filter((q) => q.status === "right").length;
+    const partial = data.questions.filter((q) => q.status === "partial").length;
+    const wrong = data.questions.filter((q) => q.status === "wrong").length;
+    const responses = right + partial + wrong;
+    if (responses === 0) return formatRoundCompletedFallback();
+
+    return formatRoundCompletedSummary({
+      questionCount: data.questionLimit,
+      right,
+      responses,
+    });
+  } catch {
+    return formatRoundCompletedFallback();
   }
 }

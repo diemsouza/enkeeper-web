@@ -32,7 +32,7 @@ import {
   formatDocItemLimitReached,
   formatNoActivity,
   formatIntensiveModeActivated,
-  humanizeFeedback,
+  formatFeedback,
   formatIntensiveModeStopped,
   formatGuideAfterFirstFeedback,
   formatCanceled,
@@ -43,7 +43,7 @@ import {
   formatNoActiveActivity,
   formatAllQuestionsAnswered,
   formatNoPendingAction,
-  formatEvaluationFailed,
+  formatFeedbackFailed,
   formatPracticeWaiting,
   formatInternalSupportMessage,
   formatOnboardingMsg5,
@@ -98,10 +98,9 @@ import { calcSm2 } from "../core/sm2";
 import {
   findNextUnansweredQuestion,
   findNextGeneralQuestion,
-  findSm2EligibleQuestion,
-  hasWrongOrPartial,
   findPendingQuestion,
   updateQuestion,
+  findSm2EligibleQuestion,
 } from "../repo/questions.repo";
 import { findSectionById, recalcSectionStatus } from "../repo/sections.repo";
 import {
@@ -822,42 +821,16 @@ export async function handleIncomingMessage(
           await channel.sendMessage(userChannel.channelId, pendingReply);
           return;
         }
-        const practiceDoc = await findDocById(activeActivity.docId, user.id);
-        if (!practiceDoc) {
-          reply = formatNoActiveActivity();
-          messageIntent = "free_text";
-          break;
-        }
-        let nextQ = await resolveNextQuestion(
-          activeActivity.docId,
-          activeActivity.lastQuestionId,
-          activeActivity.roundCompleted,
-          activeActivity.id,
-        );
-        if (!nextQ && !activeActivity.roundCompleted) {
-          const outcome = await generateQuestionIfPoolNotFull(activeActivity);
-          if (!outcome.poolExhausted && outcome.question) {
-            nextQ = outcome.question;
-          }
-        }
-        if (!nextQ) {
-          reply = formatAllQuestionsAnswered();
-          messageIntent = "free_text";
-          break;
-        }
 
         const replyActivation = formatIntensiveModeActivated({
           isIntensiveMode,
         });
         await saveBotReply(user.id, userChannel.id, replyActivation, today);
 
-        const intensiveReplies = await sendIntensiveQuestion(
-          nextQ,
-          activeActivity.id,
+        const intensiveReplies = await handleIntensiveNextQuestion(
+          activeActivity,
           user.id,
           userChannel.id,
-          activeActivity.executionCount,
-          activeActivity.intervalMinutes,
           today,
         );
         await saveUserMsg(
@@ -1056,8 +1029,8 @@ export async function handleIncomingMessage(
               });
               const evalStatus = evaluation?.status ?? "wrong";
               const feedback = evaluation
-                ? humanizeFeedback(evaluation)
-                : formatEvaluationFailed();
+                ? formatFeedback(evaluation, activeActivity.userLevel)
+                : formatFeedbackFailed();
               const answerType = input.mediaType === "audio" ? "audio" : "text";
               const isWrongOrPartial =
                 evalStatus === "wrong" || evalStatus === "partial";
@@ -1237,34 +1210,6 @@ export async function handleIncomingMessage(
   }
 }
 
-// ─── Question selection helpers ──────────────────────────────────────────────
-
-export async function resolveNextQuestion(
-  docId: string,
-  lastQuestionId: string | null,
-  roundCompleted: boolean,
-  activityId: string,
-): Promise<{
-  id: string;
-  question: string;
-  status: QuestionStatus | null;
-  sectionId: string | null;
-  questionFormat: QuestionFormat | null;
-  questionOptions: string[];
-} | null> {
-  if (!roundCompleted) {
-    const sm2 = await findSm2EligibleQuestion(activityId, lastQuestionId);
-    if (sm2) return sm2;
-
-    const unanswered = await findNextUnansweredQuestion(docId, lastQuestionId);
-    if (unanswered) return unanswered;
-    const openRemains = await hasWrongOrPartial(docId);
-    if (openRemains) return findNextGeneralQuestion(activityId, lastQuestionId);
-    return findNextGeneralQuestion(activityId, lastQuestionId);
-  }
-  return findNextGeneralQuestion(activityId, lastQuestionId);
-}
-
 async function handleIntensiveNextQuestion(
   activity: Activity,
   userId: string,
@@ -1282,6 +1227,19 @@ async function handleIntensiveNextQuestion(
   const lastId = lastQuestionId;
 
   if (!roundCompleted) {
+    const sm2 = await findSm2EligibleQuestion(activityId, lastId);
+    if (sm2) {
+      return sendIntensiveQuestion(
+        sm2,
+        activityId,
+        userId,
+        userChannelId,
+        executionCount,
+        intervalMinutes,
+        today,
+      );
+    }
+
     const unanswered = await findNextUnansweredQuestion(docId, lastId);
     if (unanswered) {
       return sendIntensiveQuestion(
@@ -1311,22 +1269,6 @@ async function handleIntensiveNextQuestion(
       return [];
     }
 
-    const openRemains = await hasWrongOrPartial(docId);
-    if (openRemains) {
-      const next = await findNextGeneralQuestion(activityId, lastId);
-      if (next)
-        return sendIntensiveQuestion(
-          next,
-          activityId,
-          userId,
-          userChannelId,
-          executionCount,
-          intervalMinutes,
-          today,
-        );
-      return [];
-    }
-
     const completionMsg = await completeRoundZero(
       activityId,
       userId,
@@ -1334,6 +1276,19 @@ async function handleIntensiveNextQuestion(
       userChannelId,
       intervalMinutes,
     );
+    const next = await findNextGeneralQuestion(activityId, lastId);
+    if (next) {
+      const nextReplies = await sendIntensiveQuestion(
+        next,
+        activityId,
+        userId,
+        userChannelId,
+        executionCount,
+        intervalMinutes,
+        today,
+      );
+      return [completionMsg, ...nextReplies];
+    }
     return [completionMsg];
   }
 
@@ -1410,6 +1365,7 @@ async function sendIntensiveQuestion(
     executionCount: executionCount + 1,
     lastQuestionId: question.id,
     nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),
+    intensiveUntil: new Date(Date.now() + INTENSIVE_UNTIL_MIN * 60 * 1000),
   });
   messages.push(questionText);
   return messages;

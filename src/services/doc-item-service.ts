@@ -14,7 +14,7 @@ export function validateDocItemInput(
   docType: DocType,
 ): DocItemValidationResult {
   if (!SUPPORTED_TYPES.includes(docType)) {
-    console.warn("[doc-item-service] item rejected", {
+    console.warn("[validateDocItemInput] item rejected", {
       docType,
       reason: "unsupported_type",
     });
@@ -22,7 +22,7 @@ export function validateDocItemInput(
   }
 
   if (!rawContent || rawContent.trim().length === 0) {
-    console.warn("[doc-item-service] item rejected", {
+    console.warn("[validateDocItemInput] item rejected", {
       docType,
       reason: "empty_content",
     });

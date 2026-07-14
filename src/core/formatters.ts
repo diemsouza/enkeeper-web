@@ -1,14 +1,22 @@
-import { Doc, ActivityStatus, Level } from "../lib/prisma";
+import { Doc, ActivityStatus, Level, QuestionFormat } from "../lib/prisma";
 import {
   ANSWER_EMOJI,
   INTENSIVE_UNTIL_MIN,
   MAX_DOC_ITEMS_PER_DOC,
   TRIAL_DAYS,
 } from "../lib/constants";
-import { sanitizeText, sanitizeWhatsappContent } from "../lib/utils";
-import { AnswerEvaluationResult } from "../lib/llm-schemas";
+import {
+  capitalizeFirst,
+  sanitizeText,
+  sanitizeWhatsappContent,
+} from "../lib/utils";
+import {
+  AnswerEvaluationResult,
+  SectionQuestionResult,
+} from "../lib/llm-schemas";
 import { shuffle } from "lodash";
 import { format } from "date-fns";
+import { CreateQuestionData } from "../repo/questions.repo";
 
 export function formatOnboardingMsg1(): string {
   return "Hi 👋 Bem-vindo a *Fluizer*.";
@@ -279,8 +287,104 @@ export function formatShortTextNoDocs(): string {
   return "Envie um material para praticar durante o dia. Pode ser texto, imagem ou PDF.\n\n_Use *ajuda* para ver todos os comandos._";
 }
 
-export function formatPracticeComplete(): string {
-  return "Você respondeu todas as perguntas dessa atividade. Envie um novo material ou aguarde para continuar praticando.";
+export function formatRoundCompletedFallback(): string {
+  return "Você concluiu as perguntas dessa atividade. Envie um novo material ou continue revisando no ritmo normal para fixar mais.";
+}
+
+export function getRoundCompletedReadingLine(right: number, responses: number) {
+  const rate = responses > 0 ? right / responses : 0;
+
+  let reading: string;
+  let tip: string;
+
+  if (responses < 5) {
+    reading = "Poucas perguntas nessa rodada.";
+    tip = "Seguindo, a leitura fica mais precisa.";
+  } else if (rate >= 0.8) {
+    reading = "Poucas respostas saíram erradas.";
+    tip = "Ritmo bom, vale manter.";
+  } else if (rate >= 0.5) {
+    reading = "Resultado dividido entre certo e errado.";
+    tip = "Dá pra seguir apertando esse conteúdo.";
+  } else {
+    reading = "A maioria das respostas ainda saiu errada.";
+    tip = "Vale seguir firme nesse conteúdo.";
+  }
+
+  return { rate, reading, tip };
+}
+
+export function formatRoundCompletedSummary(data: {
+  questionCount: number;
+  right: number;
+  responses: number;
+}): string {
+  const { questionCount, right, responses } = data;
+  const { rate, reading, tip } = getRoundCompletedReadingLine(right, responses);
+  const percentual = Math.round(rate * 100);
+
+  return `Você concluiu as ${questionCount} perguntas dessa atividade, com ${percentual}% de acerto. ${reading} ${tip} Envie um novo material ou aguarde para continuar praticando.`;
+}
+
+export function getActivitySummaryReadingLine(
+  right: number,
+  responses: number,
+) {
+  const rate = responses > 0 ? right / responses : 0;
+
+  let reading: string;
+  let tip: string;
+
+  if (responses < 5) {
+    reading = "Ainda no início dessa atividade.";
+    tip = "Não deu tempo de firmar isso antes da troca de material.";
+  } else if (rate >= 0.8) {
+    reading = "Poucas respostas saíram erradas.";
+    tip =
+      "Você fixou a maior parte desse conteúdo antes de trocar de material.";
+  } else if (rate >= 0.5) {
+    reading = "Resultado dividido entre certo e errado.";
+    tip = "Parte relevante desse conteúdo ficou sem fixar antes da troca.";
+  } else {
+    reading = "A maioria das respostas ainda saiu errada.";
+    tip = "A maior parte desse conteúdo ficou sem fixar antes da troca.";
+  }
+
+  return { rate, reading, tip };
+}
+
+export function formatPreviousActivitySummary(
+  data: PreviousActivitySummaryData,
+): string {
+  const {
+    activityTitle,
+    questionCount,
+    right,
+    partial,
+    wrong,
+    responses,
+    revisadas,
+    period,
+  } = data;
+
+  const { rate, reading, tip } = getActivitySummaryReadingLine(
+    right,
+    responses,
+  );
+  const wrongTotal = wrong + partial;
+  const percentual = Math.round(rate * 100);
+
+  const revisadasClause =
+    revisadas > 0
+      ? `${revisadas} ${revisadas === 1 ? "delas voltou" : "delas voltaram"} mais de uma vez antes de fixar. `
+      : "";
+
+  let body = `Em ${period}, você respondeu ${responses} das ${questionCount} perguntas dessa atividade, ${percentual}% de acerto (${right} certas e ${wrongTotal} erradas). ${revisadasClause}${reading} ${tip}`;
+  if (responses > 0 && responses === questionCount) {
+    body = `Em ${period}, você respondeu todas as${questionCount} perguntas dessa atividade, ${percentual}% de acerto. ${revisadasClause}${reading}`;
+  }
+
+  return [`📊 Atividade anterior: *${activityTitle}*`, "", body].join("\n");
 }
 
 export function formatImageNoText(): string {
@@ -346,46 +450,6 @@ type PreviousActivitySummaryData = {
   revisadas: number;
   period: string;
 };
-
-export function formatPreviousActivitySummary(
-  data: PreviousActivitySummaryData,
-): string {
-  const {
-    activityTitle,
-    questionCount,
-    right,
-    partial,
-    wrong,
-    responses,
-    revisadas,
-    period,
-  } = data;
-  const taxa = right / responses;
-
-  let leitura: string;
-  if (responses < 5) {
-    leitura = "Você mal começou essa atividade.";
-  } else if (taxa >= 0.8) {
-    leitura = "Mandou bem nessa atividade.";
-  } else if (taxa >= 0.5) {
-    leitura = "Essa atividade rendeu, dá pra apertar mais.";
-  } else {
-    leitura = "Essa atividade travou bastante. Vale revisar.";
-  }
-
-  return [
-    `📊 Atividade anterior: *${activityTitle}*`,
-    "",
-    `Período: ${period}`,
-    `Perguntas: ${questionCount}`,
-    `Respondidas: ${responses}`,
-    `Revisadas: ${revisadas}`,
-    `Corretas: ${right}`,
-    `Erradas: ${wrong + partial}`,
-    "",
-    leitura,
-  ].join("\n");
-}
 
 export function formatUpgradePrompt(reason: "audio" | "image"): string {
   const messages: Record<typeof reason, string> = {
@@ -491,7 +555,7 @@ export function formatNoPendingAction(): string {
   return "Nenhuma ação pendente.";
 }
 
-export function formatEvaluationFailed(): string {
+export function formatFeedbackFailed(): string {
   return "Não foi possível avaliar essa resposta.";
 }
 
@@ -508,7 +572,6 @@ export function formatInternalSupportMessage(
 }
 
 type EvaluationStatus = "right" | "wrong" | "partial";
-
 const STATUS_OPENINGS: Record<EvaluationStatus, string[]> = {
   right: ["Exato!", "Correto!", "Perfeito!", "Boa!", "Isso!"],
   wrong: [
@@ -522,24 +585,49 @@ const STATUS_OPENINGS: Record<EvaluationStatus, string[]> = {
   partial: ["Quase!", "Quase lá!", "Por pouco!"],
 };
 
+const STATUS_OPENINGS_EN: Record<EvaluationStatus, string[]> = {
+  right: ["Nice!", "Correct!", "Perfect!", "That's it!", "Exactly!"],
+  wrong: ["Wrong!", "Not quite!", "Nope!", "That's not it!", "Hmm, wrong!"],
+  partial: ["Almost!", "So close!", "Not quite there!"],
+};
+
 const USER_UNKNOW_OPENINGS: string[] = [
   "Tudo bem!",
   "Acontece!",
-  "Sem problemas!",
+  "Sem problema!",
   "Tranquilo!",
   "Não se preocupe!",
+];
+
+const USER_UNKNOW_OPENINGS_EN: string[] = [
+  "No worries!",
+  "It happens!",
+  "No problem!",
+  "That's okay!",
+  "Don't worry!",
 ];
 
 export function getFeedbackOpening(
   status: EvaluationStatus,
   userUnknown: boolean,
+  level?: Level,
 ): string {
-  const openings = userUnknown ? USER_UNKNOW_OPENINGS : STATUS_OPENINGS[status];
+  const isAdvanced = level === Level.advanced;
+
+  const openings = userUnknown
+    ? isAdvanced
+      ? USER_UNKNOW_OPENINGS_EN
+      : USER_UNKNOW_OPENINGS
+    : isAdvanced
+      ? STATUS_OPENINGS_EN[status]
+      : STATUS_OPENINGS[status];
+
   return shuffle(openings).pop() ?? openings[0];
 }
 
-export function humanizeFeedback(
+export function formatFeedback(
   feedbackResult: AnswerEvaluationResult,
+  level?: Level,
 ): string {
   const {
     status: evalStatus,
@@ -548,34 +636,32 @@ export function humanizeFeedback(
     user_unknown: userUnknown,
   } = feedbackResult;
 
-  // humaniza feedback de "errado" para "não sei" quando o usuário indicou que não sabia a resposta
-  // if (evalStatus === "wrong" && userUnknown) {
-  //   const openings = [
-  //     "Tudo bem!",
-  //     "Acontece!",
-  //     "Sem problemas!",
-  //     "Tranquilo!",
-  //     "Não se preocupe!",
-  //   ];
-  //   const opening = shuffle(openings).pop() ?? openings[0];
-
-  //   // substitui só a abertura, mantém o resto do feedback intacto
-  //   return feedback.replace(
-  //     /^(Errado!|Hmmm, errou!|Ops, errado!|Infelizmente não!)/,
-  //     opening,
-  //   );
-  // }
-
   const feedback = sanitizeText(agentFeedback);
   const emoji = ANSWER_EMOJI[evalStatus];
-  const opening = getFeedbackOpening(evalStatus, !!userUnknown);
+  const opening = getFeedbackOpening(evalStatus, !!userUnknown, level);
 
   const result = [];
   if (emoji) result.push(emoji);
   if (opening) result.push(opening);
-  if (evalStatus !== "right" && rightAnswer) result.push(`"${rightAnswer}".`);
+  if (evalStatus !== "right" && rightAnswer)
+    result.push(`"${capitalizeFirst(rightAnswer)}".`);
   if (feedback)
     result.push(feedback.indexOf('"') === -1 ? `"${feedback}"` : feedback);
 
   return result.join(" ");
+}
+
+export function formatQuestion(
+  data: SectionQuestionResult,
+): CreateQuestionData {
+  const result = {
+    question: sanitizeText(data.question),
+    answerKeys: data.answerKeys.map((k) => sanitizeText(k)),
+    questionFormat: data.questionFormat as QuestionFormat,
+    questionOptions:
+      data.questionFormat === QuestionFormat.choice
+        ? shuffle(data.questionOptions.map((o) => sanitizeText(o)))
+        : [],
+  };
+  return result;
 }

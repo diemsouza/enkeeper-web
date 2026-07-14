@@ -192,3 +192,23 @@ export async function findLatestArchivedActivityForSummary(userId: string) {
     },
   });
 }
+
+export async function findActivityForSummary(activityId: string) {
+  return prisma.activity.findUnique({
+    where: { id: activityId },
+    select: {
+      id: true,
+      title: true,
+      questionLimit: true,
+      createdAt: true,
+      lastInteractionAt: true,
+      questions: {
+        where: {
+          deletedAt: null,
+          status: { in: ["right", "partial", "wrong"] },
+        },
+        select: { status: true, attemptCount: true },
+      },
+    },
+  });
+}

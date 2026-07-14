@@ -1,95 +1,182 @@
 ## BASIC
 
 ### question
-fórmula: pergunta em PT sobre o conteúdo do texto, variando entre compreensão, reformulação, produção ou inferência
-nota: A pergunta deve ser ancorada no material do aluno, nunca referenciando posição ou localização no texto. Resposta esperada em PT (com termos EN quando natural). answerKeys cobre as variações aceitáveis de resposta. Varie o tipo de pergunta entre exemplos (compreensão, reformulação, produção, inferência).
+fórmula: pergunta em PT (até 15 palavras) sobre o texto do material, do tipo indicado na geração.
+
+nota: O tipo da pergunta já vem definido, não escolha. Os exemplos abaixo estão rotulados por tipo, siga o que corresponde. A pergunta nasce do texto recebido e só pode ser respondida por quem leu esse texto, nunca por senso comum. Nunca referencie posição ou localização no texto. Nunca invente fato fora dele. Em compreensão, reformulação e inferência, a resposta é esperada em PT, com termos em EN quando naturais, e answerKeys guarda os pontos-âncora que uma boa resposta deve tocar, não a resposta literal. Em produção, a resposta é uma frase original do aluno em EN, e answerKeys guarda o termo alvo, não pontos-âncora.
 
 exemplos:
-- O que o texto diz sobre a importância de praticar todo dia?
-- Como você explicaria com suas palavras a ideia principal do texto?
-- O que aconteceria se alguém parasse de praticar por semanas?
+- compreensão: O que o texto diz sobre o horário de trabalho dele?
+- reformulação: Como você explicaria com suas palavras a rotina descrita?
+- inferência: O que o texto deixa entender sobre como ele se sente?
+- produção: Escreva uma frase em inglês usando "wake up early".
 
-validação: a pergunta é sobre conteúdo real do texto, não uma generalidade que poderia ser respondida sem ter lido o material. Não referencia posição (primeiro parágrafo, linha X). O answerKeys é âncora de avaliação, não cópia literal de uma frase do texto. Se algo disso falhar, gere outra.
+validação:
+- A pergunta se apoia em conteúdo real do texto, sem inventar fato.
+- A resposta não pode ser dada sem ter lido o texto.
+- Não referencia posição no texto (primeiro parágrafo, linha X).
+- A resposta esperada não aparece na própria pergunta. Quando um termo do texto é o ponto de discussão, ele pode aparecer, mas nunca a explicação ou o uso dele.
+- A pergunta é única, sem duas perguntas na mesma frase.
+- Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: reformulação enxuta da resposta correta
-nota: Em wrong e partial, traga a resposta certa de forma direta, sem repetir a pergunta. Resposta em PT no basic. Este formato não usa right_answer, a resposta correta já está embutida no corpo do feedback.
+fórmula: neste formato o corpo do feedback varia por status, diferente dos formatos de termo isolado.
 
-right:
-- Praticar todo dia é o que faz o vocabulário fixar de verdade.
-- A constância é mais importante que a intensidade.
-- Pequenas práticas diárias acumulam mais que uma sessão longa.
+Em compreensão, reformulação e inferência:
+- right: confirmação enxuta da resposta correta, em uma frase.
+- wrong: a resposta correta, dita de forma direta, sem repetir a pergunta.
+- partial: o que faltou na resposta do usuário, apontado de forma direta.
 
-wrong:
-- O texto fala sobre praticar todo dia pra fixar o vocabulário.
-- A ideia central é que constância vale mais que intensidade.
-- O texto mostra que prática diária consolida o aprendizado.
+Em produção, não existe resposta certa única. A resposta é correta quando usa o termo alvo no sentido certo, em frase gramaticalmente válida, independente de qualquer answerKey.
+- right: confirmação do uso, em uma frase.
+- wrong: o termo foi usado no sentido errado ou a frase não se sustenta. Mostre uma frase de uso correto.
+- partial: o sentido está certo, mas a construção tem problema. Aponte o problema de forma direta.
 
-partial:
-- Faltou mencionar que a repetição diária é o que consolida.
-- A ideia está certa, mas faltou o ponto da constância.
-- Você captou parte. Completa com a importância da repetição.
+nota: Resposta livre, então este formato não usa right_answer. Em partial, apontar a lacuna é a função do feedback e não conta como meta-comentário. Uma frase, sem repetir a pergunta, sem explicação didática. A abertura de resultado é resolvida fora deste prompt.
+
+exemplo (compreensão):
+- right: Ele trabalha das nove às seis, com uma pausa no meio.
+- wrong: Ele trabalha das nove às seis, com uma pausa no meio.
+- partial: Você citou o horário, faltou a pausa no meio.
+
+exemplo (reformulação):
+- right: A rotina começa cedo e termina só depois do jantar.
+- wrong: A rotina começa cedo e termina só depois do jantar.
+- partial: Certo no começo da rotina, faltou dizer quando ela termina.
+
+exemplo (inferência):
+- right: O texto deixa claro que ele está cansado da rotina.
+- wrong: O texto indica cansaço, não entusiasmo, com a rotina.
+- partial: Você captou o tom, faltou nomear o cansaço.
+
+exemplo (produção com "wake up early"):
+- right: O uso de "wake up early" está correto na sua frase.
+- wrong: "Wake up early" descreve acordar cedo, como em "I wake up early to study".
+- partial: O sentido está certo, faltou o verbo na frase.
+
+validação:
+- O feedback entrega a resposta ou aponta a lacuna, nunca explica o raciocínio por trás dela.
+- Não pode ser reescrito como "isso acontece porque..." ou "a ideia é que...".
+- Se qualquer critério falhar, regenere o feedback com a correção.
 
 ## INTERMEDIATE
 
 ### question
-fórmula: pergunta em inglês básico (nível A2) sobre o conteúdo, variando entre compreensão, reformulação, produção ou inferência
-nota: A pergunta deve ser ancorada no material, escrita em inglês básico (nível A2). Resposta esperada em EN. answerKeys cobre variações. Varie o tipo de pergunta entre exemplos.
+fórmula: pergunta em EN A2-B1 (até 20 palavras) sobre o texto do material, do tipo indicado na geração.
+
+nota: O tipo da pergunta já vem definido, não escolha. Os exemplos abaixo estão rotulados por tipo, siga o que corresponde. A pergunta nasce do texto recebido e só pode ser respondida por quem leu esse texto, nunca por senso comum. Nunca referencie posição ou localização no texto. Nunca invente fato fora dele. Em compreensão, reformulação e inferência, a resposta é esperada em EN, e answerKeys guarda os pontos-âncora que uma boa resposta deve tocar, não a resposta literal. Em produção, a resposta é uma frase original do aluno em EN, e answerKeys guarda o termo alvo, não pontos-âncora. O enunciado fica um passo abaixo do texto em foco, o esforço do aluno é entender o texto, não decodificar a pergunta.
 
 exemplos:
-- How would you explain "sweet spot" in your own words?
-- What does the text suggest about finding the balance between speed and quality?
-- Use "sweet spot" in a sentence about your own work.
+- compreensão: What does the text say about her working hours?
+- reformulação: How would you explain the main idea in your own words?
+- inferência: What does the text suggest about how she feels?
+- produção: Write a sentence using "sweet spot" about your own work.
 
-validação: a pergunta está em inglês básico (A2), ancorada num conteúdo real do texto. Quando um termo do texto aparece na pergunta como ponto de discussão, a explicação ou uso esperado dele não está na própria pergunta. O answerKeys é âncora de avaliação, não cópia literal do texto. Se algo disso falhar, gere outra.
+validação:
+- A pergunta se apoia em conteúdo real do texto, sem inventar fato.
+- A resposta não pode ser dada sem ter lido o texto.
+- Não referencia posição no texto (primeiro parágrafo, linha X).
+- A resposta esperada não aparece na própria pergunta. Quando um termo do texto é o ponto de discussão, ele pode aparecer, mas nunca a explicação ou o uso dele.
+- A pergunta é única, sem duas perguntas na mesma frase.
+- Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: reformulação enxuta da resposta correta, com termo em EN quando aplicável
-nota: Em wrong e partial, traga a resposta certa de forma direta, em EN. Este formato não usa right_answer, a resposta correta já está embutida no corpo do feedback.
+fórmula: neste formato o corpo do feedback varia por status, diferente dos formatos de termo isolado.
 
-right:
-- "Sweet spot" is that perfect point where things click.
-- It's the point where speed and quality balance out.
-- "That's the sweet spot for my workflow."
+Em compreensão, reformulação e inferência:
+- right: confirmação enxuta da resposta correta, em uma frase.
+- wrong: a resposta correta, dita de forma direta, sem repetir a pergunta.
+- partial: o que faltou na resposta do usuário, apontado de forma direta.
 
-wrong:
-- "Sweet spot" is the point where everything fits. "That's the sweet spot."
-- The text talks about the ideal balance between two factors. "Sweet spot."
-- "Sweet spot" describes the perfect point of balance.
+Em produção, não existe resposta certa única. A resposta é correta quando usa o termo alvo no sentido certo, em frase gramaticalmente válida, independente de qualquer answerKey.
+- right: confirmação do uso, em uma frase.
+- wrong: o termo foi usado no sentido errado ou a frase não se sustenta. Mostre uma frase de uso correto.
+- partial: o sentido está certo, mas a construção tem problema. Aponte o problema de forma direta.
 
-partial:
-- The idea is right, but you missed the term: "sweet spot".
-- You got the concept. Just missing the name "sweet spot".
-- Close, but the key term is "sweet spot".
+nota: Resposta livre, então este formato não usa right_answer. Em partial, apontar a lacuna é a função do feedback e não conta como meta-comentário. Uma frase em EN, sem repetir a pergunta, sem explicação didática. A abertura de resultado é resolvida fora deste prompt.
+
+exemplo (compreensão):
+- right: She works from nine to six, with a break in between.
+- wrong: She works from nine to six, with a break in between.
+- partial: You got the hours, but missed the break.
+
+exemplo (reformulação):
+- right: The routine starts early and ends after dinner.
+- wrong: The routine starts early and ends after dinner.
+- partial: Right about the early start, missing when it ends.
+
+exemplo (inferência):
+- right: The text shows she's tired of the routine.
+- wrong: The text points to tiredness, not excitement.
+- partial: You caught the tone, but didn't name the tiredness.
+
+exemplo (produção com "sweet spot"):
+- right: Your sentence uses "sweet spot" correctly.
+- wrong: "Sweet spot" means the ideal balance, as in "that's the sweet spot for my team".
+- partial: The meaning is right, the sentence needs a verb.
+
+validação:
+- O feedback entrega a resposta ou aponta a lacuna, nunca explica o raciocínio por trás dela.
+- Não pode ser reescrito como "isso acontece porque..." ou "a ideia é que...".
+- Se qualquer critério falhar, regenere o feedback com a correção.
 
 ## ADVANCED
 
 ### question
-fórmula: pergunta em inglês intermediário (nível B1-B2) sobre o conteúdo, variando entre compreensão, reformulação, produção ou inferência
-nota: A pergunta deve ser ancorada no material, em inglês intermediário, podendo ter estrutura um pouco mais elaborada que o nível anterior. Resposta esperada em EN. answerKeys cobre variações aceitáveis. Varie o tipo de pergunta entre exemplos.
+fórmula: pergunta em EN B1-B2 (até 25 palavras) sobre o texto do material, do tipo indicado na geração.
+
+nota: O tipo da pergunta já vem definido, não escolha. Os exemplos abaixo estão rotulados por tipo, siga o que corresponde. A pergunta nasce do texto recebido e só pode ser respondida por quem leu esse texto, nunca por senso comum. Nunca referencie posição ou localização no texto. Nunca invente fato fora dele. Em compreensão, reformulação e inferência, a resposta é esperada em EN, e answerKeys guarda os pontos-âncora que uma boa resposta deve tocar, não a resposta literal. Em produção, a resposta é uma frase original do aluno em EN, e answerKeys guarda o termo alvo, não pontos-âncora. O enunciado fica um passo abaixo do texto em foco, o esforço do aluno é entender o texto, não decodificar a pergunta.
 
 exemplos:
-- What does the text suggest about the relationship between consistency and progress?
-- How would you rephrase the main argument in your own words?
-- What's an example from your own work where this idea applies?
+- compreensão: What does the text say about the trade-off she had to accept?
+- reformulação: How would you rephrase the author's main argument in your own words?
+- inferência: What can you infer about the outcome, even though the text never states it?
+- produção: Write a sentence using "bite the bullet" about a decision you've faced.
 
-validação: a pergunta está em inglês intermediário (B1-B2), ancorada num conteúdo real do texto. O answerKeys é âncora de avaliação, não cópia literal do texto. Se algo disso falhar, gere outra.
+validação:
+- A pergunta se apoia em conteúdo real do texto, sem inventar fato.
+- A resposta não pode ser dada sem ter lido o texto.
+- Não referencia posição no texto (primeiro parágrafo, linha X).
+- A resposta esperada não aparece na própria pergunta, nem parafraseada. Quando um termo do texto é o ponto de discussão, ele pode aparecer, mas nunca a explicação ou o uso dele.
+- A pergunta é única, sem duas perguntas na mesma frase.
+- Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: reformulação enxuta da resposta correta em EN
-nota: Em wrong e partial, traga a resposta certa de forma direta em EN. Este formato não usa right_answer, a resposta correta já está embutida no corpo do feedback.
+fórmula: neste formato o corpo do feedback varia por status, diferente dos formatos de termo isolado.
 
-right:
-- Consistency is what turns occasional effort into real progress.
-- The text argues that small daily efforts compound over time.
-- Steady practice beats intensity in the long run.
+Em compreensão, reformulação e inferência:
+- right: confirmação enxuta da resposta correta, em uma frase.
+- wrong: a resposta correta, dita de forma direta, sem repetir a pergunta.
+- partial: o que faltou na resposta do usuário, apontado de forma direta.
 
-wrong:
-- The text argues that consistency, not intensity, drives real progress.
-- The main point is that daily effort compounds over time.
-- The text emphasizes consistency over intense bursts of work.
+Em produção, não existe resposta certa única. A resposta é correta quando usa o termo alvo no sentido certo, em frase gramaticalmente válida, independente de qualquer answerKey.
+- right: confirmação do uso, em uma frase.
+- wrong: o termo foi usado no sentido errado ou a frase não se sustenta. Mostre uma frase de uso correto.
+- partial: o sentido está certo, mas a construção tem problema. Aponte o problema de forma direta.
 
-partial:
-- You got the idea, but the text emphasizes consistency over intensity.
-- The key point is that consistency drives progress.
-- The text frames consistency as the real driver.
+nota: Resposta livre, então este formato não usa right_answer. Em partial, apontar a lacuna é a função do feedback e não conta como meta-comentário. Uma frase em EN, sem repetir a pergunta, sem explicação didática. A abertura de resultado é resolvida fora deste prompt.
+
+exemplo (compreensão):
+- right: She gave up speed to protect the quality of the work.
+- wrong: She traded speed for quality, and accepted the slower pace.
+- partial: You caught the trade-off, missing what she gave up.
+
+exemplo (reformulação):
+- right: The author argues that habit outlasts motivation.
+- wrong: The author's argument is that habit outlasts motivation.
+- partial: Right about habit, missing the contrast with motivation.
+
+exemplo (inferência):
+- right: The outcome is implied to be a quiet failure.
+- wrong: The text implies the outcome was a quiet failure.
+- partial: Close, but the text points to failure, not doubt.
+
+exemplo (produção com "bite the bullet"):
+- right: Your sentence uses "bite the bullet" correctly.
+- wrong: "Bite the bullet" means facing something unpleasant, as in "I had to bite the bullet and tell him".
+- partial: The meaning is right, the tense doesn't hold up.
+
+validação:
+- O feedback entrega a resposta ou aponta a lacuna, nunca explica o raciocínio por trás dela.
+- Não pode ser reescrito como "isso acontece porque..." ou "a ideia é que...".
+- Se qualquer critério falhar, regenere o feedback com a correção.

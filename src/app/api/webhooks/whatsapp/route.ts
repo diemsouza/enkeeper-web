@@ -202,10 +202,13 @@ export async function POST(req: NextRequest): Promise<Response> {
           return;
         }
 
-        console.warn("[WA WEBHOOK] unsupported document mime_type, ignoring", {
-          mime,
-          messageId: message.id,
-        });
+        console.warn(
+          "[webhooks] whatsapp: unsupported document mime_type, ignoring",
+          {
+            mime,
+            messageId: message.id,
+          },
+        );
         return;
       }
 

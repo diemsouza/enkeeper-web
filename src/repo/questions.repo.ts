@@ -7,7 +7,7 @@ import {
 } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
-type CreateQuestionData = {
+export type CreateQuestionData = {
   question: string;
   answerKeys: string[];
   questionFormat?: QuestionFormat;
@@ -90,17 +90,6 @@ export async function findNextGeneralQuestion(
   });
 }
 
-export async function hasWrongOrPartial(docId: string): Promise<boolean> {
-  const count = await prisma.question.count({
-    where: {
-      deletedAt: null,
-      status: { in: ["wrong", "partial", "pending"] },
-      activity: { docId, deletedAt: null },
-    },
-  });
-  return count > 0;
-}
-
 export async function findPendingQuestion(
   activityId: string,
 ): Promise<Question | null> {
@@ -114,7 +103,9 @@ export async function findQuestionById(id: string): Promise<Question | null> {
   return prisma.question.findFirst({ where: { id, deletedAt: null } });
 }
 
-export async function countQuestionsForSection(sectionId: string): Promise<number> {
+export async function countQuestionsForSection(
+  sectionId: string,
+): Promise<number> {
   return prisma.question.count({ where: { sectionId, deletedAt: null } });
 }
 

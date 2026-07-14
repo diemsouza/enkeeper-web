@@ -13,7 +13,7 @@ export function parseJsonWithFallback<T = any>(raw: string): T {
     assertObjectRoot(parsed);
     return parsed;
   } catch (err) {
-    console.warn("[JSON_PARSE_FALLBACK]", {
+    console.warn("[parseJsonWithFallback]", {
       message: (err as Error).message,
       preview: raw.slice(0, 300),
     });
