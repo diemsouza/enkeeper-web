@@ -185,6 +185,18 @@ export async function processActivityCron(
 
         const today = startOfDay(new Date());
         const nudge = formatNudgeMessage(nextStep);
+        const nextAfterStep = getNextNudgeStep(nextStep);
+
+        await updateActivity(activity.id, activity.userId, {
+          lastNudgeStep: nextStep,
+          lastNudgeAt: new Date(),
+          waitingUser: true,
+          nextMessageAt: nextAfterStep
+            ? new Date(
+                referenceTime.getTime() + NUDGE_THRESHOLDS_MS[nextAfterStep],
+              )
+            : null,
+        });
 
         try {
           if (nudge.templateName) {
@@ -210,18 +222,6 @@ export async function processActivityCron(
           intent: "practice_nudge",
         });
         await incrementAgentMessageCount(activity.userId, today);
-
-        const nextAfterStep = getNextNudgeStep(nextStep);
-        await updateActivity(activity.id, activity.userId, {
-          lastNudgeStep: nextStep,
-          lastNudgeAt: new Date(),
-          waitingUser: true,
-          nextMessageAt: nextAfterStep
-            ? new Date(
-                referenceTime.getTime() + NUDGE_THRESHOLDS_MS[nextAfterStep],
-              )
-            : null,
-        });
 
         processed++;
         continue;

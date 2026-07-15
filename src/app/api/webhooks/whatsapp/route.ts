@@ -15,6 +15,8 @@ import {
   formatUpgradePrompt,
   formatImageNoText,
   formatPlanExpired,
+  formatGenericError,
+  formatUnsupportedFileType,
 } from "../../../../core/formatters";
 import { IncomingMessage } from "../../../../types/domain";
 import {
@@ -47,6 +49,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   after(async () => {
     const channel = new WhatsAppChannel();
+    let wa_id: string | undefined;
     try {
       const payload = body as {
         entry?: Array<{
@@ -72,7 +75,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         return;
       }
 
-      const wa_id = value.contacts?.[0]?.wa_id;
+      wa_id = value.contacts?.[0]?.wa_id;
       if (!wa_id) {
         console.log("[WA WEBHOOK] no wa_id in payload, skipping");
         return;
@@ -209,6 +212,7 @@ export async function POST(req: NextRequest): Promise<Response> {
             messageId: message.id,
           },
         );
+        await channel.sendMessage(wa_id, formatUnsupportedFileType());
         return;
       }
 
@@ -220,6 +224,7 @@ export async function POST(req: NextRequest): Promise<Response> {
           type: message.type,
           messageId: message.id,
         });
+        await channel.sendMessage(wa_id, formatUnsupportedFileType());
         return;
       }
 
@@ -240,6 +245,13 @@ export async function POST(req: NextRequest): Promise<Response> {
         return;
       }
       console.error("[WA WEBHOOK] processing error", err);
+      if (wa_id) {
+        try {
+          await channel.sendMessage(wa_id, formatGenericError());
+        } catch {
+          // nada mais a fazer
+        }
+      }
     }
   });
 

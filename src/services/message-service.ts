@@ -106,6 +106,7 @@ import { findSectionById, recalcSectionStatus } from "../repo/sections.repo";
 import {
   formatSectionTransition,
   formatChoiceQuestion,
+  formatIntensivePendingQuestion,
 } from "../core/formatters";
 import {
   MIN_DOC_CHARS,
@@ -231,7 +232,11 @@ export async function handleIncomingMessage(
           text,
         );
         if (process.env.WA_SUPPORT) {
-          await sendWhatsAppMessage(process.env.WA_SUPPORT, supportMsg);
+          try {
+            await sendWhatsAppMessage(process.env.WA_SUPPORT, supportMsg);
+          } catch {
+            // notificação interna, falha silenciosa
+          }
         }
         await saveUserMsg(
           user.id,
@@ -459,6 +464,13 @@ export async function handleIncomingMessage(
       if (pendingIntent === "awaiting_doc_confirm") {
         await updateUserPendingIntent(user.id, null);
         const lastUserMessage = await findLastUserMessage(user.id);
+        if (!lastUserMessage) {
+          const noPendingReply = formatNoPendingAction();
+          await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
+          await saveBotReply(user.id, userChannel.id, noPendingReply, today);
+          await channel.sendMessage(userChannel.channelId, noPendingReply);
+          return;
+        }
         if (parsed.intent === "confirm") {
           await saveUserMsg(
             user.id,
@@ -471,10 +483,10 @@ export async function handleIncomingMessage(
           const msgs = await createPendingBuffer(
             user.id,
             userChannel.id,
-            lastUserMessage!.content,
+            lastUserMessage.content,
             "text",
             today,
-            lastUserMessage!.id,
+            lastUserMessage.id,
           );
           if (msgs.length > 0)
             await channel.sendMessage(userChannel.channelId, msgs);
@@ -499,7 +511,13 @@ export async function handleIncomingMessage(
       if (pendingIntent === "awaiting_doc_replace") {
         await updateUserPendingIntent(user.id, null);
         const lastUserMessage = await findLastUserMessage(user.id);
-
+        if (!lastUserMessage) {
+          const noPendingReply = formatNoPendingAction();
+          await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
+          await saveBotReply(user.id, userChannel.id, noPendingReply, today);
+          await channel.sendMessage(userChannel.channelId, noPendingReply);
+          return;
+        }
         if (parsed.intent === "confirm") {
           await saveUserMsg(
             user.id,
@@ -509,7 +527,7 @@ export async function handleIncomingMessage(
             input,
             today,
           );
-          const mt = lastUserMessage!.mediaType;
+          const mt = lastUserMessage.mediaType;
           const originalDocType: DocType =
             mt === "audio" || mt === "image" || mt === "pdf"
               ? (mt as DocType)
@@ -517,10 +535,10 @@ export async function handleIncomingMessage(
           const replaceMsgs = await createPendingBuffer(
             user.id,
             userChannel.id,
-            lastUserMessage!.content,
+            lastUserMessage.content,
             originalDocType,
             today,
-            lastUserMessage!.id,
+            lastUserMessage.id,
           );
           if (replaceMsgs.length > 0)
             await channel.sendMessage(userChannel.channelId, replaceMsgs);
@@ -627,7 +645,11 @@ export async function handleIncomingMessage(
         );
         const supportNumber = process.env.WA_SUPPORT;
         if (supportNumber) {
-          await sendWhatsAppMessage(supportNumber, supportMsg);
+          try {
+            await sendWhatsAppMessage(supportNumber, supportMsg);
+          } catch {
+            // notificação interna, falha silenciosa
+          }
         }
 
         await saveUserMsg(
@@ -1266,7 +1288,17 @@ async function handleIntensiveNextQuestion(
           today,
         );
       }
-      return [];
+      const pendingMsg = formatIntensivePendingQuestion();
+      await saveMessage({
+        userId,
+        userChannelId,
+        activityId,
+        role: "assistant",
+        content: pendingMsg,
+        intent: "pending_question",
+      });
+      await incrementAgentMessageCount(userId, today);
+      return [pendingMsg];
     }
 
     const completionMsg = await completeRoundZero(

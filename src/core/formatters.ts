@@ -563,6 +563,18 @@ export function formatPracticeWaiting(): string {
   return "Aguarde, a próxima mensagem chega em breve. Para mudar de atividade, envie um novo material.";
 }
 
+export function formatGenericError(): string {
+  return "Não foi possível processar sua mensagem agora. Tente em instantes.";
+}
+
+export function formatUnsupportedFileType(): string {
+  return "Formato não suportado. Envie texto, imagem ou PDF.";
+}
+
+export function formatIntensivePendingQuestion(): string {
+  return "Estamos preparando sua próxima pergunta.";
+}
+
 export function formatInternalSupportMessage(
   channelCode: string,
   planLabel: string,
