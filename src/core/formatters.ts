@@ -181,7 +181,7 @@ export function formatDocProcessed(
 }
 
 export function formatGuideAfterFirstFeedback(): string {
-  return "A próxima pergunta chega mais tarde, no ritmo normal. Use *praticar* e ative o modo intensivo agora.";
+  return "As próximas perguntas chegam aos poucos durante o dia. Use *praticar* para iniciar agora com um ritmo mais rápido.";
 }
 
 export function formatDocProcessingFailed(): string {
@@ -287,31 +287,27 @@ export function formatShortTextNoDocs(): string {
   return "Envie um material para praticar durante o dia. Pode ser texto, imagem ou PDF.\n\n_Use *ajuda* para ver todos os comandos._";
 }
 
-export function formatRoundCompletedFallback(): string {
-  return "Você concluiu as perguntas dessa atividade. Envie um novo material ou continue revisando no ritmo normal para fixar mais.";
-}
-
 export function getRoundCompletedReadingLine(right: number, responses: number) {
   const rate = responses > 0 ? right / responses : 0;
 
   let reading: string;
-  let tip: string;
 
   if (responses < 5) {
-    reading = "Poucas perguntas nessa rodada.";
-    tip = "Seguindo, a leitura fica mais precisa.";
+    reading =
+      "Poucas perguntas nessa rodada, a leitura fica mais precisa seguindo.";
   } else if (rate >= 0.8) {
     reading = "Poucas respostas saíram erradas.";
-    tip = "Ritmo bom, vale manter.";
   } else if (rate >= 0.5) {
     reading = "Resultado dividido entre certo e errado.";
-    tip = "Dá pra seguir apertando esse conteúdo.";
   } else {
     reading = "A maioria das respostas ainda saiu errada.";
-    tip = "Vale seguir firme nesse conteúdo.";
   }
 
-  return { rate, reading, tip };
+  return { rate, reading };
+}
+
+export function formatRoundCompletedFallback(): string {
+  return "Você concluiu as perguntas dessa atividade. Envie um novo material ou continue revisando no ritmo normal para fixar mais.";
 }
 
 export function formatRoundCompletedSummary(data: {
@@ -320,10 +316,14 @@ export function formatRoundCompletedSummary(data: {
   responses: number;
 }): string {
   const { questionCount, right, responses } = data;
-  const { rate, reading, tip } = getRoundCompletedReadingLine(right, responses);
+  const { rate, reading } = getRoundCompletedReadingLine(right, responses);
   const percentual = Math.round(rate * 100);
 
-  return `Você concluiu as ${questionCount} perguntas dessa atividade, com ${percentual}% de acerto. ${reading} ${tip} Envie um novo material ou aguarde para continuar praticando.`;
+  return [
+    `📊 Você concluiu as ${questionCount} perguntas dessa atividade, ${percentual}% de acerto. ${reading}`,
+    "",
+    "Continue praticando no seu ritmo.",
+  ].join("\n");
 }
 
 export function getActivitySummaryReadingLine(
@@ -353,6 +353,19 @@ export function getActivitySummaryReadingLine(
   return { rate, reading, tip };
 }
 
+function getCoverageClause(responses: number, questionCount: number): string {
+  if (responses <= 0 || responses >= questionCount) return "";
+
+  const missing = questionCount - responses;
+  const coverage = responses / questionCount;
+
+  if (coverage < 0.5) {
+    return `Ficaram ${missing} perguntas sem resposta, mais da metade do total.`;
+  }
+
+  return `Ficaram ${missing} perguntas sem resposta.`;
+}
+
 export function formatPreviousActivitySummary(
   data: PreviousActivitySummaryData,
 ): string {
@@ -363,7 +376,7 @@ export function formatPreviousActivitySummary(
     partial,
     wrong,
     responses,
-    revisadas,
+    reviews,
     period,
   } = data;
 
@@ -373,18 +386,28 @@ export function formatPreviousActivitySummary(
   );
   const wrongTotal = wrong + partial;
   const percentual = Math.round(rate * 100);
+  const isFullCoverage = responses > 0 && responses === questionCount;
 
-  const revisadasClause =
-    revisadas > 0
-      ? `${revisadas} ${revisadas === 1 ? "delas voltou" : "delas voltaram"} mais de uma vez antes de fixar. `
+  const reviewsClause =
+    reviews > 0
+      ? `, sendo ${reviews} ${reviews === 1 ? "delas revisada" : "delas reviews"} mais de uma vez antes de fixar`
       : "";
 
-  let body = `Em ${period}, você respondeu ${responses} das ${questionCount} perguntas dessa atividade, ${percentual}% de acerto (${right} certas e ${wrongTotal} erradas). ${revisadasClause}${reading} ${tip}`;
-  if (responses > 0 && responses === questionCount) {
-    body = `Em ${period}, você respondeu todas as${questionCount} perguntas dessa atividade, ${percentual}% de acerto. ${revisadasClause}${reading}`;
-  }
+  const rightClause = isFullCoverage
+    ? `você respondeu todas as ${questionCount} perguntas, ${percentual}% de acerto (${right} certas e ${wrongTotal} erradas)${reviewsClause}.`
+    : `você respondeu ${responses} de ${questionCount} perguntas, ${percentual}% de acerto entre as respondidas (${right} certas e ${wrongTotal} erradas)${reviewsClause}.`;
 
-  return [`📊 Atividade anterior: *${activityTitle}*`, "", body].join("\n");
+  const coverageClause = getCoverageClause(responses, questionCount);
+
+  const stats = `Em ${period}, ${rightClause}${coverageClause ? ` ${coverageClause}` : ""}`;
+
+  return [
+    `📊 Resumo da última atividade: *${activityTitle}*`,
+    "",
+    stats,
+    "",
+    `${reading} ${tip}`,
+  ].join("\n");
 }
 
 export function formatImageNoText(): string {
@@ -447,7 +470,7 @@ type PreviousActivitySummaryData = {
   partial: number;
   wrong: number;
   responses: number;
-  revisadas: number;
+  reviews: number;
   period: string;
 };
 

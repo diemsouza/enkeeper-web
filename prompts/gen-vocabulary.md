@@ -31,7 +31,7 @@ Regras do JSON:
 - answerKeys: array com pelo menos 1 item. A primeira chave é sempre a resposta principal, e é ela que o bloco de exemplos usa para construir a pergunta e o feedback. As demais são variações aceitas na avaliação e não influenciam a pergunta gerada.
 - Resposta principal: por padrão, é o termo exato do conteúdo. O bloco de exemplos define quando não é, e nesse caso a regra do bloco prevalece.
 - Variações aceitáveis são termos verdadeiramente intercambiáveis na mesma frase, sem mudar o sentido. Termos relacionados mas não intercambiáveis no contexto não entram. Quando o item tiver mais de uma tradução natural sem contexto que desambigue (ex: "get ready" como "se preparar" ou "se arrumar"), inclua todas as traduções válidas. Se o termo não tiver tradução no material original, inclua a tradução inferida como chave adicional.
-- questionOptions: quando o formato é choice, contém a opção correta (primeiro item de answerKeys) mais os distratores, nunca apenas os distratores. Nos demais formatos, array vazio..
+- questionOptions: quando o formato é choice, contém a opção correta (primeiro item de answerKeys) mais 2 distratores, nunca apenas os distratores. Nos demais formatos, array vazio..
 - warning: string curta em português descrevendo a inconsistência. Omita o campo quando não houver inconsistência.
 
 Formato desta pergunta: {format}

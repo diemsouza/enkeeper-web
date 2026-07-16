@@ -39,6 +39,7 @@ import {
   getEntryNudgeStep,
   MAX_RETRY_ATTEMPTS,
   RETRY_DELAY_MS,
+  DOC_PENDING_TIMEOUT_MS,
 } from "../lib/constants";
 import {
   Activity,
@@ -94,6 +95,28 @@ export async function processActivityCron(
 
       const pendingDoc = await findPendingDocByUser(activity.userId);
       if (pendingDoc) {
+        const pendingAgeMs = Date.now() - pendingDoc.createdAt.getTime();
+        if (pendingAgeMs > DOC_PENDING_TIMEOUT_MS) {
+          await updateDoc(pendingDoc.id, activity.userId, {
+            status: "failed",
+            error: `Doc pending more than ${DOC_PENDING_TIMEOUT_MS} ms.`,
+          });
+          const userChannel = await findUserChannelByUserId(activity.userId);
+          if (userChannel) {
+            const msg =
+              "Não consegui processar seu conteúdo. Tenta mandar de novo.";
+            await channel.sendMessage(userChannel.channelId, msg);
+            await saveMessage({
+              userId: activity.userId,
+              userChannelId: userChannel.id,
+              role: "assistant",
+              content: msg,
+              intent: "system_error",
+            });
+            const today = startOfDay(new Date());
+            await incrementAgentMessageCount(activity.userId, today);
+          }
+        }
         skipped++;
         continue;
       }
@@ -107,7 +130,10 @@ export async function processActivityCron(
       if (doc.status === "processing") {
         const ageMs = Date.now() - doc.createdAt.getTime();
         if (ageMs > DOC_PROCESSING_TIMEOUT_MS) {
-          await updateDoc(doc.id, activity.userId, { status: "failed" });
+          await updateDoc(doc.id, activity.userId, {
+            status: "failed",
+            error: `Doc processing more than ${DOC_PROCESSING_TIMEOUT_MS} ms.`,
+          });
           const userChannel = await findUserChannelByUserId(activity.userId);
           if (userChannel) {
             const msg =
@@ -450,10 +476,10 @@ export async function generateQuestionIfPoolNotFull(
       generated,
       targetSection.sectionType,
     );
-    if (genParams.retryContext) {
-      continue;
+    if (!genParams.retryContext) {
+      validated = generated;
+      break;
     }
-    validated = generated;
   }
 
   if (!validated) return { poolExhausted: false, question: null };

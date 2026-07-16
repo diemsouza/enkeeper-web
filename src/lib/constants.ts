@@ -17,6 +17,7 @@ export const TRIAL_DAYS = 3;
 export const MAX_ACTIVITIES_PER_DAY = 5;
 export const MAX_DOC_ITEMS_PER_DOC = 3;
 export const DOC_BUFFER_DELAY_SEC = 45;
+export const DOC_PENDING_TIMEOUT_MS = 5 * 60 * 1000;
 export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 export const ONBOARDING_MESSAGE_INTERVAL_SEC = 2;
 export const DEFAULT_MESSAGE_INTERVAL_SEC = 3;
