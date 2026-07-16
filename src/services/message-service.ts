@@ -466,7 +466,14 @@ export async function handleIncomingMessage(
         const lastUserMessage = await findLastUserMessage(user.id);
         if (!lastUserMessage) {
           const noPendingReply = formatNoPendingAction();
-          await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "free_text",
+            input,
+            today,
+          );
           await saveBotReply(user.id, userChannel.id, noPendingReply, today);
           await channel.sendMessage(userChannel.channelId, noPendingReply);
           return;
@@ -513,7 +520,14 @@ export async function handleIncomingMessage(
         const lastUserMessage = await findLastUserMessage(user.id);
         if (!lastUserMessage) {
           const noPendingReply = formatNoPendingAction();
-          await saveUserMsg(user.id, userChannel.id, text, "free_text", input, today);
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "free_text",
+            input,
+            today,
+          );
           await saveBotReply(user.id, userChannel.id, noPendingReply, today);
           await channel.sendMessage(userChannel.channelId, noPendingReply);
           return;
@@ -880,7 +894,8 @@ export async function handleIncomingMessage(
         await updateActivity(activeActivity!.id, user.id, {
           intensiveUntil: null,
         });
-        reply = formatIntensiveModeStopped();
+        const pendingQuestion = await findPendingQuestion(activeActivity.id);
+        reply = formatIntensiveModeStopped(!!pendingQuestion);
         messageIntent = "free_text";
         break;
       }

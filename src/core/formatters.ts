@@ -142,10 +142,10 @@ export function formatActivitiesList(activities: ActivityListItem[]): string {
   if (archived.length > 0) {
     if (lines.length > 0) lines.push("");
     lines.push("*Arquivadas:*\n");
-    archived.forEach((a) => {
+    archived.forEach((a, index) => {
       const displayTitle = a.title || "Sem título";
       lines.push(
-        `_${format(a.updatedAt, "dd/MM")}_ - *${displayTitle}* \n${LEVEL_LABEL[a.userLevel]}`,
+        `${index + 1}. _${format(a.updatedAt, "dd/MM")}_ - *${displayTitle}* \n${LEVEL_LABEL[a.userLevel]}`,
       );
     });
   }
@@ -192,8 +192,12 @@ export function formatDocNoQuestions(): string {
   return "Não foi possível gerar perguntas a partir desse material. Tente outro material.";
 }
 
-export function formatIntensiveModeStopped(): string {
-  return "Modo prática intensiva pausado. Voltando para o ritmo normal.";
+export function formatIntensiveModeStopped(pendingQuestion: boolean): string {
+  let message = "Modo prática intensiva pausado. Voltando para o ritmo normal.";
+  if (pendingQuestion) {
+    message += "\n\n⚠️ Encerre respondendo a última pergunta em aberto.";
+  }
+  return message;
 }
 
 export function formatDailyPracticeLimitReached(): string {
