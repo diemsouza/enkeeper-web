@@ -15,13 +15,12 @@ import {
 import {
   formatCommandList,
   formatActivitiesList,
+  selectArchivedActivities,
   formatLevelQuestion,
   formatDocConfirmPrompt,
   formatActivityReplacePrompt,
-  formatPausePrompt,
   formatPauseSuccess,
   formatNoPausableDocs,
-  formatResumePrompt,
   formatResumeSuccess,
   formatNoPausedDocs,
   formatPlanExpired,
@@ -38,7 +37,6 @@ import {
   formatCanceled,
   formatLevelUpdateCanceled,
   formatDocReplaceCanceled,
-  formatInvalidPauseIndex,
   formatInvalidResumeIndex,
   formatNoActiveActivity,
   formatAllQuestionsAnswered,
@@ -68,21 +66,17 @@ import { findOrCreateUserByChannel } from "./user-service";
 import {
   createDoc,
   findDocById,
-  findDocsByUser,
-  findActiveDocsByUser,
-  findActiveOrPausedDocsByUser,
   findPendingDocByUser,
   updateDoc,
 } from "../repo/docs.repo";
 import { createDocItem, countValidDocItemsByDoc } from "../repo/doc-items.repo";
 import {
   findLastActivityByUser,
+  findCurrentActivityByUser,
   findActivitiesForList,
-  pauseActivitiesByDoc,
-  resumeActivitiesByDoc,
   updateActivity,
 } from "../repo/activities.repo";
-import { archiveOrCancelActivitiesByDoc } from "./activity-service";
+import { switchToActivity } from "./activity-service";
 import {
   getTodayActivityCount,
   getTodayUsage,
@@ -573,80 +567,6 @@ export async function handleIncomingMessage(
         return;
       }
 
-      // TODO: refactory (maybe do not need this anymore our need change to activity)
-      // Aguardando número para pausar
-      if (pendingIntent === "awaiting_pause_select") {
-        await updateUserPendingIntent(user.id, null);
-        await saveUserMsg(
-          user.id,
-          userChannel.id,
-          text,
-          "free_text",
-          input,
-          today,
-        );
-        if (parsed.intent === "cancel" || parsed.intent === "cancel_no") {
-          const reply = formatCanceled();
-          await saveBotReply(user.id, userChannel.id, reply, today);
-          await channel.sendMessage(userChannel.channelId, reply);
-          return;
-        }
-        const idx = parseInt(text.trim(), 10);
-        const activeDocs = await findActiveDocsByUser(user.id);
-        const doc = isNaN(idx) ? null : activeDocs[idx - 1];
-        const reply = doc
-          ? await (async () => {
-              await updateDoc(doc.id, user.id, { status: "paused" });
-              await pauseActivitiesByDoc(doc.id, user.id);
-              return formatPauseSuccess();
-            })()
-          : formatInvalidPauseIndex();
-        await saveBotReply(user.id, userChannel.id, reply, today);
-        await channel.sendMessage(userChannel.channelId, reply);
-        return;
-      }
-
-      // TODO: refactory (maybe do not need this anymore our need change to activity)
-      // Aguardando número para retomar
-      if (pendingIntent === "awaiting_resume_select") {
-        await updateUserPendingIntent(user.id, null);
-        await saveUserMsg(
-          user.id,
-          userChannel.id,
-          text,
-          "free_text",
-          input,
-          today,
-        );
-        if (parsed.intent === "cancel" || parsed.intent === "cancel_no") {
-          const reply = formatCanceled();
-          await saveBotReply(user.id, userChannel.id, reply, today);
-          await channel.sendMessage(userChannel.channelId, reply);
-          return;
-        }
-        const idx = parseInt(text.trim(), 10);
-        const allDocs = await findDocsByUser(user.id);
-        const pausedDocs = allDocs.filter((d) => d.status === "paused");
-        const doc = isNaN(idx) ? null : pausedDocs[idx - 1];
-        const reply = doc
-          ? await (async () => {
-              await updateDoc(doc.id, user.id, { status: "active" });
-              await resumeActivitiesByDoc(doc.id, user.id);
-              const others = await findActiveOrPausedDocsByUser(user.id);
-              for (const other of others) {
-                if (other.id !== doc.id) {
-                  await updateDoc(other.id, user.id, { status: "archived" });
-                  await archiveOrCancelActivitiesByDoc(other.id, user.id);
-                }
-              }
-              return formatResumeSuccess();
-            })()
-          : formatInvalidResumeIndex();
-        await saveBotReply(user.id, userChannel.id, reply, today);
-        await channel.sendMessage(userChannel.channelId, reply);
-        return;
-      }
-
       // Aguardando mensagem de suporte
       if (pendingIntent === "support") {
         await updateUserPendingIntent(user.id, null);
@@ -729,79 +649,46 @@ export async function handleIncomingMessage(
       }
 
       case "pause_activity": {
-        const activeDocs = await findActiveDocsByUser(user.id);
-        if (activeDocs.length === 0) {
+        const current = await findCurrentActivityByUser(user.id);
+        if (!current || current.status !== "active") {
           reply = formatNoPausableDocs();
           messageIntent = "free_text";
           break;
         }
-        if (parsed.docIndex !== undefined) {
-          const doc = activeDocs[parsed.docIndex - 1];
-          if (!doc) {
-            reply = formatInvalidPauseIndex();
-          } else {
-            await updateDoc(doc.id, user.id, { status: "paused" });
-            await pauseActivitiesByDoc(doc.id, user.id);
-            reply = formatPauseSuccess();
-          }
-          messageIntent = "free_text";
-          break;
-        }
-        if (activeDocs.length === 1) {
-          await updateDoc(activeDocs[0].id, user.id, { status: "paused" });
-          await pauseActivitiesByDoc(activeDocs[0].id, user.id);
-          reply = formatPauseSuccess();
-          messageIntent = "free_text";
-          break;
-        }
-        reply = formatPausePrompt(activeDocs);
-        messageIntent = "awaiting_pause_select";
+        await updateActivity(current.id, user.id, {
+          status: "paused",
+          pausedAt: new Date(),
+          intensiveUntil: null,
+        });
+        reply = formatPauseSuccess(current.title);
+        messageIntent = "free_text";
         break;
       }
 
       case "resume_activity": {
-        const allDocs = await findDocsByUser(user.id);
-        const pausedDocs = allDocs.filter((d) => d.status === "paused");
-        if (pausedDocs.length === 0) {
-          reply = formatNoPausedDocs();
-          messageIntent = "free_text";
-          break;
-        }
+        let target: Activity | null;
+
         if (parsed.docIndex !== undefined) {
-          const doc = pausedDocs[parsed.docIndex - 1];
-          if (!doc) {
+          const activities = await findActivitiesForList(user.id);
+          target =
+            selectArchivedActivities(activities)[parsed.docIndex - 1] ?? null;
+          if (!target) {
             reply = formatInvalidResumeIndex();
-          } else {
-            await updateDoc(doc.id, user.id, { status: "active" });
-            await resumeActivitiesByDoc(doc.id, user.id);
-            const others = await findActiveOrPausedDocsByUser(user.id);
-            for (const other of others) {
-              if (other.id !== doc.id) {
-                await updateDoc(other.id, user.id, { status: "archived" });
-                await archiveOrCancelActivitiesByDoc(other.id, user.id);
-              }
-            }
-            reply = formatResumeSuccess();
+            messageIntent = "free_text";
+            break;
           }
-          messageIntent = "free_text";
-          break;
-        }
-        if (pausedDocs.length === 1) {
-          await updateDoc(pausedDocs[0].id, user.id, { status: "active" });
-          await resumeActivitiesByDoc(pausedDocs[0].id, user.id);
-          const others = await findActiveOrPausedDocsByUser(user.id);
-          for (const other of others) {
-            if (other.id !== pausedDocs[0].id) {
-              await updateDoc(other.id, user.id, { status: "archived" });
-              await archiveOrCancelActivitiesByDoc(other.id, user.id);
-            }
+        } else {
+          target = await findCurrentActivityByUser(user.id);
+          if (!target || target.status !== "paused") {
+            reply = formatNoPausedDocs();
+            messageIntent = "free_text";
+            break;
           }
-          reply = formatResumeSuccess();
-          messageIntent = "free_text";
-          break;
         }
-        reply = formatResumePrompt(pausedDocs);
-        messageIntent = "awaiting_resume_select";
+
+        await switchToActivity(user.id, target);
+        reply = formatResumeSuccess(target.title);
+        messageIntent = "free_text";
         break;
       }
 
@@ -1218,8 +1105,6 @@ export async function handleIncomingMessage(
     const SWITCH_PENDING_STATES: MessageIntent[] = [
       "awaiting_doc_confirm",
       "awaiting_doc_replace",
-      "awaiting_pause_select",
-      "awaiting_resume_select",
       "support",
     ];
     const nextPending = SWITCH_PENDING_STATES.includes(

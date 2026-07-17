@@ -1,4 +1,4 @@
-import { Doc, ActivityStatus, Level, QuestionFormat } from "../lib/prisma";
+import { ActivityStatus, Level, QuestionFormat } from "../lib/prisma";
 import {
   ANSWER_EMOJI,
   INTENSIVE_UNTIL_MIN,
@@ -15,7 +15,6 @@ import {
   SectionQuestionResult,
 } from "../lib/llm-schemas";
 import { shuffle } from "lodash";
-import { format } from "date-fns";
 import { CreateQuestionData } from "../repo/questions.repo";
 
 export function formatOnboardingMsg1(): string {
@@ -115,16 +114,19 @@ type ActivityListItem = {
   title: string;
   userLevel: Level;
   updatedAt: Date;
-  doc: Pick<Doc, "id" | "status">;
 };
+
+export function selectArchivedActivities<T extends { status: ActivityStatus }>(
+  activities: T[],
+): T[] {
+  return activities.filter((a) => a.status === "archived").slice(0, 3);
+}
 
 export function formatActivitiesList(activities: ActivityListItem[]): string {
   const current = activities.filter((a) =>
     ["active", "paused"].includes(a.status),
   );
-  const archived = activities
-    .filter((a) => a.status === "archived")
-    .slice(0, 3);
+  const archived = selectArchivedActivities(activities);
 
   if (current.length === 0 && archived.length === 0) return formatNoActivity();
 
@@ -133,7 +135,7 @@ export function formatActivitiesList(activities: ActivityListItem[]): string {
   if (current.length > 0) {
     lines.push("*Atividade atual:*\n");
     current.forEach((a) => {
-      const label = a.doc.status === "paused" ? "pausada" : "ativa";
+      const label = a.status === "paused" ? "pausada" : "ativa";
       const displayTitle = a.title || "Sem título";
       lines.push(`*${displayTitle}* - ${LEVEL_LABEL[a.userLevel]} - ${label}`);
     });
@@ -144,9 +146,10 @@ export function formatActivitiesList(activities: ActivityListItem[]): string {
     lines.push("*Arquivadas:*\n");
     archived.forEach((a, index) => {
       const displayTitle = a.title || "Sem título";
-      lines.push(
-        `${index + 1}. _${format(a.updatedAt, "dd/MM")}_ - *${displayTitle}* \n${LEVEL_LABEL[a.userLevel]}`,
-      );
+      // lines.push(
+      //   `${index + 1}. _${format(a.updatedAt, "dd/MM")}_ - *${displayTitle}*`,
+      // );
+      lines.push(`${index + 1}. *${displayTitle}*`);
     });
   }
 
@@ -249,26 +252,16 @@ export function formatDocItemLimitReached(): string {
   return `⚠️ Essa atividade já atingiu o limite de ${MAX_DOC_ITEMS_PER_DOC} materiais. Continuando com o que já foi enviado...`;
 }
 
-export function formatPausePrompt(docs: Pick<Doc, "id" | "title">[]): string {
-  const lines = docs.map((d, i) => `${i + 1}. ${d.title || "Sem título"}`);
-  return `Qual atividade você quer pausar?\n\n${lines.join("\n")}\n\n_Digite o número ou use *cancelar*._`;
-}
-
-export function formatPauseSuccess(): string {
-  return "Atividade pausada. Use *retomar* para continuar.";
+export function formatPauseSuccess(title: string): string {
+  return `Atividade *${title || "Sem título"}* pausada. Use *retomar* para continuar de onde parou.`;
 }
 
 export function formatNoPausableDocs(): string {
   return "Nenhuma atividade ativa no momento.";
 }
 
-export function formatResumePrompt(docs: Pick<Doc, "id" | "title">[]): string {
-  const lines = docs.map((d, i) => `${i + 1}. ${d.title || "Sem título"}`);
-  return `Qual atividade você quer retomar?\n\n${lines.join("\n")}\n\n_Digite o número ou *cancelar*._`;
-}
-
-export function formatResumeSuccess(): string {
-  return "Atividade retomada, de onde parou.";
+export function formatResumeSuccess(title: string): string {
+  return `Retomando *${title || "Sem título"}*, de onde parou.`;
 }
 
 export function formatNoPausedDocs(): string {
@@ -562,12 +555,8 @@ export function formatDocReplaceCanceled(): string {
   return "Ok, seguindo com a atividade atual.";
 }
 
-export function formatInvalidPauseIndex(): string {
-  return "Número inválido. Use pausar para ver suas atividades ativas.";
-}
-
 export function formatInvalidResumeIndex(): string {
-  return "Número inválido. Use retomar para ver suas atividades pausadas.";
+  return "Número inválido. Use *atividade* para ver as opções.";
 }
 
 export function formatNoActiveActivity(): string {
@@ -611,6 +600,7 @@ export function formatInternalSupportMessage(
 }
 
 type EvaluationStatus = "right" | "wrong" | "partial";
+
 const STATUS_OPENINGS: Record<EvaluationStatus, string[]> = {
   right: ["Exato!", "Correto!", "Perfeito!", "Boa!", "Isso!"],
   wrong: [
@@ -682,7 +672,7 @@ export function formatFeedback(
   const result = [];
   if (emoji) result.push(emoji);
   if (opening) result.push(opening);
-  if (evalStatus !== "right" && rightAnswer)
+  if (evalStatus !== "right" && rightAnswer && rightAnswer !== feedback)
     result.push(`"${capitalizeFirst(rightAnswer)}".`);
   if (feedback)
     result.push(feedback.indexOf('"') === -1 ? `"${feedback}"` : feedback);

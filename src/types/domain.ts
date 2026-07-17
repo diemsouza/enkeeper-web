@@ -13,8 +13,6 @@ export type MessageIntent =
   | "cancel_no"
   | "awaiting_doc_confirm"
   | "awaiting_doc_replace"
-  | "awaiting_pause_select"
-  | "awaiting_resume_select"
   | "awaiting_level_set"
   | "set_level"
   | "free_text"

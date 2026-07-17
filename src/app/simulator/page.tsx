@@ -2,19 +2,42 @@
 
 import { notFound } from "next/navigation";
 import { useState, useEffect, useRef, useCallback, KeyboardEvent } from "react";
-import { WhatsAppChat } from "../../components/whatsapp-chat";
+import { WhatsAppChat, Message } from "../../components/whatsapp-chat";
 import { useScrollToBottom } from "../../hooks/use-scroll-to-bottom";
 import { http } from "../../lib/http";
 import { Input } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
 import { startOfDay } from "date-fns";
 
-interface Message {
-  from: "user" | "bot";
-  text: string;
-  time: string;
+type ApiMessage = {
+  role: string;
+  content: string;
+  createdAt: string;
+  mediaType?: string | null;
+  metadata?: Record<string, string | number | null> | null;
+};
+
+function normalizeSimulatorText(text: string): string {
+  return text.replace(/[ \t]{3,}/g, "  ").replace(/\n{4,}/g, "\n\n\n");
 }
 
-type ApiMessage = { role: string; content: string; createdAt: string };
+function detectMediaType(file: File): "image" | "pdf" | "text" {
+  if (file.type.startsWith("image/")) return "image";
+  if (file.type === "application/pdf") return "pdf";
+  return "text";
+}
+
+function mediaTypeLabel(mediaType: "image" | "pdf" | "text"): string {
+  if (mediaType === "image") return "Imagem";
+  if (mediaType === "pdf") return "PDF";
+  return "Texto";
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function nowTime(): string {
   return new Date().toLocaleTimeString("pt-BR", {
@@ -31,11 +54,25 @@ function formatTime(iso: string): string {
 }
 
 function mapApiMessages(raw: ApiMessage[]): Message[] {
-  return raw.map((m) => ({
-    from: m.role === "user" ? "user" : "bot",
-    text: m.content,
-    time: formatTime(m.createdAt),
-  }));
+  return raw.map((m) => {
+    const from = m.role === "user" ? "user" : "bot";
+    const time = formatTime(m.createdAt);
+    if (m.mediaType === "image" || m.mediaType === "pdf" || m.mediaType === "text") {
+      const metadata = m.metadata ?? {};
+      const fileName = typeof metadata.file_name === "string" ? metadata.file_name : "Arquivo";
+      const sizeBytes = typeof metadata.size_bytes === "number" ? metadata.size_bytes : 0;
+      const label = mediaTypeLabel(m.mediaType);
+      return {
+        from,
+        time,
+        type: "file",
+        fileName,
+        fileSize: `${label} · ${formatFileSize(sizeBytes)}`,
+        mediaType: m.mediaType,
+      };
+    }
+    return { from, text: m.content, time };
+  });
 }
 
 const SECRET = process.env.NEXT_PUBLIC_SIMULATE_SECRET ?? "";
@@ -49,7 +86,7 @@ export default function SimulatorPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const { containerRef, endRef, scrollToBottom } = useScrollToBottom();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -107,10 +144,18 @@ export default function SimulatorPage() {
       setSelectedFile(null);
       setInput("");
 
-      const mediaType = file.type.startsWith("image/") ? "image" : "pdf";
+      const mediaType = detectMediaType(file);
+      const label = mediaTypeLabel(mediaType);
       setMessages((prev) => [
         ...prev,
-        { from: "user", text: `[${mediaType === "image" ? "Imagem" : "PDF"}: ${file.name}]`, time: nowTime() },
+        {
+          from: "user",
+          time: nowTime(),
+          type: "file",
+          fileName: file.name,
+          fileSize: `${label} · ${formatFileSize(file.size)}`,
+          mediaType,
+        },
       ]);
       scrollToBottom("smooth");
 
@@ -155,8 +200,8 @@ export default function SimulatorPage() {
     }
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       void sendMessage();
     }
@@ -222,10 +267,10 @@ export default function SimulatorPage() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 w-full md:max-w-[480px]">
+      <div className="flex items-end gap-2 w-full md:max-w-[480px]">
         <input
           type="file"
-          accept="image/*,application/pdf"
+          accept="image/*,application/pdf,text/plain,text/markdown,.txt,.md"
           onChange={handleFileSelect}
           className="hidden"
           ref={fileInputRef}
@@ -234,21 +279,21 @@ export default function SimulatorPage() {
           onClick={() => fileInputRef.current?.click()}
           className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
           aria-label="Anexar arquivo"
-          title="Enviar imagem ou PDF"
+          title="Enviar imagem, PDF ou texto"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
             <path fillRule="evenodd" d="M18.97 3.659a2.25 2.25 0 00-3.182 0l-10.94 10.94a3.75 3.75 0 105.304 5.303l7.693-7.693a.75.75 0 011.06 1.06l-7.693 7.693a5.25 5.25 0 11-7.424-7.424l10.939-10.94a3.75 3.75 0 115.303 5.304L9.097 18.835l-.008.008-.007.007-.002.002-.003.002A2.25 2.25 0 015.91 15.66l7.81-7.81a.75.75 0 011.061 1.06l-7.81 7.81a.75.75 0 001.054 1.068L18.97 6.84a2.25 2.25 0 000-3.182z" clipRule="evenodd" />
           </svg>
         </button>
-        <input
+        <Textarea
           ref={inputRef}
-          type="text"
+          rows={4}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => setInput(normalizeSimulatorText(e.target.value))}
           onKeyDown={handleKeyDown}
           autoFocus
           placeholder={selectedFile ? "Pressione Enter para enviar o arquivo..." : "Digite uma mensagem..."}
-          className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+          className="flex-1 min-h-0 max-h-40 resize-none border rounded-2xl px-4 py-2 text-sm focus-visible:ring-2 focus-visible:ring-green-400"
         />
         <button
           onClick={() => void sendMessage()}

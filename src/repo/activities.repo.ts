@@ -1,4 +1,4 @@
-import { Activity, Doc, ActivityStatus, Level } from "../lib/prisma";
+import { Activity, ActivityStatus, Level } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type CreateActivityData = {
@@ -93,13 +93,12 @@ export async function findEligibleActivities(limit = 100): Promise<Activity[]> {
   });
 }
 
-export async function findActivitiesByDoc(
-  docId: string,
+export async function findCurrentActivityByUser(
   userId: string,
-): Promise<Activity[]> {
-  return prisma.activity.findMany({
-    where: { docId, userId, deletedAt: null },
-    orderBy: { date: "desc" },
+): Promise<Activity | null> {
+  return prisma.activity.findFirst({
+    where: { userId, status: { in: ["active", "paused"] }, deletedAt: null },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -134,42 +133,17 @@ export async function softDeleteActivitiesByDoc(
   });
 }
 
-export async function pauseActivitiesByDoc(
-  docId: string,
-  userId: string,
-): Promise<void> {
-  await prisma.activity.updateMany({
-    where: { docId, userId, status: "active", deletedAt: null },
-    data: { status: "paused", pausedAt: new Date(), intensiveUntil: null },
-  });
-}
-
-export async function resumeActivitiesByDoc(
-  docId: string,
-  userId: string,
-): Promise<void> {
-  await prisma.activity.updateMany({
-    where: { docId, userId, status: "paused", deletedAt: null },
-    data: { status: "active", pausedAt: null },
-  });
-}
-
-export type ActivityWithDoc = Activity & {
-  doc: Pick<Doc, "id" | "status">;
-};
-
 export async function findActivitiesForList(
   userId: string,
-): Promise<ActivityWithDoc[]> {
+): Promise<Activity[]> {
   return prisma.activity.findMany({
     where: {
       userId,
       status: { in: ["active", "paused", "archived"] },
       deletedAt: null,
     },
-    include: { doc: { select: { id: true, status: true } } },
     orderBy: { createdAt: "desc" },
-  }) as Promise<ActivityWithDoc[]>;
+  });
 }
 
 export async function findLatestArchivedActivityForSummary(userId: string) {

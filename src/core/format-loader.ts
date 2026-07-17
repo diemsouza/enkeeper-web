@@ -91,11 +91,17 @@ export function getFeedbackExamples(
   return formats.map((f) => buildBlock(f, level, "feedback")).join("\n\n");
 }
 
+function stripQuoted(text: string): string {
+  // remove trechos entre aspas (retas ou tipográficas) antes de contar "?"
+  return text.replace(/["“”][^"“”]*["“”]/g, "");
+}
+
 function looksLikeDoubleQuestion(question: string): boolean {
-  const marks = (question.match(/\?/g) || []).length;
+  const stripped = stripQuoted(question);
+  const marks = (stripped.match(/\?/g) || []).length;
   if (marks > 1) return true;
   // "e quem", "e onde", "e qual", "e como" perto do fim
-  return /\be (quem|onde|qual|como|o que)\b.*\?/i.test(question);
+  return /\be (quem|onde|qual|como|o que)\b.*\?/i.test(stripped);
 }
 
 export function validateGeneratedQuestion(

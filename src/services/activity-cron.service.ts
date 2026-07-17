@@ -56,10 +56,7 @@ import {
   getQuestionExamples,
   validateGeneratedQuestion,
 } from "../core/format-loader";
-import { shuffle } from "lodash";
-import { sanitizeText } from "../lib/utils";
 import { startOfDay } from "date-fns";
-import { RetryContext } from "../types/retry-context";
 import { buildRoundCompletedSummary } from "./activity-service";
 
 type CronResult = {

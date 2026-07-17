@@ -1,6 +1,7 @@
+import { Activity } from "../lib/prisma";
 import {
-  findActivitiesByDoc,
   findActivityForSummary,
+  findCurrentActivityByUser,
   findLatestArchivedActivityForSummary,
   updateActivity,
 } from "../repo/activities.repo";
@@ -10,16 +11,28 @@ import {
   formatRoundCompletedSummary,
 } from "../core/formatters";
 
-export async function archiveOrCancelActivitiesByDoc(
-  docId: string,
+export async function archiveOrCancelActivity(
+  activity: Activity,
   userId: string,
 ): Promise<void> {
-  const activities = await findActivitiesByDoc(docId, userId);
-  for (const activity of activities) {
-    if (activity.status !== "active" && activity.status !== "paused") continue;
-    const status = activity.interactionCount > 0 ? "archived" : "cancelled";
-    await updateActivity(activity.id, userId, { status });
+  if (activity.status !== "active" && activity.status !== "paused") return;
+  const status = activity.interactionCount > 0 ? "archived" : "cancelled";
+  await updateActivity(activity.id, userId, { status, intensiveUntil: null });
+}
+
+export async function switchToActivity(
+  userId: string,
+  target: Activity,
+): Promise<void> {
+  const current = await findCurrentActivityByUser(userId);
+  if (current && current.id !== target.id) {
+    await archiveOrCancelActivity(current, userId);
   }
+  await updateActivity(target.id, userId, {
+    status: "active",
+    pausedAt: null,
+    intensiveUntil: null,
+  });
 }
 
 export async function buildPreviousActivitySummary(

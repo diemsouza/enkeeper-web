@@ -1,17 +1,17 @@
-import {
-  findDocById,
-  findActiveOrPausedDocsByUser,
-  updateDoc,
-} from "../repo/docs.repo";
+import { findDocById, updateDoc } from "../repo/docs.repo";
 import { findDocItemsByDoc } from "../repo/doc-items.repo";
 import {
   formatInvalidContentMessage,
   validateContent,
 } from "../core/validate-content";
-import { createActivity, updateActivity } from "../repo/activities.repo";
+import {
+  createActivity,
+  findCurrentActivityByUser,
+  updateActivity,
+} from "../repo/activities.repo";
 import { createSection } from "../repo/sections.repo";
 import {
-  archiveOrCancelActivitiesByDoc,
+  archiveOrCancelActivity,
   buildPreviousActivitySummary,
 } from "./activity-service";
 import { generateDocSections } from "../vendors/llm.vendor";
@@ -188,12 +188,9 @@ export async function mergeDoc(
 
     const userLevel = user.level ?? docSectionResult.level;
 
-    const otherDocs = await findActiveOrPausedDocsByUser(userId);
-    for (const other of otherDocs) {
-      if (other.id !== docId) {
-        await updateDoc(other.id, userId, { status: "archived" });
-      }
-      await archiveOrCancelActivitiesByDoc(other.id, userId);
+    const currentActivity = await findCurrentActivityByUser(userId);
+    if (currentActivity) {
+      await archiveOrCancelActivity(currentActivity, userId);
     }
 
     const now = new Date();

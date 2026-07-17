@@ -33,29 +33,6 @@ export async function findDocById(
   });
 }
 
-export async function findDocsByUser(userId: string): Promise<Doc[]> {
-  return prisma.doc.findMany({
-    where: { userId, deletedAt: null },
-    orderBy: { createdAt: "desc" },
-  });
-}
-
-export async function findActiveDocsByUser(userId: string): Promise<Doc[]> {
-  return prisma.doc.findMany({
-    where: { userId, status: "active", deletedAt: null },
-    orderBy: { createdAt: "desc" },
-  });
-}
-
-export async function findActiveOrPausedDocsByUser(
-  userId: string,
-): Promise<Doc[]> {
-  return prisma.doc.findMany({
-    where: { userId, status: { in: ["active", "paused"] }, deletedAt: null },
-    orderBy: { createdAt: "desc" },
-  });
-}
-
 export async function updateDoc(
   id: string,
   userId: string,

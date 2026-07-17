@@ -34,9 +34,9 @@ O critério é independência entre itens, não tamanho nem idioma.
 
   Pode vir sem tradução, só termos soltos em PT ou EN ("Garden / Mundo / Happy"). Nesse caso preserve o content como está, sem inventar tradução.
 
-  Itens podem chegar em texto corrido, sem nenhuma quebra de linha entre eles ("Anyway - De qualquer forma Awesome - incrível Actually - na verdade"). Isso é apenas formatação compacta do material, não falta de estrutura: cada repetição do padrão termo-tradução marca o início de um novo item. Identifique as fronteiras pelo padrão que se repete, não pela presença de separador visual, e conte cada um normalmente para o mínimo de 3 itens.
+  Resolva a segmentação em duas etapas, nessa ordem. Primeiro, separe o conteúdo em uma linha por item, aplicando o padrão termo-tradução que se repete: cada ocorrência do padrão abre uma linha nova. Depois, revise o resultado linha a linha: qualquer linha que não bater no padrão termo-tradução (sem separador reconhecível, sem tradução própria, não formando um par completo sozinha) não é item novo, junte essa linha à linha imediatamente anterior, como conteúdo interno dela, na linha de baixo, sem separar por linha em branco.
 
-  Separe cada item por uma linha em branco no content, mesmo quando o original não tinha nenhuma quebra entre eles. Um item pode ter mais de uma linha internamente (termo, tradução, exemplo de uso); quando essas linhas já existem no original, preserve-as como estão, sem uni-las numa linha só.
+  Separe cada item (já com as linhas internas unidas pela segunda etapa) por uma linha em branco no content.
 
 - "text": conteúdo corrido onde as partes dependem umas das outras pra manter sentido (diálogo, narrativa, parágrafo).
 

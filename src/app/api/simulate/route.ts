@@ -84,6 +84,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         extractedText = visionResult.content;
       } else if (mediaType === "pdf") {
         extractedText = await extractTextFromPdf(buffer);
+      } else if (mediaType === "text") {
+        extractedText = buffer.toString("utf-8");
       } else {
         return NextResponse.json(
           { error: "Unsupported mediaType" },
@@ -105,6 +107,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           text: extractedText,
           externalId: typeof externalId === "string" ? externalId : undefined,
           mediaType: mediaType ?? undefined,
+          mediaMetadata: {
+            media_type: mediaType,
+            file_name: file.name,
+            size_bytes: file.size,
+          },
           receivedAt,
         }, channel);
         emitToSession(channelId, { type: "done" });

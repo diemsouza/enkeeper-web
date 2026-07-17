@@ -32,6 +32,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       role: m.role,
       content: m.content,
       createdAt: m.createdAt.toISOString(),
+      mediaType: m.mediaType,
+      metadata: m.metadata,
     })),
   });
 }
