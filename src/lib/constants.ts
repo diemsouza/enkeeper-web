@@ -1,5 +1,4 @@
 export const LOCALE_COOKIE_NAME = "zn_locale";
-export const MIN_DOC_CHARS = 300;
 export const MIN_WORDS = 50;
 export const MIN_UNIQUE_WORDS = 30;
 export const MIN_UNIQUE_RATIO = 0.3;
@@ -70,3 +69,28 @@ export const ANSWER_EMOJI = {
 export const MESSAGE_SUPPRESSION_SEC = 10;
 export const MAX_RETRY_ATTEMPTS = 3;
 export const RETRY_DELAY_MS = 1000;
+
+export const COMMAND_TIMEOUT_MIN = 5;
+
+export const CONTENT_GROUPS = [
+  { id: "work", label: "Mercado de Trabalho" },
+  { id: "travel", label: "Viagens Internacionais" },
+  { id: "education", label: "Educação e Intercâmbio" },
+  { id: "daily_life", label: "Dia a Dia e Lazer" },
+] as const;
+export type ContentGroupId = (typeof CONTENT_GROUPS)[number]["id"];
+
+export const CONTENT_SUBGROUPS = [
+  { id: "words", label: "Palavras" },
+  { id: "actions", label: "Ações" },
+  { id: "expressions", label: "Expressões" },
+] as const;
+export type ContentSubgroupId = (typeof CONTENT_SUBGROUPS)[number]["id"];
+
+export function getContentGroupLabel(id: string): string {
+  return CONTENT_GROUPS.find((g) => g.id === id)?.label ?? id;
+}
+
+export function getContentSubgroupLabel(id: string): string {
+  return CONTENT_SUBGROUPS.find((g) => g.id === id)?.label ?? id;
+}

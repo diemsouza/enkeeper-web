@@ -26,7 +26,10 @@ export const POST = verifySignatureAppRouter(async (req: Request) => {
       message = error.errors[0]?.message || "Invalid payload!";
     }
 
-    console.error("Chat dispatch error:", message);
+    console.error(
+      "[post/api/queue/chat-dispatch] Chat dispatch error:",
+      message,
+    );
     return NextResponse.json(
       { success: false, message: getErrorMessage(error, message) },
       { status: 500 },

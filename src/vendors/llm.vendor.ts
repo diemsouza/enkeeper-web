@@ -22,8 +22,9 @@ import {
   GEN_VOCABULARY_PROMPT,
   GEN_TEXT_PROMPT,
   GEN_EXERCISE_PROMPT,
+  GEN_CONTENT_PROMPT,
 } from "../lib/prompts";
-import { QuestionFormat, SectionType } from "../lib/prisma";
+import { Level, QuestionFormat, SectionType } from "../lib/prisma";
 import { RetryContext } from "../types/retry-context";
 
 const MODEL_MINI = "gpt-4.1-mini";
@@ -120,6 +121,103 @@ export async function generateDocSections(params: {
   });
 
   return result;
+}
+
+// ─── Topic content generation ────────────────────────────────────────────────
+
+const TOPIC_GENERATION_ERROR_REASON =
+  "Não foi possível usar esse assunto. Tente outro assunto.";
+
+export async function generateTopicContent(params: {
+  level: Level;
+  contentGroup: string;
+  contentSubgroup: string;
+  contentTopic: string;
+  userId: string;
+}): Promise<
+  | { status: "content"; data: DocProcessingResult }
+  | { status: "error"; reason: string }
+> {
+  const { level, contentGroup, contentSubgroup, contentTopic, userId } = params;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cachedTokens = 0;
+  let result: DocProcessingResult | null = null;
+  let rawOutput: string | null = null;
+  let logError: string | null = null;
+  const startTime = Date.now();
+
+  const systemPrompt = GEN_CONTENT_PROMPT.replace("{nivel}", level)
+    .replace("{content_group}", contentGroup)
+    .replace("{content_subgroup}", contentSubgroup)
+    .replace("{content_topic}", contentTopic);
+  const userPrompt = `Tema: {content_topic}`.replace(
+    "{content_topic}",
+    contentTopic,
+  );
+
+  try {
+    const llmResult = await generateText({
+      model: getStandardLanguageModel(),
+      output: Output.object({ schema: docProcessingSchema }),
+      temperature: 0.5,
+      system: systemPrompt,
+      prompt: userPrompt,
+    });
+    inputTokens += llmResult.usage?.inputTokens ?? 0;
+    outputTokens += llmResult.usage?.outputTokens ?? 0;
+    cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+    rawOutput = llmResult.text ?? null;
+    result = llmResult.output;
+  } catch (err) {
+    if (NoObjectGeneratedError.isInstance(err) && err.text) {
+      rawOutput = err.text;
+      try {
+        result = docProcessingSchema.parse(
+          parseJsonWithFallback(err.text.trim()),
+        );
+      } catch {
+        // structured parse failed after NoObjectGeneratedError
+      }
+    } else if (err instanceof Error) {
+      logError = err.message;
+    }
+  }
+
+  const durationMs = Date.now() - startTime;
+
+  await llmUsageService.registerUsage({
+    userId,
+    docId: null,
+    usageType: "practice_generation",
+    provider: PROVIDER_STANDARD,
+    model: getStandardModel(),
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+  });
+
+  await llmLogService.registerLog({
+    stage: "gen-content",
+    provider: PROVIDER_STANDARD,
+    model: getStandardModel(),
+    input: { system: systemPrompt, prompt: userPrompt },
+    output: rawOutput,
+    parsedOutput: result,
+    success: result !== null,
+    error: logError,
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+    durationMs,
+    userId,
+  });
+
+  if (!result || !result.isValid) {
+    return { status: "error", reason: TOPIC_GENERATION_ERROR_REASON };
+  }
+
+  return { status: "content", data: result };
 }
 
 // ─── Section question generation ─────────────────────────────────────────────

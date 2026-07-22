@@ -26,7 +26,7 @@ export const POST = verifySignatureAppRouter(async (req: Request) => {
       message = error.errors[0]?.message || "Invalid payload!";
     }
 
-    console.error("Chat compute error:", message);
+    console.error("[post/api/queue/chat-compute] Chat compute error:", message);
     return NextResponse.json(
       { success: false, message: getErrorMessage(error, message) },
       { status: 500 },

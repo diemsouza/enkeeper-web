@@ -1,4 +1,4 @@
-import { Doc, DocStatus, DocType, Level } from "../lib/prisma";
+import { Doc, DocSource, DocStatus, DocType, Level, Prisma } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type CreateDocData = {
@@ -8,6 +8,9 @@ type CreateDocData = {
   rawContent?: string;
   content?: string;
   status?: DocStatus;
+  level?: Level;
+  source?: DocSource;
+  metadata?: Prisma.InputJsonValue;
 };
 
 type UpdateDocData = {

@@ -16,6 +16,11 @@ enum DocStatus {
     canceled
 }
 
+enum DocSource {
+    upload
+    generated
+}
+
 enum ActivityStatus {
     active
     paused
@@ -117,6 +122,8 @@ model Doc {
     content    String?   @map("content") @db.Text
     status     DocStatus @default(processing) @map("status")
     error      String?   @map("error")
+    source     DocSource @default(upload) @map("source")
+    metadata   Json?     @map("metadata")
     createdAt  DateTime  @default(now()) @map("created_at")
     updatedAt  DateTime  @updatedAt @map("updated_at")
     deletedAt  DateTime? @map("deleted_at")

@@ -1,4 +1,5 @@
 import {
+  findCurrentActivityByUser,
   findEligibleActivities,
   updateActivity,
 } from "../repo/activities.repo";
@@ -18,7 +19,12 @@ import {
   findQuestionById,
   findLatestUnansweredInSection,
 } from "../repo/questions.repo";
-import { findUserChannelByUserId, findUserById } from "../repo/users.repo";
+import {
+  findUserChannelByUserId,
+  findUserById,
+  findUsersWithExpiredFlowIntent,
+  updateUserPendingIntent,
+} from "../repo/users.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 import { MessageChannel } from "../types/message-channel";
 import {
@@ -26,6 +32,7 @@ import {
   formatNudgeMessage,
   formatQuestion,
   formatSectionTransition,
+  formatNewActivityFlowExpired,
 } from "../core/formatters";
 import {
   findSectionById,
@@ -40,6 +47,7 @@ import {
   MAX_RETRY_ATTEMPTS,
   RETRY_DELAY_MS,
   DOC_PENDING_TIMEOUT_MS,
+  COMMAND_TIMEOUT_MIN,
 } from "../lib/constants";
 import {
   Activity,
@@ -58,6 +66,12 @@ import {
 } from "../core/format-loader";
 import { startOfDay } from "date-fns";
 import { buildRoundCompletedSummary } from "./activity-service";
+import { UserIntentMetadata } from "../types/domain";
+
+function isNewActivityFlowIntent(user: { metadata: unknown }): boolean {
+  const metadata = user.metadata as UserIntentMetadata | null;
+  return metadata?.intent_data?.flow === "new_activity";
+}
 
 type CronResult = {
   processed: number;
@@ -82,9 +96,17 @@ export async function processActivityCron(
         continue;
       }
 
+      if (user.pendingIntent === "waiting_doc_replace") {
+        skipped++;
+        continue;
+      }
+
       if (
-        user.pendingIntent === "awaiting_doc_replace" ||
-        user.pendingIntent === "awaiting_doc_confirm"
+        user.pendingIntent === "waiting_set_activity_group" ||
+        user.pendingIntent === "waiting_set_activity_subgroup" ||
+        user.pendingIntent === "waiting_set_activity_topic" ||
+        (user.pendingIntent === "waiting_set_level" &&
+          isNewActivityFlowIntent(user))
       ) {
         skipped++;
         continue;
@@ -231,7 +253,7 @@ export async function processActivityCron(
             await channel.sendMessage(userChannel.channelId, nudge.text);
           }
         } catch (err) {
-          console.error(`[activity-cron] nudge send error (${nextStep}):`, err);
+          console.error(`[processActivityCron] nudge send error (${nextStep}):`, err);
           errors++;
           continue;
         }
@@ -327,7 +349,59 @@ export async function processActivityCron(
 
       processed++;
     } catch (err) {
-      console.error(`[activity-cron] activity ${activity.id} error:`, err);
+      console.error(`[processActivityCron] activity ${activity.id} error:`, err);
+      errors++;
+    }
+  }
+
+  return { processed, skipped, errors };
+}
+
+export async function processExpiredFlowIntents(
+  channel: MessageChannel,
+): Promise<CronResult> {
+  const threshold = new Date(Date.now() - COMMAND_TIMEOUT_MIN * 60 * 1000);
+  const users = await findUsersWithExpiredFlowIntent(threshold);
+
+  let processed = 0;
+  let skipped = 0;
+  let errors = 0;
+
+  for (const user of users) {
+    try {
+      if (
+        user.pendingIntent === "waiting_set_level" &&
+        !isNewActivityFlowIntent(user)
+      ) {
+        skipped++;
+        continue;
+      }
+
+      const currentActivity = await findCurrentActivityByUser(user.id);
+      if (!currentActivity) {
+        skipped++;
+        continue;
+      }
+
+      await updateUserPendingIntent(user.id, null);
+
+      const userChannel = await findUserChannelByUserId(user.id);
+      if (userChannel) {
+        const msg = formatNewActivityFlowExpired();
+        await channel.sendMessage(userChannel.channelId, msg);
+        await saveMessage({
+          userId: user.id,
+          userChannelId: userChannel.id,
+          role: "assistant",
+          content: msg,
+        });
+        const today = startOfDay(new Date());
+        await incrementAgentMessageCount(user.id, today);
+      }
+
+      processed++;
+    } catch (err) {
+      console.error(`[processExpiredFlowIntents] expired flow intent for user ${user.id}:`, err);
       errors++;
     }
   }

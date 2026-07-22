@@ -1,7 +1,7 @@
 # Fluizer - Product Brief
 
 > Documento vivo - base de decisão para produto e negócio.
-> Versão 13 - Junho 2026
+> Versão 14 - Julho 2026
 > Regras de negócio e produto em Product-Rules.md
 
 ---
@@ -10,7 +10,7 @@
 
 **Um agente de prática de inglês que mantém seu estudo ativo o dia inteiro no WhatsApp.**
 
-Você envia o material da sua aula - texto, imagem ou PDF - e recebe perguntas sobre aquilo ao longo do dia. Responde de cabeça, sem consultar. O sistema avalia, dá feedback e registra o que você acertou e errou.
+Você conta o que quer praticar, ou envia o material da sua aula - texto, imagem ou PDF - e recebe perguntas sobre aquilo ao longo do dia. Responde de cabeça, sem consultar. O sistema avalia, dá feedback e registra o que você acertou e errou.
 
 Aula tem 30 minutos. Sua prática tem o dia inteiro.
 
@@ -22,7 +22,7 @@ Para quem estuda inglês e perde o conteúdo no resto da rotina. Aluno de escola
 
 Vocabulário novo não fixa sem repetição contextual. Você estuda 30 minutos, depois é português o dia inteiro. Flashcard exige disciplina e sessão dedicada. Tutor de IA conversa sobre cenários genéricos, não sobre o material da sua aula.
 
-Fluizer mantém sua prática ativa no canal onde você já vive, com o material que você já está estudando.
+Fluizer mantém sua prática ativa no canal onde você já vive, com o material que você já está estudando, ou com um tema à sua escolha quando não há material formal em mãos.
 
 ---
 
@@ -58,8 +58,8 @@ A interseção "prática contextual contínua, ancorada no material do aluno, de
 
 ## 4. Como funciona
 
-1. Usuário manda o material da aula - texto, imagem ou PDF.
-2. Sistema identifica seções do material por tipo, detecta o nível e gera perguntas específicas por seção.
+1. Usuário conta o que quer praticar, ou envia o material da aula - texto, imagem ou PDF.
+2. Sistema identifica seções do material por tipo (ou gera o conteúdo a partir do tema informado), detecta o nível e gera perguntas específicas por seção.
 3. Durante o dia, perguntas chegam no WhatsApp. Usuário responde de cabeça.
 4. Sistema avalia a resposta, dá feedback natural e registra acerto/erro.
 5. Perguntas que travaram voltam com prioridade, calculadas por repetição espaçada.
@@ -88,18 +88,33 @@ Cadência e sessão intensiva aceleram a exposição sem interferir no algoritmo
 
 Usuário pode iniciar sessão ativa - perguntas chegam em sequência, uma após a outra, sem esperar a cadência. Sessão dura 15 minutos de inatividade.
 
+### Nova atividade por tema
+
+Quando o usuário não tem material em mãos, ou quer trocar de assunto sem subir arquivo, o comando `nova atividade` inicia um fluxo curto de pergunta e resposta: nível (se ainda não informado), objetivo, tipo de conteúdo e um tema aberto. O sistema gera o conteúdo individualmente para aquele usuário a partir dessa combinação, e a atividade segue o mesmo ciclo de sempre a partir daí. Upload de material continua disponível a qualquer momento, inclusive durante esse fluxo.
+
 ### Resumo de atividade
 
-Ao subir novo material, o usuário recebe um resumo da atividade anterior: quanto tempo durou, quantas perguntas foram respondidas, acertos e erros, e uma leitura direta do resultado. Fecha o ciclo anterior e contextualiza o novo.
+Ao subir novo material ou concluir o fluxo de nova atividade, o usuário recebe um resumo da atividade anterior: quanto tempo durou, quantas perguntas foram respondidas, acertos e erros, e uma leitura direta do resultado. Fecha o ciclo anterior e contextualiza o novo.
 
 ### Onboarding
 
 ```
-Hi! Bem-vindo ao *Fluizer*. 👋
-Envie o material da sua aula de inglês - texto, foto ou PDF - e recebe perguntas sobre ele ao longo do dia, aqui mesmo.
-Você tem 24 horas pra sentir na prática. Aproveita!
-Mande agora pra começar. Ou use ajuda pra ver os comandos disponíveis.
+Hi 👋 Bem-vindo a Fluizer.
+
+Pratique inglês no seu ritmo, sobre o que fizer sentido pra você.
+
+Só me conta o que quer praticar, ou envie um arquivo de texto, imagem ou PDF
+com conteúdo em inglês: página de livro, post nas redes sociais ou material
+de aula.
+
+Ao longo do dia, chegam perguntas sobre o que você escolher praticar, aqui
+mesmo.
+
+Você tem 3 dias pra praticar sem custo. Use ajuda pra ver os comandos
+disponíveis.
 ```
+
+Logo em seguida, o sistema já inicia o fluxo de nível e nova atividade automaticamente, sem o usuário precisar comandar nada.
 
 ---
 
@@ -196,6 +211,7 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Transcrição de áudio | OpenAI Whisper |
 | OCR / Vision | GPT-4o-mini Vision |
 | Extração de conteúdo do material (doc-extraction) | GPT-4.1-mini |
+| Geração de conteúdo por tema (nova atividade) | Claude Haiku 4.5 |
 | Geração de perguntas | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Avaliação de respostas + feedback | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Evolução semanal | Modelo médio em batch |
@@ -222,6 +238,8 @@ Custo variável por usuário Pro ativo:
 | **Total médio** | **R$4,30–6,30** |
 
 **Margem bruta:** 68–78%.
+
+Geração de conteúdo por tema (nova atividade) ainda não tem custo médio medido em produção, é individual por usuário e por troca de atividade, sem compartilhamento entre usuários. Vale revisar essa tabela quando houver volume real desse fluxo.
 
 ---
 
@@ -298,13 +316,15 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Logs de LLM com DISABLE_LLM_LOGS
 - Resumo da atividade anterior ao adicionar novo material (com Revisadas)
 - Repetição espaçada SM-2 com timing corrigido (easeFactor, interval, nextRevisionAt, revisionCount)
+- Texto solto no chat não é mais interpretado como material, apenas arquivo (imagem, PDF, texto)
+- Fluxo de nova atividade (nível, objetivo, tipo de conteúdo, tema aberto) com geração de conteúdo individual por LLM
+- Onboarding atualizado para refletir o fluxo de nova atividade como caminho principal
 
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou
 - [ ] Gatilhos de upgrade contextuais
 - [ ] Pix manual via suporte
 - [ ] Site refeito com nova copy (foco inglês)
-- [ ] Onboarding atualizado
 - [ ] Material institucional para professor (1 página)
 
 **Testes antes do beta:**
@@ -323,16 +343,17 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 ## 14. Riscos principais
 
 1. **Qualidade conversacional.** Pergunta tem que soar como pessoa, feedback como amigo. É o trabalho central.
-2. **Custo de WhatsApp.** Se janela 24h cair abaixo de 80%, custos disparam. Monitorar semanalmente.
-3. **Dependência da Meta.** Mitigado por arquitetura multicanal.
-4. **Concorrente no mesmo eixo.** Histórico de acerto/erro acumulado com repetição espaçada personalizada é a defesa - vantagem do incumbente.
-5. **Conversão abaixo do projetado.** Se cair para 5%, meta sobe para ~3.000 pagantes.
+2. **Posicionamento do conteúdo gerado.** Geração individual por objetivo, tipo de conteúdo e tema aproxima o produto do território de concorrentes que apostam em currículo pronto (Parlai, ChatClass), sobretudo se a copy sugerir progressão, módulo ou etapa concluída. Mitigação: nenhuma linguagem de percurso em nenhum ponto do fluxo; upload de material próprio continua sendo o caminho reforçado nas parcerias com professor.
+3. **Custo de WhatsApp.** Se janela 24h cair abaixo de 80%, custos disparam. Monitorar semanalmente.
+4. **Dependência da Meta.** Mitigado por arquitetura multicanal.
+5. **Concorrente no mesmo eixo.** Histórico de acerto/erro acumulado com repetição espaçada personalizada é a defesa - vantagem do incumbente.
+6. **Conversão abaixo do projetado.** Se cair para 5%, meta sobe para ~3.000 pagantes.
 
 ---
 
 ## 15. Resumo executivo
 
-Um agente de prática de inglês que mantém seu vocabulário ativo o dia inteiro no WhatsApp. Você manda o material da aula, recebe perguntas durante o dia, o sistema avalia e registra o que travou. O que travou volta mais cedo. O que você domina ganha espaço. Toda semana você vê sua evolução real.
+Um agente de prática de inglês que mantém seu vocabulário ativo o dia inteiro no WhatsApp. Você conta o que quer praticar ou manda o material da aula, recebe perguntas durante o dia, o sistema avalia e registra o que travou. O que travou volta mais cedo. O que você domina ganha espaço. Toda semana você vê sua evolução real.
 
 Entra focado em inglês. Posicionamento de complemento - não compete com professor, trabalha com ele. Canal principal de aquisição é o próprio professor como parceiro.
 

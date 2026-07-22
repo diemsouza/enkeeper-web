@@ -33,9 +33,11 @@ model User {
     planStatus    PlanStatus @default(active) @map("plan_status")
     planExpiresAt DateTime?  @map("plan_expires_at")
 
-    level         Level?     @map("level")
-    pendingIntent String?    @map("pending_intent")
-    onboardedAt   DateTime?  @map("onboarded_at")
+    level           Level?     @map("level")
+    pendingIntent   String?    @map("pending_intent")
+    pendingIntentAt DateTime?  @map("pending_intent_at")
+    metadata        Json?      @map("metadata")
+    onboardedAt     DateTime?  @map("onboarded_at")
     // lastRequestAt não representa a última mensagem recebida; representa a
     // última mensagem aceita para processamento. Mensagens bloqueadas pelo lock
     // nunca atualizam este campo.
@@ -58,6 +60,7 @@ model User {
     llmLogs       LlmLog[]
     docItems      DocItem[]
 
+    @@index([pendingIntent, pendingIntentAt])
     @@map("users")
 }
 

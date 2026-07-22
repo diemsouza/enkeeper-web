@@ -42,7 +42,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
     });
 
     if (!result) {
-      console.error(`[process-doc] AI failed for doc ${docId}`);
+      console.error(`[processDoc] AI failed for doc ${docId}`);
       await updateDoc(docId, userId, { status: "failed" });
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
@@ -173,7 +173,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
       }
     }
   } catch (err) {
-    console.error(`[process-doc] unexpected error for doc ${docId}`, err);
+    console.error(`[processDoc] unexpected error for doc ${docId}`, err);
     await updateDoc(docId, userId, {
       status: "failed",
       error: err instanceof Error ? err.message : "Erro inesperado.",

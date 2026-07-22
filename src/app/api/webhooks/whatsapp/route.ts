@@ -206,7 +206,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         }
 
         console.warn(
-          "[webhooks] whatsapp: unsupported document mime_type, ignoring",
+          "[post/api/webhooks/whatsapp] unsupported document mime_type, ignoring",
           {
             mime,
             messageId: message.id,
@@ -244,7 +244,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         console.log(`[WEBHOOK] duplicate message ignored ${externalId}`);
         return;
       }
-      console.error("[WA WEBHOOK] processing error", err);
+      console.error("[post/api/webhooks/whatsapp] processing error", err);
       if (wa_id) {
         try {
           await channel.sendMessage(wa_id, formatGenericError());

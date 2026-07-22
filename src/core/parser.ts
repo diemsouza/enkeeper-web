@@ -1,5 +1,11 @@
 import { ParsedMessage } from "../types/domain";
 import { Level } from "../lib/prisma";
+import {
+  CONTENT_GROUPS,
+  CONTENT_SUBGROUPS,
+  ContentGroupId,
+  ContentSubgroupId,
+} from "../lib/constants";
 
 function normalize(s: string): string {
   // eslint-disable-next-line no-misleading-character-class
@@ -15,6 +21,37 @@ export function parseLevelInput(text: string): Level | "cancel" | null {
   return null;
 }
 
+function parseFixedChoiceInput<T extends { id: string; label: string }>(
+  text: string,
+  options: readonly T[],
+): T["id"] | "cancel" | null {
+  const n = normalize(text.trim());
+  if (n === "cancelar") return "cancel";
+  const num = parseInt(n, 10);
+  if (!isNaN(num) && num >= 1 && num <= options.length) {
+    return options[num - 1].id;
+  }
+  const match = options.find(
+    (o) =>
+      normalize(o.label) === n ||
+      normalize(o.label).includes(n) ||
+      n.includes(normalize(o.label)),
+  );
+  return match?.id ?? null;
+}
+
+export function parseContentGroupInput(
+  text: string,
+): ContentGroupId | "cancel" | null {
+  return parseFixedChoiceInput(text, CONTENT_GROUPS);
+}
+
+export function parseContentSubgroupInput(
+  text: string,
+): ContentSubgroupId | "cancel" | null {
+  return parseFixedChoiceInput(text, CONTENT_SUBGROUPS);
+}
+
 export function parseMessage(
   text: string,
   context: { isIntensiveMode?: boolean } = {},
@@ -24,9 +61,12 @@ export function parseMessage(
   const n = normalize(trimmed);
 
   if (n === "ajuda") return { intent: "list_commands", raw };
-  if (n === "atividade") return { intent: "list_activities", raw };
+  if (n === "atividade" || n === "atividades")
+    return { intent: "list_activities", raw };
   if (n === "nivel") return { intent: "set_level", raw };
   if (n === "suporte") return { intent: "support", raw };
+  if (n === "nova atividade" || n === "trocar atividade")
+    return { intent: "new_activity", raw };
 
   if (n === "sim") return { intent: "confirm", raw };
   if (n === "nao") return { intent: "cancel_no", raw };

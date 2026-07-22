@@ -17,7 +17,12 @@ export const POST = verifySignatureAppRouter(async (req: Request) => {
   try {
     const body = await req.json();
     const payload = MergeDocPayloadSchema.parse(body);
-    await mergeDoc(payload.docId, payload.userId, payload.latestDocItemId, resolveChannel());
+    await mergeDoc(
+      payload.docId,
+      payload.userId,
+      payload.latestDocItemId,
+      resolveChannel(),
+    );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     let message = error instanceof Error ? error.message : "Merge doc error!";
@@ -27,7 +32,7 @@ export const POST = verifySignatureAppRouter(async (req: Request) => {
     }
 
     const err = error instanceof Error ? error : new Error(message);
-    console.error("Merge doc error:", message);
+    console.error("[post/api/queue/merge-doc] Merge doc error:", message);
     return NextResponse.json(
       { success: false, message: getErrorMessage(err, message) },
       { status: 500 },

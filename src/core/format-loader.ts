@@ -104,6 +104,15 @@ function looksLikeDoubleQuestion(question: string): boolean {
   return /\be (quem|onde|qual|como|o que)\b.*\?/i.test(stripped);
 }
 
+// Aceita parênteses retos "()" e tipográficos "（）", com pelo menos
+// um caractere alfanumérico dentro (evita falso positivo em "(...)"
+// vazio ou pontuação solta).
+const PARENTHESIZED_TERM_RE = /[\(（][^()\)）]*[a-zA-Z0-9À-ÿ][^()\)）]*[\)）]/;
+
+function missingParenthesizedTerm(question: string): boolean {
+  return !PARENTHESIZED_TERM_RE.test(question);
+}
+
 export function validateGeneratedQuestion(
   question: SectionQuestionResult,
   sectionType: string,
@@ -117,6 +126,15 @@ export function validateGeneratedQuestion(
 
   if (looksLikeDoubleQuestion(question.question)) {
     const warning = `Pergunta descartada por parecer conter mais de uma pergunta: Q: ${question.question} A: ${question.answerKeys}`;
+    console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+    return warning;
+  }
+
+  if (
+    question.questionFormat === "scenario" &&
+    missingParenthesizedTerm(question.question)
+  ) {
+    const warning = `Pergunta de cenário descartada por não trazer o termo entre parênteses: Q: ${question.question} A: ${question.answerKeys}`;
     console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
     return warning;
   }

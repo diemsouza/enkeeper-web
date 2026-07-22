@@ -1,6 +1,7 @@
 import {
   Activity,
   DocType,
+  Level,
   Message,
   QuestionFormat,
   QuestionStatus,
@@ -17,7 +18,6 @@ import {
   formatActivitiesList,
   selectArchivedActivities,
   formatLevelQuestion,
-  formatDocConfirmPrompt,
   formatActivityReplacePrompt,
   formatPauseSuccess,
   formatNoPausableDocs,
@@ -51,6 +51,8 @@ import {
   formatOnboardingMsg2,
   formatOnboardingMsg3,
   formatOnboardingMsg4,
+  formatContentGroupQuestion,
+  formatNewActivityFlowCanceled,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import {
@@ -62,6 +64,11 @@ import {
   updateUserLastResponse,
 } from "../repo/users.repo";
 import { processLevelResponse } from "./level-capture-service";
+import {
+  processGroupResponse,
+  processSubgroupResponse,
+  processTopicResponse,
+} from "./new-activity-flow-service";
 import { findOrCreateUserByChannel } from "./user-service";
 import {
   createDoc,
@@ -103,7 +110,6 @@ import {
   formatIntensivePendingQuestion,
 } from "../core/formatters";
 import {
-  MIN_DOC_CHARS,
   INTENSIVE_UNTIL_MIN,
   MAX_ACTIVITIES_PER_DAY,
   AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
@@ -111,7 +117,12 @@ import {
   ONBOARDING_MESSAGE_INTERVAL_SEC,
   DAILY_PRACTICE_LIMIT,
 } from "../lib/constants";
-import { IncomingMessage, MessageIntent } from "../types/domain";
+import {
+  IncomingMessage,
+  MessageIntent,
+  NewActivityIntentData,
+  UserIntentMetadata,
+} from "../types/domain";
 import {
   completeRoundZero,
   generateQuestionIfPoolNotFull,
@@ -134,6 +145,7 @@ const OVERRIDING_INTENTS: MessageIntent[] = [
   "practice_now",
   "pause_practice",
   "set_level",
+  "new_activity",
 ];
 
 export async function handleIncomingMessage(
@@ -331,7 +343,7 @@ export async function handleIncomingMessage(
         const normalizedPhone = userChannel.channelId.replace(/\D/g, "");
         await markWaitlistActive(normalizedPhone);
       } catch (e) {
-        console.error(`Error to mark user ${user.id} as active in waitlist`, e);
+        console.error(`[handleIncomingMessage] Error to mark user ${user.id} as active in waitlist`, e);
       }
 
       await saveUserMsg(
@@ -358,6 +370,14 @@ export async function handleIncomingMessage(
         }
         outMsgs.push(msg);
       }
+
+      const { message: flowMessage } = await startNewActivityFlow(
+        user,
+        userChannel.id,
+        today,
+      );
+      outMsgs.push({ delay: ONBOARDING_MESSAGE_INTERVAL_SEC }, flowMessage);
+
       await channel.sendMessage(userChannel.channelId, outMsgs);
       return;
     }
@@ -370,6 +390,13 @@ export async function handleIncomingMessage(
       input.mediaType === "pdf" ||
       input.mediaType === "text"
     ) {
+      if (
+        pendingIntent === "waiting_set_activity_group" ||
+        pendingIntent === "waiting_set_activity_subgroup" ||
+        pendingIntent === "waiting_set_activity_topic"
+      ) {
+        await updateUserPendingIntent(user.id, null);
+      }
       const docType = input.mediaType as DocType;
       const msgs = await handleDocUpload(
         user.id,
@@ -386,7 +413,21 @@ export async function handleIncomingMessage(
 
     // ─── Estado pendente ──────────────────────────────────────────────────────
 
-    if (pendingIntent === "awaiting_level_set" && parsed.intent === "cancel") {
+    if (
+      (pendingIntent === "waiting_set_activity_group" ||
+        pendingIntent === "waiting_set_activity_subgroup" ||
+        pendingIntent === "waiting_set_activity_topic") &&
+      parsed.intent === "cancel"
+    ) {
+      await updateUserPendingIntent(user.id, null);
+      await saveUserMsg(user.id, userChannel.id, text, "cancel", input, today);
+      const flowCancelledReply = formatNewActivityFlowCanceled();
+      await saveBotReply(user.id, userChannel.id, flowCancelledReply, today);
+      await channel.sendMessage(userChannel.channelId, flowCancelledReply);
+      return;
+    }
+
+    if (pendingIntent === "waiting_set_level" && parsed.intent === "cancel") {
       await updateUserPendingIntent(user.id, null);
       await saveUserMsg(user.id, userChannel.id, text, "cancel", input, today);
       const pendingDocForLevel = await findPendingDocByUser(user.id);
@@ -403,14 +444,14 @@ export async function handleIncomingMessage(
 
     if (pendingIntent && !isOverriding) {
       // Aguardando captura de nível
-      if (pendingIntent === "awaiting_level_set") {
+      if (pendingIntent === "waiting_set_level") {
         if (parsed.intent === "set_level") {
           // nivel durante captura em andamento: reenviar pergunta
           await saveUserMsg(
             user.id,
             userChannel.id,
             text,
-            "awaiting_level_set",
+            "waiting_set_level",
             input,
             today,
           );
@@ -425,6 +466,25 @@ export async function handleIncomingMessage(
         await saveBotReply(user.id, userChannel.id, message, today);
 
         if (outcome === "captured") {
+          const levelFlowData = getIntentData(user);
+          if (levelFlowData?.flow === "new_activity") {
+            const groupMsg = await sendContentGroupQuestion(
+              user.id,
+              userChannel.id,
+              today,
+            );
+            await channel.sendMessage(userChannel.channelId, groupMsg);
+            await saveUserMsg(
+              user.id,
+              userChannel.id,
+              text,
+              "waiting_set_activity_group",
+              input,
+              today,
+            );
+            return;
+          }
+
           await updateUserPendingIntent(user.id, null);
           await saveUserMsg(
             user.id,
@@ -442,7 +502,7 @@ export async function handleIncomingMessage(
         }
 
         const levelIntent: MessageIntent =
-          outcome === "invalid" ? "awaiting_level_set" : "free_text";
+          outcome === "invalid" ? "waiting_set_level" : "free_text";
         await saveUserMsg(
           user.id,
           userChannel.id,
@@ -454,12 +514,63 @@ export async function handleIncomingMessage(
         return;
       }
 
-      // Aguardando sim ou não após texto longo
-      if (pendingIntent === "awaiting_doc_confirm") {
-        await updateUserPendingIntent(user.id, null);
-        const lastUserMessage = await findLastUserMessage(user.id);
-        if (!lastUserMessage) {
-          const noPendingReply = formatNoPendingAction();
+      // Aguardando escolha de objetivo (contentGroup)
+      if (pendingIntent === "waiting_set_activity_group") {
+        const result = processGroupResponse(text);
+        await channel.sendMessage(userChannel.channelId, result.message);
+        await saveBotReply(user.id, userChannel.id, result.message, today);
+
+        if (result.outcome === "canceled") {
+          await updateUserPendingIntent(user.id, null);
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "cancel",
+            input,
+            today,
+          );
+          return;
+        }
+        if (result.outcome === "invalid") {
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "waiting_set_activity_group",
+            input,
+            today,
+          );
+          return;
+        }
+
+        const subgroupData: NewActivityIntentData = {
+          flow: "new_activity",
+          contentGroup: result.contentGroup,
+        };
+        await updateUserPendingIntent(
+          user.id,
+          "waiting_set_activity_subgroup",
+          subgroupData,
+        );
+        await saveUserMsg(
+          user.id,
+          userChannel.id,
+          text,
+          "waiting_set_activity_subgroup",
+          input,
+          today,
+        );
+        return;
+      }
+
+      // Aguardando escolha de eixo (contentSubgroup)
+      if (pendingIntent === "waiting_set_activity_subgroup") {
+        const flowData = getIntentData(user);
+        const contentGroup = flowData?.contentGroup;
+        if (!contentGroup) {
+          // não deveria acontecer: objetivo é sempre capturado antes deste passo
+          await updateUserPendingIntent(user.id, null);
           await saveUserMsg(
             user.id,
             userChannel.id,
@@ -468,48 +579,120 @@ export async function handleIncomingMessage(
             input,
             today,
           );
-          await saveBotReply(user.id, userChannel.id, noPendingReply, today);
-          await channel.sendMessage(userChannel.channelId, noPendingReply);
+          const errReply = formatNewActivityFlowCanceled();
+          await saveBotReply(user.id, userChannel.id, errReply, today);
+          await channel.sendMessage(userChannel.channelId, errReply);
           return;
         }
-        if (parsed.intent === "confirm") {
+        const result = processSubgroupResponse(text, contentGroup);
+        await channel.sendMessage(userChannel.channelId, result.message);
+        await saveBotReply(user.id, userChannel.id, result.message, today);
+
+        if (result.outcome === "canceled") {
+          await updateUserPendingIntent(user.id, null);
           await saveUserMsg(
             user.id,
             userChannel.id,
             text,
-            "confirm",
+            "cancel",
             input,
             today,
           );
-          const msgs = await createPendingBuffer(
+          return;
+        }
+        if (result.outcome === "invalid") {
+          await saveUserMsg(
             user.id,
             userChannel.id,
-            lastUserMessage.content,
-            "text",
+            text,
+            "waiting_set_activity_subgroup",
+            input,
             today,
-            lastUserMessage.id,
           );
-          if (msgs.length > 0)
-            await channel.sendMessage(userChannel.channelId, msgs);
           return;
         }
 
+        const topicData: NewActivityIntentData = {
+          flow: "new_activity",
+          contentGroup,
+          contentSubgroup: result.contentSubgroup,
+        };
+        await updateUserPendingIntent(
+          user.id,
+          "waiting_set_activity_topic",
+          topicData,
+        );
         await saveUserMsg(
           user.id,
           userChannel.id,
           text,
-          "cancel",
+          "waiting_set_activity_topic",
           input,
           today,
         );
-        const reply = formatCanceled();
-        await saveBotReply(user.id, userChannel.id, reply, today);
-        await channel.sendMessage(userChannel.channelId, reply);
+        return;
+      }
+
+      // Aguardando tema livre (contentTopic) e geração do conteúdo
+      if (pendingIntent === "waiting_set_activity_topic") {
+        const flowData = getIntentData(user);
+        const contentGroup = flowData?.contentGroup;
+        const contentSubgroup = flowData?.contentSubgroup;
+        const userLevel = user.level;
+
+        if (!userLevel || !contentGroup || !contentSubgroup) {
+          // não deveria acontecer: nível, objetivo e eixo são sempre capturados antes deste passo
+          await updateUserPendingIntent(user.id, null);
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "free_text",
+            input,
+            today,
+          );
+          const errReply = formatNewActivityFlowCanceled();
+          await saveBotReply(user.id, userChannel.id, errReply, today);
+          await channel.sendMessage(userChannel.channelId, errReply);
+          return;
+        }
+
+        const result = await processTopicResponse(
+          text,
+          user.id,
+          userLevel,
+          contentGroup,
+          contentSubgroup,
+          channel,
+        );
+
+        if (result.outcome === "done") {
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "free_text",
+            input,
+            today,
+          );
+          return;
+        }
+
+        await channel.sendMessage(userChannel.channelId, result.message);
+        await saveBotReply(user.id, userChannel.id, result.message, today);
+        await saveUserMsg(
+          user.id,
+          userChannel.id,
+          text,
+          "waiting_set_activity_topic",
+          input,
+          today,
+        );
         return;
       }
 
       // Aguardando sim ou não para substituir doc ativo
-      if (pendingIntent === "awaiting_doc_replace") {
+      if (pendingIntent === "waiting_doc_replace") {
         await updateUserPendingIntent(user.id, null);
         const lastUserMessage = await findLastUserMessage(user.id);
         if (!lastUserMessage) {
@@ -628,18 +811,36 @@ export async function handleIncomingMessage(
       }
 
       case "set_level": {
-        await updateUserPendingIntent(user.id, "awaiting_level_set");
+        await updateUserPendingIntent(user.id, "waiting_set_level");
         await saveUserMsg(
           user.id,
           userChannel.id,
           text,
-          "awaiting_level_set",
+          "waiting_set_level",
           input,
           today,
         );
         const levelMsg = formatLevelQuestion();
         await channel.sendMessage(userChannel.channelId, levelMsg);
         await saveBotReply(user.id, userChannel.id, levelMsg, today);
+        return;
+      }
+
+      case "new_activity": {
+        const { message: flowMessage, nextIntent } = await startNewActivityFlow(
+          user,
+          userChannel.id,
+          today,
+        );
+        await saveUserMsg(
+          user.id,
+          userChannel.id,
+          text,
+          nextIntent,
+          input,
+          today,
+        );
+        await channel.sendMessage(userChannel.channelId, flowMessage);
         return;
       }
 
@@ -807,100 +1008,6 @@ export async function handleIncomingMessage(
       }
 
       case "free_text": {
-        if (text.length >= MIN_DOC_CHARS) {
-          const pendingDoc = await findPendingDocByUser(user.id);
-          if (pendingDoc) {
-            const validCount = await countValidDocItemsByDoc(pendingDoc.id);
-            if (!canAddDocItem(validCount)) {
-              await saveUserMsg(
-                user.id,
-                userChannel.id,
-                text,
-                "free_text",
-                input,
-                today,
-              );
-              const limitReply = formatDocItemLimitReached();
-              await saveBotReply(user.id, userChannel.id, limitReply, today);
-              await channel.sendMessage(userChannel.channelId, limitReply);
-              return;
-            }
-            const itemValidation = validateDocItemInput(text, "text");
-            if (!itemValidation.success) {
-              await saveUserMsg(
-                user.id,
-                userChannel.id,
-                text,
-                "free_text",
-                input,
-                today,
-              );
-              await saveBotReply(
-                user.id,
-                userChannel.id,
-                itemValidation.error,
-                today,
-              );
-              await channel.sendMessage(
-                userChannel.channelId,
-                itemValidation.error,
-              );
-              return;
-            }
-            const savedMsg = await saveMessage({
-              userId: user.id,
-              userChannelId: userChannel.id,
-              role: "user",
-              content: text,
-              intent: "free_text",
-              externalId: input.externalId,
-              mediaType: input.mediaType,
-              mediaId: input.mediaId,
-              metadata: input.mediaMetadata,
-              receivedAt: input.receivedAt,
-            });
-            await incrementUserMessageCount(user.id, today);
-            const docItem = await createDocItem({
-              docId: pendingDoc.id,
-              userId: user.id,
-              messageId: savedMsg.id,
-              docType: "text",
-              rawContent: text,
-              order: validCount + 1,
-            });
-            await publishDocMerge(pendingDoc.id, user.id, docItem.id);
-            const ackReply = formatDocItemReceived(validCount + 1);
-            await saveBotReply(user.id, userChannel.id, ackReply, today);
-            await channel.sendMessage(userChannel.channelId, ackReply);
-            return;
-          }
-
-          const activityCount = await getTodayActivityCount(user.id, today);
-          if (!canStartActivity(activityCount)) {
-            reply = formatDailyActivityLimitReached();
-            messageIntent = "free_text";
-            break;
-          }
-          const textValidation = validateDocItemInput(text, "text");
-          if (!textValidation.success) {
-            reply = textValidation.error;
-            messageIntent = "free_text";
-            break;
-          }
-
-          if (activeActivity) {
-            reply = formatActivityReplacePrompt(
-              activeActivity.title ?? "",
-              MAX_ACTIVITIES_PER_DAY - activityCount,
-            );
-            messageIntent = "awaiting_doc_replace";
-            break;
-          }
-          reply = formatDocConfirmPrompt();
-          messageIntent = "awaiting_doc_confirm";
-          break;
-        }
-
         if (!activeActivity) {
           reply = formatNoActivity();
           break;
@@ -1103,8 +1210,7 @@ export async function handleIncomingMessage(
     }
 
     const SWITCH_PENDING_STATES: MessageIntent[] = [
-      "awaiting_doc_confirm",
-      "awaiting_doc_replace",
+      "waiting_doc_replace",
       "support",
     ];
     const nextPending = SWITCH_PENDING_STATES.includes(
@@ -1112,7 +1218,7 @@ export async function handleIncomingMessage(
     )
       ? messageIntent
       : null;
-    if (user.pendingIntent !== "awaiting_level_set" || nextPending !== null) {
+    if (user.pendingIntent !== "waiting_set_level" || nextPending !== null) {
       await updateUserPendingIntent(user.id, nextPending);
     }
 
@@ -1342,6 +1448,45 @@ async function saveBotReply(
   await incrementAgentMessageCount(userId, today);
 }
 
+function getIntentData(user: {
+  metadata: unknown;
+}): NewActivityIntentData | undefined {
+  const metadata = user.metadata as UserIntentMetadata | null;
+  return metadata?.intent_data;
+}
+
+async function sendContentGroupQuestion(
+  userId: string,
+  userChannelId: string,
+  today: Date,
+): Promise<string> {
+  const groupData: NewActivityIntentData = { flow: "new_activity" };
+  await updateUserPendingIntent(
+    userId,
+    "waiting_set_activity_group",
+    groupData,
+  );
+  const groupMsg = formatContentGroupQuestion();
+  await saveBotReply(userId, userChannelId, groupMsg, today);
+  return groupMsg;
+}
+
+async function startNewActivityFlow(
+  user: { id: string; level: Level | null },
+  userChannelId: string,
+  today: Date,
+): Promise<{ message: string; nextIntent: MessageIntent }> {
+  if (!user.level) {
+    const levelFlowData: NewActivityIntentData = { flow: "new_activity" };
+    await updateUserPendingIntent(user.id, "waiting_set_level", levelFlowData);
+    const levelMsg = formatLevelQuestion();
+    await saveBotReply(user.id, userChannelId, levelMsg, today);
+    return { message: levelMsg, nextIntent: "waiting_set_level" };
+  }
+  const groupMsg = await sendContentGroupQuestion(user.id, userChannelId, today);
+  return { message: groupMsg, nextIntent: "waiting_set_activity_group" };
+}
+
 async function createPendingBuffer(
   userId: string,
   userChannelId: string,
@@ -1459,12 +1604,12 @@ async function handleDocUpload(
 
   const activeActivity = await findLastActivityByUser(userId);
   if (activeActivity) {
-    await updateUserPendingIntent(userId, "awaiting_doc_replace");
+    await updateUserPendingIntent(userId, "waiting_doc_replace");
     await saveUserMsg(
       userId,
       userChannelId,
       rawContent,
-      "awaiting_doc_replace",
+      "waiting_doc_replace",
       input,
       today,
     );

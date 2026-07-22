@@ -1,6 +1,9 @@
 import { ActivityStatus, Level, QuestionFormat } from "../lib/prisma";
 import {
   ANSWER_EMOJI,
+  CONTENT_GROUPS,
+  CONTENT_SUBGROUPS,
+  ContentGroupId,
   INTENSIVE_UNTIL_MIN,
   MAX_DOC_ITEMS_PER_DOC,
   TRIAL_DAYS,
@@ -22,23 +25,23 @@ export function formatOnboardingMsg1(): string {
 }
 
 export function formatOnboardingMsg2(): string {
-  return "Pratique inglês no seu ritmo, com o material que fizer sentido pra você.";
+  return "Pratique inglês no seu ritmo, sobre o que fizer sentido pra você.";
 }
 
 export function formatOnboardingMsg3(): string {
-  return "Envie imagem, PDF ou texto com conteúdo em inglês: algo que esteja lendo, página de livro, post nas redes sociais ou material de aula.";
+  return "Só me conta o que quer praticar, ou envie um arquivo de texto, imagem ou PDF com conteúdo em inglês: página de livro, post nas redes sociais ou material de aula.";
 }
 
 export function formatOnboardingMsg4(): string {
-  return "Estude o que você enviar. Ao longo do dia, chegam perguntas sobre ele, aqui mesmo.";
+  return "Ao longo do dia, chegam perguntas sobre o que você escolher praticar, aqui mesmo.";
 }
 
 export function formatOnboardingMsg5(): string {
-  return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra sentir o produto. Envie o material agora pra começar, ou use *ajuda* pra ver os comandos disponíveis.`;
+  return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra praticar sem custo. Use *ajuda* pra ver os comandos disponíveis.`;
 }
 
 export function formatMaterialGuidance(): string {
-  return `Sem ideia do que enviar? Precisa ter texto em inglês suficiente para virar prática.\n\nFoto de página de livro, captura de tela de conversa, letra de música, post nas redes sociais, material de aula ou PDF.`;
+  return `Use *nova atividade* para praticar um tema à sua escolha.\n\nOu envie um arquivo de texto em inglês: foto de página de livro, captura de tela de conversa, letra de música, post nas redes sociais, material de aula ou PDF.`;
 }
 
 export function formatNoActivity(): string {
@@ -71,9 +74,9 @@ export function formatLevelQuestion(): string {
   return [
     "Informe a letra que corresponde ao nível do seu inglês.",
     "",
-    "a) - Básico",
-    "b) - Intermediário",
-    "c) - Avançado",
+    "a) Básico",
+    "b) Intermediário",
+    "c) Avançado",
     "",
     "_Use *cancelar* para sair._",
   ].join("\n");
@@ -95,18 +98,68 @@ export function formatCommandList(level: Level | null): string {
     "*Comandos disponíveis:*",
     "",
     "*ajuda* - ver essa lista de comandos",
-    //"*cancelar* - descartar atividade em andamento",
+    //"*cancelar* - sai do fluxo ou ação em andamento",
     "*praticar* - prática intensiva",
     "*pausar* - pausar atividade ou prática intensiva em andamento",
     "*retomar* - retomar atividade pausada",
     "*atividade* - sua atividade atual",
+    "*nova atividade* - cria uma atividade com tema gerado por você",
     `*nivel* - ${nivelLabel}`,
     "*suporte* - fala com a equipe",
     "",
-    "_Envie texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._",
-    ,
-    ,
+    "_Envie um arquivo de texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._",
   ].join("\n");
+}
+
+export function formatContentGroupQuestion(): string {
+  const options = CONTENT_GROUPS.map((g, i) => `${i + 1}) ${g.label}`);
+  return [
+    "Sobre qual objetivo você quer praticar?",
+    "",
+    ...options,
+    "",
+    "_Use *cancelar* para sair._",
+  ].join("\n");
+}
+
+export function formatContentSubgroupQuestion(): string {
+  const options = CONTENT_SUBGROUPS.map((g, i) => `${i + 1}) ${g.label}`);
+  return [
+    "Que tipo de conteúdo prefere praticar?",
+    "",
+    ...options,
+    "",
+    "_Use *cancelar* para sair._",
+  ].join("\n");
+}
+
+const CONTENT_TOPIC_QUESTION: Record<ContentGroupId, string> = {
+  work: "Qual área de trabalho gostaria de praticar? Construção, medicina, tecnologia...",
+  travel:
+    "Qual assunto sobre viagens deseja praticar? Aeroporto, hotel, restaurante...",
+  education:
+    "Qual assunto sobre estudos ou intercâmbio gostaria de praticar? Universidade, bolsa de estudos, entrevista...",
+  daily_life:
+    "Qual tema do dia a dia gostaria de praticar? Tarefas domésticas, compras, lazer...",
+};
+
+export function formatContentTopicQuestion(contentGroup: string): string {
+  const question =
+    CONTENT_TOPIC_QUESTION[contentGroup as ContentGroupId] ??
+    "Sobre qual tema você quer praticar?";
+  return [question, "", "_Use *cancelar* para sair._"].join("\n");
+}
+
+export function formatNewActivityFlowCanceled(): string {
+  return "Ok, criação de nova atividade cancelada.";
+}
+
+export function formatNewActivityFlowExpired(): string {
+  return "Criação da nova atividade encerrada por inatividade. Pode recomeçar quando quiser com *nova atividade*.";
+}
+
+export function formatContentTopicError(): string {
+  return "Assunto inválido. Envie outro, ou use *cancelar* para sair.";
 }
 
 type ActivityListItem = {
@@ -160,7 +213,7 @@ export function formatActivitiesList(activities: ActivityListItem[]): string {
   else if (currentStatus === "paused")
     textFooter = "_Use *retomar* para continuar._ ";
   textFooter +=
-    "_Para criar uma atividade, envie texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._";
+    "_Para criar uma atividade, use *nova atividade* ou envie um arquivo de texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._";
   if (textFooter) lines.push("", textFooter);
 
   return lines.join("\n");
@@ -204,19 +257,11 @@ export function formatIntensiveModeStopped(pendingQuestion: boolean): string {
 }
 
 export function formatDailyPracticeLimitReached(): string {
-  return "Você usou toda sua prática intesiva disponível de hoje, mas amanhã tem mais.";
+  return "Você usou toda sua prática disponível de hoje, mas amanhã tem mais.";
 }
 
 export function formatIntensiveDailyLimitReached(): string {
   return "Você atingiu o limite diário de prática intensiva. Sua prática ao longo do dia continua normal.";
-}
-
-export function formatDocConfirmPrompt(): string {
-  return [
-    "Esse material parece bom pra praticar. Quer começar uma nova atividade com ele?",
-    "",
-    "_Use *sim* para confirmar ou *não* para cancelar._",
-  ].join("\n");
 }
 
 export function formatActivityReplacePrompt(
@@ -281,7 +326,7 @@ export function formatShortTextWithDocs(): string {
 }
 
 export function formatShortTextNoDocs(): string {
-  return "Envie um material para praticar durante o dia. Pode ser texto, imagem ou PDF.\n\n_Use *ajuda* para ver todos os comandos._";
+  return "Use *nova atividade* para praticar um tema à sua escolha, ou envie um arquivo de texto, imagem ou PDF para praticar durante o dia.\n\n_Use *ajuda* para ver todos os comandos._";
 }
 
 export function getRoundCompletedReadingLine(right: number, responses: number) {
@@ -387,12 +432,18 @@ export function formatPreviousActivitySummary(
 
   const reviewsClause =
     reviews > 0
-      ? `, sendo ${reviews} ${reviews === 1 ? "delas revisada" : "delas reviews"} mais de uma vez antes de fixar`
+      ? `, sendo ${reviews} ${reviews === 1 ? "delas revisada" : "delas revisadas"} mais de uma vez antes de fixar`
       : "";
 
-  const rightClause = isFullCoverage
-    ? `você respondeu todas as ${questionCount} perguntas, ${percentual}% de acerto (${right} certas e ${wrongTotal} erradas)${reviewsClause}.`
-    : `você respondeu ${responses} de ${questionCount} perguntas, ${percentual}% de acerto entre as respondidas (${right} certas e ${wrongTotal} erradas)${reviewsClause}.`;
+  let rightClause = isFullCoverage
+    ? `você respondeu todas as ${questionCount} perguntas, ${percentual}% de acerto`
+    : `você respondeu ${responses} de ${questionCount} perguntas, ${percentual}% de acerto entre as respondidas`;
+
+  rightClause +=
+    percentual > 0 && percentual < 100
+      ? ` (${right} certas e ${wrongTotal} erradas)`
+      : "";
+  rightClause += `${reviewsClause}.`;
 
   const coverageClause = getCoverageClause(responses, questionCount);
 
@@ -584,7 +635,7 @@ export function formatGenericError(): string {
 }
 
 export function formatUnsupportedFileType(): string {
-  return "Formato não suportado. Envie texto, imagem ou PDF.";
+  return "Formato não suportado. Envie um arquivo de texto, imagem ou PDF.";
 }
 
 export function formatIntensivePendingQuestion(): string {

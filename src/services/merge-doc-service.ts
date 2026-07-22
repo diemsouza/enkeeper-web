@@ -85,7 +85,7 @@ export async function mergeDoc(
 
   if (user.level === null) {
     await updateDoc(docId, userId, { rawContent: consolidatedRaw, docType });
-    await updateUserPendingIntent(userId, "awaiting_level_set");
+    await updateUserPendingIntent(userId, "waiting_set_level");
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
       const msg = formatLevelQuestion();
@@ -95,7 +95,7 @@ export async function mergeDoc(
         userChannelId: userChannel.id,
         role: "assistant",
         content: msg,
-        intent: "awaiting_level_set",
+        intent: "waiting_set_level",
       });
     }
     return;
@@ -133,7 +133,7 @@ export async function mergeDoc(
     });
 
     if (!docSectionResult) {
-      console.error(`[merge-doc] AI failed for doc ${docId}`);
+      console.error(`[mergeDoc] AI failed for doc ${docId}`);
       await updateDoc(docId, userId, {
         status: "failed",
         error: "Falha na extração de conteúdo.",
@@ -275,7 +275,7 @@ export async function mergeDoc(
       }
     }
   } catch (err) {
-    console.error(`[merge-doc] unexpected error for doc ${docId}`, err);
+    console.error(`[mergeDoc] unexpected error for doc ${docId}`, err);
     await updateDoc(docId, userId, {
       status: "failed",
       error: err instanceof Error ? err.message : "Erro inesperado.",

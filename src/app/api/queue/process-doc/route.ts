@@ -26,7 +26,7 @@ export const POST = verifySignatureAppRouter(async (req: Request) => {
     }
 
     const err = error instanceof Error ? error : new Error(message);
-    console.error("Process doc error:", message);
+    console.error("[post/api/queue/process-doc] Process doc error:", message);
     return NextResponse.json(
       { success: false, message: getErrorMessage(err, message) },
       { status: 500 },

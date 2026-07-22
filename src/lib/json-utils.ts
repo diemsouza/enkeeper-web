@@ -62,7 +62,7 @@ export const parseRawMessage = (
     const data = parseJsonWithFallback(rawMessage.trim());
     return data;
   } catch (err) {
-    console.error("Erro ao parsear JSON:", err, rawMessage);
+    console.error("[parseRawMessage] Erro ao parsear JSON:", err, rawMessage);
     return {
       message: fallbackError,
     };

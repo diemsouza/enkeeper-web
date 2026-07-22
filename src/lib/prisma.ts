@@ -21,6 +21,7 @@ export {
   ChannelType,
   DocStatus,
   DocType,
+  DocSource,
   Level,
   SectionStatus,
   SectionType,

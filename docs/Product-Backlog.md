@@ -64,70 +64,82 @@ Avaliação em dois estágios via LLM, não dá pra fazer por regra fixa: primei
 
 Avaliação em dois estágios é mais cara que a avaliação atual de vocabulary, porque exige LLM julgando duas dimensões ao mesmo tempo (estrutura e semântica) em vez de match simples. Risco de classificação ambígua em seções com poucos exemplos (2-3 itens) permanece mesmo com o critério definido, exige teste com material real antes de confiar no doc-extraction sem revisão.
 
+Depende deste item o eixo `Frases prontas` do item 2 (conteúdo gerado), que fica fora de escopo até `structure` existir.
+
 ---
 
-## 2) Nível do usuário sobrepondo nível do material (Já foi implementado)
+## 2) Conteúdo gerado por objetivo, eixo e tema aberto (Já foi implementado)
+
+> Substitui as versões anteriores deste item ("Geração assistida de material para quem não tem o que enviar" e "Conteúdo gerado por objetivo e eixo, upload como caminho alternativo"). A leitura de "fallback para usuário travado" foi revista: geração passa a ser o caminho padrão de ativação, não a exceção. A complexidade de pool compartilhado, versionamento e área por objetivo foi removida deste desenho, substituída por geração individual por usuário com tema aberto validado por LLM.
 
 **Contexto**
 
-Análise de uso real (founder como usuário) mostrou perguntas calibradas como básico ("O que significa World em português?", "Como falar casa em inglês?") mesmo com o usuário em nível intermediário/avançado. O nível hoje é detectado por material (Seção 5 do Product-Rules), não pelo usuário.
+O produto depende de o usuário enviar material próprio. Quem não tem o que enviar trava antes de experimentar, e quem envia uma vez raramente sustenta o hábito de subir material novo. Piloto real confirmou o problema de outra forma: usuária verbalizou "quero aprender sobre coisas de cozinha" em vez de enviar material formal, e quando pediu pra enviar algo, mandou uma foto sem texto do próprio ambiente. O produto não tinha caminho pra capturar intenção livre, só sabia reagir a material trazido pronto.
 
 **Problema**
 
-Quem está acima do nível das perguntas geradas a partir do material sente o produto raso e sem retorno, porque a calibração depende do que foi enviado, não de quem está praticando. Isso é risco direto de abandono no trial: a pessoa nunca chega a sentir o valor central do produto porque a primeira impressão já vem desalinhada com sua capacidade real.
-*Exemplo:* usuário avançado sobe lista de vocabulário básico de uma aula de reforço e passa a receber só perguntas em PT/EN traduzidas, quando o esperado seria avançar o nível de exigência da pergunta independente do material.
+Ativação: usuário sem material em mãos, ou sem entender o que "serve" como material, perde o trial inteiro sem ver o valor central.
+
+Continuidade: sem material novo, a activity recicla as mesmas perguntas até o usuário perder interesse.
+
+Mental model: parte dos usuários pensa em termos de interesse ("quero praticar cozinha"), não em termos de "material formal para extrair". O produto de hoje só reconhece a segunda entrada.
 
 **Solução**
 
-Nível de inglês passa a ser atributo do usuário, capturado uma vez e reutilizável em qualquer atividade, com prioridade sobre o nível detectado no material.
+Usuário escolhe objetivo, eixo e um tema aberto (texto livre validado por LLM), o sistema gera o conteúdo individualmente para aquele usuário e a prática começa. Upload de material continua existindo como caminho alternativo, sem mudança no que já funciona hoje.
 
 **Como**
 
-Captura do nível direto no onboarding, como pergunta simples de escolha (básico, intermediário, avançado) antes do primeiro material chegar.
-*Exemplo:* a sequência de onboarding (Seção 10 do Product-Rules) ganha uma mensagem extra perguntando o nível antes de "Envie agora pra começar."
+**Pré-requisito**
 
-Nível do usuário sobrepõe nível do material na geração de perguntas, mas nível do material continua sendo calculado e armazenado (pode servir de sinal auxiliar ou de alerta de descompasso).
-*Exemplo:* material classificado como básico, usuário com nível avançado configurado, pergunta gerada deve seguir o padrão de idioma "majoritariamente em EN" da Seção 5, não o padrão do material.
+Texto solto no chat deixa de ser interpretado como material (já em implementação, independente deste item). Anexo (imagem, PDF, texto em arquivo) é a única entrada de material. Texto no chat passa a ter só duas leituras: comando ou resposta.
 
-Comando novo no menu de comandos (Seção 9) para o usuário trocar seu nível quando quiser, sem precisar reenviar material.
+**Fluxo fixo de captura**
+
+Sequência de pergunta e resposta determinística, reutilizada tanto no onboarding quanto no comando de nova atividade:
+
+1. Nível — só perguntado se o usuário ainda não tem nível declarado (mesmo campo do item de nível já implementado).
+2. Objetivo (contentGroup) — lista fechada de 4: Mercado de Trabalho, Viagens Internacionais, Educação e Intercâmbio, Dia a Dia e Lazer.
+3. Eixo (contentSubgroup) — lista fechada de 4: Palavras, Ações, Expressões, Frases prontas (este último depende do item 1 e fica fora enquanto `structure` não existir).
+4. Tema (contentTopic) — texto aberto. Pergunta fixa por objetivo, com exemplos embutidos no próprio texto (sem lista numerada separada).
+*Exemplo:* para Dia a Dia, a pergunta já sugere "tarefas domésticas, compras, lazer" dentro do próprio texto da pergunta, sem passo extra de escolha.
+
+Estado do fluxo controlado por um único campo de intenção pendente por usuário (mesmo mecanismo já usado para outras esperas de resposta). Enquanto o fluxo está em andamento, qualquer texto recebido é resposta ao passo atual, com prioridade sobre resposta de prática pendente. Cadência e nudge são suprimidos enquanto o fluxo está ativo. Fora do onboarding, o fluxo expira por inatividade após um tempo configurável, cancela silenciosamente e devolve o controle pra cadência normal da activity em andamento. Dentro do onboarding, não expira.
+
+**Geração**
+
+Chamada de LLM recebe nível, objetivo, eixo e tema, valida em duas camadas antes de gerar: o tema faz sentido dentro da combinação escolhida, e o tema não recai em conteúdo proibido (pornografia, sexualização, drogas, armas, discurso de ódio, xenofobia, racismo e equivalentes), mesmo quando tecnicamente encaixaria na combinação. Falhando qualquer validação, retorna erro curto e genérico, sem expor o motivo específico, e o usuário pode tentar outro tema ou cancelar. Passando, gera a mesma estrutura de documento e seção que o doc-extraction já produz hoje, sectionType fixo `vocabulary`.
+*Exemplo:* Mercado de Trabalho > Palavras > "flerte" não encaixa, retorna erro genérico. Dia a Dia > Ações > "armas de fogo" encaixaria estruturalmente mas é bloqueado pela camada de conteúdo proibido, mesmo erro genérico ao usuário.
+
+**Sem compartilhamento entre usuários**
+
+Diferente do desenho anterior deste item, aqui não existe pool compartilhado nem versionamento. Tema aberto por usuário torna reuso entre usuários pouco provável, então cada geração é individual. Simplifica o desenho, ao custo de não ter economia de cache. Revisitar só quando houver dado real de custo por geração que justifique voltar a uma taxonomia fechada com reuso.
+
+**Metadado**
+
+Documento gerado grava `origin: generated` e `metadata` (JSON) com o objetivo, eixo e tema que originaram aquele conteúdo, pra manter rastreabilidade de por que o material existe. Upload continua com `metadata` nulo por enquanto (ver item 4).
+
+**Troca de conteúdo**
+
+Comando `nova atividade` no menu dispara o fluxo a qualquer momento. Segue o mesmo ciclo de activity que já existe hoje (arquiva se teve resposta, cancela se não teve, resumo do ciclo anterior antes da nova pergunta).
+
+Se chega upload de arquivo durante o fluxo em andamento, o fluxo é cancelado silenciosamente e o upload segue o pipeline normal, sem pergunta de confirmação.
+
+**Sem artefato de estudo**
+
+Nada de PDF ou imagem para estudar antes. O termo aparece em contexto na própria pergunta, o feedback de erro é onde o ensino acontece.
 
 **Objeção**
 
-Nível auto-declarado pode não bater com o nível real do usuário (sub ou sobrestimado). Vale considerar, numa fase futura, ajuste implícito via taxa de acerto sustentada (ex: usuário "básico" acertando quase tudo por semanas seguidas sinaliza possível recalibração), mas isso é incremento posterior, não bloqueia o lançamento da captura inicial.
+Posicionamento. O risco não está na origem do conteúdo, está em apresentar progressão como percurso. Qualquer copy que sugira módulo, nível desbloqueado ou etapa concluída cruza a linha de ensino. Colocar esse fluxo como ação principal do onboarding aproxima o produto de currículo se a copy não deixar claro que é ponto de partida, não trilha.
+
+Sem pool compartilhado, custo de geração escala por usuário e por troca de atividade, não só por combinação. Medir custo real antes de considerar reintroduzir cache.
+
+Qualidade individual sem revisão prévia: diferente do pool compartilhado (que permitia revisar as primeiras versões manualmente antes de servir a muitos usuários), aqui cada geração vai direto ao usuário sem revisão humana. Validação de encaixe e conteúdo proibido no prompt reduz risco, mas não substitui auditoria amostral depois de rodando.
 
 ---
 
-## 3) Geração assistida de material para quem não tem o que enviar
-
-**Contexto**
-
-Piloto com usuário real: pessoa mandou "oi", viu o onboarding completo, e não enviou nenhum material até hoje. Hipótese é que a barreira é decidir o quê mandar, em qual formato, se serve.
-
-**Problema**
-
-O produto depende inteiramente de o usuário trazer material próprio para funcionar (Seção 4 do Product-Brief, passo 1). Para quem não tem aula corrente, não sabe o que mandar, ou trava na decisão, essa dependência é a própria porta de entrada falhando, antes de qualquer outra feature do produto entrar em jogo. Não é um ajuste de UX pequeno, é a barreira de ativação do trial inteiro para esse perfil de usuário.
-*Exemplo:* autodidata sem aula corrente, sem material recente em mãos, que abre o WhatsApp, lê o onboarding e não sabe se uma captura de tela do Duolingo "serve" ou não, e simplesmente não manda nada.
-
-**Solução**
-
-Para usuário que não envia material após um tempo do onboarding, o sistema oferece um fluxo de elicitação curto (nível, tópico de interesse, assunto) e gera o material por IA, entregando como texto ou arquivo, e segue o fluxo normal de atividade a partir dali.
-
-**Como**
-
-Gatilho condicional: se o trial passar um tempo definido sem nenhum material enviado, dispara a sequência de perguntas (nível, o que estudar, assunto de interesse), não como parte do onboarding padrão de todo mundo.
-*Exemplo:* "Qual nível você é? Intermediário ou B1" → "O que gostaria de estudar hoje? Verbo to be" → "Qual assunto te interessa? Tecnologia" → sistema gera o material e segue como se o usuário tivesse enviado.
-
-Material gerado entra no mesmo pipeline de extração/seção/pergunta já existente, não cria caminho técnico paralelo.
-
-Fluxo permanece como fallback, não substitui ou compete com o fluxo principal de "usuário manda material da própria aula", que continua sendo o caminho padrão e o foco do canal de aquisição por professor.
-
-**Objeção**
-
-Risco de posicionamento: o produto se define hoje como complemento de aula, não gerador de conteúdo de estudo (Seção 5 e 12 do Product-Brief, "voo baixo", "copy nunca menciona IA"). Gerar material do zero aproxima o produto do território de concorrentes diretos (Parlai, ChatClass) que o Fluizer evita deliberadamente. Por isso esse fluxo deve ficar restrito a quem trava sem material, e não se tornar a porta de entrada padrão do produto.
-
----
-
-## 4) Perguntas por áudio (camada TTS sobre o texto existente)
+## 3) Perguntas por áudio (camada TTS sobre o texto existente)
 
 **Contexto**
 
@@ -162,32 +174,26 @@ Custo de TTS é recorrente e escala linearmente com volume de mensagens e usuár
 
 ---
 
-## 5) Pool diário de práticas com controle de custo (Já foi implementado)
+## 4) Classificação de objetivo, eixo e tema para material de upload
 
 **Contexto**
 
-Modo prática intensiva (Seção 8, Product-Rules) só limitava por inatividade (15 minutos sem resposta). Cadência normal não tinha limite diário. Avaliação de resposta é a fatia mais cara do custo variável por usuário (Seção 10, Product-Brief), e esse custo é por resposta processada, não por tempo de sessão.
+O item 2 (conteúdo gerado) grava `metadata` com objetivo, eixo e tema para material com `origin: generated`, porque esses dados já chegam como parâmetro de entrada da geração. Material de upload (`origin: upload`) não tem esse metadado hoje, o doc-extraction só extrai título.
 
 **Problema**
 
-Sem limite de volume, o custo real por usuário podia escalar bem acima da média projetada. Usuário hiperfocado ou muito engajado podia consumir volume de avaliações desproporcional ao que a mensalidade sustenta.
+Sem esse dado para upload, não é possível ter visão agregada de que tipo de conteúdo os usuários trazem por conta própria (quantos % de material de trabalho, viagem, etc.), nem comparar esse padrão com o que é escolhido no fluxo de geração. A informação existe implicitamente no conteúdo do material, mas não é capturada em lugar nenhum.
 
 **Solução**
 
-Limite diário único de 60 práticas avaliadas por usuário, cadência e intensivo somados, com reserva fixa de 24 práticas garantidas para cadência. Intensivo consome no máximo 36 do total, protegendo a cadência de ser zerada por uma sessão isolada.
+Doc-extraction passa a inferir objetivo e eixo aproximados (e, quando fizer sentido, um tema) a partir do conteúdo do material enviado, gravando no mesmo campo `metadata` já usado pelo item 2.
 
-**Como foi implementado**
+**Como**
 
-Reaproveitada a tabela `DailyUsage`, já usada para os demais contadores diários (atividades, imagens, áudios). Dois campos novos: `practiceCount` (total do dia) e `intensiveCount` (subconjunto de prática originada de sessão intensiva).
+Diferente da geração (onde o LLM recebe objetivo e eixo como restrição e valida o tema contra eles), aqui o LLM precisa classificar livremente a partir do conteúdo, sem restrição prévia. É inferência, não validação, prompt e critério de acerto diferentes do item 2.
 
-Constantes de código, não campo no banco: `DAILY_PRACTICE_LIMIT = 60`, `CADENCE_RESERVE = 24`, `INTENSIVE_LIMIT` calculado como a diferença entre os dois (36). Sem diferenciação entre Trial e Pro.
-
-Checagem acontece antes de avaliar a resposta, não depois. Se o total do dia já atingiu o limite, a prática não é avaliada, o sistema retorna a mensagem de limite direto. Se for intensivo e o subcontador de intensivo já atingiu o teto, mesma lógica, mas só para o canal intensivo, cadência segue liberada.
-
-Reset é automático pela chave composta usuário e data, sem cron dedicado, mesmo mecanismo já usado nos demais contadores diários.
-
-Hard stop de 15 minutos por tempo de sessão intensiva foi removido. Controle é só por volume.
+Tema aberto pode não fazer sentido no caso de upload da mesma forma que faz no caso gerado, já que não existe uma intenção verbalizada antes do envio, só o conteúdo do material em si. Objetivo e eixo aproximados são o valor mais claro aqui, tema fica em aberto até haver um uso concreto que justifique a inferência.
 
 **Objeção**
 
-Número do limite (60 total, 36 intensivo) foi calibrado por estimativa de custo por resposta avaliada, sem dado real de produção ainda. Precisa de medição real de custo por resposta antes de qualquer ajuste definitivo, para cima ou para baixo. Vale reavaliar de novo quando a geração de perguntas migrar de lote para sob demanda, porque isso muda a estrutura de custo por interação e invalida a estimativa atual.
+Nenhuma feature hoje consome essa informação para material de upload, é dado puramente analítico neste momento. Baixa prioridade até que uma decisão de produto concreta dependa dele.
