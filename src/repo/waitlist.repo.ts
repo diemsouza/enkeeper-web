@@ -20,3 +20,7 @@ export async function markWaitlistActive(phone: string): Promise<void> {
     data: { status: "active" },
   });
 }
+
+export async function countWaitlistEntriesSince(since: Date): Promise<number> {
+  return prisma.waitlist.count({ where: { createdAt: { gte: since } } });
+}
