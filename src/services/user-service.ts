@@ -33,8 +33,8 @@ export async function findOrCreateUserByChannel(
         waSupport,
         `*Novo cadastro* 🎉\nNome: ${name ?? "Não identificado"}\nTelefone: +${channelId.replace("+", "")}`,
       );
-    } catch {
-      // falha silenciosa
+    } catch (error) {
+      console.error("[findOrCreateUserByChannel] Failed to notify WA_SUPPORT", error);
     }
   }
   return user;

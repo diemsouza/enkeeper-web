@@ -248,8 +248,11 @@ export async function POST(req: NextRequest): Promise<Response> {
       if (wa_id) {
         try {
           await channel.sendMessage(wa_id, formatGenericError());
-        } catch {
-          // nada mais a fazer
+        } catch (fallbackError) {
+          console.error(
+            "[post/api/webhooks/whatsapp] failed to send generic error fallback",
+            fallbackError,
+          );
         }
       }
     }

@@ -41,7 +41,41 @@ function getClientIp(request: Request): string {
   return forwardedFor?.split(",")[0]?.trim() ?? "unknown";
 }
 
+// Camada extra, nao substitui o rate limit: Origin/Referer sao headers de
+// texto simples, forjaveis por qualquer cliente que faca requests diretos.
+// So bloqueia quando ha uma origem explicita e ela nao bate -- ausencia de
+// header nao e motivo de rejeicao, pra nao quebrar clientes legitimos.
+function isAllowedOrigin(request: Request): boolean {
+  const originHeader =
+    request.headers.get("origin") ?? request.headers.get("referer");
+  if (!originHeader) return true;
+
+  let requestOrigin: string;
+  try {
+    requestOrigin = new URL(originHeader).origin;
+  } catch {
+    return false;
+  }
+
+  if (/^http:\/\/(localhost|127\.0\.0\.1):/.test(requestOrigin)) {
+    return true;
+  }
+
+  const allowedAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!allowedAppUrl) return true;
+
+  try {
+    return requestOrigin === new URL(allowedAppUrl).origin;
+  } catch {
+    return true;
+  }
+}
+
 export async function POST(request: Request): Promise<Response> {
+  if (!isAllowedOrigin(request)) {
+    return Response.json({ error: "forbidden origin" }, { status: 403 });
+  }
+
   const ip = getClientIp(request);
   if (isRateLimited(ip)) {
     return Response.json({ error: "too many requests" }, { status: 429 });
@@ -68,8 +102,8 @@ export async function POST(request: Request): Promise<Response> {
             waSupport,
             `Novo contato na lista de espera.\nNome: ${name}\nTelefone: +${phone}`,
           );
-        } catch {
-          // falha silenciosa
+        } catch (error) {
+          console.error("[post/api/waitlist] Failed to notify WA_SUPPORT", error);
         }
       }
     }
