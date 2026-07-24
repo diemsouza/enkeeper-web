@@ -1,4 +1,3 @@
-
 type MediaDownloadResult = {
   buffer: Buffer;
   mimeType: string;
@@ -10,6 +9,8 @@ export async function sendWhatsAppMessage(
   to: string,
   text: string,
 ): Promise<void> {
+  if (process.env.NODE_ENV === "production") return;
+
   const token = process.env.WABA_TOKEN;
   const phoneNumberId = process.env.WABA_PHONE_ID;
 
@@ -40,6 +41,8 @@ export async function sendWhatsAppTemplate(
   to: string,
   templateName: string,
 ): Promise<void> {
+  if (process.env.NODE_ENV === "production") return;
+
   const token = process.env.WABA_TOKEN;
   const phoneNumberId = process.env.WABA_PHONE_ID;
 

@@ -100,10 +100,13 @@ export async function POST(request: Request): Promise<Response> {
         try {
           await sendWhatsAppMessage(
             waSupport,
-            `Novo contato na lista de espera.\nNome: ${name}\nTelefone: +${phone}`,
+            `👤 *Novo contato na lista de espera.* \nNome: ${name}\nTelefone: +${phone.replace("+", "")}`,
           );
         } catch (error) {
-          console.error("[post/api/waitlist] Failed to notify WA_SUPPORT", error);
+          console.error(
+            "[post/api/waitlist] Failed to notify WA_SUPPORT",
+            error,
+          );
         }
       }
     }

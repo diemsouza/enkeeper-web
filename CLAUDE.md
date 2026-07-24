@@ -146,6 +146,8 @@ O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotac
 | ------------------------- | ----------------- | ------------------ |
 | `generateDocSections`     | doc-extraction    | gpt-4.1-mini       |
 | `generateSectionQuestions`| gen-{sectionType} | PROVIDER_STANDARD  |
+| `generateTopicValidation` | topic-validation  | PROVIDER_STANDARD  |
+| `generateFocusContent`    | gen-content        | PROVIDER_STANDARD  |
 | `generateAnswerEvaluation`| answer-evaluation | PROVIDER_STANDARD  |
 | `extractTextFromImage`    | ocr               | gpt-4o-mini        |
 | `extractTextFromPdf`      | --                | unpdf (sem LLM)    |
@@ -170,6 +172,8 @@ Cada prompt vive em `prompts/<etapa>.md`. Formato e convencoes em `prompts/stand
 
 Arquivos de prompt ativos:
 - `doc-extraction.md` -- extrai secoes do material
+- `topic-validation.md` -- valida tema do fluxo de nova atividade e sugere focos linguisticos
+- `gen-content.md` -- resolve o foco linguistico (lista numerada ou texto livre) e gera o conteudo do fluxo de nova atividade
 - `gen-vocabulary.md`, `gen-text.md`, `gen-exercise.md` -- geram perguntas por tipo de secao
 - `answer-evaluation.md` -- avalia resposta do usuario e gera feedback
 - `voice.md` -- persona e tom de voz (injetado nos prompts acima)

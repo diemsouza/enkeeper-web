@@ -1,11 +1,6 @@
 import { ParsedMessage } from "../types/domain";
 import { Level } from "../lib/prisma";
-import {
-  CONTENT_GROUPS,
-  CONTENT_SUBGROUPS,
-  ContentGroupId,
-  ContentSubgroupId,
-} from "../lib/constants";
+import { DOMAINS, DomainId } from "../lib/constants";
 
 function normalize(s: string): string {
   // eslint-disable-next-line no-misleading-character-class
@@ -40,16 +35,50 @@ function parseFixedChoiceInput<T extends { id: string; label: string }>(
   return match?.id ?? null;
 }
 
-export function parseContentGroupInput(
-  text: string,
-): ContentGroupId | "cancel" | null {
-  return parseFixedChoiceInput(text, CONTENT_GROUPS);
+export function parseDomainInput(text: string): DomainId | "cancel" | null {
+  return parseFixedChoiceInput(text, DOMAINS);
 }
 
-export function parseContentSubgroupInput(
+export function parseTopicSelectionInput(
   text: string,
-): ContentSubgroupId | "cancel" | null {
-  return parseFixedChoiceInput(text, CONTENT_SUBGROUPS);
+  suggestions: string[],
+): string | "cancel" | null {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) return null;
+  const n = normalize(trimmed);
+  if (n === "cancelar") return "cancel";
+
+  if (/^\d+$/.test(n)) {
+    const num = parseInt(n, 10);
+    if (num >= 1 && num <= suggestions.length) {
+      return suggestions[num - 1];
+    }
+  }
+
+  return trimmed;
+}
+
+export type FocusSelectionInput =
+  | { type: "known"; keys: [string] }
+  | { type: "freeText"; text: string };
+
+export function parseFocusSelectionInput(
+  text: string,
+  suggestions: { key: string; label: string }[],
+): FocusSelectionInput | "cancel" | null {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) return null;
+  const n = normalize(trimmed);
+  if (n === "cancelar") return "cancel";
+
+  if (/^\d+$/.test(n)) {
+    const num = parseInt(n, 10);
+    if (num >= 1 && num <= suggestions.length) {
+      return { type: "known", keys: [suggestions[num - 1].key] };
+    }
+  }
+
+  return { type: "freeText", text: trimmed };
 }
 
 export function parseMessage(

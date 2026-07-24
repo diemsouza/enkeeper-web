@@ -71,9 +71,9 @@ export async function updateUserLevel(
 
 const NEW_ACTIVITY_FLOW_INTENTS = [
   "waiting_set_level",
-  "waiting_set_activity_group",
-  "waiting_set_activity_subgroup",
+  "waiting_set_activity_domain",
   "waiting_set_activity_topic",
+  "waiting_set_activity_focus",
 ];
 
 export async function findUsersWithExpiredFlowIntent(

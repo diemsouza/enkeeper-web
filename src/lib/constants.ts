@@ -72,25 +72,189 @@ export const RETRY_DELAY_MS = 1000;
 
 export const COMMAND_TIMEOUT_MIN = 5;
 
-export const CONTENT_GROUPS = [
+export const DOMAINS = [
   { id: "work", label: "Mercado de Trabalho" },
   { id: "travel", label: "Viagens Internacionais" },
   { id: "education", label: "Educação e Intercâmbio" },
   { id: "daily_life", label: "Dia a Dia e Lazer" },
 ] as const;
-export type ContentGroupId = (typeof CONTENT_GROUPS)[number]["id"];
+export type DomainId = (typeof DOMAINS)[number]["id"];
 
-export const CONTENT_SUBGROUPS = [
-  { id: "words", label: "Palavras" },
-  { id: "actions", label: "Ações" },
-  { id: "expressions", label: "Expressões" },
+export function getDomainLabel(id: string): string {
+  return DOMAINS.find((g) => g.id === id)?.label ?? id;
+}
+
+export const TOPIC_SUGGESTIONS: Record<DomainId, string[]> = {
+  work: [
+    "Entrevista de emprego",
+    "Reuniões e apresentações",
+    "E-mails profissionais",
+    "Currículo e LinkedIn",
+    "Negociação e vendas",
+  ],
+  travel: [
+    "Aeroporto e embarque",
+    "Hospedagem e hotel",
+    "Restaurante e pedidos",
+    "Transporte e deslocamento",
+    "Situações de emergência",
+  ],
+  education: [
+    "Universidade e aulas",
+    "Bolsas e processos seletivos",
+    "Entrevista de intercâmbio",
+    "Vida no campus",
+    "Provas de proficiência",
+  ],
+  daily_life: [
+    "Tarefas domésticas",
+    "Compras e mercado",
+    "Redes sociais e streaming",
+    "Encontros e vida social",
+    "Esportes e hobbies",
+  ],
+};
+
+export type FocusCategory = "lexico" | "verbal" | "estrutural";
+
+export const FOCUS_ENUM = [
+  {
+    key: "vocabulary",
+    labelPt: "Vocabulário geral",
+    category: "lexico",
+    aliases: ["vocabulário", "palavras", "vocabulary", "words"],
+  },
+  {
+    key: "nouns",
+    labelPt: "Substantivos",
+    category: "lexico",
+    aliases: ["substantivo", "substantivos", "noun", "nouns"],
+  },
+  {
+    key: "adjectives",
+    labelPt: "Adjetivos",
+    category: "lexico",
+    aliases: ["adjetivo", "adjetivos", "adjective", "adjectives"],
+  },
+  {
+    key: "phrasal_verbs",
+    labelPt: "Phrasal verbs",
+    category: "lexico",
+    aliases: ["verbos frasais", "phrasal verb"],
+  },
+  {
+    key: "connectors",
+    labelPt: "Conectores",
+    category: "lexico",
+    aliases: ["conectivos", "linking words", "connectors"],
+  },
+  {
+    key: "collocations",
+    labelPt: "Combinações de palavras",
+    category: "lexico",
+    aliases: ["collocations", "combinações"],
+  },
+  {
+    key: "expressions",
+    labelPt: "Expressões",
+    category: "lexico",
+    aliases: ["expressões", "idioms", "expression"],
+  },
+  {
+    key: "to_be",
+    labelPt: "Verbo To Be",
+    category: "verbal",
+    aliases: ["to be", "verbo ser/estar"],
+  },
+  {
+    key: "present_simple",
+    labelPt: "Presente simples",
+    category: "verbal",
+    aliases: ["present simple", "presente"],
+  },
+  {
+    key: "present_continuous",
+    labelPt: "Presente contínuo (-ing)",
+    category: "verbal",
+    aliases: ["gerúndio", "ing", "present continuous"],
+  },
+  {
+    key: "past_simple",
+    labelPt: "Verbos no passado",
+    category: "verbal",
+    aliases: ["passado", "past", "simple past"],
+  },
+  {
+    key: "future",
+    labelPt: "Futuro",
+    category: "verbal",
+    aliases: ["futuro", "future", "will", "going to"],
+  },
+  {
+    key: "present_perfect",
+    labelPt: "Presente perfeito",
+    category: "verbal",
+    aliases: ["present perfect", "have been"],
+  },
+  {
+    key: "modals",
+    labelPt: "Verbos modais",
+    category: "verbal",
+    aliases: ["modal", "can", "could", "should", "must"],
+  },
+  {
+    key: "conditionals",
+    labelPt: "Condicionais",
+    category: "verbal",
+    aliases: ["condicional", "if", "conditional"],
+  },
+  {
+    key: "questions",
+    labelPt: "Perguntas",
+    category: "estrutural",
+    aliases: ["perguntas", "questions", "question form"],
+  },
+  {
+    key: "negation",
+    labelPt: "Negação",
+    category: "estrutural",
+    aliases: ["negativa", "negation", "not"],
+  },
+  {
+    key: "comparatives",
+    labelPt: "Comparativos e superlativos",
+    category: "estrutural",
+    aliases: ["comparativo", "superlativo", "comparative"],
+  },
+  {
+    key: "prepositions",
+    labelPt: "Preposições",
+    category: "estrutural",
+    aliases: ["preposição", "preposition", "in on at"],
+  },
+  {
+    key: "articles",
+    labelPt: "Artigos",
+    category: "estrutural",
+    aliases: ["artigo", "a an the", "article"],
+  },
+  {
+    key: "plurals",
+    labelPt: "Plural",
+    category: "estrutural",
+    aliases: ["plural", "plurais"],
+  },
+  {
+    key: "quantifiers",
+    labelPt: "Quantificadores",
+    category: "estrutural",
+    aliases: ["quantificador", "some any much many"],
+  },
+  {
+    key: "possessives",
+    labelPt: "Possessivos",
+    category: "estrutural",
+    aliases: ["possessivo", "possessive", "my your his"],
+  },
 ] as const;
-export type ContentSubgroupId = (typeof CONTENT_SUBGROUPS)[number]["id"];
-
-export function getContentGroupLabel(id: string): string {
-  return CONTENT_GROUPS.find((g) => g.id === id)?.label ?? id;
-}
-
-export function getContentSubgroupLabel(id: string): string {
-  return CONTENT_SUBGROUPS.find((g) => g.id === id)?.label ?? id;
-}
+export type FocusKey = (typeof FOCUS_ENUM)[number]["key"];

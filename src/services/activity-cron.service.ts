@@ -102,9 +102,9 @@ export async function processActivityCron(
       }
 
       if (
-        user.pendingIntent === "waiting_set_activity_group" ||
-        user.pendingIntent === "waiting_set_activity_subgroup" ||
+        user.pendingIntent === "waiting_set_activity_domain" ||
         user.pendingIntent === "waiting_set_activity_topic" ||
+        user.pendingIntent === "waiting_set_activity_focus" ||
         (user.pendingIntent === "waiting_set_level" &&
           isNewActivityFlowIntent(user))
       ) {

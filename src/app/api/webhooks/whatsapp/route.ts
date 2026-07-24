@@ -45,7 +45,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     return new Response(null, { status: 200 });
   }
 
-  //console.log("[WA WEBHOOK] received payload", body);
+  //console.log("[post/api/webhooks/whatsapp] received payload", body);
 
   after(async () => {
     const channel = new WhatsAppChannel();
@@ -71,13 +71,17 @@ export async function POST(req: NextRequest): Promise<Response> {
 
       const value = payload?.entry?.[0]?.changes?.[0]?.value;
       if (!value?.messages?.length) {
-        console.log("[WA WEBHOOK] no messages in payload, skipping");
+        console.log(
+          "[post/api/webhooks/whatsapp] no messages in payload, skipping",
+        );
         return;
       }
 
       wa_id = value.contacts?.[0]?.wa_id;
       if (!wa_id) {
-        console.log("[WA WEBHOOK] no wa_id in payload, skipping");
+        console.log(
+          "[post/api/webhooks/whatsapp] no wa_id in payload, skipping",
+        );
         return;
       }
 
@@ -173,7 +177,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         }
 
         const mime = message.document.mime_type ?? "";
-        console.log("[WA WEBHOOK] document received", {
+        console.log("[post/api/webhooks/whatsapp] document received", {
           mime,
           messageId: message.id,
         });
@@ -220,10 +224,13 @@ export async function POST(req: NextRequest): Promise<Response> {
       if (message.type === "text" && message.text) {
         input = { ...base, text: message.text.body };
       } else {
-        console.log("[WA WEBHOOK] unsupported message type, ignoring", {
-          type: message.type,
-          messageId: message.id,
-        });
+        console.log(
+          "[post/api/webhooks/whatsapp] unsupported message type, ignoring",
+          {
+            type: message.type,
+            messageId: message.id,
+          },
+        );
         await channel.sendMessage(wa_id, formatUnsupportedFileType());
         return;
       }

@@ -23,8 +23,8 @@
   },
   "seo": {
     "home": {
-      "title": "Fluizer | Inglês o dia inteiro no WhatsApp, com o material que você enviar.",
-      "description": "Prática diária de inglês direto no WhatsApp. Envie o material que fizer sentido pra você e pratica o dia inteiro no seu ritmo.",
+      "title": "Fluizer | Inglês o dia inteiro no WhatsApp, com o que você quiser praticar.",
+      "description": "Prática diária de inglês direto no WhatsApp. Pratique o que fizer sentido pra você, o dia inteiro, no seu ritmo.",
       "keywords": "prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Fluizer",
       "ogImage": "/images/logo.png"
     }
@@ -42,7 +42,7 @@
       "4": "Você não esquece por falta de esforço. <strong>Esquece por falta de prática.</strong>",
       "5": "30 minutos de aula. <strong>23 horas e meia em português.</strong>"
     },
-    "tagline": "Inglês o dia inteiro, no WhatsApp, com o material que fizer sentido pra você.",
+    "tagline": "Inglês o dia inteiro, no WhatsApp, no que fizer sentido pra você.",
     "cta": "Experimentar grátis",
     "microcopy": "Abre no WhatsApp · Comece grátis · Sem cadastro",
     "waitlist_microcopy": "Garanta sua vaga · Comece grátis",
@@ -61,11 +61,11 @@
     },
     "who": {
       "title": "Para quem estuda inglês e quer praticar mais, sem obstáculo.",
-      "subtitle": "Não importa onde você aprende. Pratica em cima do seu material, no seu contexto e no seu ritmo sem travar.",
+      "subtitle": "Não importa onde você aprende. Pratica o que quiser, no seu contexto e no seu ritmo, sem travar.",
       "cards": {
         "0": {
           "title": "Aprendi na aula. Na semana seguinte, esqueci.",
-          "description": "Envie o material e recebe perguntas sobre ele ao longo do dia, enquanto o conteúdo ainda está fresco. O que praticou fica. O que não praticou some."
+          "description": "Envie o material, ou diga o que quer praticar, e recebe perguntas ao longo do dia, com o conteúdo fresco. O que praticou fica. O que não, some."
         },
         "1": {
           "title": "Tentei manter a disciplina. Não consegui.",
@@ -94,12 +94,12 @@
       "subtitle": "Três passos. Sem configuração.",
       "steps": {
         "0": {
-          "title": "Envie um material em inglês",
-          "description": "Texto, foto ou PDF. Lista de vocabulário, exercício, página de livro ou material de aula. Qualquer conteúdo em inglês que fizer sentido pra você."
+          "title": "Escolha o que praticar",
+          "description": "Diga o que quer praticar, ou envie texto, foto ou PDF: vocabulário, exercício, aula, o que fizer sentido pra você."
         },
         "1": {
           "title": "O Fluizer gera as perguntas",
-          "description": "Extrai o vocabulário e os pontos centrais do material e monta as perguntas em cima do que você enviou, não de cenários genéricos."
+          "description": "Extrai o vocabulário e os pontos centrais do que você escolheu e monta as perguntas em cima disso, não de cenários genéricos."
         },
         "2": {
           "title": "As perguntas chegam no WhatsApp",
@@ -110,12 +110,12 @@
     "pricing": {
       "title": "Comece grátis.",
       "subtitle": "Acesso completo por 3 dias. Sem cartão e sem cadastro.",
-      "description": "Envie qualquer material com conteúdo em inglês: texto, imagem ou PDF. Pratique durante o dia. Se fizer sentido, continua por R$19,90/mês.",
+      "description": "Diga o que quer praticar, ou envie material: texto, imagem ou PDF. Pratique durante o dia. Se fizer sentido, continua por R$19,90/mês.",
       "cta": "Experimentar grátis"
     },
     "features_demo": {
       "title": "Na prática.",
-      "subtitle": "Você envia o material. As perguntas chegam durante o dia.",
+      "subtitle": "Material ou tema, você escolhe. As perguntas chegam durante o dia.",
       "blocks": {
         "0": {
           "title": "As perguntas saem do seu material de estudo.",

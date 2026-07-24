@@ -1,4 +1,4 @@
-import { ContentGroupId, ContentSubgroupId } from "../lib/constants";
+import { DomainId } from "../lib/constants";
 
 export type PlanCode = "trial" | "pro";
 export type ChannelType = "whatsapp";
@@ -15,9 +15,9 @@ export type MessageIntent =
   | "cancel_no"
   | "waiting_doc_replace"
   | "waiting_set_level"
-  | "waiting_set_activity_group"
-  | "waiting_set_activity_subgroup"
+  | "waiting_set_activity_domain"
   | "waiting_set_activity_topic"
+  | "waiting_set_activity_focus"
   | "set_level"
   | "new_activity"
   | "free_text"
@@ -25,10 +25,13 @@ export type MessageIntent =
   | "practice_now"
   | "pause_practice";
 
+export type FocusSuggestion = { key: string; label: string };
+
 export type NewActivityIntentData = {
   flow: "new_activity";
-  contentGroup?: ContentGroupId;
-  contentSubgroup?: ContentSubgroupId;
+  domain?: DomainId;
+  topic?: string;
+  focusSuggestions?: FocusSuggestion[];
 };
 
 export type UserIntentMetadata = {

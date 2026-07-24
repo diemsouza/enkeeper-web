@@ -11,6 +11,10 @@ import {
   SectionQuestionResult,
   answerEvaluationSchema,
   AnswerEvaluationResult,
+  topicValidationSchema,
+  TopicValidationResult,
+  focusContentSchema,
+  FocusContentResult,
 } from "../lib/llm-schemas";
 import { parseJsonWithFallback } from "../lib/json-utils";
 import { llmUsageService } from "../services/llm-usage-service";
@@ -23,9 +27,13 @@ import {
   GEN_TEXT_PROMPT,
   GEN_EXERCISE_PROMPT,
   GEN_CONTENT_PROMPT,
+  TOPIC_VALIDATION_PROMPT,
 } from "../lib/prompts";
 import { Level, QuestionFormat, SectionType } from "../lib/prisma";
 import { RetryContext } from "../types/retry-context";
+import { FocusSuggestion } from "../types/domain";
+import { FocusSelectionInput } from "../core/parser";
+import { getFocusEnumPromptText } from "../core/focus";
 
 const MODEL_MINI = "gpt-4.1-mini";
 const MODEL_ANTHROPIC = "claude-haiku-4-5-20251001";
@@ -123,43 +131,39 @@ export async function generateDocSections(params: {
   return result;
 }
 
-// ─── Topic content generation ────────────────────────────────────────────────
+// ─── Topic validation ─────────────────────────────────────────────────────────
 
-const TOPIC_GENERATION_ERROR_REASON =
+const TOPIC_VALIDATION_ERROR_REASON =
   "Não foi possível usar esse assunto. Tente outro assunto.";
 
-export async function generateTopicContent(params: {
+export async function generateTopicValidation(params: {
   level: Level;
-  contentGroup: string;
-  contentSubgroup: string;
-  contentTopic: string;
+  domain: string;
+  topic: string;
   userId: string;
 }): Promise<
-  | { status: "content"; data: DocProcessingResult }
+  | { status: "valid"; focusSuggestions: FocusSuggestion[] }
   | { status: "error"; reason: string }
 > {
-  const { level, contentGroup, contentSubgroup, contentTopic, userId } = params;
+  const { level, domain, topic, userId } = params;
   let inputTokens = 0;
   let outputTokens = 0;
   let cachedTokens = 0;
-  let result: DocProcessingResult | null = null;
+  let result: TopicValidationResult | null = null;
   let rawOutput: string | null = null;
   let logError: string | null = null;
   const startTime = Date.now();
 
-  const systemPrompt = GEN_CONTENT_PROMPT.replace("{nivel}", level)
-    .replace("{content_group}", contentGroup)
-    .replace("{content_subgroup}", contentSubgroup)
-    .replace("{content_topic}", contentTopic);
-  const userPrompt = `Tema: {content_topic}`.replace(
-    "{content_topic}",
-    contentTopic,
-  );
+  const systemPrompt = TOPIC_VALIDATION_PROMPT.replace("{level}", level)
+    .replace("{domain}", domain)
+    .replace("{topic}", topic)
+    .replace("{focus_enum}", getFocusEnumPromptText());
+  const userPrompt = `Tema: {topic}`.replace("{topic}", topic);
 
   try {
     const llmResult = await generateText({
       model: getStandardLanguageModel(),
-      output: Output.object({ schema: docProcessingSchema }),
+      output: Output.object({ schema: topicValidationSchema }),
       temperature: 0.5,
       system: systemPrompt,
       prompt: userPrompt,
@@ -173,7 +177,108 @@ export async function generateTopicContent(params: {
     if (NoObjectGeneratedError.isInstance(err) && err.text) {
       rawOutput = err.text;
       try {
-        result = docProcessingSchema.parse(
+        result = topicValidationSchema.parse(
+          parseJsonWithFallback(err.text.trim()),
+        );
+      } catch {
+        // structured parse failed after NoObjectGeneratedError
+      }
+    } else if (err instanceof Error) {
+      logError = err.message;
+    }
+  }
+
+  const durationMs = Date.now() - startTime;
+
+  await llmUsageService.registerUsage({
+    userId,
+    docId: null,
+    usageType: "topic_validation",
+    provider: PROVIDER_STANDARD,
+    model: getStandardModel(),
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+  });
+
+  await llmLogService.registerLog({
+    stage: "topic-validation",
+    provider: PROVIDER_STANDARD,
+    model: getStandardModel(),
+    input: { system: systemPrompt, prompt: userPrompt },
+    output: rawOutput,
+    parsedOutput: result,
+    success: result !== null,
+    error: logError,
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+    durationMs,
+    userId,
+  });
+
+  if (!result || !result.isValid) {
+    return { status: "error", reason: TOPIC_VALIDATION_ERROR_REASON };
+  }
+
+  return { status: "valid", focusSuggestions: result.focusSuggestions };
+}
+
+// ─── Focus content generation ────────────────────────────────────────────────
+
+const FOCUS_CONTENT_ERROR_REASON =
+  "Não foi possível usar essa opção. Tente outra.";
+
+export async function generateFocusContent(params: {
+  level: Level;
+  domain: string;
+  topic: string;
+  focusSelection: FocusSelectionInput;
+  userId: string;
+}): Promise<
+  | { status: "content"; data: FocusContentResult }
+  | { status: "error"; kind: "invalid" | "too_many_focus"; reason: string }
+> {
+  const { level, domain, topic, focusSelection, userId } = params;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cachedTokens = 0;
+  let result: FocusContentResult | null = null;
+  let rawOutput: string | null = null;
+  let logError: string | null = null;
+  const startTime = Date.now();
+
+  const focusKnown =
+    focusSelection.type === "known" ? focusSelection.keys.join(", ") : "";
+  const focusFreeText =
+    focusSelection.type === "freeText" ? focusSelection.text : "";
+
+  const systemPrompt = GEN_CONTENT_PROMPT.replace("{level}", level)
+    .replace("{domain}", domain)
+    .replace("{topic}", topic)
+    .replace("{focus_enum}", getFocusEnumPromptText())
+    .replace("{focus_known}", focusKnown)
+    .replace("{focus_free_text}", focusFreeText);
+  const userPrompt = `Tema: {topic}`.replace("{topic}", topic);
+
+  try {
+    const llmResult = await generateText({
+      model: getStandardLanguageModel(),
+      output: Output.object({ schema: focusContentSchema }),
+      temperature: 0.5,
+      system: systemPrompt,
+      prompt: userPrompt,
+    });
+    inputTokens += llmResult.usage?.inputTokens ?? 0;
+    outputTokens += llmResult.usage?.outputTokens ?? 0;
+    cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+    rawOutput = llmResult.text ?? null;
+    result = llmResult.output;
+  } catch (err) {
+    if (NoObjectGeneratedError.isInstance(err) && err.text) {
+      rawOutput = err.text;
+      try {
+        result = focusContentSchema.parse(
           parseJsonWithFallback(err.text.trim()),
         );
       } catch {
@@ -214,7 +319,18 @@ export async function generateTopicContent(params: {
   });
 
   if (!result || !result.isValid) {
-    return { status: "error", reason: TOPIC_GENERATION_ERROR_REASON };
+    if (result?.tooManyFocus) {
+      return {
+        status: "error",
+        kind: "too_many_focus",
+        reason: "Usuário mencionou mais de 2 opções distintas",
+      };
+    }
+    return {
+      status: "error",
+      kind: "invalid",
+      reason: FOCUS_CONTENT_ERROR_REASON,
+    };
   }
 
   return { status: "content", data: result };
@@ -232,7 +348,7 @@ export async function generateNextQuestion(params: {
   sectionType: SectionType;
   sectionTitle: string;
   sectionContent: string;
-  level: string;
+  level: Level;
   format: QuestionFormat;
   questionExamples: string;
   questionFocus?: string;
@@ -349,7 +465,7 @@ export async function generateAnswerEvaluation(params: {
   docContent: string;
   feedbackExamples: string;
   questionFormat: string;
-  level: string;
+  level: Level;
   userId: string;
   docId: string;
   questionFormats: QuestionFormat[];

@@ -31,10 +31,13 @@ export async function findOrCreateUserByChannel(
     try {
       await sendWhatsAppMessage(
         waSupport,
-        `*Novo cadastro* 🎉\nNome: ${name ?? "Não identificado"}\nTelefone: +${channelId.replace("+", "")}`,
+        `👤 *Novo cadastro* \nNome: ${name ?? "Não identificado"}\nTelefone: +${channelId.replace("+", "")}`,
       );
     } catch (error) {
-      console.error("[findOrCreateUserByChannel] Failed to notify WA_SUPPORT", error);
+      console.error(
+        "[findOrCreateUserByChannel] Failed to notify WA_SUPPORT",
+        error,
+      );
     }
   }
   return user;

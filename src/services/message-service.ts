@@ -51,7 +51,7 @@ import {
   formatOnboardingMsg2,
   formatOnboardingMsg3,
   formatOnboardingMsg4,
-  formatContentGroupQuestion,
+  formatDomainQuestion,
   formatNewActivityFlowCanceled,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
@@ -65,9 +65,9 @@ import {
 } from "../repo/users.repo";
 import { processLevelResponse } from "./level-capture-service";
 import {
-  processGroupResponse,
-  processSubgroupResponse,
+  processDomainResponse,
   processTopicResponse,
+  processFocusResponse,
 } from "./new-activity-flow-service";
 import { findOrCreateUserByChannel } from "./user-service";
 import {
@@ -391,9 +391,9 @@ export async function handleIncomingMessage(
       input.mediaType === "text"
     ) {
       if (
-        pendingIntent === "waiting_set_activity_group" ||
-        pendingIntent === "waiting_set_activity_subgroup" ||
-        pendingIntent === "waiting_set_activity_topic"
+        pendingIntent === "waiting_set_activity_domain" ||
+        pendingIntent === "waiting_set_activity_topic" ||
+        pendingIntent === "waiting_set_activity_focus"
       ) {
         await updateUserPendingIntent(user.id, null);
       }
@@ -414,9 +414,9 @@ export async function handleIncomingMessage(
     // ─── Estado pendente ──────────────────────────────────────────────────────
 
     if (
-      (pendingIntent === "waiting_set_activity_group" ||
-        pendingIntent === "waiting_set_activity_subgroup" ||
-        pendingIntent === "waiting_set_activity_topic") &&
+      (pendingIntent === "waiting_set_activity_domain" ||
+        pendingIntent === "waiting_set_activity_topic" ||
+        pendingIntent === "waiting_set_activity_focus") &&
       parsed.intent === "cancel"
     ) {
       await updateUserPendingIntent(user.id, null);
@@ -468,17 +468,17 @@ export async function handleIncomingMessage(
         if (outcome === "captured") {
           const levelFlowData = getIntentData(user);
           if (levelFlowData?.flow === "new_activity") {
-            const groupMsg = await sendContentGroupQuestion(
+            const domainMsg = await sendDomainQuestion(
               user.id,
               userChannel.id,
               today,
             );
-            await channel.sendMessage(userChannel.channelId, groupMsg);
+            await channel.sendMessage(userChannel.channelId, domainMsg);
             await saveUserMsg(
               user.id,
               userChannel.id,
               text,
-              "waiting_set_activity_group",
+              "waiting_set_activity_domain",
               input,
               today,
             );
@@ -514,9 +514,9 @@ export async function handleIncomingMessage(
         return;
       }
 
-      // Aguardando escolha de objetivo (contentGroup)
-      if (pendingIntent === "waiting_set_activity_group") {
-        const result = processGroupResponse(text);
+      // Aguardando escolha de objetivo (domain)
+      if (pendingIntent === "waiting_set_activity_domain") {
+        const result = processDomainResponse(text);
         await channel.sendMessage(userChannel.channelId, result.message);
         await saveBotReply(user.id, userChannel.id, result.message, today);
 
@@ -537,75 +537,7 @@ export async function handleIncomingMessage(
             user.id,
             userChannel.id,
             text,
-            "waiting_set_activity_group",
-            input,
-            today,
-          );
-          return;
-        }
-
-        const subgroupData: NewActivityIntentData = {
-          flow: "new_activity",
-          contentGroup: result.contentGroup,
-        };
-        await updateUserPendingIntent(
-          user.id,
-          "waiting_set_activity_subgroup",
-          subgroupData,
-        );
-        await saveUserMsg(
-          user.id,
-          userChannel.id,
-          text,
-          "waiting_set_activity_subgroup",
-          input,
-          today,
-        );
-        return;
-      }
-
-      // Aguardando escolha de eixo (contentSubgroup)
-      if (pendingIntent === "waiting_set_activity_subgroup") {
-        const flowData = getIntentData(user);
-        const contentGroup = flowData?.contentGroup;
-        if (!contentGroup) {
-          // não deveria acontecer: objetivo é sempre capturado antes deste passo
-          await updateUserPendingIntent(user.id, null);
-          await saveUserMsg(
-            user.id,
-            userChannel.id,
-            text,
-            "free_text",
-            input,
-            today,
-          );
-          const errReply = formatNewActivityFlowCanceled();
-          await saveBotReply(user.id, userChannel.id, errReply, today);
-          await channel.sendMessage(userChannel.channelId, errReply);
-          return;
-        }
-        const result = processSubgroupResponse(text, contentGroup);
-        await channel.sendMessage(userChannel.channelId, result.message);
-        await saveBotReply(user.id, userChannel.id, result.message, today);
-
-        if (result.outcome === "canceled") {
-          await updateUserPendingIntent(user.id, null);
-          await saveUserMsg(
-            user.id,
-            userChannel.id,
-            text,
-            "cancel",
-            input,
-            today,
-          );
-          return;
-        }
-        if (result.outcome === "invalid") {
-          await saveUserMsg(
-            user.id,
-            userChannel.id,
-            text,
-            "waiting_set_activity_subgroup",
+            "waiting_set_activity_domain",
             input,
             today,
           );
@@ -614,8 +546,7 @@ export async function handleIncomingMessage(
 
         const topicData: NewActivityIntentData = {
           flow: "new_activity",
-          contentGroup,
-          contentSubgroup: result.contentSubgroup,
+          domain: result.domain,
         };
         await updateUserPendingIntent(
           user.id,
@@ -633,15 +564,14 @@ export async function handleIncomingMessage(
         return;
       }
 
-      // Aguardando tema livre (contentTopic) e geração do conteúdo
+      // Aguardando tema livre (topic)
       if (pendingIntent === "waiting_set_activity_topic") {
         const flowData = getIntentData(user);
-        const contentGroup = flowData?.contentGroup;
-        const contentSubgroup = flowData?.contentSubgroup;
+        const domain = flowData?.domain;
         const userLevel = user.level;
 
-        if (!userLevel || !contentGroup || !contentSubgroup) {
-          // não deveria acontecer: nível, objetivo e eixo são sempre capturados antes deste passo
+        if (!userLevel || !domain) {
+          // não deveria acontecer: nível e objetivo são sempre capturados antes deste passo
           await updateUserPendingIntent(user.id, null);
           await saveUserMsg(
             user.id,
@@ -661,8 +591,78 @@ export async function handleIncomingMessage(
           text,
           user.id,
           userLevel,
-          contentGroup,
-          contentSubgroup,
+          domain,
+        );
+
+        await channel.sendMessage(userChannel.channelId, result.message);
+        await saveBotReply(user.id, userChannel.id, result.message, today);
+
+        if (result.outcome !== "captured") {
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "waiting_set_activity_topic",
+            input,
+            today,
+          );
+          return;
+        }
+
+        const focusData: NewActivityIntentData = {
+          flow: "new_activity",
+          domain,
+          topic: result.topic,
+          focusSuggestions: result.focusSuggestions,
+        };
+        await updateUserPendingIntent(
+          user.id,
+          "waiting_set_activity_focus",
+          focusData,
+        );
+        await saveUserMsg(
+          user.id,
+          userChannel.id,
+          text,
+          "waiting_set_activity_focus",
+          input,
+          today,
+        );
+        return;
+      }
+
+      // Aguardando escolha de foco (focus) e geração do conteúdo
+      if (pendingIntent === "waiting_set_activity_focus") {
+        const flowData = getIntentData(user);
+        const domain = flowData?.domain;
+        const topic = flowData?.topic;
+        const focusSuggestions = flowData?.focusSuggestions;
+        const userLevel = user.level;
+
+        if (!userLevel || !domain || !topic || !focusSuggestions) {
+          // não deveria acontecer: nível, objetivo e tema são sempre capturados antes deste passo
+          await updateUserPendingIntent(user.id, null);
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "free_text",
+            input,
+            today,
+          );
+          const errReply = formatNewActivityFlowCanceled();
+          await saveBotReply(user.id, userChannel.id, errReply, today);
+          await channel.sendMessage(userChannel.channelId, errReply);
+          return;
+        }
+
+        const result = await processFocusResponse(
+          text,
+          focusSuggestions,
+          user.id,
+          userLevel,
+          domain,
+          topic,
           channel,
         );
 
@@ -684,7 +684,7 @@ export async function handleIncomingMessage(
           user.id,
           userChannel.id,
           text,
-          "waiting_set_activity_topic",
+          "waiting_set_activity_focus",
           input,
           today,
         );
@@ -1455,20 +1455,20 @@ function getIntentData(user: {
   return metadata?.intent_data;
 }
 
-async function sendContentGroupQuestion(
+async function sendDomainQuestion(
   userId: string,
   userChannelId: string,
   today: Date,
 ): Promise<string> {
-  const groupData: NewActivityIntentData = { flow: "new_activity" };
+  const domainData: NewActivityIntentData = { flow: "new_activity" };
   await updateUserPendingIntent(
     userId,
-    "waiting_set_activity_group",
-    groupData,
+    "waiting_set_activity_domain",
+    domainData,
   );
-  const groupMsg = formatContentGroupQuestion();
-  await saveBotReply(userId, userChannelId, groupMsg, today);
-  return groupMsg;
+  const domainMsg = formatDomainQuestion();
+  await saveBotReply(userId, userChannelId, domainMsg, today);
+  return domainMsg;
 }
 
 async function startNewActivityFlow(
@@ -1483,8 +1483,8 @@ async function startNewActivityFlow(
     await saveBotReply(user.id, userChannelId, levelMsg, today);
     return { message: levelMsg, nextIntent: "waiting_set_level" };
   }
-  const groupMsg = await sendContentGroupQuestion(user.id, userChannelId, today);
-  return { message: groupMsg, nextIntent: "waiting_set_activity_group" };
+  const domainMsg = await sendDomainQuestion(user.id, userChannelId, today);
+  return { message: domainMsg, nextIntent: "waiting_set_activity_domain" };
 }
 
 async function createPendingBuffer(

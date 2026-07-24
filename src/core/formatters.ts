@@ -1,11 +1,11 @@
 import { ActivityStatus, Level, QuestionFormat } from "../lib/prisma";
 import {
   ANSWER_EMOJI,
-  CONTENT_GROUPS,
-  CONTENT_SUBGROUPS,
-  ContentGroupId,
+  DOMAINS,
+  DomainId,
   INTENSIVE_UNTIL_MIN,
   MAX_DOC_ITEMS_PER_DOC,
+  TOPIC_SUGGESTIONS,
   TRIAL_DAYS,
 } from "../lib/constants";
 import {
@@ -58,7 +58,7 @@ export function formatPlanExpired(): string {
   return [
     "*Seu período de teste encerrou!*",
     "",
-    "Para continuar praticando, assine o *Fluizer* por R$19,90/mês.",
+    "Para continuar praticando, assine o *Fluizer* por R$19,90/mês. Cancele quando quiser.",
     "",
     "_Use *suporte* para falar com a gente e ativar sua conta._",
   ].join("\n");
@@ -111,10 +111,10 @@ export function formatCommandList(level: Level | null): string {
   ].join("\n");
 }
 
-export function formatContentGroupQuestion(): string {
-  const options = CONTENT_GROUPS.map((g, i) => `${i + 1}) ${g.label}`);
+export function formatDomainQuestion(): string {
+  const options = DOMAINS.map((g, i) => `${i + 1}) ${g.label}`);
   return [
-    "Sobre qual objetivo você quer praticar?",
+    "Sobre qual área você quer praticar?",
     "",
     ...options,
     "",
@@ -122,10 +122,11 @@ export function formatContentGroupQuestion(): string {
   ].join("\n");
 }
 
-export function formatContentSubgroupQuestion(): string {
-  const options = CONTENT_SUBGROUPS.map((g, i) => `${i + 1}) ${g.label}`);
+export function formatTopicQuestion(domain: string): string {
+  const suggestions = TOPIC_SUGGESTIONS[domain as DomainId] ?? [];
+  const options = suggestions.map((s, i) => `${i + 1}) ${s}`);
   return [
-    "Que tipo de conteúdo prefere praticar?",
+    "Escolha um dos assuntos abaixo ou informe outra opção.",
     "",
     ...options,
     "",
@@ -133,21 +134,17 @@ export function formatContentSubgroupQuestion(): string {
   ].join("\n");
 }
 
-const CONTENT_TOPIC_QUESTION: Record<ContentGroupId, string> = {
-  work: "Qual área de trabalho gostaria de praticar? Construção, medicina, tecnologia...",
-  travel:
-    "Qual assunto sobre viagens deseja praticar? Aeroporto, hotel, restaurante...",
-  education:
-    "Qual assunto sobre estudos ou intercâmbio gostaria de praticar? Universidade, bolsa de estudos, entrevista...",
-  daily_life:
-    "Qual tema do dia a dia gostaria de praticar? Tarefas domésticas, compras, lazer...",
-};
-
-export function formatContentTopicQuestion(contentGroup: string): string {
-  const question =
-    CONTENT_TOPIC_QUESTION[contentGroup as ContentGroupId] ??
-    "Sobre qual tema você quer praticar?";
-  return [question, "", "_Use *cancelar* para sair._"].join("\n");
+export function formatFocusQuestion(
+  suggestions: { key: string; label: string }[],
+): string {
+  const options = suggestions.map((s, i) => `${i + 1}) ${s.label}`);
+  return [
+    "Escolha um dos pontos abaixo ou informe outra opção.",
+    "",
+    ...options,
+    "",
+    "_Use *cancelar* para sair._",
+  ].join("\n");
 }
 
 export function formatNewActivityFlowCanceled(): string {
@@ -158,8 +155,16 @@ export function formatNewActivityFlowExpired(): string {
   return "Criação da nova atividade encerrada por inatividade. Pode recomeçar quando quiser com *nova atividade*.";
 }
 
-export function formatContentTopicError(): string {
+export function formatTopicError(): string {
   return "Assunto inválido. Envie outro, ou use *cancelar* para sair.";
+}
+
+export function formatFocusError(): string {
+  return "Não foi possível usar essa opção. Tente descrever de outra forma, ou use *cancelar* para sair.";
+}
+
+export function formatFocusTooMany(): string {
+  return "Não é possível informar mais de 2 opções. Tente de novo com uma ou duas opções, ou use *cancelar* para sair.";
 }
 
 type ActivityListItem = {
