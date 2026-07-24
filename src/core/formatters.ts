@@ -148,7 +148,7 @@ export function formatFocusQuestion(
 }
 
 export function formatNewActivityFlowCanceled(): string {
-  return "Ok, criação de nova atividade cancelada.";
+  return "Ok, nova atividade cancelada.";
 }
 
 export function formatNewActivityFlowExpired(): string {
@@ -607,7 +607,7 @@ export function formatLevelUpdateCanceled(): string {
   return "Atualização de nível cancelada.";
 }
 
-export function formatDocReplaceCanceled(): string {
+export function formatActivityReplaceCanceled(): string {
   return "Ok, seguindo com a atividade atual.";
 }
 

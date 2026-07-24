@@ -36,7 +36,7 @@ import {
   formatGuideAfterFirstFeedback,
   formatCanceled,
   formatLevelUpdateCanceled,
-  formatDocReplaceCanceled,
+  formatActivityReplaceCanceled,
   formatInvalidResumeIndex,
   formatNoActiveActivity,
   formatAllQuestionsAnswered,
@@ -343,7 +343,10 @@ export async function handleIncomingMessage(
         const normalizedPhone = userChannel.channelId.replace(/\D/g, "");
         await markWaitlistActive(normalizedPhone);
       } catch (e) {
-        console.error(`[handleIncomingMessage] Error to mark user ${user.id} as active in waitlist`, e);
+        console.error(
+          `[handleIncomingMessage] Error to mark user ${user.id} as active in waitlist`,
+          e,
+        );
       }
 
       await saveUserMsg(
@@ -744,7 +747,7 @@ export async function handleIncomingMessage(
           input,
           today,
         );
-        const reply = formatDocReplaceCanceled();
+        const reply = formatActivityReplaceCanceled();
         await saveBotReply(user.id, userChannel.id, reply, today);
         await channel.sendMessage(userChannel.channelId, reply);
         return;
