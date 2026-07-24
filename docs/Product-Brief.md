@@ -90,7 +90,9 @@ Usuário pode iniciar sessão ativa - perguntas chegam em sequência, uma após 
 
 ### Nova atividade por tema
 
-Quando o usuário não tem material em mãos, ou quer trocar de assunto sem subir arquivo, o comando `nova atividade` inicia um fluxo curto de pergunta e resposta: nível (se ainda não informado), objetivo, tipo de conteúdo e um tema aberto. O sistema gera o conteúdo individualmente para aquele usuário a partir dessa combinação, e a atividade segue o mesmo ciclo de sempre a partir daí. Upload de material continua disponível a qualquer momento, inclusive durante esse fluxo.
+Quando o usuário não tem material em mãos, ou quer trocar de assunto sem subir arquivo, o comando `nova atividade` inicia um fluxo curto de pergunta e resposta: nível (se ainda não informado), objetivo, assunto e ponto. Objetivo é uma lista fechada de 4 opções (Mercado de Trabalho, Viagens Internacionais, Educação e Intercâmbio, Dia a Dia e Lazer). Assunto e ponto combinam lista de sugestões com opção de resposta livre, o assunto com 5 sugestões fixas por objetivo, o ponto com 5 sugestões geradas com base no objetivo e no assunto escolhidos, sempre incluindo a opção de vocabulário geral. O sistema gera o conteúdo individualmente para aquele usuário a partir dessa combinação, e a atividade segue o mesmo ciclo de sempre a partir daí. Upload de material continua disponível a qualquer momento, inclusive durante esse fluxo.
+
+Ponto representa o aspecto da língua a praticar dentro do assunto escolhido, vocabulário geral, um tempo verbal, uma estrutura gramatical, entre outros, e pode combinar até 2 pontos numa mesma geração quando informado por texto livre.
 
 ### Resumo de atividade
 
@@ -239,7 +241,7 @@ Custo variável por usuário Pro ativo:
 
 **Margem bruta:** 68–78%.
 
-Geração de conteúdo por tema (nova atividade) ainda não tem custo médio medido em produção, é individual por usuário e por troca de atividade, sem compartilhamento entre usuários. Vale revisar essa tabela quando houver volume real desse fluxo.
+Geração de conteúdo por tema (nova atividade) ainda não tem custo médio medido em produção, é individual por usuário e por troca de atividade, sem compartilhamento entre usuários. O fluxo passou a usar duas chamadas de LLM por troca (validação do assunto com sugestão de pontos, depois resolução do ponto e geração), em vez de uma. Vale revisar essa tabela quando houver volume real desse fluxo.
 
 ---
 
@@ -317,14 +319,14 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Resumo da atividade anterior ao adicionar novo material (com Revisadas)
 - Repetição espaçada SM-2 com timing corrigido (easeFactor, interval, nextRevisionAt, revisionCount)
 - Texto solto no chat não é mais interpretado como material, apenas arquivo (imagem, PDF, texto)
-- Fluxo de nova atividade (nível, objetivo, tipo de conteúdo, tema aberto) com geração de conteúdo individual por LLM
+- Fluxo de nova atividade (nível, objetivo, assunto e ponto, com sugestões de assunto por lista fixa e sugestões de ponto geradas por LLM) com geração de conteúdo individual em duas chamadas de LLM
 - Onboarding atualizado para refletir o fluxo de nova atividade como caminho principal
+- Site com copy atualizada, refletindo os dois caminhos de entrada (material ou tema) na home, publicado
 
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou
 - [ ] Gatilhos de upgrade contextuais
 - [ ] Pix manual via suporte
-- [ ] Site refeito com nova copy (foco inglês)
 - [ ] Material institucional para professor (1 página)
 
 **Testes antes do beta:**
@@ -343,7 +345,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 ## 14. Riscos principais
 
 1. **Qualidade conversacional.** Pergunta tem que soar como pessoa, feedback como amigo. É o trabalho central.
-2. **Posicionamento do conteúdo gerado.** Geração individual por objetivo, tipo de conteúdo e tema aproxima o produto do território de concorrentes que apostam em currículo pronto (Parlai, ChatClass), sobretudo se a copy sugerir progressão, módulo ou etapa concluída. Mitigação: nenhuma linguagem de percurso em nenhum ponto do fluxo; upload de material próprio continua sendo o caminho reforçado nas parcerias com professor.
+2. **Posicionamento do conteúdo gerado.** Geração individual por objetivo, assunto e ponto aproxima o produto do território de concorrentes que apostam em currículo pronto (Parlai, ChatClass), sobretudo se a copy sugerir progressão, módulo ou etapa concluída. Mitigação: nenhuma linguagem de percurso em nenhum ponto do fluxo; upload de material próprio continua sendo o caminho reforçado nas parcerias com professor.
 3. **Custo de WhatsApp.** Se janela 24h cair abaixo de 80%, custos disparam. Monitorar semanalmente.
 4. **Dependência da Meta.** Mitigado por arquitetura multicanal.
 5. **Concorrente no mesmo eixo.** Histórico de acerto/erro acumulado com repetição espaçada personalizada é a defesa - vantagem do incumbente.

@@ -34,7 +34,7 @@ O material enviado pelo usuário não vira atividade imediatamente. Existe uma j
 - O comando `cancelar` aborta o processamento em andamento antes da janela fechar, nesse caso, nenhuma atividade é criada e o material descartado não conta para o cap diário (seção 14).
 - Ao fechar a janela, o material consolidado gera a atividade.
 
-Essa janela de buffer não se aplica ao fluxo de nova atividade (Seção 15), que gera a atividade assim que o tema é validado e o conteúdo é gerado, sem etapa de acúmulo de peças.
+Essa janela de buffer não se aplica ao fluxo de nova atividade (Seção 15), que gera a atividade assim que o ponto é resolvido e o conteúdo é gerado, sem etapa de acúmulo de peças.
 
 ### Transições ao subir novo material ou concluir o fluxo de nova atividade
 
@@ -124,7 +124,7 @@ Mensagem enviada ao usuário:
 O material é dividido em blocos por tipo antes de gerar as perguntas. Cada bloco tem seu próprio conjunto de perguntas e formatos.
 
 | Tipo | Descrição | Formatos de pergunta |
-| ---- | --------- | -------------------- |
+| ---- | --------- | --------------------- |
 | `vocabulary` | Lista de palavras ou expressões isoladas | gap fill, recall, recall invertido, cenário, múltipla escolha |
 | `text` | Texto corrido, frase, diálogo ou parágrafo | pergunta aberta |
 | `exercise` | Lista de perguntas do próprio material | pergunta direta |
@@ -160,7 +160,7 @@ O usuário informa seu nível uma vez (no início do uso, ou quando quiser troca
 Cada atividade guarda o nível que foi usado para gerar suas perguntas, então o histórico permanece consistente mesmo se o usuário trocar de nível depois.
 
 | Nível | Idioma da pergunta |
-| ----- | ----------------- |
+| ----- | ------------------- |
 | Básico | Pergunta em PT, termo em EN |
 | Intermediário | Misto PT/EN natural |
 | Avançado | Majoritariamente em EN |
@@ -269,7 +269,7 @@ Limite do intensivo atingido, cadência ainda disponível:
 | `pausar` | Para o envio de perguntas |
 | `retomar` | Retoma após pausa |
 | `atividade` | Lista a atividade ativa e as anteriores |
-| `nova atividade` | Inicia o fluxo de captura de nível, objetivo, tipo de conteúdo e tema, e gera uma atividade individual a partir da combinação escolhida (ver Seção 15) |
+| `nova atividade` | Inicia o fluxo de captura de nível, objetivo, assunto e ponto, e gera uma atividade individual a partir da combinação escolhida (ver Seção 15) |
 | `nivel` | Atualiza o nível de inglês declarado pelo usuário (básico, intermediário ou avançado) |
 | `cancelar` | Sai do fluxo ou ação em andamento: processamento de material dentro da janela de buffer (ver Seção 1), ou qualquer passo do fluxo de nova atividade (ver Seção 15) |
 | `suporte` | Aciona suporte via WhatsApp do admin |
@@ -345,7 +345,7 @@ Nenhuma mensagem deve soar como notificação de app pedindo atenção. Cada uma
 ### Fluxo de steps
 
 | Step | Tempo desde última resposta | Tipo |
-| ---- | --------------------------- | ---- |
+| ---- | ---------------------------- | ---- |
 | h4 | 4 horas | Nudge livre (janela 24h) |
 | h12 | 12 horas | Nudge livre (janela 24h) |
 | h23 | 23 horas | Nudge livre (janela 24h) |
@@ -422,7 +422,7 @@ Caps adicionais por tipo de envio, por usuário por dia: 30 áudios (máximo 60s
 
 Após o processamento, a primeira pergunta é agendada com um atraso de 3 minutos, para garantir que o usuário receba a confirmação de processamento antes da primeira interação de prática. O mesmo atraso se aplica à primeira pergunta de uma atividade criada pelo fluxo de nova atividade.
 
-**Origem do material:** cada material grava sua origem, `upload` ou `generated` (ver Seção 15). Material com origem `generated` grava também o objetivo, o tipo de conteúdo e o tema que originaram aquele conteúdo, para rastreabilidade. Material com origem `upload` não grava esses dados por enquanto.
+**Origem do material:** cada material grava sua origem, `upload` ou `generated` (ver Seção 15). Material com origem `generated` grava também o objetivo, o assunto e o(s) ponto(s) que originaram aquele conteúdo, para rastreabilidade. Material com origem `upload` não grava esses dados por enquanto.
 
 ---
 
@@ -440,10 +440,18 @@ Pergunta e resposta fixa, na ordem:
 
 1. **Nível** — só perguntado se o usuário ainda não tem nível declarado (ver Seção 5). Se já existe, pula direto para o passo seguinte.
 2. **Objetivo** — lista fechada de 4 opções: Mercado de Trabalho, Viagens Internacionais, Educação e Intercâmbio, Dia a Dia e Lazer.
-3. **Tipo de conteúdo** — lista fechada: Palavras, Ações, Expressões. Um quarto tipo, Frases prontas, existe como conceito mas só fica disponível quando o sectionType `structure` existir (ver Backlog).
-4. **Tema** — texto aberto do usuário, sem lista de opções fixas, com sugestões de exemplo embutidas na própria pergunta, variando por objetivo.
+3. **Assunto** — lista de 5 sugestões específicas por objetivo, mais opção de informar outro assunto por texto livre. As 5 sugestões são fixas por objetivo, não geradas por LLM.
+4. **Ponto** — o que praticar dentro do assunto escolhido: vocabulário geral, um tempo verbal, uma estrutura gramatical, entre outros (ver "Catálogo de foco linguístico" abaixo). Lista de 5 sugestões geradas com base no objetivo e no assunto informados, ordenadas da mais comum e didática pra mais específica, sempre incluindo a opção de vocabulário geral, mais opção de informar outro ponto por texto livre.
 
-O termo interno usado para o tipo de conteúdo (eixo) não aparece em nenhuma copy voltada ao usuário, a pergunta é sempre formulada em linguagem natural, sem jargão de categoria.
+Nenhum termo técnico de categoria aparece em copy voltada ao usuário, tanto assunto quanto ponto são perguntados em linguagem natural.
+
+### Catálogo de foco linguístico
+
+Ponto é escolhido de um catálogo fixo de aspectos da língua: vocabulário geral, classes de palavra (substantivos, adjetivos), tempos verbais, conectores, phrasal verbs, estruturas gramaticais, entre outros. O catálogo vale igualmente para os três níveis, sem restrição por nível, o que muda por nível é só o peso de prioridade nas 5 sugestões exibidas, não a disponibilidade do item.
+
+Usuário pode combinar até 2 pontos numa mesma atividade, mas só informando por texto livre, nunca como opção da lista numerada. Se pedir mais de 2, o sistema não trata como erro, pede pra escolher no máximo 2 entre o que foi mencionado.
+
+Novo item só entra no catálogo por decisão deliberada, mesmo princípio de mudança rara que já vale para outras regras de negócio deste documento.
 
 ### Estado do fluxo
 
@@ -451,18 +459,16 @@ Controlado por um campo de intenção pendente por usuário, com um valor por pa
 
 **Timeout:** fora do onboarding, o fluxo expira por inatividade após um tempo configurável. Ao expirar, o fluxo é cancelado silenciosamente, o usuário recebe aviso de que pode recomeçar quando quiser, e a cadência da activity em andamento retoma normal. Dentro do onboarding, o fluxo não expira, aguarda resposta indefinidamente, já que não há activity nem cadência competindo pela atenção do usuário nesse momento.
 
-**Cancelamento:** o comando `cancelar` sai do fluxo em qualquer passo, sem criar nada.
+**Cancelamento:** o comando `cancelar` sai do fluxo em qualquer passo, sem criar nada. Não existe retorno a um passo anterior, cancelar sempre descarta o fluxo inteiro.
 
 **Upload durante o fluxo:** se chega um arquivo válido em qualquer passo do fluxo, o fluxo é cancelado silenciosamente e o arquivo segue o pipeline normal de material (Seção 14), incluindo a confirmação de substituição já existente quando há uma activity ativa em andamento (ver Seção 1). Não há confirmação adicional pelo fato de o usuário estar em meio ao fluxo, apenas a que já existe para upload comum.
 
 ### Geração de conteúdo
 
-A combinação de nível, objetivo, tipo de conteúdo e tema é enviada para geração por LLM, que valida o tema em duas camadas antes de gerar:
+A combinação de nível, objetivo, assunto e ponto passa por duas chamadas de LLM em sequência:
 
-1. **Encaixe:** o tema faz sentido dentro da combinação de objetivo e tipo de conteúdo escolhida.
-2. **Conteúdo proibido:** o tema não recai em pornografia, sexualização, drogas, armas, discurso de ódio, xenofobia, racismo ou equivalente, mesmo quando tecnicamente se encaixaria na combinação escolhida.
-
-Falhando qualquer uma das duas camadas, o sistema retorna um erro curto e genérico ao usuário, sem revelar qual camada falhou nem o motivo específico, e o usuário pode tentar outro tema ou cancelar. Passando nas duas, o conteúdo é gerado no mesmo formato de documento e seção que o processamento de upload já produz (Seção 3), com `sectionType` sempre `vocabulary`.
+1. **Validação do assunto.** Valida o assunto em duas camadas: encaixe (o assunto faz sentido dentro do objetivo escolhido) e conteúdo proibido (pornografia, sexualização, drogas, armas, discurso de ódio, xenofobia, racismo ou equivalente, mesmo quando tecnicamente se encaixaria no objetivo). Falhando qualquer uma, retorna erro curto e genérico, sem revelar qual camada falhou, e o usuário pode tentar outro assunto ou cancelar. Passando, retorna as 5 sugestões de ponto usadas no passo seguinte.
+2. **Resolução do ponto e geração.** Se o ponto veio da lista, gera direto, sem reclassificar. Se veio como texto livre, classifica contra o catálogo de foco antes de gerar, podendo identificar até 2 pontos válidos numa mesma resposta. Gera 25 itens de vocabulário (quantidade de config, sujeita a revisão) no mesmo formato de documento e seção que o processamento de upload já produz, `sectionType` sempre `vocabulary`.
 
 ### Sem compartilhamento entre usuários
 

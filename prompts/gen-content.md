@@ -35,6 +35,18 @@ A tradução de cada item é sempre o equivalente direto do termo em português,
 
 Quando o termo tiver mais de um significado ou tradução igualmente comum, liste as opções separadas por vírgula depois do hífen, no formato: termo - tradução1, tradução2. Use isso só quando as traduções forem genuinamente equivalentes no dia a dia, sem forçar alternativa artificial em item que só tem uma tradução natural.
 
+Quando a tradução escolhida for ambígua fora de contexto, ou seja, o termo em português tem outros sentidos comuns além do que está sendo ensinado aqui, adicione uma distinção curta entre parênteses logo depois da tradução, indicando o sentido específico pretendido. Formato: termo - tradução (distinção).
+
+A distinção é uma pista mínima de sentido, não uma definição nem um exemplo de uso completo. Poucas palavras, o suficiente pra eliminar a ambiguidade.
+
+Exemplo: checkout - caixa (onde você paga na loja)
+Exemplo: bank - banco (instituição financeira)
+Exemplo: mango - manga (fruta)
+
+Não confunda com o caso anterior de tradução alternativa. Lá são duas traduções diferentes, igualmente corretas, pro mesmo sentido. Aqui é uma tradução só, que precisa de contexto porque a palavra em português, sozinha, sugere outro sentido primeiro.
+
+Use a distinção apenas quando ela resolver ambiguidade real. Não adicione parênteses em todo item por padrão, isso destrói a leitura da lista e não ajuda em nada quando o termo já é claro.
+
 Dentro do tema e do foco, misture itens de uso corrente com itens mais específicos. Não gere só o vocabulário mais raro ou técnico, mesmo em nível avançado, garanta que uma parte dos itens seja de reconhecimento imediato.
 
 Nível do conteúdo gerado:
@@ -50,7 +62,7 @@ O título da seção (`sections[].title`) segue o mesmo padrão de título curto
 
 Retorne APENAS UM JSON válido. Sem markdown, sem cercas de código (```), sem texto antes ou depois.
 
-Formato do campo content: um item por linha, termo e tradução separados por hífen, linha em branco entre itens.
+Formato do campo content: um item por linha, termo e tradução separados por hífen, linha em branco entre itens. Tradução pode incluir distinção de sentido entre parênteses quando necessário (ver regra acima).
 
 Estrutura do JSON:
 {

@@ -3,7 +3,7 @@
 ### question
 fórmula: pergunta curta em PT (até 10 palavras) pedindo o significado do termo em EN, terminando em "em português?".
 
-nota: Neste formato answerKeys contém o significado em PT, não o termo em EN, e todos os itens da lista são traduções válidas aceitas na avaliação. Isso é específico do recall invertido. O termo em EN aparece entre aspas no enunciado, sempre por inteiro, sem deixar parte dele fora das aspas. A resposta esperada é em PT. Escolha um dos padrões demonstrados nos exemplos, nunca use "explicar" ou equivalente.
+nota: Neste formato answerKeys contém o significado em PT, não o termo em EN, e todos os itens da lista são traduções válidas aceitas na avaliação. Isso é específico do recall invertido. O termo em EN aparece entre aspas no enunciado, sempre por inteiro, sem deixar parte dele fora das aspas. A resposta esperada é em PT. Escolha um dos padrões demonstrados nos exemplos, nunca use "explicar" ou equivalente. Quando o significado no conteúdo vier acompanhado de um complemento curto que resolve ambiguidade de sentido, independente de como esse complemento estiver marcado no texto recebido, parênteses, colchetes, hífen ou qualquer outra forma, identifique esse complemento e normalize-o em answerKeys no formato "significado (complemento)", com parênteses, mesmo que o texto original use outra marcação. A pergunta em si não muda nesse caso, o termo em EN já é claro sozinho, o complemento existe para ancorar a avaliação da resposta em PT, não para alterar o enunciado.
 
 exemplos:
 - O que significa "garden" em português?
@@ -15,12 +15,13 @@ validação:
 - O termo em EN aparece entre aspas, por inteiro.
 - O significado em PT não aparece em nenhum ponto do enunciado.
 - Se o termo admite mais de uma tradução comum em PT sem contexto que desambigue, todas as traduções válidas estão em answerKeys.
+- Se o significado do conteúdo trouxer um complemento curto que resolve ambiguidade, esteja ele marcado como for no texto original, answerKeys traz esse complemento normalizado em parênteses, no formato "significado (complemento)".
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o termo em EN, empregado no sentido que a pergunta pediu.
 
-nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
+nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o answerKeys trouxer complemento entre parênteses junto do significado em PT, esse complemento define o sentido a validar na resposta do usuário e o sentido do termo em EN a empregar na frase de uso do feedback. Uma resposta em PT que corresponderia a outro sentido do mesmo termo em EN, mas não bate com o sentido indicado pelo complemento, é wrong.
 
 exemplo (quiet):
 - The library was quiet all afternoon.
@@ -41,7 +42,7 @@ validação:
 ### question
 fórmula: pergunta direta em EN A2-B1 (até 12 palavras), estrutura simples e mecânica, tipo pedido cru de significado, terminando em "in Portuguese?".
 
-nota: Neste formato answerKeys contém o significado em PT, não o termo em EN, e todos os itens da lista são traduções válidas aceitas na avaliação. Isso é específico do recall invertido. O termo em EN aparece entre aspas no enunciado, sempre por inteiro, sem deixar parte dele fora das aspas. A resposta esperada é em PT. O enunciado fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a pergunta.
+nota: Neste formato answerKeys contém o significado em PT, não o termo em EN, e todos os itens da lista são traduções válidas aceitas na avaliação. Isso é específico do recall invertido. O termo em EN aparece entre aspas no enunciado, sempre por inteiro, sem deixar parte dele fora das aspas. A resposta esperada é em PT. O enunciado fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a pergunta. Quando o significado no conteúdo vier acompanhado de um complemento curto que resolve ambiguidade de sentido, independente de como esse complemento estiver marcado no texto recebido, parênteses, colchetes, hífen ou qualquer outra forma, identifique esse complemento e normalize-o em answerKeys no formato "significado (complemento)", com parênteses, mesmo que o texto original use outra marcação. A pergunta em si não muda nesse caso, o termo em EN já é claro sozinho, o complemento existe para ancorar a avaliação da resposta em PT, não para alterar o enunciado.
 
 exemplos:
 - What does "never mind" mean in Portuguese?
@@ -53,12 +54,13 @@ validação:
 - O enunciado está todo em EN e o termo aparece entre aspas, por inteiro.
 - O significado em PT não aparece em nenhum ponto do enunciado.
 - Se o termo admite mais de uma tradução comum em PT sem contexto que desambigue (ex: "get ready" pode ser "se preparar" ou "se arrumar"), todas as traduções válidas estão em answerKeys.
+- Se o significado do conteúdo trouxer um complemento curto que resolve ambiguidade, esteja ele marcado como for no texto original, answerKeys traz esse complemento normalizado em parênteses, no formato "significado (complemento)".
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o termo em EN, empregado no sentido que a pergunta pediu.
 
-nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
+nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o answerKeys trouxer complemento entre parênteses junto do significado em PT, esse complemento define o sentido a validar na resposta do usuário e o sentido do termo em EN a empregar na frase de uso do feedback. Uma resposta em PT que corresponderia a outro sentido do mesmo termo em EN, mas não bate com o sentido indicado pelo complemento, é wrong.
 
 exemplo (crowded):
 - The subway was crowded during rush hour.
@@ -79,7 +81,7 @@ validação:
 ### question
 fórmula: pergunta em EN B1-B2 (até 15 palavras) sobre idiom, expressão idiomática ou colocação, formulada como alguém buscaria entender o sentido numa conversa real, terminando em "in Portuguese?".
 
-nota: Neste formato answerKeys contém o significado em PT, não o termo em EN, e todos os itens da lista são traduções válidas aceitas na avaliação. Isso é específico do recall invertido. O termo em EN aparece entre aspas no enunciado, sempre por inteiro, incluindo verbo e artigos que fazem parte do termo, sem deixar parte dele fora das aspas. A resposta esperada é em PT. O contexto em volta situa o uso do termo, nunca revela o significado dele. O enunciado fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a pergunta.
+nota: Neste formato answerKeys contém o significado em PT, não o termo em EN, e todos os itens da lista são traduções válidas aceitas na avaliação. Isso é específico do recall invertido. O termo em EN aparece entre aspas no enunciado, sempre por inteiro, incluindo verbo e artigos que fazem parte do termo, sem deixar parte dele fora das aspas. A resposta esperada é em PT. O contexto em volta situa o uso do termo, nunca revela o significado dele. O enunciado fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a pergunta. Quando o significado no conteúdo vier acompanhado de um complemento curto que resolve ambiguidade de sentido, independente de como esse complemento estiver marcado no texto recebido, parênteses, colchetes, hífen ou qualquer outra forma, identifique esse complemento e normalize-o em answerKeys no formato "significado (complemento)", com parênteses, mesmo que o texto original use outra marcação. A pergunta em si não muda nesse caso, o termo em EN já é claro sozinho dentro do contexto dado, o complemento existe para ancorar a avaliação da resposta em PT, não para alterar o enunciado.
 
 exemplos:
 - Your manager says the team finally "hit the sweet spot". What does that mean in Portuguese?
@@ -92,12 +94,13 @@ validação:
 - O significado em PT não aparece em nenhum ponto do enunciado, nem parafraseado no contexto que antecede o termo.
 - O contexto situa o uso, mas não permite deduzir o significado sem conhecer o termo.
 - Termos idiomáticos costumam ter mais de uma tradução natural em PT, todas as variações válidas estão em answerKeys.
+- Se o significado do conteúdo trouxer um complemento curto que resolve ambiguidade, esteja ele marcado como for no texto original, answerKeys traz esse complemento normalizado em parênteses, no formato "significado (complemento)".
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o termo, empregado no sentido que a pergunta pediu.
 
-nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
+nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o answerKeys trouxer complemento entre parênteses junto do significado em PT, esse complemento define o sentido a validar na resposta do usuário e o sentido do termo em EN a empregar na frase de uso do feedback. Uma resposta em PT que corresponderia a outro sentido do mesmo termo em EN, mas não bate com o sentido indicado pelo complemento, é wrong.
 
 exemplo (reluctant):
 - He was reluctant to sign the new contract.
