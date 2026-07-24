@@ -15,3 +15,5 @@ export const GEN_TEXT_PROMPT = read("gen-text.md");
 export const GEN_EXERCISE_PROMPT = read("gen-exercise.md");
 
 export const ANSWER_EVALUATION_PROMPT = read("answer-evaluation.md");
+
+export const OCR_DOCUMENT_PROMPT = read("ocr-document.md");

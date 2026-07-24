@@ -28,6 +28,7 @@ import {
   GEN_EXERCISE_PROMPT,
   GEN_CONTENT_PROMPT,
   TOPIC_VALIDATION_PROMPT,
+  OCR_DOCUMENT_PROMPT,
 } from "../lib/prompts";
 import { Level, QuestionFormat, SectionType } from "../lib/prisma";
 import { RetryContext } from "../types/retry-context";
@@ -582,18 +583,6 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
 
 // ─── Image transcription ──────────────────────────────────────────────────────
 
-const OCR_PROMPT = `Identifique se a imagem tem um elemento de foco claro (post de rede social, página de caderno, slide, página de livro, documento) ou se é uma cena geral sem foco definido.
-
-Se houver foco claro: considere apenas o conteúdo dentro dessa área e descarte todo o restante (interface do app, moldura, ambiente ao redor, mão, mesa, etc).
-
-Se não houver foco claro: analise a cena toda e extraia o que houver de conteúdo.
-
-Em qualquer caso, descarte: nomes de usuário, @menções, emails, links, domínios, endereços e qualquer dado sensível, exceto quando claramente fizer parte do conteúdo ou for usado como exemplo (ex: "email", "nome", "endereço", etc. como exemplo de ou para o vocabulário).
-
-Se a imagem contiver texto legível relevante, extraia o texto exatamente como está. Caso contrário, descreva de forma concisa o que a imagem mostra.
-
-Defina transcription_type como "text" se havia texto legível ou "description" se foi gerada uma descrição.`;
-
 export async function extractTextFromImage(
   buffer: Buffer,
   userId: string,
@@ -615,7 +604,7 @@ export async function extractTextFromImage(
           role: "user",
           content: [
             { type: "image", image: buffer },
-            { type: "text", text: OCR_PROMPT },
+            { type: "text", text: OCR_DOCUMENT_PROMPT },
           ],
         },
       ],
@@ -655,7 +644,7 @@ export async function extractTextFromImage(
     stage: "ocr",
     provider: "openai",
     model: "gpt-4o-mini",
-    input: { prompt: OCR_PROMPT },
+    input: { prompt: OCR_DOCUMENT_PROMPT },
     output: rawOutput,
     parsedOutput: result,
     success: result !== null,

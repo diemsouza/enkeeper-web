@@ -100,7 +100,7 @@ export async function updateUserPendingIntent(
       metadata:
         intent && metadata !== null
           ? { intent_data: metadata }
-          : Prisma.JsonNull,
+          : Prisma.DbNull,
     },
   });
 }
