@@ -9,7 +9,12 @@ export async function sendWhatsAppMessage(
   to: string,
   text: string,
 ): Promise<void> {
-  if (process.env.NODE_ENV === "production") return;
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[sendWhatsAppMessage] Skipping sending message to ${to} in non-production environment`,
+    );
+    return;
+  }
 
   const token = process.env.WABA_TOKEN;
   const phoneNumberId = process.env.WABA_PHONE_ID;
@@ -41,7 +46,12 @@ export async function sendWhatsAppTemplate(
   to: string,
   templateName: string,
 ): Promise<void> {
-  if (process.env.NODE_ENV === "production") return;
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[sendWhatsAppTemplate] Skipping sending template ${templateName} to ${to} in non-production environment`,
+    );
+    return;
+  }
 
   const token = process.env.WABA_TOKEN;
   const phoneNumberId = process.env.WABA_PHONE_ID;
