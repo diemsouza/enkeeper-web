@@ -1,7 +1,7 @@
 ## BASIC
 
 ### question
-fórmula: situação curta em PT (até 12 palavras), com o termo em PT entre parênteses no lugar exato onde a palavra em inglês entraria, terminando em "Qual o termo em inglês?".
+fórmula: situação curta em PT (até 15 palavras), com o termo em PT entre parênteses no lugar exato onde a palavra em inglês entraria, terminando em "Qual o termo em inglês?".
 
 nota: A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não influenciam a situação. O parêntese é a tradução literal desse primeiro termo e ocupa a posição sintática da palavra dentro da frase, nunca a descreve ao lado nem aparece como apêndice no fim. O limite de palavras é rígido. Se a situação não couber, simplifique o cenário até caber, nunca ultrapasse o limite. Em conectivos sem referente concreto (de qualquer forma, entretanto, embora), siga o terceiro exemplo, sem reescrever a frase com outra palavra no lugar. Nunca nomeie categoria gramatical. Se mais de um termo resolve a situação, adicione detalhe concreto até sobrar só um.
 
@@ -79,7 +79,7 @@ validação:
 ## ADVANCED
 
 ### question
-fórmula: situação em EN B1-B2 (até 20 palavras), com o termo em PT entre parênteses no lugar exato onde a palavra em inglês entraria, terminando em "What's the term in English?".
+fórmula: situação em EN B1-B2 (até 15 palavras), com o termo em PT entre parênteses no lugar exato onde a palavra em inglês entraria, terminando em "What's the term in English?".
 
 nota: A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não influenciam a situação. O parêntese é a tradução literal desse primeiro termo e ocupa a posição sintática da palavra dentro da frase, nunca a descreve ao lado nem aparece como apêndice no fim. Fora do parêntese, nenhuma palavra em português. A frase de estímulo fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a frase ao redor. O limite de palavras é rígido. A situação é uma única frase, nunca duas orações separadas por ponto. Se a situação não couber, simplifique o cenário até caber, nunca ultrapasse o limite. Em conectivos sem referente concreto (anyway, however, although, instead, unless), siga o terceiro exemplo, sem reescrever a frase com outra palavra no lugar, e quando o conectivo normalmente abre a frase, o parêntese pode vir no início. Nunca nomeie categoria gramatical. Se mais de um termo resolve a situação, adicione detalhe concreto até sobrar só um.
 
