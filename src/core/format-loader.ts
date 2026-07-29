@@ -1,8 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { shuffle } from "lodash";
 import { Level, QuestionFormat } from "../lib/prisma";
 import { SectionQuestionResult } from "../lib/llm-schemas";
+import { sanitizeText } from "../lib/utils";
 import { RetryContext } from "../types/retry-context";
+import { CreateQuestionData } from "../repo/questions.repo";
 
 const VOCABULARY_FORMATS: QuestionFormat[] = [
   QuestionFormat.gap_fill,
@@ -113,6 +116,70 @@ function missingParenthesizedTerm(question: string): boolean {
   return !PARENTHESIZED_TERM_RE.test(question);
 }
 
+function normalizeForMatch(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // remove acentos
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Verifica se algum item de answerKeys aparece de forma literal na pergunta,
+// como palavra ou expressão inteira (não como substring de outra palavra).
+function containsAnswerInQuestion(
+  question: string,
+  answerKeys: string[],
+): string | undefined {
+  const normalizedQuestion = normalizeForMatch(question);
+
+  for (const answer of answerKeys) {
+    const trimmed = answer.trim();
+    if (!trimmed) continue;
+
+    const normalizedAnswer = normalizeForMatch(trimmed);
+    const pattern = new RegExp(
+      `(?<![a-z0-9À-ÿ])${escapeRegExp(normalizedAnswer)}(?![a-z0-9À-ÿ])`,
+      "i",
+    );
+
+    if (pattern.test(normalizedQuestion)) {
+      return trimmed;
+    }
+  }
+
+  return undefined;
+}
+
+// Verifica quantos itens de answerKeys aparecem literalmente na pergunta.
+// Só o primeiro deveria aparecer (quando aparecer), nunca mais de um.
+function countAnswerKeysInQuestion(
+  question: string,
+  answerKeys: string[],
+): string[] {
+  const normalizedQuestion = normalizeForMatch(question);
+  const matches: string[] = [];
+
+  for (const answer of answerKeys) {
+    const trimmed = answer.trim();
+    if (!trimmed) continue;
+
+    const normalizedAnswer = normalizeForMatch(trimmed);
+    const pattern = new RegExp(
+      `(?<![a-z0-9À-ÿ])${escapeRegExp(normalizedAnswer)}(?![a-z0-9À-ÿ])`,
+      "i",
+    );
+
+    if (pattern.test(normalizedQuestion)) {
+      matches.push(trimmed);
+    }
+  }
+
+  return matches;
+}
+
 export function validateGeneratedQuestion(
   question: SectionQuestionResult,
   sectionType: string,
@@ -139,5 +206,65 @@ export function validateGeneratedQuestion(
     return warning;
   }
 
+  const leakedAnswer = containsAnswerInQuestion(
+    question.question,
+    question.answerKeys,
+  );
+  if (leakedAnswer) {
+    const warning = `Pergunta descartada por conter a resposta no próprio enunciado ("${leakedAnswer}"): Q: ${question.question} A: ${question.answerKeys}`;
+    console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+    return warning;
+  }
+
+  if (question.termHint) {
+    const leakedAnswerInHint = containsAnswerInQuestion(
+      question.termHint,
+      question.answerKeys,
+    );
+    if (leakedAnswerInHint) {
+      const warning = `Pergunta descartada por conter a resposta no termHint ("${leakedAnswerInHint}"): Q: ${question.question} A: ${question.answerKeys} Hint: ${question.termHint}`;
+      console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+      return warning;
+    }
+  }
+
+  const matchedAnswerKeys = countAnswerKeysInQuestion(
+    question.question,
+    question.answerKeys,
+  );
+  if (matchedAnswerKeys.length > 1) {
+    const warning = `Pergunta descartada por referenciar mais de um answerKey ("${matchedAnswerKeys.join(
+      '", "',
+    )}"): Q: ${question.question} A: ${question.answerKeys}`;
+    console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+    return warning;
+  }
+
   return undefined;
+}
+
+export function sanitizeQuestionData(
+  data: SectionQuestionResult,
+): CreateQuestionData {
+  // sanitize termHint to remove leading/trailing non-alphanumeric characters
+  const termHing = data.termHint
+    ? sanitizeText(
+        data.termHint.replace(/^[^a-zA-Z0-9À-ÿ]+|[^a-zA-Z0-9À-ÿ]+$/g, ""),
+      )
+    : undefined;
+  return {
+    question: sanitizeText(data.question),
+    answerKeys: data.answerKeys.map((k) => sanitizeText(k)),
+    questionFormat: data.questionFormat as QuestionFormat,
+    questionOptions:
+      data.questionFormat === QuestionFormat.choice
+        ? shuffle(data.questionOptions.map((o) => sanitizeText(o)))
+        : [],
+    term: data.term ? sanitizeText(data.term) : undefined,
+    termHint: termHing,
+    meaning: data.meaning ? sanitizeText(data.meaning) : undefined,
+    sourceContent: data.sourceContent
+      ? sanitizeText(data.sourceContent)
+      : undefined,
+  };
 }

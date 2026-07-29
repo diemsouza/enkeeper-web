@@ -4,6 +4,7 @@ import {
   QuestionStatus,
   AnswerType,
   QuestionType,
+  AiProvider,
 } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
@@ -12,6 +13,12 @@ export type CreateQuestionData = {
   answerKeys: string[];
   questionFormat?: QuestionFormat;
   questionOptions?: string[];
+  term?: string;
+  meaning?: string;
+  termHint?: string;
+  sourceContent?: string;
+  provider?: AiProvider;
+  model?: string;
 };
 
 export async function createQuestions(
@@ -27,6 +34,12 @@ export async function createQuestions(
       answerKeys: q.answerKeys,
       ...(q.questionFormat ? { questionFormat: q.questionFormat } : {}),
       questionOptions: q.questionOptions ?? [],
+      term: q.term,
+      meaning: q.meaning,
+      provider: q.provider,
+      model: q.model,
+      termHint: q.termHint,
+      sourceContent: q.sourceContent,
     })),
   });
 }
@@ -133,6 +146,8 @@ export async function updateQuestion(
     easeFactor?: number;
     interval?: number;
     nextRevisionAt?: Date;
+    provider?: AiProvider;
+    model?: string;
   },
 ): Promise<void> {
   await prisma.question.update({ where: { id }, data });

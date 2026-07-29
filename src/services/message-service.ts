@@ -108,6 +108,7 @@ import {
   formatSectionTransition,
   formatChoiceQuestion,
   formatIntensivePendingQuestion,
+  formatQuestion,
 } from "../core/formatters";
 import {
   INTENSIVE_UNTIL_MIN,
@@ -1036,20 +1037,20 @@ export async function handleIncomingMessage(
               const questionFormats = [
                 pendingQuestion.questionFormat,
               ] as QuestionFormat[];
+
               const feedbackExamples = pendingQuestion.questionFormat
                 ? getFeedbackExamples(questionFormats, activeActivity.userLevel)
                 : "";
-              const questionForEval =
-                pendingQuestion.questionFormat === QuestionFormat.choice &&
-                pendingQuestion.questionOptions.length > 0
-                  ? formatChoiceQuestion(
-                      pendingQuestion.question,
-                      pendingQuestion.questionOptions,
-                    )
-                  : pendingQuestion.question;
+
+              const questionForEvaluation = formatQuestion({
+                question: pendingQuestion.question,
+                questionFormat: pendingQuestion.questionFormat,
+                questionOptions: pendingQuestion.questionOptions,
+                termHint: pendingQuestion.termHint,
+              });
 
               const evaluation = await generateAnswerEvaluation({
-                question: questionForEval,
+                question: questionForEvaluation,
                 answerKeys: pendingQuestion.answerKeys,
                 userAnswer: text,
                 attemptCount: pendingQuestion.attemptCount,
@@ -1092,6 +1093,8 @@ export async function handleIncomingMessage(
                       nextRevisionAt: sm2.nextRevisionAt,
                     }
                   : {}),
+                provider: evaluation?.provider,
+                model: evaluation?.model,
               });
               if (pendingQuestion.sectionId) {
                 await recalcSectionStatus(pendingQuestion.sectionId);
@@ -1354,6 +1357,7 @@ async function sendIntensiveQuestion(
     sectionId: string | null;
     questionFormat: QuestionFormat | null;
     questionOptions: string[];
+    termHint?: string | null;
   },
   activityId: string,
   userId: string,
@@ -1384,11 +1388,7 @@ async function sendIntensiveQuestion(
     }
   }
 
-  const questionText =
-    question.questionFormat === QuestionFormat.choice &&
-    question.questionOptions.length > 0
-      ? formatChoiceQuestion(question.question, question.questionOptions)
-      : question.question;
+  const questionText = formatQuestion(question);
 
   await saveMessage({
     userId,

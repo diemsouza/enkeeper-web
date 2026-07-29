@@ -165,6 +165,7 @@ model Activity {
     title             String         @default("") @map("title")
     lastNudgeStep     String?        @map("last_nudge_step")
     lastNudgeAt       DateTime?      @map("last_nudge_at")
+    metadata          Json?          @map("metadata")
     createdAt         DateTime       @default(now()) @map("created_at")
     updatedAt         DateTime       @updatedAt @map("updated_at")
     deletedAt         DateTime?      @map("deleted_at")
@@ -189,6 +190,7 @@ model Section {
     title       String         @map("title")
     content     String         @map("content") @db.Text
     order       Int            @map("order")
+    metadata    Json?          @map("metadata")
     status      SectionStatus? @map("status")
     createdAt   DateTime       @default(now()) @map("created_at")
     updatedAt   DateTime       @updatedAt @map("updated_at")
@@ -210,9 +212,9 @@ model Question {
     id              String          @id @default(ulid()) @map("id")
     activityId      String          @map("activity_id")
     sectionId       String?         @map("section_id")
-    question        String          @db.Text
+    question        String          @map("question") @db.Text
     answerKeys      String[]        @map("answer_keys")
-    answer          String?         @db.Text
+    answer          String?         @map("answer") @db.Text
     questionType    QuestionType    @default(text) @map("question_type")
     answerType      AnswerType?     @map("answer_type")
     questionFormat  QuestionFormat? @map("question_format")
@@ -224,6 +226,13 @@ model Question {
     easeFactor      Float           @default(2.5) @map("ease_factor")
     interval        Int             @default(0) @map("interval")
     nextRevisionAt  DateTime?       @map("next_revision_at")
+    term            String?         @map("term") @db.Text
+    meaning         String?         @map("meaning") @db.Text
+    termHint        String?         @map("term_hint") @db.Text
+    sourceContent   String?         @map("source_content") @db.Text
+    provider        AiProvider?     @map("provider")
+    model           String?         @map("model")
+    metadata        Json?           @map("metadata")
     createdAt       DateTime        @default(now()) @map("created_at")
     updatedAt       DateTime        @updatedAt @map("updated_at")
     deletedAt       DateTime?       @map("deleted_at")

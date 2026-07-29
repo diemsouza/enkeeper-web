@@ -304,7 +304,7 @@ material de aula.
 Ao longo do dia, chegam perguntas sobre o que você escolher praticar,
 aqui mesmo.
 
-Você tem {TRIAL_DAYS} dias pra praticar sem custo. Use *ajuda* pra ver
+Você tem {TRIAL_DAYS} dias pra praticar sem custo. Use *ajuda* quando precisar ver
 os comandos disponíveis.
 ```
 

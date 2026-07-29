@@ -28,7 +28,6 @@ import {
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 import { MessageChannel } from "../types/message-channel";
 import {
-  formatChoiceQuestion,
   formatNudgeMessage,
   formatQuestion,
   formatSectionTransition,
@@ -63,6 +62,7 @@ import {
   getFormatsBySectionType,
   getQuestionExamples,
   validateGeneratedQuestion,
+  sanitizeQuestionData,
 } from "../core/format-loader";
 import { startOfDay } from "date-fns";
 import { buildRoundCompletedSummary } from "./activity-service";
@@ -297,55 +297,13 @@ export async function processActivityCron(
         continue;
       }
 
-      if (question.sectionId) {
-        const section = await findSectionById(question.sectionId);
-        if (section?.status === null) {
-          const transitionMsg = formatSectionTransition(
-            section.title,
-            activity.executionCount === 0,
-          );
-          await channel.sendMessage(userChannel.channelId, transitionMsg);
-          await saveMessage({
-            userId: activity.userId,
-            userChannelId: userChannel.id,
-            activityId: activity.id,
-            role: "assistant",
-            content: transitionMsg,
-            intent: "section_transition",
-          });
-          await incrementAgentMessageCount(activity.userId, today);
-        }
-      }
-
-      const questionText =
-        question.questionFormat === QuestionFormat.choice &&
-        question.questionOptions.length > 0
-          ? formatChoiceQuestion(question.question, question.questionOptions)
-          : question.question;
-
-      await channel.sendMessage(userChannel.channelId, questionText);
-      await saveMessage({
-        userId: activity.userId,
-        userChannelId: userChannel.id,
-        activityId: activity.id,
-        role: "assistant",
-        content: questionText,
-        intent: "practice_question",
-        questionId: question.id,
-      });
-      await incrementAgentMessageCount(activity.userId, today);
-      await updateQuestion(question.id, {
-        status: "pending",
-        activityId: activity.id,
-      });
-      await updateActivity(activity.id, activity.userId, {
-        executionCount: activity.executionCount + 1,
-        nextMessageAt: new Date(
-          Date.now() + activity.intervalMinutes * 60 * 1000,
-        ),
-        waitingUser: true,
-        lastQuestionId: question.id,
-      });
+      await sendCadenceQuestion(
+        question,
+        activity,
+        userChannel,
+        today,
+        channel,
+      );
 
       processed++;
     } catch (err) {
@@ -355,6 +313,65 @@ export async function processActivityCron(
   }
 
   return { processed, skipped, errors };
+}
+
+async function sendCadenceQuestion(
+  question: {
+    id: string;
+    question: string;
+    sectionId: string | null;
+    questionFormat: QuestionFormat | null;
+    questionOptions: string[];
+    termHint: string | null;
+  },
+  activity: Activity,
+  userChannel: { channelId: string; id: string },
+  today: Date,
+  channel: MessageChannel,
+): Promise<void> {
+  if (question.sectionId) {
+    const section = await findSectionById(question.sectionId);
+    if (section?.status === null) {
+      const transitionMsg = formatSectionTransition(
+        section.title,
+        activity.executionCount === 0,
+      );
+      await channel.sendMessage(userChannel.channelId, transitionMsg);
+      await saveMessage({
+        userId: activity.userId,
+        userChannelId: userChannel.id,
+        activityId: activity.id,
+        role: "assistant",
+        content: transitionMsg,
+        intent: "section_transition",
+      });
+      await incrementAgentMessageCount(activity.userId, today);
+    }
+  }
+
+  const questionText = formatQuestion(question);
+
+  await channel.sendMessage(userChannel.channelId, questionText);
+  await saveMessage({
+    userId: activity.userId,
+    userChannelId: userChannel.id,
+    activityId: activity.id,
+    role: "assistant",
+    content: questionText,
+    intent: "practice_question",
+    questionId: question.id,
+  });
+  await incrementAgentMessageCount(activity.userId, today);
+  await updateQuestion(question.id, {
+    status: "pending",
+    activityId: activity.id,
+  });
+  await updateActivity(activity.id, activity.userId, {
+    executionCount: activity.executionCount + 1,
+    nextMessageAt: new Date(Date.now() + activity.intervalMinutes * 60 * 1000),
+    waitingUser: true,
+    lastQuestionId: question.id,
+  });
 }
 
 export async function processExpiredFlowIntents(
@@ -422,6 +439,7 @@ async function selectNextQuestion(
   sectionId: string | null;
   questionFormat: QuestionFormat | null;
   questionOptions: string[];
+  termHint: string | null;
 } | null> {
   const lastId = activity.lastQuestionId;
 
@@ -556,7 +574,7 @@ export async function generateQuestionIfPoolNotFull(
   if (!validated) return { poolExhausted: false, question: null };
 
   await createQuestions(activity.id, targetSection.id, [
-    formatQuestion(validated),
+    sanitizeQuestionData(validated),
   ]);
 
   await updateActivity(activity.id, activity.userId, {

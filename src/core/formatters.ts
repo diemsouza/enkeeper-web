@@ -13,12 +13,8 @@ import {
   sanitizeText,
   sanitizeWhatsappContent,
 } from "../lib/utils";
-import {
-  AnswerEvaluationResult,
-  SectionQuestionResult,
-} from "../lib/llm-schemas";
+import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { shuffle } from "lodash";
-import { CreateQuestionData } from "../repo/questions.repo";
 
 export function formatOnboardingMsg1(): string {
   return "Hi 👋 Bem-vindo a *Fluizer*.";
@@ -237,7 +233,7 @@ export function formatDocProcessed(
     lines.push("\nAlguns termos pareceram inconsistentes e foram ignorados.");
   if (remaining === 1)
     lines.push("\n_Você ainda pode enviar mais 1 atividade hoje._");
-  if (remaining === 0) lines.push("\n_Essa foi sua última atividade do dia._");
+  if (remaining === 0) lines.push("\n_Essa é sua última atividade do dia._");
   return lines.join("");
 }
 
@@ -512,7 +508,7 @@ export function formatChoiceQuestion(
   options: string[],
 ): string {
   if (!options.length) return question;
-  const labels = "abcdefghij";
+  const labels = "abcde";
   return `${question}\n\n${options.map((o, i) => `${labels[i]}) ${o}`).join("\n")}`;
 }
 
@@ -736,17 +732,39 @@ export function formatFeedback(
   return result.join(" ");
 }
 
-export function formatQuestion(
-  data: SectionQuestionResult,
-): CreateQuestionData {
-  const result = {
-    question: sanitizeText(data.question),
-    answerKeys: data.answerKeys.map((k) => sanitizeText(k)),
-    questionFormat: data.questionFormat as QuestionFormat,
-    questionOptions:
-      data.questionFormat === QuestionFormat.choice
-        ? shuffle(data.questionOptions.map((o) => sanitizeText(o)))
-        : [],
-  };
-  return result;
+function insertTermHint(
+  question: string,
+  hint: string | null | undefined,
+  format: QuestionFormat | null,
+): string {
+  if (!hint) return question;
+
+  const formatsWithQuotedTerm: QuestionFormat[] = [
+    QuestionFormat.recall_inverted,
+  ];
+  if (!format || !formatsWithQuotedTerm.includes(format)) return question;
+
+  const quotedTermPattern = /(["“][^"”]+["”])/;
+  if (quotedTermPattern.test(question)) {
+    return question.replace(quotedTermPattern, `$1 (${hint})`);
+  }
+  // termo entre aspas não encontrado, evita posicionar errado
+  return question;
+}
+
+export function formatQuestion(question: {
+  question: string;
+  questionFormat: QuestionFormat | null;
+  questionOptions: string[];
+  termHint?: string | null;
+}): string {
+  const withHint = insertTermHint(
+    question.question,
+    question.termHint,
+    question.questionFormat,
+  );
+  return question.questionFormat === QuestionFormat.choice &&
+    question.questionOptions.length > 0
+    ? formatChoiceQuestion(withHint, question.questionOptions)
+    : withHint;
 }

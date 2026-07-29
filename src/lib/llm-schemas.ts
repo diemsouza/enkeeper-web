@@ -97,6 +97,10 @@ export const sectionQuestionSchema = z.object({
   answerKeys: z.array(z.string()),
   questionFormat: z.string().optional(),
   questionOptions: z.array(z.string()).default([]),
+  term: z.string().optional(),
+  termHint: z.string().optional(),
+  meaning: z.string().optional(),
+  sourceContent: z.string().optional(),
   warning: z.string().optional(),
 });
 

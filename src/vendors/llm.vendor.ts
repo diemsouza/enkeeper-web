@@ -30,7 +30,7 @@ import {
   TOPIC_VALIDATION_PROMPT,
   OCR_DOCUMENT_PROMPT,
 } from "../lib/prompts";
-import { Level, QuestionFormat, SectionType } from "../lib/prisma";
+import { AiProvider, Level, QuestionFormat, SectionType } from "../lib/prisma";
 import { RetryContext } from "../types/retry-context";
 import { FocusSuggestion } from "../types/domain";
 import { FocusSelectionInput } from "../core/parser";
@@ -416,6 +416,7 @@ Nível: {level}`
       ...parsed,
       questionFormat:
         sectionType === "vocabulary" ? format : parsed.questionFormat,
+      sourceContent: sectionContent,
     };
   } catch (err) {
     if (err instanceof Error) logError = err.message;
@@ -458,6 +459,11 @@ Nível: {level}`
 
 // ─── Answer evaluation ────────────────────────────────────────────────────────
 
+type AnswerEvaluationResultWithProvider = AnswerEvaluationResult & {
+  provider: AiProvider;
+  model: string;
+};
+
 export async function generateAnswerEvaluation(params: {
   question: string;
   answerKeys: string[];
@@ -470,7 +476,7 @@ export async function generateAnswerEvaluation(params: {
   userId: string;
   docId: string;
   questionFormats: QuestionFormat[];
-}): Promise<AnswerEvaluationResult | null> {
+}): Promise<AnswerEvaluationResultWithProvider | null> {
   const {
     question,
     answerKeys,
@@ -486,7 +492,7 @@ export async function generateAnswerEvaluation(params: {
   let inputTokens = 0;
   let outputTokens = 0;
   let cachedTokens = 0;
-  let result: AnswerEvaluationResult | null = null;
+  let result: AnswerEvaluationResultWithProvider | null = null;
   let rawOutput: string | null = null;
   let logError: string | null = null;
   const startTime = Date.now();
@@ -525,14 +531,22 @@ Resposta do usuário: {user_answer}`
     outputTokens += llmResult.usage?.outputTokens ?? 0;
     cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
     rawOutput = llmResult.text ?? null;
-    result = llmResult.output;
+    result = {
+      ...(llmResult.output || {}),
+      provider: PROVIDER_STANDARD,
+      model: getStandardModel(),
+    };
   } catch (err) {
     if (NoObjectGeneratedError.isInstance(err) && err.text) {
       rawOutput = err.text;
       try {
-        result = answerEvaluationSchema.parse(
-          parseJsonWithFallback(err.text.trim()),
-        );
+        result = {
+          ...(answerEvaluationSchema.parse(
+            parseJsonWithFallback(err.text.trim()),
+          ) || {}),
+          provider: PROVIDER_STANDARD,
+          model: getStandardModel(),
+        };
       } catch {
         // structured parse failed after NoObjectGeneratedError
       }
