@@ -16,6 +16,7 @@ validação:
 - O parêntese está na posição exata em que a palavra em inglês entraria na frase.
 - O termo em inglês não aparece em nenhum ponto da situação.
 - A situação aponta para um único termo possível.
+- Situação com no máximo 15 palavras, sem contar a pergunta final.
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
@@ -35,6 +36,7 @@ exemplo (anyway):
 validação:
 - A frase de uso emprega o termo, nunca o define ou o explica.
 - Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- A frase é a mesma da pergunta gerada, com a lacuna preenchida, nunca uma frase nova.
 - Se qualquer critério falhar, gere outro feedback com a correção.
 
 ## INTERMEDIATE
@@ -55,6 +57,7 @@ validação:
 - O parêntese está na posição exata em que a palavra em inglês entraria na frase.
 - O termo em inglês não aparece em nenhum ponto da situação.
 - A situação aponta para um único termo possível.
+- Situação com no máximo 15 palavras, sem contar a pergunta final.
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
@@ -74,6 +77,7 @@ exemplo (give up):
 validação:
 - A frase de uso emprega o termo, nunca o define ou o explica.
 - Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- A frase é a mesma da pergunta gerada, com a lacuna preenchida, nunca uma frase nova.
 - Se qualquer critério falhar, gere outro feedback com a correção.
 
 ## ADVANCED
@@ -94,6 +98,7 @@ validação:
 - O parêntese está na posição exata em que a palavra em inglês entraria na frase.
 - O termo em inglês não aparece em nenhum ponto da situação, incluindo a oração que vem antes ou depois do parêntese na mesma frase de duas cláusulas.
 - A situação aponta para um único termo possível.
+- Situação com no máximo 15 palavras, sem contar a pergunta final.
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
@@ -113,4 +118,5 @@ exemplo (bite the bullet):
 validação:
 - A frase de uso emprega o termo, nunca o define ou o explica.
 - Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- A frase é a mesma da pergunta gerada, com a lacuna preenchida, nunca uma frase nova.
 - Se qualquer critério falhar, gere outro feedback com a correção.

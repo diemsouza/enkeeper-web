@@ -732,6 +732,10 @@ export function formatFeedback(
   return result.join(" ");
 }
 
+export function formatEvalTip(tip: string): string {
+  return `💡 ${tip}`;
+}
+
 function insertTermHint(
   question: string,
   hint: string | null | undefined,

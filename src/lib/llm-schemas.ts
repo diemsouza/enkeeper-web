@@ -115,6 +115,7 @@ export const answerEvaluationSchema = z.object({
   feedback: z.string(),
   right_answer: z.string().optional(),
   user_unknown: z.boolean().optional(),
+  eval_tip: z.string().optional(),
 });
 
 export type AnswerEvaluationResult = z.infer<typeof answerEvaluationSchema>;

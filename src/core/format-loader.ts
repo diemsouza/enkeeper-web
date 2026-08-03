@@ -240,6 +240,19 @@ export function validateGeneratedQuestion(
     return warning;
   }
 
+  const situationWordCount = question.question.trim().split(/\s+/).length;
+  const SCENARIO_WORD_LIMIT = 15;
+  const SCENARIO_WORD_TOLERANCE = 6;
+
+  if (
+    question.questionFormat === "scenario" &&
+    situationWordCount > SCENARIO_WORD_LIMIT + SCENARIO_WORD_TOLERANCE
+  ) {
+    const warning = `Pergunta descartada por estourar o limite de palavras da situação (${situationWordCount} palavras, limite ${SCENARIO_WORD_LIMIT}): Q: ${question.question}`;
+    console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+    return warning;
+  }
+
   return undefined;
 }
 

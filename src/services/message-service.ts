@@ -32,6 +32,7 @@ import {
   formatNoActivity,
   formatIntensiveModeActivated,
   formatFeedback,
+  formatEvalTip,
   formatIntensiveModeStopped,
   formatGuideAfterFirstFeedback,
   formatCanceled,
@@ -1066,6 +1067,9 @@ export async function handleIncomingMessage(
               const feedback = evaluation
                 ? formatFeedback(evaluation, activeActivity.userLevel)
                 : formatFeedbackFailed();
+              const evalTip = evaluation?.eval_tip;
+              const tipMsg =
+                !isIntensiveMode && evalTip ? formatEvalTip(evalTip) : null;
               const answerType = input.mediaType === "audio" ? "audio" : "text";
               const isWrongOrPartial =
                 evalStatus === "wrong" || evalStatus === "partial";
@@ -1095,6 +1099,7 @@ export async function handleIncomingMessage(
                   : {}),
                 provider: evaluation?.provider,
                 model: evaluation?.model,
+                evalTip: evaluation?.eval_tip || null,
               });
               if (pendingQuestion.sectionId) {
                 await recalcSectionStatus(pendingQuestion.sectionId);
@@ -1196,10 +1201,45 @@ export async function handleIncomingMessage(
                   intent: "guide_after_first_feedback",
                 });
                 await incrementAgentMessageCount(user.id, today);
+                const messages = [
+                  feedback,
+                  { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
+                ];
+                if (tipMsg) {
+                  await saveMessage({
+                    userId: user.id,
+                    userChannelId: userChannel.id,
+                    activityId: activeActivity.id,
+                    role: "assistant",
+                    content: tipMsg,
+                    intent: "eval_tip",
+                    questionId: pendingQuestion.id,
+                  });
+                  await incrementAgentMessageCount(user.id, today);
+                  messages.push(tipMsg, {
+                    delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
+                  });
+                }
+                messages.push(guideMsg);
+                await channel.sendMessage(userChannel.channelId, messages);
+                return;
+              }
+
+              if (tipMsg) {
+                await saveMessage({
+                  userId: user.id,
+                  userChannelId: userChannel.id,
+                  activityId: activeActivity.id,
+                  role: "assistant",
+                  content: tipMsg,
+                  intent: "eval_tip",
+                  questionId: pendingQuestion.id,
+                });
+                await incrementAgentMessageCount(user.id, today);
                 await channel.sendMessage(userChannel.channelId, [
                   feedback,
                   { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
-                  guideMsg,
+                  tipMsg,
                 ]);
                 return;
               }

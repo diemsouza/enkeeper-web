@@ -148,6 +148,7 @@ export async function updateQuestion(
     nextRevisionAt?: Date;
     provider?: AiProvider;
     model?: string;
+    evalTip?: string | null;
   },
 ): Promise<void> {
   await prisma.question.update({ where: { id }, data });

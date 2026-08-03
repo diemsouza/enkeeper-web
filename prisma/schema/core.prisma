@@ -232,6 +232,7 @@ model Question {
     sourceContent   String?         @map("source_content") @db.Text
     provider        AiProvider?     @map("provider")
     model           String?         @map("model")
+    evalTip         String?         @map("eval_tip") @db.Text
     metadata        Json?           @map("metadata")
     createdAt       DateTime        @default(now()) @map("created_at")
     updatedAt       DateTime        @updatedAt @map("updated_at")
