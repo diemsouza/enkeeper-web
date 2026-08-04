@@ -161,7 +161,9 @@ export async function processFocusResponse(
   }
 
   const data = generated.data;
-  const focusKeys = data.focusKeys.filter((key) => isValidFocusKey(key));
+  const focusKeys = data.focusKeys
+    ? data.focusKeys.filter((key) => isValidFocusKey(key))
+    : [];
   if (focusKeys.length === 0) {
     return { outcome: "retry", message: formatFocusError() };
   }

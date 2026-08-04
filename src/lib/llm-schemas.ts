@@ -1,4 +1,3 @@
-import { Warning } from "postcss";
 import z from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
@@ -66,9 +65,7 @@ export type DocProcessingResult = z.infer<typeof docProcessingSchema>;
 export const topicValidationSchema = z.object({
   isValid: z.boolean(),
   invalidReason: z.string().nullable(),
-  focusSuggestions: z
-    .array(z.object({ key: z.string(), label: z.string() }))
-    .default([]),
+  focusSuggestions: z.array(z.object({ key: z.string(), label: z.string() })),
 });
 
 export type TopicValidationResult = z.infer<typeof topicValidationSchema>;
@@ -76,8 +73,8 @@ export type TopicValidationResult = z.infer<typeof topicValidationSchema>;
 export const focusContentSchema = z.object({
   isValid: z.boolean(),
   invalidReason: z.string().nullable(),
-  tooManyFocus: z.boolean().default(false),
-  focusKeys: z.array(z.string()).max(2).default([]),
+  tooManyFocus: z.boolean(),
+  focusKeys: z.array(z.string()).max(2),
   title: z.string(),
   level: z.enum(["basic", "intermediate", "advanced"]),
   sections: z.array(
@@ -95,13 +92,13 @@ export type FocusContentResult = z.infer<typeof focusContentSchema>;
 export const sectionQuestionSchema = z.object({
   question: z.string(),
   answerKeys: z.array(z.string()),
-  questionFormat: z.string().optional(),
-  questionOptions: z.array(z.string()).default([]),
-  term: z.string().optional(),
-  termHint: z.string().optional(),
-  meaning: z.string().optional(),
-  sourceContent: z.string().optional(),
-  warning: z.string().optional(),
+  questionFormat: z.string().nullable(),
+  questionOptions: z.array(z.string()),
+  term: z.string().nullable(),
+  termHint: z.string().nullable(),
+  meaning: z.string().nullable(),
+  sourceContent: z.string().nullable(),
+  warning: z.string().nullable(),
 });
 
 export type SectionQuestionResult = z.infer<typeof sectionQuestionSchema>;
@@ -113,9 +110,9 @@ export const sectionQuestionsSchema = z.object({
 export const answerEvaluationSchema = z.object({
   status: z.enum(["right", "partial", "wrong"]),
   feedback: z.string(),
-  right_answer: z.string().optional(),
-  user_unknown: z.boolean().optional(),
-  eval_tip: z.string().optional(),
+  right_answer: z.string().nullable(),
+  user_unknown: z.boolean().nullable(),
+  eval_tip: z.string().nullable(),
 });
 
 export type AnswerEvaluationResult = z.infer<typeof answerEvaluationSchema>;

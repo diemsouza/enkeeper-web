@@ -180,6 +180,17 @@ function countAnswerKeysInQuestion(
   return matches;
 }
 
+function overflowMaxWords(limit: number, question: string) {
+  const situationOnly = question
+    .replace(/\([^)]*\)/g, "")
+    .slice(0, question.lastIndexOf(".") + 1 || question.length)
+    .trim();
+
+  const situationWordCount = situationOnly.split(/\s+/).filter(Boolean).length;
+
+  return situationWordCount > limit;
+}
+
 export function validateGeneratedQuestion(
   question: SectionQuestionResult,
   sectionType: string,
@@ -210,6 +221,7 @@ export function validateGeneratedQuestion(
     question.question,
     question.answerKeys,
   );
+
   if (leakedAnswer) {
     const warning = `Pergunta descartada por conter a resposta no próprio enunciado ("${leakedAnswer}"): Q: ${question.question} A: ${question.answerKeys}`;
     console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
@@ -232,6 +244,7 @@ export function validateGeneratedQuestion(
     question.question,
     question.answerKeys,
   );
+
   if (matchedAnswerKeys.length > 1) {
     const warning = `Pergunta descartada por referenciar mais de um answerKey ("${matchedAnswerKeys.join(
       '", "',
@@ -240,15 +253,12 @@ export function validateGeneratedQuestion(
     return warning;
   }
 
-  const situationWordCount = question.question.trim().split(/\s+/).length;
-  const SCENARIO_WORD_LIMIT = 15;
-  const SCENARIO_WORD_TOLERANCE = 6;
-
+  const maxWords = 15; // Limite de palavras para perguntas de cenário
   if (
     question.questionFormat === "scenario" &&
-    situationWordCount > SCENARIO_WORD_LIMIT + SCENARIO_WORD_TOLERANCE
+    overflowMaxWords(maxWords, question.question)
   ) {
-    const warning = `Pergunta descartada por estourar o limite de palavras da situação (${situationWordCount} palavras, limite ${SCENARIO_WORD_LIMIT}): Q: ${question.question}`;
+    const warning = `Pergunta descartada por estourar o limite de ${maxWords} palavras da situação, desconsiderando termo em parênteses e pergunta final. Q: ${question.question}`;
     console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
     return warning;
   }

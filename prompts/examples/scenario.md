@@ -16,7 +16,8 @@ validação:
 - O parêntese está na posição exata em que a palavra em inglês entraria na frase.
 - O termo em inglês não aparece em nenhum ponto da situação.
 - A situação aponta para um único termo possível.
-- Situação com no máximo 15 palavras, sem contar a pergunta final.
+- O termo em parêntese deve aparecer na situação, nunca na pergunta final.
+- Situação com no máximo 15 palavras, sem contar termo em parêntese nem a pergunta final.
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
@@ -57,7 +58,8 @@ validação:
 - O parêntese está na posição exata em que a palavra em inglês entraria na frase.
 - O termo em inglês não aparece em nenhum ponto da situação.
 - A situação aponta para um único termo possível.
-- Situação com no máximo 15 palavras, sem contar a pergunta final.
+- O termo em parêntese deve aparecer na situação, nunca na pergunta final.
+- Situação com no máximo 15 palavras, sem contar termo em parêntese nem a pergunta final.
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
@@ -98,7 +100,8 @@ validação:
 - O parêntese está na posição exata em que a palavra em inglês entraria na frase.
 - O termo em inglês não aparece em nenhum ponto da situação, incluindo a oração que vem antes ou depois do parêntese na mesma frase de duas cláusulas.
 - A situação aponta para um único termo possível.
-- Situação com no máximo 15 palavras, sem contar a pergunta final.
+- O termo em parêntese deve aparecer na situação, nunca na pergunta final.
+- Situação com no máximo 15 palavras, sem contar termo em parêntese nem a pergunta final.
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback

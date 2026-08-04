@@ -73,10 +73,10 @@ export const RETRY_DELAY_MS = 1000;
 export const COMMAND_TIMEOUT_MIN = 5;
 
 export const DOMAINS = [
-  { id: "work", label: "Mercado de Trabalho" },
+  { id: "daily_life", label: "Dia a Dia e Lazer" },
   { id: "travel", label: "Viagens Internacionais" },
   { id: "education", label: "Educação e Intercâmbio" },
-  { id: "daily_life", label: "Dia a Dia e Lazer" },
+  { id: "work", label: "Mercado de Trabalho" },
 ] as const;
 export type DomainId = (typeof DOMAINS)[number]["id"];
 

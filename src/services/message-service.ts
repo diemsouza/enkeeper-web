@@ -4,7 +4,6 @@ import {
   Level,
   Message,
   QuestionFormat,
-  QuestionStatus,
 } from "../lib/prisma";
 import { parseMessage } from "../core/parser";
 import { canPractice } from "../core/access";
@@ -40,7 +39,6 @@ import {
   formatActivityReplaceCanceled,
   formatInvalidResumeIndex,
   formatNoActiveActivity,
-  formatAllQuestionsAnswered,
   formatNoPendingAction,
   formatFeedbackFailed,
   formatPracticeWaiting,
@@ -107,7 +105,6 @@ import {
 import { findSectionById, recalcSectionStatus } from "../repo/sections.repo";
 import {
   formatSectionTransition,
-  formatChoiceQuestion,
   formatIntensivePendingQuestion,
   formatQuestion,
 } from "../core/formatters";
@@ -1068,8 +1065,7 @@ export async function handleIncomingMessage(
                 ? formatFeedback(evaluation, activeActivity.userLevel)
                 : formatFeedbackFailed();
               const evalTip = evaluation?.eval_tip;
-              const tipMsg =
-                !isIntensiveMode && evalTip ? formatEvalTip(evalTip) : null;
+              const tipMsg = evalTip ? formatEvalTip(evalTip) : null;
               const answerType = input.mediaType === "audio" ? "audio" : "text";
               const isWrongOrPartial =
                 evalStatus === "wrong" || evalStatus === "partial";

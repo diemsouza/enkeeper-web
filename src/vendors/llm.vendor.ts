@@ -31,15 +31,24 @@ import {
   OCR_DOCUMENT_PROMPT,
 } from "../lib/prompts";
 import { AiProvider, Level, QuestionFormat, SectionType } from "../lib/prisma";
-import { RetryContext } from "../types/retry-context";
 import { FocusSuggestion } from "../types/domain";
 import { FocusSelectionInput } from "../core/parser";
 import { getFocusEnumPromptText } from "../core/focus";
 
-const MODEL_MINI = "gpt-4.1-mini";
-const MODEL_ANTHROPIC = "claude-haiku-4-5-20251001";
-const MODEL_OPENAI = "gpt-4.1";
-const PROVIDER_STANDARD = "anthropic";
+/*
+claude-haiku-4-5-20251001 -> US$ 1,00 / US$ 5,00
+gpt-4.1 -> $2.00 / $8.00
+gpt-4.1-mini -> $0.20 / $1.60
+gpt-5-mini -> $0.25 / $2.00
+gpt-5.6-luna -> $0.20 / $1.20
+*/
+
+const MODEL_ANTHROPIC = String(process.env.ANTHROPIC_MODEL);
+const MODEL_OPENAI = String(process.env.OPENAI_MODEL);
+const PROVIDER_STANDARD = String(process.env.AI_PROVIDER) as
+  | "openai"
+  | "anthropic";
+
 // ─── Doc extraction ───────────────────────────────────────────────────────────
 
 const getStandardModel = () => {
@@ -50,6 +59,15 @@ const getStandardModel = () => {
 const getStandardLanguageModel = () => {
   if (PROVIDER_STANDARD === "anthropic") return anthropic(getStandardModel());
   return openai(getStandardModel());
+};
+
+const isReasoningModel = () => {
+  const model = getStandardModel();
+  return (
+    model.startsWith("gpt-5") ||
+    model.startsWith("o1") ||
+    model.startsWith("o3")
+  );
 };
 
 export async function generateDocSections(params: {
@@ -73,9 +91,15 @@ export async function generateDocSections(params: {
 
   try {
     const llmResult = await generateText({
-      model: openai(MODEL_MINI),
+      model: getStandardLanguageModel(),
       output: Output.object({ schema: docProcessingSchema }),
-      temperature: 0.2,
+      ...(isReasoningModel()
+        ? {
+            providerOptions: {
+              openai: { reasoningEffort: "low" },
+            },
+          }
+        : { temperature: 0.2 }),
       system: systemPrompt,
       prompt: userPrompt,
     });
@@ -105,8 +129,8 @@ export async function generateDocSections(params: {
     userId,
     docId,
     usageType: "topic_extraction",
-    provider: "openai",
-    model: MODEL_MINI,
+    provider: PROVIDER_STANDARD,
+    model: getStandardModel(),
     inputTokens,
     outputTokens,
     cachedTokens,
@@ -114,8 +138,8 @@ export async function generateDocSections(params: {
 
   await llmLogService.registerLog({
     stage: "doc-extraction",
-    provider: "openai",
-    model: MODEL_MINI,
+    provider: PROVIDER_STANDARD,
+    model: getStandardModel(),
     input: { system: systemPrompt, prompt: userPrompt },
     output: rawOutput,
     parsedOutput: result,
@@ -165,7 +189,13 @@ export async function generateTopicValidation(params: {
     const llmResult = await generateText({
       model: getStandardLanguageModel(),
       output: Output.object({ schema: topicValidationSchema }),
-      temperature: 0.5,
+      ...(isReasoningModel()
+        ? {
+            providerOptions: {
+              openai: { reasoningEffort: "low" },
+            },
+          }
+        : { temperature: 0.5 }),
       system: systemPrompt,
       prompt: userPrompt,
     });
@@ -222,7 +252,7 @@ export async function generateTopicValidation(params: {
     return { status: "error", reason: TOPIC_VALIDATION_ERROR_REASON };
   }
 
-  return { status: "valid", focusSuggestions: result.focusSuggestions };
+  return { status: "valid", focusSuggestions: result.focusSuggestions || [] };
 }
 
 // ─── Focus content generation ────────────────────────────────────────────────
@@ -260,13 +290,23 @@ export async function generateFocusContent(params: {
     .replace("{focus_enum}", getFocusEnumPromptText())
     .replace("{focus_known}", focusKnown)
     .replace("{focus_free_text}", focusFreeText);
-  const userPrompt = `Tema: {topic}`.replace("{topic}", topic);
+
+  const userPrompt = `Tema: {topic}
+  Número de variação: {variation_seed} (sem significado, serve só pra gerar contextos e situações diferentes entre chamadas parecidas)`
+    .replace("{topic}", topic)
+    .replace("{variation_seed}", String(Math.floor(Math.random() * 1000)));
 
   try {
     const llmResult = await generateText({
       model: getStandardLanguageModel(),
       output: Output.object({ schema: focusContentSchema }),
-      temperature: 0.5,
+      ...(isReasoningModel()
+        ? {
+            providerOptions: {
+              openai: { reasoningEffort: "low" },
+            },
+          }
+        : { temperature: 0.5 }),
       system: systemPrompt,
       prompt: userPrompt,
     });
@@ -334,6 +374,7 @@ export async function generateFocusContent(params: {
     };
   }
 
+  result.focusKeys = result.focusKeys ?? [];
   return { status: "content", data: result };
 }
 
@@ -388,10 +429,12 @@ export async function generateNextQuestion(params: {
 
   let userPrompt = `Seção: {section_title}
 Conteúdo: {section_content}
-Nível: {level}`
+Nível: {level}
+Número de variação: {variation_seed} (sem significado, serve só pra gerar contextos e situações diferentes entre chamadas parecidas)`
     .replace("{section_title}", sectionTitle)
     .replace("{section_content}", sectionContent)
-    .replace("{level}", level);
+    .replace("{level}", level)
+    .replace("{variation_seed}", String(Math.floor(Math.random() * 1000)));
 
   if (retryContext) {
     userPrompt += `\n\nEvite o erro da tentativa anterior que foi rejeitada: ${retryContext}`;
@@ -402,7 +445,13 @@ Nível: {level}`
       model: getStandardLanguageModel(),
       output: Output.object({ schema: sectionQuestionSchema }),
       system: systemPrompt,
-      temperature: 0.2,
+      ...(isReasoningModel()
+        ? {
+            providerOptions: {
+              openai: { reasoningEffort: "low" },
+            },
+          }
+        : { temperature: 0.2 }),
       prompt: userPrompt,
     });
     inputTokens += llmResult.usage?.inputTokens ?? 0;
@@ -524,7 +573,13 @@ Resposta do usuário: {user_answer}`
       model: getStandardLanguageModel(),
       system: systemPrompt,
       output: Output.object({ schema: answerEvaluationSchema }),
-      temperature: 0.3,
+      ...(isReasoningModel()
+        ? {
+            providerOptions: {
+              openai: { reasoningEffort: "low" },
+            },
+          }
+        : { temperature: 0.3 }),
       prompt: userPrompt,
     });
     inputTokens += llmResult.usage?.inputTokens ?? 0;

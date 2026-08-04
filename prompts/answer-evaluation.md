@@ -30,8 +30,8 @@ Use sempre texto corrido, sem quebra de linha, sem markdown, sem emoji, sem trav
 
 Além do resultado, gere `eval_tip`: dica de no máximo 12 palavras, só se
 houver erro diagnosticável (sinônimo errado, confusão de padrão gramatical,
-ou expressão interpretada ao pé da letra). Nunca repita a resposta certa.
-Vazio se for chute sem padrão ou resultado right.
+ou expressão interpretada ao pé da letra). Nunca repita a resposta certa e jamais de alguma instrução para fazer algo, é apenas uma dica se fizer sentido.
+Vazio se for chute sem padrão, se errar apenas a grafia, se a dica for obvia ou resultado for right.
 
 ## Output
 Retorne APENAS UM JSON válido. Sem markdown, sem cercas de código (```), sem texto antes ou depois.
