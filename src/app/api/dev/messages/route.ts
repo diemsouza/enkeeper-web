@@ -33,6 +33,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       content: m.content,
       createdAt: m.createdAt.toISOString(),
       mediaType: m.mediaType,
+      mediaId: m.mediaId,
       metadata: m.metadata,
     })),
   });

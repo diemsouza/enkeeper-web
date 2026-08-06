@@ -14,6 +14,7 @@ type ApiMessage = {
   content: string;
   createdAt: string;
   mediaType?: string | null;
+  mediaId?: string | null;
   metadata?: Record<string, string | number | null> | null;
 };
 
@@ -53,6 +54,12 @@ function formatTime(iso: string): string {
   });
 }
 
+const SECRET = process.env.NEXT_PUBLIC_SIMULATE_SECRET ?? "";
+
+function buildAudioUrl(path: string): string {
+  return `/api/dev/audio?path=${encodeURIComponent(path)}&secret=${encodeURIComponent(SECRET)}`;
+}
+
 function mapApiMessages(raw: ApiMessage[]): Message[] {
   return raw.map((m) => {
     const from = m.role === "user" ? "user" : "bot";
@@ -71,11 +78,18 @@ function mapApiMessages(raw: ApiMessage[]): Message[] {
         mediaType: m.mediaType,
       };
     }
+    if (m.mediaType === "audio" && m.mediaId) {
+      return {
+        from,
+        time,
+        type: "audio",
+        audioUrl: buildAudioUrl(m.mediaId),
+        textFallback: m.content,
+      };
+    }
     return { from, text: m.content, time };
   });
 }
-
-const SECRET = process.env.NEXT_PUBLIC_SIMULATE_SECRET ?? "";
 
 export default function SimulatorPage() {
   if (process.env.NODE_ENV !== "development") notFound();
@@ -119,11 +133,31 @@ export default function SimulatorPage() {
     const es = new EventSource(url);
 
     es.onmessage = (e: MessageEvent) => {
-      const data = JSON.parse(e.data as string) as { type: string; text?: string; time?: string };
+      const data = JSON.parse(e.data as string) as {
+        type: string;
+        text?: string;
+        time?: string;
+        audioPath?: string;
+        textFallback?: string;
+      };
       if (data.type === "message" && data.text && data.time) {
         setMessages((prev) => [
           ...prev,
           { from: "bot", text: data.text!, time: formatTime(data.time!) },
+        ]);
+        scrollToBottom("smooth");
+      }
+      if (data.type === "audio" && data.audioPath && data.time) {
+        const audioUrl = buildAudioUrl(data.audioPath);
+        setMessages((prev) => [
+          ...prev,
+          {
+            from: "bot",
+            type: "audio",
+            audioUrl,
+            textFallback: data.textFallback,
+            time: formatTime(data.time!),
+          },
         ]);
         scrollToBottom("smooth");
       }

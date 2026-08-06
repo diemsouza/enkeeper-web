@@ -49,7 +49,7 @@ export async function updateUserPlanStatus(
 ): Promise<void> {
   await prisma.user.update({
     where: { id: userId },
-    data: { planStatus },
+    data: { planStatus, planStatusUpdatedAt: new Date() },
   });
 }
 
@@ -113,7 +113,14 @@ export async function updateUserPlan(
     planExpiresAt?: Date | null;
   },
 ): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data });
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...data,
+      ...(data.planCode !== undefined ? { planCodeUpdatedAt: new Date() } : {}),
+      ...(data.planStatus !== undefined ? { planStatusUpdatedAt: new Date() } : {}),
+    },
+  });
 }
 
 type UserStat = {

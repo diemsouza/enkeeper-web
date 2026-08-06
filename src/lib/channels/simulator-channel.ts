@@ -9,7 +9,16 @@ export class SimulatorChannel implements MessageChannel {
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       if (typeof part === "object") {
-        await new Promise((r) => setTimeout(r, part.delay * 1000));
+        if ("delay" in part) {
+          await new Promise((r) => setTimeout(r, part.delay * 1000));
+        } else {
+          emitToSession(to, {
+            type: "audio",
+            audioPath: part.audioPath,
+            textFallback: part.textFallback,
+            time: new Date().toISOString(),
+          });
+        }
         continue;
       }
       if (i > 0 && typeof parts[i - 1] === "string") {

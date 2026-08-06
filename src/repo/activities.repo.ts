@@ -26,6 +26,7 @@ type UpdateActivityData = {
   interactionCount?: number;
   lastInteractionAt?: Date | null;
   status?: ActivityStatus;
+  statusUpdatedAt?: Date;
   pausedAt?: Date | null;
   completedAt?: Date | null;
   intensiveUntil?: Date | null;
@@ -149,7 +150,7 @@ export async function findActivitiesForList(
 export async function findLatestArchivedActivityForSummary(userId: string) {
   return prisma.activity.findFirst({
     where: { userId, status: "archived", summary: null, deletedAt: null },
-    orderBy: { updatedAt: "desc" },
+    orderBy: { statusUpdatedAt: "desc" },
     select: {
       id: true,
       title: true,

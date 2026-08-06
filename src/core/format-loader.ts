@@ -99,12 +99,10 @@ function stripQuoted(text: string): string {
   return text.replace(/["“”][^"“”]*["“”]/g, "");
 }
 
-function looksLikeDoubleQuestion(question: string): boolean {
+function looksLikeManyQuestion(question: string): boolean {
   const stripped = stripQuoted(question);
   const marks = (stripped.match(/\?/g) || []).length;
-  if (marks > 1) return true;
-  // "e quem", "e onde", "e qual", "e como" perto do fim
-  return /\be (quem|onde|qual|como|o que)\b.*\?/i.test(stripped);
+  return marks > 2;
 }
 
 // Aceita parênteses retos "()" e tipográficos "（）", com pelo menos
@@ -131,8 +129,10 @@ function escapeRegExp(text: string): string {
 // como palavra ou expressão inteira (não como substring de outra palavra).
 function containsAnswerInQuestion(
   question: string,
+  term: string,
   answerKeys: string[],
 ): string | undefined {
+  const normalizedTerm = normalizeForMatch(term.trim());
   const normalizedQuestion = normalizeForMatch(question);
 
   for (const answer of answerKeys) {
@@ -140,6 +140,13 @@ function containsAnswerInQuestion(
     if (!trimmed) continue;
 
     const normalizedAnswer = normalizeForMatch(trimmed);
+
+    // term (PT) e answer (EN) são a mesma palavra depois de normalizar.
+    // é cognato (vídeo/video, hotel/hotel), pula esse answerKey.
+    if (normalizedAnswer === normalizedTerm) {
+      continue;
+    }
+
     const pattern = new RegExp(
       `(?<![a-z0-9À-ÿ])${escapeRegExp(normalizedAnswer)}(?![a-z0-9À-ÿ])`,
       "i",
@@ -202,7 +209,7 @@ export function validateGeneratedQuestion(
     return question.warning;
   }
 
-  if (looksLikeDoubleQuestion(question.question)) {
+  if (looksLikeManyQuestion(question.question)) {
     const warning = `Pergunta descartada por parecer conter mais de uma pergunta: Q: ${question.question} A: ${question.answerKeys}`;
     console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
     return warning;
@@ -219,6 +226,7 @@ export function validateGeneratedQuestion(
 
   const leakedAnswer = containsAnswerInQuestion(
     question.question,
+    question.term ?? "",
     question.answerKeys,
   );
 
@@ -231,6 +239,7 @@ export function validateGeneratedQuestion(
   if (question.termHint) {
     const leakedAnswerInHint = containsAnswerInQuestion(
       question.termHint,
+      question.term ?? "",
       question.answerKeys,
     );
     if (leakedAnswerInHint) {

@@ -131,6 +131,43 @@ export async function findLatestUnansweredInSection(
   });
 }
 
+export async function countQuestionsWithExpiredAudio(
+  threshold: Date,
+): Promise<number> {
+  return prisma.question.count({
+    where: {
+      audioPath: { not: null },
+      audioDeletedAt: null,
+      deletedAt: null,
+      activity: {
+        status: { in: ["archived", "cancelled"] },
+        statusUpdatedAt: { lte: threshold },
+        deletedAt: null,
+      },
+    },
+  });
+}
+
+export async function findQuestionsWithExpiredAudio(
+  threshold: Date,
+  limit: number,
+): Promise<Question[]> {
+  return prisma.question.findMany({
+    where: {
+      audioPath: { not: null },
+      audioDeletedAt: null,
+      deletedAt: null,
+      activity: {
+        status: { in: ["archived", "cancelled"] },
+        statusUpdatedAt: { lte: threshold },
+        deletedAt: null,
+      },
+    },
+    orderBy: { audioCreatedAt: "asc" },
+    take: limit,
+  });
+}
+
 export async function updateQuestion(
   id: string,
   data: {
@@ -149,6 +186,9 @@ export async function updateQuestion(
     provider?: AiProvider;
     model?: string;
     evalTip?: string | null;
+    audioPath?: string | null;
+    audioCreatedAt?: Date | null;
+    audioDeletedAt?: Date | null;
   },
 ): Promise<void> {
   await prisma.question.update({ where: { id }, data });

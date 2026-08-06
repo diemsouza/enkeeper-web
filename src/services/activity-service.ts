@@ -17,7 +17,11 @@ export async function archiveOrCancelActivity(
 ): Promise<void> {
   if (activity.status !== "active" && activity.status !== "paused") return;
   const status = activity.interactionCount > 0 ? "archived" : "cancelled";
-  await updateActivity(activity.id, userId, { status, intensiveUntil: null });
+  await updateActivity(activity.id, userId, {
+    status,
+    statusUpdatedAt: new Date(),
+    intensiveUntil: null,
+  });
 }
 
 export async function switchToActivity(
@@ -30,6 +34,7 @@ export async function switchToActivity(
   }
   await updateActivity(target.id, userId, {
     status: "active",
+    statusUpdatedAt: new Date(),
     pausedAt: null,
     intensiveUntil: null,
   });

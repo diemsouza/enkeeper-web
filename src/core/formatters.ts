@@ -772,3 +772,24 @@ export function formatQuestion(question: {
     ? formatChoiceQuestion(withHint, question.questionOptions)
     : withHint;
 }
+
+export function formatQuestionToSpeechText(
+  question: string,
+  questionFormat: QuestionFormat | null,
+): string {
+  if (!questionFormat || questionFormat !== QuestionFormat.gap_fill)
+    return question;
+
+  const match = question.match(/^Complete:\s*"(.+?)"\s*\(([^)]+)\)\s*$/);
+
+  // Se o texto não seguir o padrão esperado, devolve como está,
+  // evita quebrar o envio por causa de um formato inesperado.
+  if (!match) return question;
+
+  const [, sentence, hint] = match;
+
+  // Troca a sequência de underscores (qualquer tamanho) pela pausa falada.
+  const sentenceWithPause = sentence.replace(/_+/g, "... blablabla ...");
+
+  return `${sentenceWithPause} Complete the sentence with (${hint}).`;
+}

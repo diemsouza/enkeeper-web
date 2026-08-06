@@ -83,6 +83,7 @@ import {
   updateActivity,
 } from "../repo/activities.repo";
 import { switchToActivity } from "./activity-service";
+import { resolveQuestionAudioPath } from "./question-audio-service";
 import {
   getTodayActivityCount,
   getTodayUsage,
@@ -860,6 +861,7 @@ export async function handleIncomingMessage(
         }
         await updateActivity(current.id, user.id, {
           status: "paused",
+          statusUpdatedAt: new Date(),
           pausedAt: new Date(),
           intensiveUntil: null,
         });
@@ -1285,7 +1287,7 @@ async function handleIntensiveNextQuestion(
   userId: string,
   userChannelId: string,
   today: Date,
-): Promise<string[]> {
+): Promise<OutMessage[]> {
   const {
     id: activityId,
     docId,
@@ -1301,7 +1303,7 @@ async function handleIntensiveNextQuestion(
     if (sm2) {
       return sendIntensiveQuestion(
         sm2,
-        activityId,
+        activity,
         userId,
         userChannelId,
         executionCount,
@@ -1314,7 +1316,7 @@ async function handleIntensiveNextQuestion(
     if (unanswered) {
       return sendIntensiveQuestion(
         unanswered,
-        activityId,
+        activity,
         userId,
         userChannelId,
         executionCount,
@@ -1328,7 +1330,7 @@ async function handleIntensiveNextQuestion(
       if (outcome.question) {
         return sendIntensiveQuestion(
           outcome.question,
-          activityId,
+          activity,
           userId,
           userChannelId,
           executionCount,
@@ -1360,7 +1362,7 @@ async function handleIntensiveNextQuestion(
     if (next) {
       const nextReplies = await sendIntensiveQuestion(
         next,
-        activityId,
+        activity,
         userId,
         userChannelId,
         executionCount,
@@ -1376,7 +1378,7 @@ async function handleIntensiveNextQuestion(
   if (next)
     return sendIntensiveQuestion(
       next,
-      activityId,
+      activity,
       userId,
       userChannelId,
       executionCount,
@@ -1394,15 +1396,17 @@ async function sendIntensiveQuestion(
     questionFormat: QuestionFormat | null;
     questionOptions: string[];
     termHint?: string | null;
+    audioPath: string | null;
+    audioDeletedAt: Date | null;
   },
-  activityId: string,
+  activity: Activity,
   userId: string,
   userChannelId: string,
   executionCount: number,
   intervalMinutes: number,
   today: Date,
-): Promise<string[]> {
-  const messages: string[] = [];
+): Promise<OutMessage[]> {
+  const messages: OutMessage[] = [];
 
   if (question.sectionId) {
     const section = await findSectionById(question.sectionId);
@@ -1414,7 +1418,7 @@ async function sendIntensiveQuestion(
       await saveMessage({
         userId,
         userChannelId,
-        activityId,
+        activityId: activity.id,
         role: "assistant",
         content: transitionMsg,
         intent: "section_transition",
@@ -1425,26 +1429,37 @@ async function sendIntensiveQuestion(
   }
 
   const questionText = formatQuestion(question);
+  const audioPath = await resolveQuestionAudioPath(
+    question,
+    activity.userLevel,
+  );
+  const questionPart: OutMessage = audioPath
+    ? { audioPath, textFallback: questionText }
+    : questionText;
 
   await saveMessage({
     userId,
     userChannelId,
-    activityId,
+    activityId: activity.id,
     role: "assistant",
     content: questionText,
     intent: "practice_question",
     questionId: question.id,
+    ...(audioPath ? { mediaType: "audio", mediaId: audioPath } : {}),
   });
   await incrementAgentMessageCount(userId, today);
-  await updateQuestion(question.id, { status: "pending", activityId });
-  await updateActivity(activityId, userId, {
+  await updateQuestion(question.id, {
+    status: "pending",
+    activityId: activity.id,
+  });
+  await updateActivity(activity.id, userId, {
     waitingUser: true,
     executionCount: executionCount + 1,
     lastQuestionId: question.id,
     nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),
     intensiveUntil: new Date(Date.now() + INTENSIVE_UNTIL_MIN * 60 * 1000),
   });
-  messages.push(questionText);
+  messages.push(questionPart);
   return messages;
 }
 

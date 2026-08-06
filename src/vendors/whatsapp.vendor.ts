@@ -82,6 +82,85 @@ export async function sendWhatsAppTemplate(
   }
 }
 
+export async function uploadWhatsAppMedia(
+  buffer: Buffer,
+  mimeType: string,
+): Promise<string> {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[uploadWhatsAppMedia] Skipping media upload in non-production environment`,
+    );
+    return "";
+  }
+
+  const token = process.env.WABA_TOKEN;
+  const phoneNumberId = process.env.WABA_PHONE_ID;
+  const ext = mimeType.split("/")[1]?.split(";")[0] ?? "ogg";
+
+  const formData = new FormData();
+  formData.append("messaging_product", "whatsapp");
+  formData.append(
+    "file",
+    new Blob([new Uint8Array(buffer)], { type: mimeType }),
+    `audio.${ext}`,
+  );
+  formData.append("type", mimeType);
+
+  const res = await fetch(
+    `https://graph.facebook.com/v20.0/${phoneNumberId}/media`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    },
+  );
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Meta media upload error ${res.status}: ${detail}`);
+  }
+
+  const data = (await res.json()) as { id: string };
+  return data.id;
+}
+
+export async function sendWhatsAppAudio(
+  to: string,
+  mediaId: string,
+): Promise<void> {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[sendWhatsAppAudio] Skipping sending audio to ${to} in non-production environment`,
+    );
+    return; // mediaId vem "" aqui pois uploadWhatsAppMedia tambem faz no-op; os dois guards tem que ficar sincronizados
+  }
+
+  const token = process.env.WABA_TOKEN;
+  const phoneNumberId = process.env.WABA_PHONE_ID;
+
+  const res = await fetch(
+    `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "audio",
+        audio: { id: mediaId },
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Meta audio send error ${res.status}: ${detail}`);
+  }
+}
+
 export async function downloadMedia(
   mediaId: string,
 ): Promise<MediaDownloadResult> {

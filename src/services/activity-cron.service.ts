@@ -27,6 +27,8 @@ import {
 } from "../repo/users.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 import { MessageChannel } from "../types/message-channel";
+import { OutMessage } from "../types/out-message";
+import { resolveQuestionAudioPath } from "./question-audio-service";
 import {
   formatNudgeMessage,
   formatQuestion,
@@ -253,7 +255,10 @@ export async function processActivityCron(
             await channel.sendMessage(userChannel.channelId, nudge.text);
           }
         } catch (err) {
-          console.error(`[processActivityCron] nudge send error (${nextStep}):`, err);
+          console.error(
+            `[processActivityCron] nudge send error (${nextStep}):`,
+            err,
+          );
           errors++;
           continue;
         }
@@ -307,7 +312,10 @@ export async function processActivityCron(
 
       processed++;
     } catch (err) {
-      console.error(`[processActivityCron] activity ${activity.id} error:`, err);
+      console.error(
+        `[processActivityCron] activity ${activity.id} error:`,
+        err,
+      );
       errors++;
     }
   }
@@ -323,6 +331,8 @@ async function sendCadenceQuestion(
     questionFormat: QuestionFormat | null;
     questionOptions: string[];
     termHint: string | null;
+    audioPath: string | null;
+    audioDeletedAt: Date | null;
   },
   activity: Activity,
   userChannel: { channelId: string; id: string },
@@ -350,8 +360,15 @@ async function sendCadenceQuestion(
   }
 
   const questionText = formatQuestion(question);
+  const audioPath = await resolveQuestionAudioPath(
+    question,
+    activity.userLevel,
+  );
+  const questionPart: OutMessage = audioPath
+    ? { audioPath, textFallback: questionText }
+    : questionText;
 
-  await channel.sendMessage(userChannel.channelId, questionText);
+  await channel.sendMessage(userChannel.channelId, questionPart);
   await saveMessage({
     userId: activity.userId,
     userChannelId: userChannel.id,
@@ -360,6 +377,7 @@ async function sendCadenceQuestion(
     content: questionText,
     intent: "practice_question",
     questionId: question.id,
+    ...(audioPath ? { mediaType: "audio", mediaId: audioPath } : {}),
   });
   await incrementAgentMessageCount(activity.userId, today);
   await updateQuestion(question.id, {
@@ -418,7 +436,10 @@ export async function processExpiredFlowIntents(
 
       processed++;
     } catch (err) {
-      console.error(`[processExpiredFlowIntents] expired flow intent for user ${user.id}:`, err);
+      console.error(
+        `[processExpiredFlowIntents] expired flow intent for user ${user.id}:`,
+        err,
+      );
       errors++;
     }
   }
@@ -440,6 +461,8 @@ async function selectNextQuestion(
   questionFormat: QuestionFormat | null;
   questionOptions: string[];
   termHint: string | null;
+  audioPath: string | null;
+  audioDeletedAt: Date | null;
 } | null> {
   const lastId = activity.lastQuestionId;
 

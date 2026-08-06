@@ -6,10 +6,12 @@ export interface Message {
   from: "user" | "bot";
   text?: string;
   time: string;
-  type?: "file";
+  type?: "file" | "audio";
   fileName?: string;
   fileSize?: string;
   mediaType?: "image" | "pdf" | "text";
+  audioUrl?: string;
+  textFallback?: string;
 }
 
 function FileCard({
@@ -21,17 +23,57 @@ function FileCard({
   fileSize: string;
   mediaType?: "image" | "pdf" | "text";
 }) {
-  const badge = mediaType === "image" ? "IMG" : mediaType === "text" ? "TXT" : "PDF";
-  const badgeColor = mediaType === "image" ? "bg-blue-500" : mediaType === "text" ? "bg-gray-500" : "bg-red-500";
+  const badge =
+    mediaType === "image" ? "IMG" : mediaType === "text" ? "TXT" : "PDF";
+  const badgeColor =
+    mediaType === "image"
+      ? "bg-blue-500"
+      : mediaType === "text"
+        ? "bg-gray-500"
+        : "bg-red-500";
   return (
     <div className="flex items-center gap-3 py-1">
-      <div className={`w-10 h-10 rounded-lg ${badgeColor} flex items-center justify-center shrink-0`}>
-        <span className="text-white text-[10px] font-bold tracking-wide">{badge}</span>
+      <div
+        className={`w-10 h-10 rounded-lg ${badgeColor} flex items-center justify-center shrink-0`}
+      >
+        <span className="text-white text-[10px] font-bold tracking-wide">
+          {badge}
+        </span>
       </div>
       <div className="min-w-0">
         <p className="font-semibold text-[13px] leading-tight">{fileName}</p>
         <p className="text-[11px] opacity-50 mt-0.5">{fileSize}</p>
       </div>
+    </div>
+  );
+}
+
+function AudioCard({
+  audioUrl,
+  textFallback,
+}: {
+  audioUrl: string;
+  textFallback?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1 py-1 min-w-[220px]">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="white"
+            className="w-4 h-4"
+          >
+            <path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3z" />
+            <path d="M17 11a1 1 0 10-2 0 3 3 0 01-6 0 1 1 0 10-2 0 5 5 0 004 4.9V18H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.1a5 5 0 004-4.9z" />
+          </svg>
+        </div>
+        <audio controls src={audioUrl} className="h-8 flex-1" />
+      </div>
+      {/* {textFallback && (
+        <p className="text-[11px] opacity-50 italic">{textFallback}</p>
+      )} */}
     </div>
   );
 }
@@ -54,7 +96,16 @@ export function WhatsAppChat({ messages }: { messages: Message[] }) {
             }
           >
             {msg.type === "file" ? (
-              <FileCard fileName={msg.fileName!} fileSize={msg.fileSize!} mediaType={msg.mediaType} />
+              <FileCard
+                fileName={msg.fileName!}
+                fileSize={msg.fileSize!}
+                mediaType={msg.mediaType}
+              />
+            ) : msg.type === "audio" ? (
+              <AudioCard
+                audioUrl={msg.audioUrl!}
+                textFallback={msg.textFallback}
+              />
             ) : (
               <p className="whitespace-pre-line leading-[1.5]">
                 <WhatsAppText text={msg.text ?? ""} />

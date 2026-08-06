@@ -152,6 +152,7 @@ model Activity {
     interactionCount  Int            @default(0) @map("interaction_count")
     lastInteractionAt DateTime?      @map("last_interaction_at")
     status            ActivityStatus @default(active) @map("status")
+    statusUpdatedAt   DateTime       @default(now()) @map("status_updated_at")
     pausedAt          DateTime?      @map("paused_at")
     completedAt       DateTime?      @map("completed_at")
     intensiveUntil    DateTime?      @map("intensive_until")
@@ -233,6 +234,9 @@ model Question {
     provider        AiProvider?     @map("provider")
     model           String?         @map("model")
     evalTip         String?         @map("eval_tip") @db.Text
+    audioPath       String?         @map("audio_path")
+    audioCreatedAt  DateTime?       @map("audio_created_at")
+    audioDeletedAt  DateTime?       @map("audio_deleted_at")
     metadata        Json?           @map("metadata")
     createdAt       DateTime        @default(now()) @map("created_at")
     updatedAt       DateTime        @updatedAt @map("updated_at")
