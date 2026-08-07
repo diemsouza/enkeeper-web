@@ -1,11 +1,12 @@
-import { Question } from "../lib/prisma";
+import { Media } from "../lib/prisma";
 import {
-  findQuestionsWithExpiredAudio,
-  countQuestionsWithExpiredAudio,
-  updateQuestion,
+  findQuestionsEligibleForAudioCleanup,
+  countQuestionsEligibleForAudioCleanup,
 } from "../repo/questions.repo";
+import { findMediaByParentIds, softDeleteMedia } from "../repo/media.repo";
 import { deleteFiles } from "../vendors/storage.vendor";
 import {
+  MEDIA_PARENT_TYPE,
   AUDIO_CLEANUP_TTL_DAYS,
   AUDIO_CLEANUP_BATCH_LIMIT,
   AUDIO_CLEANUP_SUBBATCH_SIZE,
@@ -24,22 +25,27 @@ export async function processAudioCleanup(): Promise<AudioCleanupResult> {
   );
 
   const [totalEligible, questions] = await Promise.all([
-    countQuestionsWithExpiredAudio(threshold),
-    findQuestionsWithExpiredAudio(threshold, AUDIO_CLEANUP_BATCH_LIMIT),
+    countQuestionsEligibleForAudioCleanup(threshold),
+    findQuestionsEligibleForAudioCleanup(threshold, AUDIO_CLEANUP_BATCH_LIMIT),
   ]);
+
+  const medias = await findMediaByParentIds(
+    MEDIA_PARENT_TYPE.QUESTION,
+    questions.map((q) => q.id),
+  );
 
   let deleted = 0;
   let failures = 0;
 
-  for (let i = 0; i < questions.length; i += AUDIO_CLEANUP_SUBBATCH_SIZE) {
-    const subBatch = questions.slice(i, i + AUDIO_CLEANUP_SUBBATCH_SIZE);
+  for (let i = 0; i < medias.length; i += AUDIO_CLEANUP_SUBBATCH_SIZE) {
+    const subBatch = medias.slice(i, i + AUDIO_CLEANUP_SUBBATCH_SIZE);
     const result = await deleteSubBatch(subBatch);
     deleted += result.deleted;
     failures += result.failures;
   }
 
   console.log(
-    `[processAudioCleanup] processados ${questions.length}/${totalEligible} elegiveis, deletados: ${deleted}, falhas: ${failures}`,
+    `[processAudioCleanup] processados ${medias.length} midias de ${questions.length}/${totalEligible} questions elegiveis, deletados: ${deleted}, falhas: ${failures}`,
   );
   if (totalEligible > questions.length) {
     console.warn(
@@ -47,63 +53,57 @@ export async function processAudioCleanup(): Promise<AudioCleanupResult> {
     );
   }
 
-  return { totalEligible, processed: questions.length, deleted, failures };
+  return { totalEligible, processed: medias.length, deleted, failures };
 }
 
 async function deleteSubBatch(
-  questions: Question[],
+  medias: Media[],
 ): Promise<{ deleted: number; failures: number }> {
-  const filePaths = questions
-    .map((q) => q.audioPath)
-    .filter((path): path is string => path !== null);
+  const filePaths = medias.map((m) => m.mediaPath);
 
   try {
     const deletedNames = await deleteFiles({ filePaths });
-    return markDeleted(questions, deletedNames);
+    return markDeleted(medias, deletedNames);
   } catch (err) {
     console.error(
       `[processAudioCleanup] sub-lote falhou, tentando item a item:`,
       err,
     );
-    return retryIndividually(questions);
+    return retryIndividually(medias);
   }
 }
 
 async function markDeleted(
-  questions: Question[],
+  medias: Media[],
   deletedNames: string[],
 ): Promise<{ deleted: number; failures: number }> {
   const deletedSet = new Set(deletedNames);
   let deleted = 0;
-  for (const question of questions) {
-    if (question.audioPath && deletedSet.has(question.audioPath)) {
-      await updateQuestion(question.id, { audioDeletedAt: new Date() });
+  for (const media of medias) {
+    if (deletedSet.has(media.mediaPath)) {
+      await softDeleteMedia(media.id);
       deleted++;
     }
   }
-  return { deleted, failures: questions.length - deleted };
+  return { deleted, failures: medias.length - deleted };
 }
 
 async function retryIndividually(
-  questions: Question[],
+  medias: Media[],
 ): Promise<{ deleted: number; failures: number }> {
   let deleted = 0;
   let failures = 0;
-  for (const question of questions) {
-    if (!question.audioPath) {
-      failures++;
-      continue;
-    }
+  for (const media of medias) {
     try {
-      const deletedNames = await deleteFiles({ filePaths: [question.audioPath] });
+      const deletedNames = await deleteFiles({ filePaths: [media.mediaPath] });
       if (deletedNames.length > 0) {
-        await updateQuestion(question.id, { audioDeletedAt: new Date() });
+        await softDeleteMedia(media.id);
         deleted++;
       } else {
         failures++;
       }
     } catch (err) {
-      console.error(`[processAudioCleanup] question ${question.id} falhou:`, err);
+      console.error(`[processAudioCleanup] media ${media.id} falhou:`, err);
       failures++;
     }
   }

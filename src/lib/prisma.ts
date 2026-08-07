@@ -13,6 +13,7 @@ export type {
   Activity,
   WeeklyReport,
   Waitlist,
+  Media,
 } from "../../prisma/generated/client";
 
 export {

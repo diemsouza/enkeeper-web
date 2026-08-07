@@ -732,6 +732,18 @@ export function formatFeedback(
   return result.join(" ");
 }
 
+export function formatFeedbackToSpeech(
+  feedbackResult: AnswerEvaluationResult,
+): string {
+  const {
+    status: evalStatus,
+    feedback: agentFeedback,
+    right_answer: rightAnswer,
+  } = feedbackResult;
+
+  return sanitizeText(agentFeedback);
+}
+
 export function formatEvalTip(tip: string): string {
   return `💡 ${tip}`;
 }
@@ -771,25 +783,4 @@ export function formatQuestion(question: {
     question.questionOptions.length > 0
     ? formatChoiceQuestion(withHint, question.questionOptions)
     : withHint;
-}
-
-export function formatQuestionToSpeechText(
-  question: string,
-  questionFormat: QuestionFormat | null,
-): string {
-  if (!questionFormat || questionFormat !== QuestionFormat.gap_fill)
-    return question;
-
-  const match = question.match(/^Complete:\s*"(.+?)"\s*\(([^)]+)\)\s*$/);
-
-  // Se o texto não seguir o padrão esperado, devolve como está,
-  // evita quebrar o envio por causa de um formato inesperado.
-  if (!match) return question;
-
-  const [, sentence, hint] = match;
-
-  // Troca a sequência de underscores (qualquer tamanho) pela pausa falada.
-  const sentenceWithPause = sentence.replace(/_+/g, "... blablabla ...");
-
-  return `${sentenceWithPause} Complete the sentence with (${hint}).`;
 }

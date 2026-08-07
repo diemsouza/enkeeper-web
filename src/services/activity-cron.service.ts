@@ -27,8 +27,6 @@ import {
 } from "../repo/users.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 import { MessageChannel } from "../types/message-channel";
-import { OutMessage } from "../types/out-message";
-import { resolveQuestionAudioPath } from "./question-audio-service";
 import {
   formatNudgeMessage,
   formatQuestion,
@@ -331,8 +329,6 @@ async function sendCadenceQuestion(
     questionFormat: QuestionFormat | null;
     questionOptions: string[];
     termHint: string | null;
-    audioPath: string | null;
-    audioDeletedAt: Date | null;
   },
   activity: Activity,
   userChannel: { channelId: string; id: string },
@@ -360,15 +356,8 @@ async function sendCadenceQuestion(
   }
 
   const questionText = formatQuestion(question);
-  const audioPath = await resolveQuestionAudioPath(
-    question,
-    activity.userLevel,
-  );
-  const questionPart: OutMessage = audioPath
-    ? { audioPath, textFallback: questionText }
-    : questionText;
 
-  await channel.sendMessage(userChannel.channelId, questionPart);
+  await channel.sendMessage(userChannel.channelId, questionText);
   await saveMessage({
     userId: activity.userId,
     userChannelId: userChannel.id,
@@ -377,7 +366,6 @@ async function sendCadenceQuestion(
     content: questionText,
     intent: "practice_question",
     questionId: question.id,
-    ...(audioPath ? { mediaType: "audio", mediaId: audioPath } : {}),
   });
   await incrementAgentMessageCount(activity.userId, today);
   await updateQuestion(question.id, {
@@ -461,8 +449,6 @@ async function selectNextQuestion(
   questionFormat: QuestionFormat | null;
   questionOptions: string[];
   termHint: string | null;
-  audioPath: string | null;
-  audioDeletedAt: Date | null;
 } | null> {
   const lastId = activity.lastQuestionId;
 

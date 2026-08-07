@@ -15,7 +15,6 @@ export class SimulatorChannel implements MessageChannel {
           emitToSession(to, {
             type: "audio",
             audioPath: part.audioPath,
-            textFallback: part.textFallback,
             time: new Date().toISOString(),
           });
         }

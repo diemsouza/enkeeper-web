@@ -234,20 +234,41 @@ model Question {
     provider        AiProvider?     @map("provider")
     model           String?         @map("model")
     evalTip         String?         @map("eval_tip") @db.Text
-    audioPath       String?         @map("audio_path")
-    audioCreatedAt  DateTime?       @map("audio_created_at")
-    audioDeletedAt  DateTime?       @map("audio_deleted_at")
+    questionAudioMediaId String?    @map("question_audio_media_id")
+    feedbackAudioMediaId String?    @map("feedback_audio_media_id")
     metadata        Json?           @map("metadata")
     createdAt       DateTime        @default(now()) @map("created_at")
     updatedAt       DateTime        @updatedAt @map("updated_at")
     deletedAt       DateTime?       @map("deleted_at")
 
-    activity Activity @relation(fields: [activityId], references: [id])
-    section  Section? @relation(fields: [sectionId], references: [id])
+    activity           Activity @relation(fields: [activityId], references: [id])
+    section             Section? @relation(fields: [sectionId], references: [id])
+    questionAudioMedia Media?   @relation("QuestionAudio", fields: [questionAudioMediaId], references: [id], onDelete: SetNull)
+    feedbackAudioMedia Media?   @relation("FeedbackAudio", fields: [feedbackAudioMediaId], references: [id], onDelete: SetNull)
 
     @@index([activityId, status])
     @@index([sectionId])
     @@map("questions")
+}
+
+model Media {
+    id                 String    @id @default(ulid()) @map("id")
+    parentId           String    @map("parent_id")
+    parentType         String    @map("parent_type")
+    mediaType          String    @map("media_type")
+    contentType        String    @map("content_type")
+    mediaPath          String    @map("media_path")
+    mediaSize          Int       @default(0) @map("media_size")
+    mediaTranscription String?   @map("media_transcription") @db.Text
+    createdAt          DateTime  @default(now()) @map("created_at")
+    updatedAt          DateTime  @updatedAt @map("updated_at")
+    deletedAt          DateTime? @map("deleted_at")
+
+    questionAudioFor Question[] @relation("QuestionAudio")
+    feedbackAudioFor Question[] @relation("FeedbackAudio")
+
+    @@index([parentType, parentId])
+    @@map("medias")
 }
 
 model DocItem {

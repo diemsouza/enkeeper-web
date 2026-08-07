@@ -16,6 +16,12 @@ export const TRIAL_DAYS = 3;
 export const AUDIO_CLEANUP_TTL_DAYS = 30;
 export const AUDIO_CLEANUP_BATCH_LIMIT = 50;
 export const AUDIO_CLEANUP_SUBBATCH_SIZE = 10;
+
+export const MEDIA_PARENT_TYPE = {
+  QUESTION: "question",
+} as const;
+export type MediaParentType =
+  (typeof MEDIA_PARENT_TYPE)[keyof typeof MEDIA_PARENT_TYPE];
 export const MAX_ACTIVITIES_PER_DAY = 5;
 export const MAX_DOC_ITEMS_PER_DOC = 3;
 export const DOC_BUFFER_DELAY_SEC = 45;

@@ -12,18 +12,14 @@ import { TTS_MIME_TYPE } from "../../vendors/tts.vendor";
 
 async function sendAudioPart(
   to: string,
-  part: { audioPath: string; textFallback: string },
+  part: { audioPath: string },
 ): Promise<void> {
   try {
     const buffer = await downloadFile({ filePath: part.audioPath });
     const mediaId = await uploadWhatsAppMedia(buffer, TTS_MIME_TYPE);
     await sendWhatsAppAudio(to, mediaId);
   } catch (err) {
-    console.error(
-      "[WhatsAppChannel] audio delivery failed, falling back to text:",
-      err,
-    );
-    await sendWhatsAppMessage(to, part.textFallback);
+    console.error("[WhatsAppChannel] audio delivery failed:", err);
   }
 }
 

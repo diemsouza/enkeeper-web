@@ -83,7 +83,7 @@ import {
   updateActivity,
 } from "../repo/activities.repo";
 import { switchToActivity } from "./activity-service";
-import { resolveQuestionAudioPath } from "./question-audio-service";
+import { resolveFeedbackAudioPath } from "./feedback-audio-service";
 import {
   getTodayActivityCount,
   getTodayUsage,
@@ -1066,6 +1066,12 @@ export async function handleIncomingMessage(
               const feedback = evaluation
                 ? formatFeedback(evaluation, activeActivity.userLevel)
                 : formatFeedbackFailed();
+              const feedbackAudioPath = evaluation
+                ? await resolveFeedbackAudioPath(evaluation, pendingQuestion.id)
+                : null;
+              const feedbackParts: OutMessage[] = feedbackAudioPath
+                ? [feedback, { audioPath: feedbackAudioPath }]
+                : [feedback];
               const evalTip = evaluation?.eval_tip;
               const tipMsg = evalTip ? formatEvalTip(evalTip) : null;
               const answerType = input.mediaType === "audio" ? "audio" : "text";
@@ -1146,6 +1152,21 @@ export async function handleIncomingMessage(
               });
               await incrementAgentMessageCount(user.id, today);
 
+              if (feedbackAudioPath) {
+                await saveMessage({
+                  userId: user.id,
+                  userChannelId: userChannel.id,
+                  activityId: activeActivity.id,
+                  role: "assistant",
+                  content: feedback,
+                  intent: "practice_feedback",
+                  questionId: pendingQuestion.id,
+                  mediaType: "audio",
+                  mediaId: feedbackAudioPath,
+                });
+                await incrementAgentMessageCount(user.id, today);
+              }
+
               if (isIntensiveMode && !canContinueIntensive) {
                 const limitMsg =
                   updatedCounts.practiceCount >= DAILY_PRACTICE_LIMIT
@@ -1164,7 +1185,7 @@ export async function handleIncomingMessage(
                 });
                 await incrementAgentMessageCount(user.id, today);
                 await channel.sendMessage(userChannel.channelId, [
-                  feedback,
+                  ...feedbackParts,
                   { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
                   limitMsg,
                 ]);
@@ -1180,7 +1201,7 @@ export async function handleIncomingMessage(
                 );
                 if (replies.length > 0) {
                   await channel.sendMessage(userChannel.channelId, [
-                    feedback,
+                    ...feedbackParts,
                     { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
                     ...replies,
                   ]);
@@ -1199,8 +1220,8 @@ export async function handleIncomingMessage(
                   intent: "guide_after_first_feedback",
                 });
                 await incrementAgentMessageCount(user.id, today);
-                const messages = [
-                  feedback,
+                const messages: OutMessage[] = [
+                  ...feedbackParts,
                   { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
                 ];
                 if (tipMsg) {
@@ -1235,14 +1256,14 @@ export async function handleIncomingMessage(
                 });
                 await incrementAgentMessageCount(user.id, today);
                 await channel.sendMessage(userChannel.channelId, [
-                  feedback,
+                  ...feedbackParts,
                   { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
                   tipMsg,
                 ]);
                 return;
               }
 
-              await channel.sendMessage(userChannel.channelId, feedback);
+              await channel.sendMessage(userChannel.channelId, feedbackParts);
               return;
             }
           }
@@ -1396,8 +1417,6 @@ async function sendIntensiveQuestion(
     questionFormat: QuestionFormat | null;
     questionOptions: string[];
     termHint?: string | null;
-    audioPath: string | null;
-    audioDeletedAt: Date | null;
   },
   activity: Activity,
   userId: string,
@@ -1429,13 +1448,6 @@ async function sendIntensiveQuestion(
   }
 
   const questionText = formatQuestion(question);
-  const audioPath = await resolveQuestionAudioPath(
-    question,
-    activity.userLevel,
-  );
-  const questionPart: OutMessage = audioPath
-    ? { audioPath, textFallback: questionText }
-    : questionText;
 
   await saveMessage({
     userId,
@@ -1445,7 +1457,6 @@ async function sendIntensiveQuestion(
     content: questionText,
     intent: "practice_question",
     questionId: question.id,
-    ...(audioPath ? { mediaType: "audio", mediaId: audioPath } : {}),
   });
   await incrementAgentMessageCount(userId, today);
   await updateQuestion(question.id, {
@@ -1459,7 +1470,7 @@ async function sendIntensiveQuestion(
     nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),
     intensiveUntil: new Date(Date.now() + INTENSIVE_UNTIL_MIN * 60 * 1000),
   });
-  messages.push(questionPart);
+  messages.push(questionText);
   return messages;
 }
 
