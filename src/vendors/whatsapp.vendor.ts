@@ -1,3 +1,5 @@
+import { ExternalMessageStatus } from "../lib/prisma";
+
 type MediaDownloadResult = {
   buffer: Buffer;
   mimeType: string;
@@ -5,15 +7,30 @@ type MediaDownloadResult = {
   sha256?: string;
 };
 
+export function mapWhatsAppStatus(rawStatus: string): ExternalMessageStatus | null {
+  switch (rawStatus) {
+    case "sent":
+      return ExternalMessageStatus.sent;
+    case "delivered":
+      return ExternalMessageStatus.delivered;
+    case "read":
+      return ExternalMessageStatus.read;
+    case "failed":
+      return ExternalMessageStatus.failed;
+    default:
+      return null;
+  }
+}
+
 export async function sendWhatsAppMessage(
   to: string,
   text: string,
-): Promise<void> {
+): Promise<string | null> {
   if (process.env.NODE_ENV !== "production") {
     console.warn(
       `[sendWhatsAppMessage] Skipping sending message to ${to} in non-production environment`,
     );
-    return;
+    return null;
   }
 
   const token = process.env.WABA_TOKEN;
@@ -40,17 +57,20 @@ export async function sendWhatsAppMessage(
     const detail = await res.text();
     throw new Error(`Meta API error ${res.status}: ${detail}`);
   }
+
+  const data = (await res.json()) as { messages?: { id: string }[] };
+  return data.messages?.[0]?.id ?? null;
 }
 
 export async function sendWhatsAppTemplate(
   to: string,
   templateName: string,
-): Promise<void> {
+): Promise<string | null> {
   if (process.env.NODE_ENV !== "production") {
     console.warn(
       `[sendWhatsAppTemplate] Skipping sending template ${templateName} to ${to} in non-production environment`,
     );
-    return;
+    return null;
   }
 
   const token = process.env.WABA_TOKEN;
@@ -80,6 +100,9 @@ export async function sendWhatsAppTemplate(
     const detail = await res.text();
     throw new Error(`Meta template API error ${res.status}: ${detail}`);
   }
+
+  const data = (await res.json()) as { messages?: { id: string }[] };
+  return data.messages?.[0]?.id ?? null;
 }
 
 export async function uploadWhatsAppMedia(
@@ -127,12 +150,12 @@ export async function uploadWhatsAppMedia(
 export async function sendWhatsAppAudio(
   to: string,
   mediaId: string,
-): Promise<void> {
+): Promise<string | null> {
   if (process.env.NODE_ENV !== "production") {
     console.warn(
       `[sendWhatsAppAudio] Skipping sending audio to ${to} in non-production environment`,
     );
-    return; // mediaId vem "" aqui pois uploadWhatsAppMedia tambem faz no-op; os dois guards tem que ficar sincronizados
+    return null; // mediaId vem "" aqui pois uploadWhatsAppMedia tambem faz no-op; os dois guards tem que ficar sincronizados
   }
 
   const token = process.env.WABA_TOKEN;
@@ -159,6 +182,9 @@ export async function sendWhatsAppAudio(
     const detail = await res.text();
     throw new Error(`Meta audio send error ${res.status}: ${detail}`);
   }
+
+  const data = (await res.json()) as { messages?: { id: string }[] };
+  return data.messages?.[0]?.id ?? null;
 }
 
 export async function downloadMedia(

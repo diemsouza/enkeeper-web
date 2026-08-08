@@ -16,6 +16,7 @@ type ApiMessage = {
   mediaType?: string | null;
   mediaId?: string | null;
   metadata?: Record<string, string | number | null> | null;
+  externalId?: string | null;
 };
 
 function normalizeSimulatorText(text: string): string {
@@ -85,6 +86,7 @@ function mapApiMessages(raw: ApiMessage[]): Message[] {
         type: "audio",
         audioUrl: buildAudioUrl(m.mediaId),
         textFallback: m.content,
+        externalId: m.externalId ?? undefined,
       };
     }
     return { from, text: m.content, time };
@@ -139,6 +141,7 @@ export default function SimulatorPage() {
         time?: string;
         audioPath?: string;
         textFallback?: string;
+        externalId?: string;
       };
       if (data.type === "message" && data.text && data.time) {
         setMessages((prev) => [
@@ -157,6 +160,7 @@ export default function SimulatorPage() {
             audioUrl,
             textFallback: data.textFallback,
             time: formatTime(data.time!),
+            externalId: data.externalId,
           },
         ]);
         scrollToBottom("smooth");
@@ -247,6 +251,14 @@ export default function SimulatorPage() {
     if (e.target) e.target.value = "";
   }
 
+  const handleAudioPlay = useCallback((externalId: string) => {
+    fetch("/api/dev/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-simulate-secret": SECRET },
+      body: JSON.stringify({ status: "played", id: externalId }),
+    }).catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-0 gap-3">
       <h1 className="text-lg font-semibold text-gray-700">Simulador</h1>
@@ -274,7 +286,7 @@ export default function SimulatorPage() {
           ref={containerRef}
           className="overflow-y-auto max-h-[80vh] w-full md:w-[480px]"
         >
-          <WhatsAppChat messages={messages} />
+          <WhatsAppChat messages={messages} onAudioPlay={handleAudioPlay} />
           <div ref={endRef} />
         </div>
       )}

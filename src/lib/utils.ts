@@ -16,6 +16,10 @@ export const getFormattedPrice = (price: number, currency: string) => {
   return numberFormat.format(price);
 };
 
+export async function delay(seconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+}
+
 export async function safeCall<T>(
   promise: Promise<T>,
 ): Promise<[T | null, Error | null]> {

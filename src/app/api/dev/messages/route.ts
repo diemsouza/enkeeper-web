@@ -35,6 +35,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       mediaType: m.mediaType,
       mediaId: m.mediaId,
       metadata: m.metadata,
+      externalId: m.externalId,
     })),
   });
 }

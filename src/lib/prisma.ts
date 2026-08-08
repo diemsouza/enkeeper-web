@@ -27,6 +27,7 @@ export {
   SectionStatus,
   SectionType,
   MessageRole,
+  ExternalMessageStatus,
   QuestionFormat,
   QuestionStatus,
   AnswerType,

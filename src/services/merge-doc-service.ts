@@ -20,7 +20,6 @@ import {
   findUserChannelByUserId,
   updateUserPendingIntent,
 } from "../repo/users.repo";
-import { saveMessage } from "../repo/messages.repo";
 import { MessageChannel } from "../types/message-channel";
 import { incrementDailyActivityCount } from "../repo/daily-usage.repo";
 import {
@@ -33,8 +32,10 @@ import {
   FIRST_MESSAGE_INTERVAL_MIN,
   NEXT_MESSAGE_INTERVAL_MIN,
   MAX_ACTIVITIES_PER_DAY,
+  DEFAULT_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
-import { sanitizeText } from "../lib/utils";
+import { sanitizeText, delay } from "../lib/utils";
+import { sendAndSaveMessage } from "./message-sender-service";
 import { calculatePoolSize } from "../core/pool-size";
 import { DocType, SectionType } from "../lib/prisma";
 
@@ -62,11 +63,11 @@ export async function mergeDoc(
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
       const msg = formatDocNoQuestions();
-      await channel.sendMessage(userChannel.channelId, msg);
-      await saveMessage({
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelId,
         userId,
         userChannelId: userChannel.id,
-        role: "assistant",
         content: msg,
         intent: "system_error",
       });
@@ -89,11 +90,11 @@ export async function mergeDoc(
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
       const msg = formatLevelQuestion();
-      await channel.sendMessage(userChannel.channelId, msg);
-      await saveMessage({
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelId,
         userId,
         userChannelId: userChannel.id,
-        role: "assistant",
         content: msg,
         intent: "waiting_set_level",
       });
@@ -113,11 +114,11 @@ export async function mergeDoc(
         const msg = formatInvalidContentMessage(
           contentValidation.invalidReason,
         );
-        await channel.sendMessage(userChannel.channelId, msg);
-        await saveMessage({
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
           userId,
           userChannelId: userChannel.id,
-          role: "assistant",
           content: msg,
           intent: "system_error",
         });
@@ -141,11 +142,11 @@ export async function mergeDoc(
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatDocProcessingFailed();
-        await channel.sendMessage(userChannel.channelId, msg);
-        await saveMessage({
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
           userId,
           userChannelId: userChannel.id,
-          role: "assistant",
           content: msg,
           intent: "system_error",
         });
@@ -161,11 +162,11 @@ export async function mergeDoc(
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatInvalidContentMessage(docSectionResult.invalidReason);
-        await channel.sendMessage(userChannel.channelId, msg);
-        await saveMessage({
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
           userId,
           userChannelId: userChannel.id,
-          role: "assistant",
           content: msg,
           intent: "system_error",
         });
@@ -245,14 +246,21 @@ export async function mergeDoc(
       if (userChannel) {
         const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
         const summary = await buildPreviousActivitySummary(userId);
-        const messages = summary ? [msg, summary] : [msg];
-        await channel.sendMessage(userChannel.channelId, messages);
-        for (const content of messages) {
-          await saveMessage({
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId,
+          userChannelId: userChannel.id,
+          content: msg,
+        });
+        if (summary) {
+          await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelId,
             userId,
             userChannelId: userChannel.id,
-            role: "assistant",
-            content,
+            content: summary,
           });
         }
       }
@@ -264,11 +272,11 @@ export async function mergeDoc(
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatDocNoQuestions();
-        await channel.sendMessage(userChannel.channelId, msg);
-        await saveMessage({
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
           userId,
           userChannelId: userChannel.id,
-          role: "assistant",
           content: msg,
           intent: "system_error",
         });
@@ -283,11 +291,11 @@ export async function mergeDoc(
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
       const msg = formatDocProcessingFailed();
-      await channel.sendMessage(userChannel.channelId, msg);
-      await saveMessage({
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelId,
         userId,
         userChannelId: userChannel.id,
-        role: "assistant",
         content: msg,
         intent: "system_error",
       });

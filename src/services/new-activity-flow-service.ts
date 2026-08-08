@@ -23,6 +23,7 @@ import {
   NEXT_MESSAGE_INTERVAL_MIN,
   TOPIC_SUGGESTIONS,
   getDomainLabel,
+  DEFAULT_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
 import {
   generateTopicValidation,
@@ -44,15 +45,15 @@ import {
   findUserChannelByUserId,
   updateUserPendingIntent,
 } from "../repo/users.repo";
-import { saveMessage } from "../repo/messages.repo";
 import {
   incrementDailyActivityCount,
   incrementDailyDocCount,
 } from "../repo/daily-usage.repo";
 import { calculatePoolSize } from "../core/pool-size";
-import { sanitizeText } from "../lib/utils";
+import { sanitizeText, delay } from "../lib/utils";
 import { MessageChannel } from "../types/message-channel";
 import { FocusSuggestion } from "../types/domain";
+import { sendAndSaveMessage } from "./message-sender-service";
 
 export type DomainCaptureResult =
   | { outcome: "captured"; domain: DomainId; message: string }
@@ -277,14 +278,21 @@ async function sendActivityCreatedConfirmation(
 
   const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
   const summary = await buildPreviousActivitySummary(userId);
-  const messages = summary ? [msg, summary] : [msg];
-  await channel.sendMessage(userChannel.channelId, messages);
-  for (const content of messages) {
-    await saveMessage({
+  await sendAndSaveMessage({
+    channel,
+    to: userChannel.channelId,
+    userId,
+    userChannelId: userChannel.id,
+    content: msg,
+  });
+  if (summary) {
+    await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+    await sendAndSaveMessage({
+      channel,
+      to: userChannel.channelId,
       userId,
       userChannelId: userChannel.id,
-      role: "assistant",
-      content,
+      content: summary,
     });
   }
 }

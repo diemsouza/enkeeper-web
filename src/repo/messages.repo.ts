@@ -1,4 +1,4 @@
-import { Message, MessageRole, Prisma } from "../lib/prisma";
+import { ExternalMessageStatus, Message, MessageRole, Prisma } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type SaveMessageData = {
@@ -91,5 +91,32 @@ export async function findLastUserMessageByActivity(
   return prisma.message.findFirst({
     where: { activityId, role: "user" },
     orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function findMessageByExternalId(
+  externalId: string,
+): Promise<Message | null> {
+  return prisma.message.findFirst({ where: { externalId } });
+}
+
+export async function markMessagePlayedIfUnset(
+  id: string,
+  playedAt: Date,
+): Promise<void> {
+  await prisma.message.updateMany({
+    where: { id, playedAt: null },
+    data: { playedAt },
+  });
+}
+
+export async function updateMessageExternalStatus(
+  id: string,
+  status: ExternalMessageStatus,
+  statusAt: Date,
+): Promise<void> {
+  await prisma.message.update({
+    where: { id },
+    data: { externalStatus: status, externalStatusAt: statusAt },
   });
 }

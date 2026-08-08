@@ -1,39 +1,36 @@
-import { DEFAULT_MESSAGE_INTERVAL_SEC } from "../constants";
+import { ulid } from "ulid";
 import type { OutMessage } from "../../types/out-message";
-import type { MessageChannel, NudgeTemplate } from "../../types/message-channel";
+import type {
+  ChannelSendResult,
+  MessageChannel,
+  NudgeTemplate,
+} from "../../types/message-channel";
 import { emitToSession } from "../simulator-emitter";
 
 export class SimulatorChannel implements MessageChannel {
-  async sendMessage(to: string, messages: OutMessage | OutMessage[]): Promise<void> {
-    const parts = Array.isArray(messages) ? messages : [messages];
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (typeof part === "object") {
-        if ("delay" in part) {
-          await new Promise((r) => setTimeout(r, part.delay * 1000));
-        } else {
-          emitToSession(to, {
-            type: "audio",
-            audioPath: part.audioPath,
-            time: new Date().toISOString(),
-          });
-        }
-        continue;
-      }
-      if (i > 0 && typeof parts[i - 1] === "string") {
-        await new Promise((r) =>
-          setTimeout(r, DEFAULT_MESSAGE_INTERVAL_SEC * 1000),
-        );
-      }
+  async sendMessage(to: string, message: OutMessage): Promise<ChannelSendResult> {
+    const externalId = `simulator-${ulid()}`;
+    if (typeof message === "object") {
+      emitToSession(to, {
+        type: "audio",
+        audioPath: message.audioPath,
+        time: new Date().toISOString(),
+        externalId,
+      });
+    } else {
       emitToSession(to, {
         type: "message",
-        text: part,
+        text: message,
         time: new Date().toISOString(),
+        externalId,
       });
     }
+    return { externalId };
   }
 
   // no-op: nudge templates don't have accessible text in the cron context;
   // the cron persists the nudge text separately for display via sendMessage
-  async sendTemplate(_to: string, _template: NudgeTemplate): Promise<void> {}
+  async sendTemplate(_to: string, _template: NudgeTemplate): Promise<ChannelSendResult> {
+    return { externalId: `simulator-${ulid()}` };
+  }
 }

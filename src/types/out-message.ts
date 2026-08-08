@@ -1,4 +1,1 @@
-export type OutMessage =
-  | string
-  | { delay: number }
-  | { audioPath: string };
+export type OutMessage = string | { audioPath: string };

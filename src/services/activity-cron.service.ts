@@ -27,6 +27,7 @@ import {
 } from "../repo/users.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 import { MessageChannel } from "../types/message-channel";
+import { sendAndSaveMessage } from "./message-sender-service";
 import {
   formatNudgeMessage,
   formatQuestion,
@@ -124,16 +125,15 @@ export async function processActivityCron(
           if (userChannel) {
             const msg =
               "Não consegui processar seu conteúdo. Tenta mandar de novo.";
-            await channel.sendMessage(userChannel.channelId, msg);
-            await saveMessage({
+            await sendAndSaveMessage({
+              channel,
+              to: userChannel.channelId,
               userId: activity.userId,
               userChannelId: userChannel.id,
-              role: "assistant",
               content: msg,
               intent: "system_error",
+              today: startOfDay(new Date()),
             });
-            const today = startOfDay(new Date());
-            await incrementAgentMessageCount(activity.userId, today);
           }
         }
         skipped++;
@@ -157,16 +157,15 @@ export async function processActivityCron(
           if (userChannel) {
             const msg =
               "Não consegui processar seu conteúdo. Tenta mandar de novo.";
-            await channel.sendMessage(userChannel.channelId, msg);
-            await saveMessage({
+            await sendAndSaveMessage({
+              channel,
+              to: userChannel.channelId,
               userId: activity.userId,
               userChannelId: userChannel.id,
-              role: "assistant",
               content: msg,
               intent: "system_error",
+              today: startOfDay(new Date()),
             });
-            const today = startOfDay(new Date());
-            await incrementAgentMessageCount(activity.userId, today);
           }
         }
         skipped++;
@@ -243,15 +242,15 @@ export async function processActivityCron(
             : null,
         });
 
+        let nudgeExternalId: string | null = null;
         try {
-          if (nudge.templateName) {
-            await channel.sendTemplate(
-              userChannel.channelId,
-              nudge.templateName,
-            );
-          } else {
-            await channel.sendMessage(userChannel.channelId, nudge.text);
-          }
+          const result = nudge.templateName
+            ? await channel.sendTemplate(
+                userChannel.channelId,
+                nudge.templateName,
+              )
+            : await channel.sendMessage(userChannel.channelId, nudge.text);
+          nudgeExternalId = result.externalId;
         } catch (err) {
           console.error(
             `[processActivityCron] nudge send error (${nextStep}):`,
@@ -268,6 +267,7 @@ export async function processActivityCron(
           role: "assistant",
           content: nudge.text,
           intent: "practice_nudge",
+          externalId: nudgeExternalId ?? undefined,
         });
         await incrementAgentMessageCount(activity.userId, today);
 
@@ -342,32 +342,32 @@ async function sendCadenceQuestion(
         section.title,
         activity.executionCount === 0,
       );
-      await channel.sendMessage(userChannel.channelId, transitionMsg);
-      await saveMessage({
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelId,
         userId: activity.userId,
         userChannelId: userChannel.id,
         activityId: activity.id,
-        role: "assistant",
         content: transitionMsg,
         intent: "section_transition",
+        today,
       });
-      await incrementAgentMessageCount(activity.userId, today);
     }
   }
 
   const questionText = formatQuestion(question);
 
-  await channel.sendMessage(userChannel.channelId, questionText);
-  await saveMessage({
+  await sendAndSaveMessage({
+    channel,
+    to: userChannel.channelId,
     userId: activity.userId,
     userChannelId: userChannel.id,
     activityId: activity.id,
-    role: "assistant",
     content: questionText,
     intent: "practice_question",
     questionId: question.id,
+    today,
   });
-  await incrementAgentMessageCount(activity.userId, today);
   await updateQuestion(question.id, {
     status: "pending",
     activityId: activity.id,
@@ -411,15 +411,14 @@ export async function processExpiredFlowIntents(
       const userChannel = await findUserChannelByUserId(user.id);
       if (userChannel) {
         const msg = formatNewActivityFlowExpired();
-        await channel.sendMessage(userChannel.channelId, msg);
-        await saveMessage({
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
           userId: user.id,
           userChannelId: userChannel.id,
-          role: "assistant",
           content: msg,
+          today: startOfDay(new Date()),
         });
-        const today = startOfDay(new Date());
-        await incrementAgentMessageCount(user.id, today);
       }
 
       processed++;
@@ -465,14 +464,15 @@ async function selectNextQuestion(
       return null;
     }
 
-    const msg = await completeRoundZero(
+    await completeRoundZero(
       activity.id,
       activity.userId,
       today,
       userChannelId,
       activity.intervalMinutes,
+      channel,
+      channelId,
     );
-    await channel.sendMessage(channelId, msg);
   }
 
   return findNextGeneralQuestion(activity.id, lastId);
@@ -602,7 +602,9 @@ export async function completeRoundZero(
   today: Date,
   userChannelId: string,
   intervalMinutes: number,
-): Promise<string> {
+  channel: MessageChannel,
+  to: string,
+): Promise<void> {
   await updateActivity(activityId, userId, {
     roundCompleted: true,
     waitingUser: false,
@@ -612,14 +614,14 @@ export async function completeRoundZero(
 
   const msg = await buildRoundCompletedSummary(activityId);
 
-  await saveMessage({
-    userId: userId,
+  await sendAndSaveMessage({
+    channel,
+    to,
+    userId,
     userChannelId,
-    activityId: activityId,
-    role: "assistant",
+    activityId,
     content: msg,
     intent: "practice_complete",
+    today,
   });
-  await incrementAgentMessageCount(userId, today);
-  return msg;
 }

@@ -12,7 +12,6 @@ import {
 } from "./activity-service";
 import { generateDocSections } from "../vendors/llm.vendor";
 import { findUserById, findUserChannelByUserId } from "../repo/users.repo";
-import { saveMessage } from "../repo/messages.repo";
 import { MessageChannel } from "../types/message-channel";
 import { incrementDailyActivityCount, incrementDailyDocCount } from "../repo/daily-usage.repo";
 import {
@@ -24,8 +23,10 @@ import {
   FIRST_MESSAGE_INTERVAL_MIN,
   NEXT_MESSAGE_INTERVAL_MIN,
   MAX_ACTIVITIES_PER_DAY,
+  DEFAULT_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
-import { sanitizeText } from "../lib/utils";
+import { sanitizeText, delay } from "../lib/utils";
+import { sendAndSaveMessage } from "./message-sender-service";
 import { calculatePoolSize } from "../core/pool-size";
 import { SectionType } from "../lib/prisma";
 
@@ -47,11 +48,11 @@ export async function processDoc(docId: string, userId: string, channel: Message
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatDocProcessingFailed();
-        await channel.sendMessage(userChannel.channelId, msg);
-        await saveMessage({
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
           userId,
           userChannelId: userChannel.id,
-          role: "assistant",
           content: msg,
           intent: "system_error",
         });
@@ -64,11 +65,11 @@ export async function processDoc(docId: string, userId: string, channel: Message
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatInvalidContentMessage(result.invalidReason);
-        await channel.sendMessage(userChannel.channelId, msg);
-        await saveMessage({
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
           userId,
           userChannelId: userChannel.id,
-          role: "assistant",
           content: msg,
           intent: "system_error",
         });
@@ -146,14 +147,21 @@ export async function processDoc(docId: string, userId: string, channel: Message
       if (userChannel) {
         const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
         const summary = await buildPreviousActivitySummary(userId);
-        const messages = summary ? [msg, summary] : [msg];
-        await channel.sendMessage(userChannel.channelId, messages);
-        for (const content of messages) {
-          await saveMessage({
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId,
+          userChannelId: userChannel.id,
+          content: msg,
+        });
+        if (summary) {
+          await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelId,
             userId,
             userChannelId: userChannel.id,
-            role: "assistant",
-            content,
+            content: summary,
           });
         }
       }
@@ -162,11 +170,11 @@ export async function processDoc(docId: string, userId: string, channel: Message
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatDocNoQuestions();
-        await channel.sendMessage(userChannel.channelId, msg);
-        await saveMessage({
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
           userId,
           userChannelId: userChannel.id,
-          role: "assistant",
           content: msg,
           intent: "system_error",
         });
@@ -181,11 +189,11 @@ export async function processDoc(docId: string, userId: string, channel: Message
     const userChannel = await findUserChannelByUserId(userId);
     if (userChannel) {
       const msg = formatDocProcessingFailed();
-      await channel.sendMessage(userChannel.channelId, msg);
-      await saveMessage({
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelId,
         userId,
         userChannelId: userChannel.id,
-        role: "assistant",
         content: msg,
         intent: "system_error",
       });

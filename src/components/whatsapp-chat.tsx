@@ -12,6 +12,7 @@ export interface Message {
   mediaType?: "image" | "pdf" | "text";
   audioUrl?: string;
   textFallback?: string;
+  externalId?: string;
 }
 
 function FileCard({
@@ -51,9 +52,13 @@ function FileCard({
 function AudioCard({
   audioUrl,
   textFallback,
+  externalId,
+  onPlay,
 }: {
   audioUrl: string;
   textFallback?: string;
+  externalId?: string;
+  onPlay?: (externalId: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-1 py-1 min-w-[220px]">
@@ -69,7 +74,12 @@ function AudioCard({
             <path d="M17 11a1 1 0 10-2 0 3 3 0 01-6 0 1 1 0 10-2 0 5 5 0 004 4.9V18H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.1a5 5 0 004-4.9z" />
           </svg>
         </div>
-        <audio controls src={audioUrl} className="h-8 flex-1" />
+        <audio
+          controls
+          src={audioUrl}
+          className="h-8 flex-1"
+          onPlay={() => externalId && onPlay?.(externalId)}
+        />
       </div>
       {/* {textFallback && (
         <p className="text-[11px] opacity-50 italic">{textFallback}</p>
@@ -78,7 +88,13 @@ function AudioCard({
   );
 }
 
-export function WhatsAppChat({ messages }: { messages: Message[] }) {
+export function WhatsAppChat({
+  messages,
+  onAudioPlay,
+}: {
+  messages: Message[];
+  onAudioPlay?: (externalId: string) => void;
+}) {
   return (
     <div className="bg-[#EBE5DC] dark:bg-[#0B141A] md:rounded-[20px] p-4 w-full md:w-[480px] flex flex-col gap-1.5">
       {messages.map((msg, i) => (
@@ -105,6 +121,8 @@ export function WhatsAppChat({ messages }: { messages: Message[] }) {
               <AudioCard
                 audioUrl={msg.audioUrl!}
                 textFallback={msg.textFallback}
+                externalId={msg.externalId}
+                onPlay={onAudioPlay}
               />
             ) : (
               <p className="whitespace-pre-line leading-[1.5]">

@@ -19,6 +19,7 @@ import {
   formatUnsupportedFileType,
 } from "../../../../core/formatters";
 import { IncomingMessage } from "../../../../types/domain";
+import { processWhatsAppStatusEvent } from "../../../../services/message-status-service";
 import {
   verifyMetaSignature,
   verifyWebhookToken,
@@ -64,12 +65,35 @@ export async function POST(req: NextRequest): Promise<Response> {
                 document?: { id: string; mime_type?: string };
               }>;
               contacts?: Array<{ wa_id: string; profile?: { name?: string } }>;
+              statuses?: Array<{
+                id: string;
+                status: string;
+                timestamp?: string;
+              }>;
             };
           }>;
         }>;
       };
 
       const value = payload?.entry?.[0]?.changes?.[0]?.value;
+
+      if (value?.statuses?.length) {
+        for (const status of value.statuses) {
+          try {
+            const timestamp = status.timestamp
+              ? new Date(Number(status.timestamp) * 1000)
+              : undefined;
+            await processWhatsAppStatusEvent(status.status, status.id, timestamp);
+          } catch (err) {
+            console.error(
+              "[post/api/webhooks/whatsapp] failed to process status event",
+              err,
+            );
+          }
+        }
+        return;
+      }
+
       if (!value?.messages?.length) {
         console.log(
           "[post/api/webhooks/whatsapp] no messages in payload, skipping",

@@ -116,7 +116,10 @@ import {
   MESSAGE_SUPPRESSION_SEC,
   ONBOARDING_MESSAGE_INTERVAL_SEC,
   DAILY_PRACTICE_LIMIT,
+  DEFAULT_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
+import { delay } from "../lib/utils";
+import { sendAndSaveMessage } from "./message-sender-service";
 import {
   IncomingMessage,
   MessageIntent,
@@ -131,7 +134,6 @@ import { handleAdminCommand } from "./admin-service";
 import { markWaitlistActive } from "../repo/waitlist.repo";
 import { startOfDay } from "date-fns";
 import { validateDocItemInput } from "./doc-item-service";
-import { OutMessage } from "../types/out-message";
 import { MessageChannel } from "../types/message-channel";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
@@ -192,8 +194,14 @@ export async function handleIncomingMessage(
     if (/^admin(\s|$)/i.test(rawText)) {
       if (input.channelId !== process.env.WA_SUPPORT) return;
       const reply = await handleAdminCommand(rawText);
-      await saveBotReply(user.id, userChannel.id, reply, today);
-      await channel.sendMessage(userChannel.channelId, reply);
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelId,
+        userId: user.id,
+        userChannelId: userChannel.id,
+        content: reply,
+        today,
+      });
       return;
     }
 
@@ -253,8 +261,14 @@ export async function handleIncomingMessage(
           today,
         );
         const supportReply = formatSupportReceived();
-        await saveBotReply(user.id, userChannel.id, supportReply, today);
-        await channel.sendMessage(userChannel.channelId, supportReply);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: supportReply,
+          today,
+        });
         return;
       }
       if (
@@ -270,8 +284,14 @@ export async function handleIncomingMessage(
           today,
         );
         const cmdReply = formatCommandList(user.level ?? null);
-        await saveBotReply(user.id, userChannel.id, cmdReply, today);
-        await channel.sendMessage(userChannel.channelId, cmdReply);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: cmdReply,
+          today,
+        });
         return;
       }
 
@@ -286,8 +306,14 @@ export async function handleIncomingMessage(
         );
         const activities = await findActivitiesForList(user.id);
         const activitiesReply = formatActivitiesList(activities);
-        await saveBotReply(user.id, userChannel.id, activitiesReply, today);
-        await channel.sendMessage(userChannel.channelId, activitiesReply);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: activitiesReply,
+          today,
+        });
         return;
       }
 
@@ -301,8 +327,14 @@ export async function handleIncomingMessage(
           today,
         );
         const supportPrompt = formatSupportRequest();
-        await saveBotReply(user.id, userChannel.id, supportPrompt, today);
-        await channel.sendMessage(userChannel.channelId, supportPrompt);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: supportPrompt,
+          today,
+        });
         return;
       }
 
@@ -316,8 +348,14 @@ export async function handleIncomingMessage(
           today,
         );
         const cancelReply = formatCanceled();
-        await saveBotReply(user.id, userChannel.id, cancelReply, today);
-        await channel.sendMessage(userChannel.channelId, cancelReply);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: cancelReply,
+          today,
+        });
         return;
       }
 
@@ -330,8 +368,14 @@ export async function handleIncomingMessage(
         today,
       );
       const expiredReply = formatPlanExpired();
-      await saveBotReply(user.id, userChannel.id, expiredReply, today);
-      await channel.sendMessage(userChannel.channelId, expiredReply);
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelId,
+        userId: user.id,
+        userChannelId: userChannel.id,
+        content: expiredReply,
+        today,
+      });
       return;
     }
 
@@ -365,23 +409,26 @@ export async function handleIncomingMessage(
         formatOnboardingMsg5(),
       ];
 
-      const outMsgs: OutMessage[] = [];
-      for (const msg of msgs) {
-        await saveBotReply(user.id, userChannel.id, msg, today);
-        if (outMsgs.length > 0) {
-          outMsgs.push({ delay: ONBOARDING_MESSAGE_INTERVAL_SEC });
-        }
-        outMsgs.push(msg);
+      for (let i = 0; i < msgs.length; i++) {
+        if (i > 0) await delay(ONBOARDING_MESSAGE_INTERVAL_SEC);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: msgs[i],
+          today,
+        });
       }
 
-      const { message: flowMessage } = await startNewActivityFlow(
+      await delay(ONBOARDING_MESSAGE_INTERVAL_SEC);
+      await startNewActivityFlow(
         user,
         userChannel.id,
         today,
+        channel,
+        userChannel.channelId,
       );
-      outMsgs.push({ delay: ONBOARDING_MESSAGE_INTERVAL_SEC }, flowMessage);
-
-      await channel.sendMessage(userChannel.channelId, outMsgs);
       return;
     }
 
@@ -401,16 +448,16 @@ export async function handleIncomingMessage(
         await updateUserPendingIntent(user.id, null);
       }
       const docType = input.mediaType as DocType;
-      const msgs = await handleDocUpload(
+      await handleDocUpload(
         user.id,
         userChannel.id,
         text,
         docType,
         today,
         input,
+        channel,
+        userChannel.channelId,
       );
-      if (msgs.length > 0)
-        await channel.sendMessage(userChannel.channelId, msgs);
       return;
     }
 
@@ -425,8 +472,14 @@ export async function handleIncomingMessage(
       await updateUserPendingIntent(user.id, null);
       await saveUserMsg(user.id, userChannel.id, text, "cancel", input, today);
       const flowCancelledReply = formatNewActivityFlowCanceled();
-      await saveBotReply(user.id, userChannel.id, flowCancelledReply, today);
-      await channel.sendMessage(userChannel.channelId, flowCancelledReply);
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelId,
+        userId: user.id,
+        userChannelId: userChannel.id,
+        content: flowCancelledReply,
+        today,
+      });
       return;
     }
 
@@ -438,8 +491,14 @@ export async function handleIncomingMessage(
         await updateDoc(pendingDocForLevel.id, user.id, { status: "canceled" });
       }
       const cancelledReply = formatLevelUpdateCanceled();
-      await saveBotReply(user.id, userChannel.id, cancelledReply, today);
-      await channel.sendMessage(userChannel.channelId, cancelledReply);
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelId,
+        userId: user.id,
+        userChannelId: userChannel.id,
+        content: cancelledReply,
+        today,
+      });
       return;
     }
 
@@ -459,24 +518,37 @@ export async function handleIncomingMessage(
             today,
           );
           const levelMsg = formatLevelQuestion();
-          await channel.sendMessage(userChannel.channelId, levelMsg);
-          await saveBotReply(user.id, userChannel.id, levelMsg, today);
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            content: levelMsg,
+            today,
+          });
           return;
         }
 
         const { outcome, message } = await processLevelResponse(text, user.id);
-        await channel.sendMessage(userChannel.channelId, message);
-        await saveBotReply(user.id, userChannel.id, message, today);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: message,
+          today,
+        });
 
         if (outcome === "captured") {
           const levelFlowData = getIntentData(user);
           if (levelFlowData?.flow === "new_activity") {
-            const domainMsg = await sendDomainQuestion(
+            await sendDomainQuestion(
               user.id,
               userChannel.id,
               today,
+              channel,
+              userChannel.channelId,
             );
-            await channel.sendMessage(userChannel.channelId, domainMsg);
             await saveUserMsg(
               user.id,
               userChannel.id,
@@ -520,8 +592,14 @@ export async function handleIncomingMessage(
       // Aguardando escolha de objetivo (domain)
       if (pendingIntent === "waiting_set_activity_domain") {
         const result = processDomainResponse(text);
-        await channel.sendMessage(userChannel.channelId, result.message);
-        await saveBotReply(user.id, userChannel.id, result.message, today);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: result.message,
+          today,
+        });
 
         if (result.outcome === "canceled") {
           await updateUserPendingIntent(user.id, null);
@@ -585,8 +663,14 @@ export async function handleIncomingMessage(
             today,
           );
           const errReply = formatNewActivityFlowCanceled();
-          await saveBotReply(user.id, userChannel.id, errReply, today);
-          await channel.sendMessage(userChannel.channelId, errReply);
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            content: errReply,
+            today,
+          });
           return;
         }
 
@@ -597,8 +681,14 @@ export async function handleIncomingMessage(
           domain,
         );
 
-        await channel.sendMessage(userChannel.channelId, result.message);
-        await saveBotReply(user.id, userChannel.id, result.message, today);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: result.message,
+          today,
+        });
 
         if (result.outcome !== "captured") {
           await saveUserMsg(
@@ -654,8 +744,14 @@ export async function handleIncomingMessage(
             today,
           );
           const errReply = formatNewActivityFlowCanceled();
-          await saveBotReply(user.id, userChannel.id, errReply, today);
-          await channel.sendMessage(userChannel.channelId, errReply);
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            content: errReply,
+            today,
+          });
           return;
         }
 
@@ -681,8 +777,14 @@ export async function handleIncomingMessage(
           return;
         }
 
-        await channel.sendMessage(userChannel.channelId, result.message);
-        await saveBotReply(user.id, userChannel.id, result.message, today);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: result.message,
+          today,
+        });
         await saveUserMsg(
           user.id,
           userChannel.id,
@@ -708,8 +810,14 @@ export async function handleIncomingMessage(
             input,
             today,
           );
-          await saveBotReply(user.id, userChannel.id, noPendingReply, today);
-          await channel.sendMessage(userChannel.channelId, noPendingReply);
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            content: noPendingReply,
+            today,
+          });
           return;
         }
         if (parsed.intent === "confirm") {
@@ -726,16 +834,16 @@ export async function handleIncomingMessage(
             mt === "audio" || mt === "image" || mt === "pdf"
               ? (mt as DocType)
               : "text";
-          const replaceMsgs = await createPendingBuffer(
+          await createPendingBuffer(
             user.id,
             userChannel.id,
             lastUserMessage.content,
             originalDocType,
             today,
+            channel,
+            userChannel.channelId,
             lastUserMessage.id,
           );
-          if (replaceMsgs.length > 0)
-            await channel.sendMessage(userChannel.channelId, replaceMsgs);
           return;
         }
 
@@ -748,8 +856,14 @@ export async function handleIncomingMessage(
           today,
         );
         const reply = formatActivityReplaceCanceled();
-        await saveBotReply(user.id, userChannel.id, reply, today);
-        await channel.sendMessage(userChannel.channelId, reply);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: reply,
+          today,
+        });
         return;
       }
 
@@ -781,8 +895,14 @@ export async function handleIncomingMessage(
           today,
         );
         const reply = formatSupportReceived();
-        await saveBotReply(user.id, userChannel.id, reply, today);
-        await channel.sendMessage(userChannel.channelId, reply);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: reply,
+          today,
+        });
         return;
       }
     }
@@ -824,16 +944,24 @@ export async function handleIncomingMessage(
           today,
         );
         const levelMsg = formatLevelQuestion();
-        await channel.sendMessage(userChannel.channelId, levelMsg);
-        await saveBotReply(user.id, userChannel.id, levelMsg, today);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: levelMsg,
+          today,
+        });
         return;
       }
 
       case "new_activity": {
-        const { message: flowMessage, nextIntent } = await startNewActivityFlow(
+        const { nextIntent } = await startNewActivityFlow(
           user,
           userChannel.id,
           today,
+          channel,
+          userChannel.channelId,
         );
         await saveUserMsg(
           user.id,
@@ -843,7 +971,6 @@ export async function handleIncomingMessage(
           input,
           today,
         );
-        await channel.sendMessage(userChannel.channelId, flowMessage);
         return;
       }
 
@@ -923,8 +1050,14 @@ export async function handleIncomingMessage(
             input,
             today,
           );
-          await saveBotReply(user.id, userChannel.id, limitMsg, today);
-          await channel.sendMessage(userChannel.channelId, limitMsg);
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            content: limitMsg,
+            today,
+          });
           return;
         }
         const intensiveUntil = new Date(
@@ -945,21 +1078,37 @@ export async function handleIncomingMessage(
             isIntensiveMode,
             hasPendingQuestion: true,
           });
-          await saveBotReply(user.id, userChannel.id, pendingReply, today);
-          await channel.sendMessage(userChannel.channelId, pendingReply);
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            content: pendingReply,
+            today,
+          });
           return;
         }
 
         const replyActivation = formatIntensiveModeActivated({
           isIntensiveMode,
         });
-        await saveBotReply(user.id, userChannel.id, replyActivation, today);
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: replyActivation,
+          today,
+        });
 
-        const intensiveReplies = await handleIntensiveNextQuestion(
+        await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+        await handleIntensiveNextQuestion(
           activeActivity,
           user.id,
           userChannel.id,
           today,
+          channel,
+          userChannel.channelId,
         );
         await saveUserMsg(
           user.id,
@@ -969,10 +1118,6 @@ export async function handleIncomingMessage(
           input,
           today,
         );
-        await channel.sendMessage(userChannel.channelId, [
-          replyActivation,
-          ...intensiveReplies,
-        ]);
         return;
       }
 
@@ -1069,9 +1214,6 @@ export async function handleIncomingMessage(
               const feedbackAudioPath = evaluation
                 ? await resolveFeedbackAudioPath(evaluation, pendingQuestion.id)
                 : null;
-              const feedbackParts: OutMessage[] = feedbackAudioPath
-                ? [feedback, { audioPath: feedbackAudioPath }]
-                : [feedback];
               const evalTip = evaluation?.eval_tip;
               const tipMsg = evalTip ? formatEvalTip(evalTip) : null;
               const answerType = input.mediaType === "audio" ? "audio" : "text";
@@ -1141,30 +1283,33 @@ export async function handleIncomingMessage(
                 input,
                 today,
               );
-              await saveMessage({
+              await sendAndSaveMessage({
+                channel,
+                to: userChannel.channelId,
                 userId: user.id,
                 userChannelId: userChannel.id,
                 activityId: activeActivity.id,
-                role: "assistant",
                 content: feedback,
                 intent: "practice_feedback",
                 questionId: pendingQuestion.id,
+                today,
               });
-              await incrementAgentMessageCount(user.id, today);
 
               if (feedbackAudioPath) {
-                await saveMessage({
+                await sendAndSaveMessage({
+                  channel,
+                  to: userChannel.channelId,
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
-                  role: "assistant",
                   content: feedback,
+                  part: { audioPath: feedbackAudioPath },
                   intent: "practice_feedback",
                   questionId: pendingQuestion.id,
                   mediaType: "audio",
                   mediaId: feedbackAudioPath,
+                  today,
                 });
-                await incrementAgentMessageCount(user.id, today);
               }
 
               if (isIntensiveMode && !canContinueIntensive) {
@@ -1175,95 +1320,79 @@ export async function handleIncomingMessage(
                 await updateActivity(activeActivity.id, user.id, {
                   intensiveUntil: null,
                 });
-                await saveMessage({
+                await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                await sendAndSaveMessage({
+                  channel,
+                  to: userChannel.channelId,
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
-                  role: "assistant",
                   content: limitMsg,
                   intent: "practice_feedback",
+                  today,
                 });
-                await incrementAgentMessageCount(user.id, today);
-                await channel.sendMessage(userChannel.channelId, [
-                  ...feedbackParts,
-                  { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
-                  limitMsg,
-                ]);
                 return;
               }
 
               if (isPracticingSessionActive) {
-                const replies = await handleIntensiveNextQuestion(
+                await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                const sent = await handleIntensiveNextQuestion(
                   activeActivity,
                   user.id,
                   userChannel.id,
                   today,
+                  channel,
+                  userChannel.channelId,
                 );
-                if (replies.length > 0) {
-                  await channel.sendMessage(userChannel.channelId, [
-                    ...feedbackParts,
-                    { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
-                    ...replies,
-                  ]);
-                  return;
-                }
+                if (sent) return;
               }
 
               if (interactionCount == 1) {
                 const guideMsg = formatGuideAfterFirstFeedback();
-                await saveMessage({
-                  userId: user.id,
-                  userChannelId: userChannel.id,
-                  activityId: activeActivity.id,
-                  role: "assistant",
-                  content: guideMsg,
-                  intent: "guide_after_first_feedback",
-                });
-                await incrementAgentMessageCount(user.id, today);
-                const messages: OutMessage[] = [
-                  ...feedbackParts,
-                  { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
-                ];
+                await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
                 if (tipMsg) {
-                  await saveMessage({
+                  await sendAndSaveMessage({
+                    channel,
+                    to: userChannel.channelId,
                     userId: user.id,
                     userChannelId: userChannel.id,
                     activityId: activeActivity.id,
-                    role: "assistant",
                     content: tipMsg,
                     intent: "eval_tip",
                     questionId: pendingQuestion.id,
+                    today,
                   });
-                  await incrementAgentMessageCount(user.id, today);
-                  messages.push(tipMsg, {
-                    delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
-                  });
+                  await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
                 }
-                messages.push(guideMsg);
-                await channel.sendMessage(userChannel.channelId, messages);
+                await sendAndSaveMessage({
+                  channel,
+                  to: userChannel.channelId,
+                  userId: user.id,
+                  userChannelId: userChannel.id,
+                  activityId: activeActivity.id,
+                  content: guideMsg,
+                  intent: "guide_after_first_feedback",
+                  today,
+                });
                 return;
               }
 
               if (tipMsg) {
-                await saveMessage({
+                await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                await sendAndSaveMessage({
+                  channel,
+                  to: userChannel.channelId,
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
-                  role: "assistant",
                   content: tipMsg,
                   intent: "eval_tip",
                   questionId: pendingQuestion.id,
+                  today,
                 });
-                await incrementAgentMessageCount(user.id, today);
-                await channel.sendMessage(userChannel.channelId, [
-                  ...feedbackParts,
-                  { delay: AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC },
-                  tipMsg,
-                ]);
                 return;
               }
 
-              await channel.sendMessage(userChannel.channelId, feedbackParts);
               return;
             }
           }
@@ -1295,8 +1424,14 @@ export async function handleIncomingMessage(
       input,
       today,
     );
-    await saveBotReply(user.id, userChannel.id, reply, today);
-    await channel.sendMessage(userChannel.channelId, reply);
+    await sendAndSaveMessage({
+      channel,
+      to: userChannel.channelId,
+      userId: user.id,
+      userChannelId: userChannel.id,
+      content: reply,
+      today,
+    });
     return;
   } finally {
     await updateUserLastResponse(user.id, messageId);
@@ -1308,7 +1443,9 @@ async function handleIntensiveNextQuestion(
   userId: string,
   userChannelId: string,
   today: Date,
-): Promise<OutMessage[]> {
+  channel: MessageChannel,
+  to: string,
+): Promise<boolean> {
   const {
     id: activityId,
     docId,
@@ -1322,7 +1459,7 @@ async function handleIntensiveNextQuestion(
   if (!roundCompleted) {
     const sm2 = await findSm2EligibleQuestion(activityId, lastId);
     if (sm2) {
-      return sendIntensiveQuestion(
+      await sendIntensiveQuestion(
         sm2,
         activity,
         userId,
@@ -1330,12 +1467,15 @@ async function handleIntensiveNextQuestion(
         executionCount,
         intervalMinutes,
         today,
+        channel,
+        to,
       );
+      return true;
     }
 
     const unanswered = await findNextUnansweredQuestion(docId, lastId);
     if (unanswered) {
-      return sendIntensiveQuestion(
+      await sendIntensiveQuestion(
         unanswered,
         activity,
         userId,
@@ -1343,13 +1483,16 @@ async function handleIntensiveNextQuestion(
         executionCount,
         intervalMinutes,
         today,
+        channel,
+        to,
       );
+      return true;
     }
 
     const outcome = await generateQuestionIfPoolNotFull(activity);
     if (!outcome.poolExhausted) {
       if (outcome.question) {
-        return sendIntensiveQuestion(
+        await sendIntensiveQuestion(
           outcome.question,
           activity,
           userId,
@@ -1357,31 +1500,38 @@ async function handleIntensiveNextQuestion(
           executionCount,
           intervalMinutes,
           today,
+          channel,
+          to,
         );
+        return true;
       }
       const pendingMsg = formatIntensivePendingQuestion();
-      await saveMessage({
+      await sendAndSaveMessage({
+        channel,
+        to,
         userId,
         userChannelId,
         activityId,
-        role: "assistant",
         content: pendingMsg,
         intent: "pending_question",
+        today,
       });
-      await incrementAgentMessageCount(userId, today);
-      return [pendingMsg];
+      return true;
     }
 
-    const completionMsg = await completeRoundZero(
+    await completeRoundZero(
       activityId,
       userId,
       today,
       userChannelId,
       intervalMinutes,
+      channel,
+      to,
     );
     const next = await findNextGeneralQuestion(activityId, lastId);
     if (next) {
-      const nextReplies = await sendIntensiveQuestion(
+      await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+      await sendIntensiveQuestion(
         next,
         activity,
         userId,
@@ -1389,15 +1539,16 @@ async function handleIntensiveNextQuestion(
         executionCount,
         intervalMinutes,
         today,
+        channel,
+        to,
       );
-      return [completionMsg, ...nextReplies];
     }
-    return [completionMsg];
+    return true;
   }
 
   const next = await findNextGeneralQuestion(activityId, lastId);
-  if (next)
-    return sendIntensiveQuestion(
+  if (next) {
+    await sendIntensiveQuestion(
       next,
       activity,
       userId,
@@ -1405,8 +1556,12 @@ async function handleIntensiveNextQuestion(
       executionCount,
       intervalMinutes,
       today,
+      channel,
+      to,
     );
-  return [];
+    return true;
+  }
+  return false;
 }
 
 async function sendIntensiveQuestion(
@@ -1424,8 +1579,10 @@ async function sendIntensiveQuestion(
   executionCount: number,
   intervalMinutes: number,
   today: Date,
-): Promise<OutMessage[]> {
-  const messages: OutMessage[] = [];
+  channel: MessageChannel,
+  to: string,
+): Promise<void> {
+  let sentTransition = false;
 
   if (question.sectionId) {
     const section = await findSectionById(question.sectionId);
@@ -1434,31 +1591,35 @@ async function sendIntensiveQuestion(
         section.title,
         executionCount === 0,
       );
-      await saveMessage({
+      await sendAndSaveMessage({
+        channel,
+        to,
         userId,
         userChannelId,
         activityId: activity.id,
-        role: "assistant",
         content: transitionMsg,
         intent: "section_transition",
+        today,
       });
-      await incrementAgentMessageCount(userId, today);
-      messages.push(transitionMsg);
+      sentTransition = true;
     }
   }
 
+  if (sentTransition) await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+
   const questionText = formatQuestion(question);
 
-  await saveMessage({
+  await sendAndSaveMessage({
+    channel,
+    to,
     userId,
     userChannelId,
     activityId: activity.id,
-    role: "assistant",
     content: questionText,
     intent: "practice_question",
     questionId: question.id,
+    today,
   });
-  await incrementAgentMessageCount(userId, today);
   await updateQuestion(question.id, {
     status: "pending",
     activityId: activity.id,
@@ -1470,8 +1631,6 @@ async function sendIntensiveQuestion(
     nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),
     intensiveUntil: new Date(Date.now() + INTENSIVE_UNTIL_MIN * 60 * 1000),
   });
-  messages.push(questionText);
-  return messages;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -1503,16 +1662,6 @@ async function saveUserMsg(
   return message;
 }
 
-async function saveBotReply(
-  userId: string,
-  userChannelId: string,
-  content: string,
-  today: Date,
-): Promise<void> {
-  await saveMessage({ userId, userChannelId, role: "assistant", content });
-  await incrementAgentMessageCount(userId, today);
-}
-
 function getIntentData(user: {
   metadata: unknown;
 }): NewActivityIntentData | undefined {
@@ -1524,7 +1673,9 @@ async function sendDomainQuestion(
   userId: string,
   userChannelId: string,
   today: Date,
-): Promise<string> {
+  channel: MessageChannel,
+  to: string,
+): Promise<void> {
   const domainData: NewActivityIntentData = { flow: "new_activity" };
   await updateUserPendingIntent(
     userId,
@@ -1532,24 +1683,39 @@ async function sendDomainQuestion(
     domainData,
   );
   const domainMsg = formatDomainQuestion();
-  await saveBotReply(userId, userChannelId, domainMsg, today);
-  return domainMsg;
+  await sendAndSaveMessage({
+    channel,
+    to,
+    userId,
+    userChannelId,
+    content: domainMsg,
+    today,
+  });
 }
 
 async function startNewActivityFlow(
   user: { id: string; level: Level | null },
   userChannelId: string,
   today: Date,
-): Promise<{ message: string; nextIntent: MessageIntent }> {
+  channel: MessageChannel,
+  to: string,
+): Promise<{ nextIntent: MessageIntent }> {
   if (!user.level) {
     const levelFlowData: NewActivityIntentData = { flow: "new_activity" };
     await updateUserPendingIntent(user.id, "waiting_set_level", levelFlowData);
     const levelMsg = formatLevelQuestion();
-    await saveBotReply(user.id, userChannelId, levelMsg, today);
-    return { message: levelMsg, nextIntent: "waiting_set_level" };
+    await sendAndSaveMessage({
+      channel,
+      to,
+      userId: user.id,
+      userChannelId,
+      content: levelMsg,
+      today,
+    });
+    return { nextIntent: "waiting_set_level" };
   }
-  const domainMsg = await sendDomainQuestion(user.id, userChannelId, today);
-  return { message: domainMsg, nextIntent: "waiting_set_activity_domain" };
+  await sendDomainQuestion(user.id, userChannelId, today, channel, to);
+  return { nextIntent: "waiting_set_activity_domain" };
 }
 
 async function createPendingBuffer(
@@ -1558,8 +1724,10 @@ async function createPendingBuffer(
   rawContent: string,
   docType: DocType,
   today: Date,
+  channel: MessageChannel,
+  to: string,
   messageId?: string,
-): Promise<string[]> {
+): Promise<void> {
   const doc = await createDoc({
     userId,
     docType,
@@ -1575,8 +1743,14 @@ async function createPendingBuffer(
   });
   await publishDocMerge(doc.id, userId, docItem.id);
   const reply = formatDocItemReceived(1);
-  await saveBotReply(userId, userChannelId, reply, today);
-  return [reply];
+  await sendAndSaveMessage({
+    channel,
+    to,
+    userId,
+    userChannelId,
+    content: reply,
+    today,
+  });
 }
 
 async function handleDocUpload(
@@ -1589,7 +1763,9 @@ async function handleDocUpload(
     IncomingMessage,
     "externalId" | "mediaType" | "mediaId" | "mediaMetadata" | "receivedAt"
   >,
-): Promise<string[]> {
+  channel: MessageChannel,
+  to: string,
+): Promise<void> {
   const pendingDoc = await findPendingDocByUser(userId);
   if (pendingDoc) {
     const validCount = await countValidDocItemsByDoc(pendingDoc.id);
@@ -1603,8 +1779,15 @@ async function handleDocUpload(
         today,
       );
       const reply = formatDocItemLimitReached();
-      await saveBotReply(userId, userChannelId, reply, today);
-      return [reply];
+      await sendAndSaveMessage({
+        channel,
+        to,
+        userId,
+        userChannelId,
+        content: reply,
+        today,
+      });
+      return;
     }
     const itemValidation = validateDocItemInput(rawContent, docType);
     const savedMsg = await saveMessage({
@@ -1621,8 +1804,15 @@ async function handleDocUpload(
     });
     await incrementUserMessageCount(userId, today);
     if (!itemValidation.success) {
-      await saveBotReply(userId, userChannelId, itemValidation.error, today);
-      return [itemValidation.error];
+      await sendAndSaveMessage({
+        channel,
+        to,
+        userId,
+        userChannelId,
+        content: itemValidation.error,
+        today,
+      });
+      return;
     }
     const docItem = await createDocItem({
       docId: pendingDoc.id,
@@ -1634,8 +1824,15 @@ async function handleDocUpload(
     });
     await publishDocMerge(pendingDoc.id, userId, docItem.id);
     const reply = formatDocItemReceived(validCount + 1);
-    await saveBotReply(userId, userChannelId, reply, today);
-    return [reply];
+    await sendAndSaveMessage({
+      channel,
+      to,
+      userId,
+      userChannelId,
+      content: reply,
+      today,
+    });
+    return;
   }
 
   const activityCount = await getTodayActivityCount(userId, today);
@@ -1649,8 +1846,15 @@ async function handleDocUpload(
       today,
     );
     const reply = formatDailyActivityLimitReached();
-    await saveBotReply(userId, userChannelId, reply, today);
-    return [reply];
+    await sendAndSaveMessage({
+      channel,
+      to,
+      userId,
+      userChannelId,
+      content: reply,
+      today,
+    });
+    return;
   }
 
   const itemValidation = validateDocItemInput(rawContent, docType);
@@ -1663,8 +1867,15 @@ async function handleDocUpload(
       input,
       today,
     );
-    await saveBotReply(userId, userChannelId, itemValidation.error, today);
-    return [itemValidation.error];
+    await sendAndSaveMessage({
+      channel,
+      to,
+      userId,
+      userChannelId,
+      content: itemValidation.error,
+      today,
+    });
+    return;
   }
 
   const activeActivity = await findLastActivityByUser(userId);
@@ -1682,8 +1893,15 @@ async function handleDocUpload(
       activeActivity.title ?? "",
       MAX_ACTIVITIES_PER_DAY - activityCount,
     );
-    await saveBotReply(userId, userChannelId, reply, today);
-    return [reply];
+    await sendAndSaveMessage({
+      channel,
+      to,
+      userId,
+      userChannelId,
+      content: reply,
+      today,
+    });
+    return;
   }
 
   const savedMsg = await saveMessage({
@@ -1699,12 +1917,14 @@ async function handleDocUpload(
     receivedAt: input.receivedAt,
   });
   await incrementUserMessageCount(userId, today);
-  return createPendingBuffer(
+  await createPendingBuffer(
     userId,
     userChannelId,
     rawContent,
     docType,
     today,
+    channel,
+    to,
     savedMsg.id,
   );
 }

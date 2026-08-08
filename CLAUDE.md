@@ -225,13 +225,14 @@ Arquivos de prompt ativos:
 
 ### Padrao de mensagem WhatsApp
 
-Sempre que enviar uma mensagem ao usuario, seguir o padrao de tres passos sem desvio:
+Sempre que enviar uma mensagem ao usuario, usar `sendAndSaveMessage` (`src/services/message-sender-service.ts`):
 ```typescript
 const msg = formatX();
-await sendWhatsAppMessage(channelId, msg);
-await saveMessage({ userId, userChannelId, role: "assistant", content: msg, ... });
+await sendAndSaveMessage({ channel, to: userChannel.channelId, userId, userChannelId, content: msg, today });
 ```
-Nao encapsular send+save em helpers -- o caller sempre executa os tres passos diretamente.
+`sendAndSaveMessage` envia via `channel.sendMessage`/`sendTemplate`, captura o `externalId` (wamid) retornado pela Cloud API e so entao salva a `Message` ja com esse valor -- envio sempre antes do save, nunca depois. Passar `today` quando a mensagem deve contar para `incrementAgentMessageCount`; omitir quando o fluxo nunca contou (ex: `process-doc-service.ts`, `merge-doc-service.ts`).
+
+`MessageChannel.sendMessage`/`sendTemplate` enviam uma mensagem por chamada (sem array, sem `{ delay }`). Para pausas entre mensagens, usar `delay(segundos)` de `src/lib/utils.ts` explicitamente entre chamadas de `sendAndSaveMessage`.
 
 ### Prisma
 

@@ -35,6 +35,13 @@ enum MessageRole {
     assistant
 }
 
+enum ExternalMessageStatus {
+    sent
+    delivered
+    read
+    failed
+}
+
 enum AiProvider {
     openai
     anthropic
@@ -100,6 +107,11 @@ model Message {
     metadata      Json?       @map("metadata")
     questionId    String?     @map("question_id")
     createdAt     DateTime    @default(now()) @map("created_at")
+    updatedAt     DateTime    @default(now()) @updatedAt @map("updated_at")
+
+    externalStatus   ExternalMessageStatus? @map("external_status")
+    externalStatusAt DateTime?              @map("external_status_at")
+    playedAt         DateTime?              @map("played_at")
 
     user        User        @relation(fields: [userId], references: [id])
     userChannel UserChannel @relation(fields: [userChannelId], references: [id])
