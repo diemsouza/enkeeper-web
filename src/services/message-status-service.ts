@@ -30,6 +30,10 @@ export async function processWhatsAppStatusEvent(
   externalId: string,
   timestamp?: Date,
 ): Promise<void> {
+  console.log("[processWhatsAppStatusEvent] received status", {
+    rawStatus,
+    externalId,
+  });
   if (rawStatus === "played") {
     await markMessageAsPlayed(externalId, timestamp);
     return;
@@ -37,5 +41,10 @@ export async function processWhatsAppStatusEvent(
   const mapped = mapWhatsAppStatus(rawStatus);
   if (mapped) {
     await markMessageExternalStatus(externalId, mapped, timestamp);
+  } else {
+    console.log("[processWhatsAppStatusEvent] unmapped status, ignoring", {
+      rawStatus,
+      externalId,
+    });
   }
 }

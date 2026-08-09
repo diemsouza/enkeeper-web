@@ -127,7 +127,7 @@ export async function processActivityCron(
               "Não consegui processar seu conteúdo. Tenta mandar de novo.";
             await sendAndSaveMessage({
               channel,
-              to: userChannel.channelId,
+              to: userChannel.channelUserId,
               userId: activity.userId,
               userChannelId: userChannel.id,
               content: msg,
@@ -159,7 +159,7 @@ export async function processActivityCron(
               "Não consegui processar seu conteúdo. Tenta mandar de novo.";
             await sendAndSaveMessage({
               channel,
-              to: userChannel.channelId,
+              to: userChannel.channelUserId,
               userId: activity.userId,
               userChannelId: userChannel.id,
               content: msg,
@@ -246,10 +246,10 @@ export async function processActivityCron(
         try {
           const result = nudge.templateName
             ? await channel.sendTemplate(
-                userChannel.channelId,
+                userChannel.channelUserId,
                 nudge.templateName,
               )
-            : await channel.sendMessage(userChannel.channelId, nudge.text);
+            : await channel.sendMessage(userChannel.channelUserId, nudge.text);
           nudgeExternalId = result.externalId;
         } catch (err) {
           console.error(
@@ -291,7 +291,7 @@ export async function processActivityCron(
       const question = await selectNextQuestion(
         activity,
         today,
-        userChannel.channelId,
+        userChannel.channelUserId,
         userChannel.id,
         channel,
       );
@@ -331,7 +331,7 @@ async function sendCadenceQuestion(
     termHint: string | null;
   },
   activity: Activity,
-  userChannel: { channelId: string; id: string },
+  userChannel: { channelUserId: string; id: string },
   today: Date,
   channel: MessageChannel,
 ): Promise<void> {
@@ -344,7 +344,7 @@ async function sendCadenceQuestion(
       );
       await sendAndSaveMessage({
         channel,
-        to: userChannel.channelId,
+        to: userChannel.channelUserId,
         userId: activity.userId,
         userChannelId: userChannel.id,
         activityId: activity.id,
@@ -359,7 +359,7 @@ async function sendCadenceQuestion(
 
   await sendAndSaveMessage({
     channel,
-    to: userChannel.channelId,
+    to: userChannel.channelUserId,
     userId: activity.userId,
     userChannelId: userChannel.id,
     activityId: activity.id,
@@ -413,7 +413,7 @@ export async function processExpiredFlowIntents(
         const msg = formatNewActivityFlowExpired();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: msg,

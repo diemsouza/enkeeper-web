@@ -88,20 +88,22 @@ model DailyUsage {
 }
 
 model UserChannel {
-    id          String      @id @default(ulid()) @map("id")
-    userId      String      @map("user_id")
-    channelType ChannelType @map("channel_type")
-    channelId   String      @map("channel_id") // BSUID Meta, userId Telegram, etc
-    channelCode String?     @map("channel_code") // telefone, username - legível
-    metadata    Json?       @map("metadata")
-    createdAt   DateTime    @default(now()) @map("created_at")
-    updatedAt   DateTime    @updatedAt @map("updated_at")
+    id               String      @id @default(ulid()) @map("id")
+    userId           String      @map("user_id")
+    channelType      ChannelType @map("channel_type")
+    channelUserId    String      @map("channel_user_id") // BSUID Meta, userId Telegram, etc
+    channelUsername  String?     @map("channel_username") // username Meta - legível, auditoria
+    channelUserPhone String?     @map("channel_user_phone") // telefone do usuário no canal - legível
+    metadata         Json?       @map("metadata")
+    createdAt        DateTime    @default(now()) @map("created_at")
+    updatedAt        DateTime    @updatedAt @map("updated_at")
 
     user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
     messages Message[]
 
-    @@unique([channelType, channelId])
-    @@unique([channelType, channelCode])
+    @@unique([channelType, channelUserId])
+    @@unique([channelType, channelUsername])
+    @@unique([channelType, channelUserPhone])
     @@index([userId])
     @@map("user_channels")
 }

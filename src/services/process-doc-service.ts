@@ -50,7 +50,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
         const msg = formatDocProcessingFailed();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
           content: msg,
@@ -67,7 +67,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
         const msg = formatInvalidContentMessage(result.invalidReason);
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
           content: msg,
@@ -149,7 +149,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
         const summary = await buildPreviousActivitySummary(userId);
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
           content: msg,
@@ -158,7 +158,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
           await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
           await sendAndSaveMessage({
             channel,
-            to: userChannel.channelId,
+            to: userChannel.channelUserId,
             userId,
             userChannelId: userChannel.id,
             content: summary,
@@ -172,7 +172,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
         const msg = formatDocNoQuestions();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
           content: msg,
@@ -191,7 +191,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
       const msg = formatDocProcessingFailed();
       await sendAndSaveMessage({
         channel,
-        to: userChannel.channelId,
+        to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
         content: msg,

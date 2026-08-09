@@ -280,7 +280,7 @@ async function sendActivityCreatedConfirmation(
   const summary = await buildPreviousActivitySummary(userId);
   await sendAndSaveMessage({
     channel,
-    to: userChannel.channelId,
+    to: userChannel.channelUserId,
     userId,
     userChannelId: userChannel.id,
     content: msg,
@@ -289,7 +289,7 @@ async function sendActivityCreatedConfirmation(
     await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
     await sendAndSaveMessage({
       channel,
-      to: userChannel.channelId,
+      to: userChannel.channelUserId,
       userId,
       userChannelId: userChannel.id,
       content: summary,

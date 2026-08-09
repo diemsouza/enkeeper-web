@@ -20,8 +20,19 @@ export async function findUserByChannel(
   channelId: string,
 ): Promise<UserWithChannels | null> {
   const channel = await prisma.userChannel.findFirst({
-    where: { channelType, channelId },
+    where: { channelType, channelUserId: channelId },
     include: { user: { include: { channels: true } } },
+  });
+  return channel?.user ?? null;
+}
+
+export async function findUserByPhone(
+  channelType: ChannelType,
+  channelUserPhone: string,
+): Promise<User | null> {
+  const channel = await prisma.userChannel.findFirst({
+    where: { channelType, channelUserPhone },
+    include: { user: true },
   });
   return channel?.user ?? null;
 }
@@ -129,7 +140,7 @@ type UserStat = {
   trial: number;
   pro: number;
   expired: number;
-  recent: { channelId: string; name: string | null; createdAt: Date }[];
+  recent: { channelUserId: string; name: string | null; createdAt: Date }[];
 };
 
 export async function fetchUserStats(): Promise<UserStat> {
@@ -153,7 +164,7 @@ export async function fetchUserStats(): Promise<UserStat> {
         name: true,
         createdAt: true,
         channels: {
-          select: { channelId: true },
+          select: { channelUserId: true },
           where: { channelType: "whatsapp" },
           take: 1,
         },
@@ -167,7 +178,7 @@ export async function fetchUserStats(): Promise<UserStat> {
     pro,
     expired,
     recent: recent.map((u) => ({
-      channelId: u.channels[0]?.channelId ?? "?",
+      channelUserId: u.channels[0]?.channelUserId ?? "?",
       name: u.name,
       createdAt: u.createdAt,
     })),
@@ -198,22 +209,98 @@ export async function updateUserLastResponse(
   });
 }
 
-export async function createUserWithChannel(
+type UserChannelResolution = {
+  user: UserWithChannels;
+  userChannel: UserChannel;
+  isNew: boolean;
+};
+
+async function attemptFindOrCreateUserChannel(
   channelType: ChannelType,
-  channelId: string,
-  channelCode?: string,
+  channelUserId: string,
+  channelUserPhone: string | undefined,
+  channelUsername: string | undefined,
+  planExpiresAt: Date | undefined,
+): Promise<UserChannelResolution | null> {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const byBsuid = await tx.userChannel.findFirst({
+        where: { channelType, channelUserId },
+        include: { user: { include: { channels: true } } },
+      });
+      if (byBsuid) {
+        const { user, ...userChannel } = byBsuid;
+        return { user, userChannel, isNew: false };
+      }
+
+      if (channelUserPhone) {
+        const byPhone = await tx.userChannel.findFirst({
+          where: { channelType, channelUserPhone },
+          include: { user: { include: { channels: true } } },
+        });
+        if (byPhone) {
+          const { user, ...rest } = byPhone;
+          const userChannel = await tx.userChannel.update({
+            where: { id: rest.id },
+            data: {
+              channelUserId,
+              ...(channelUsername ? { channelUsername } : {}),
+            },
+          });
+          return { user, userChannel, isNew: false };
+        }
+      }
+
+      const user = await tx.user.create({
+        data: { planCode: "trial", planStatus: "active", planExpiresAt },
+      });
+      const userChannel = await tx.userChannel.create({
+        data: {
+          userId: user.id,
+          channelType,
+          channelUserId,
+          channelUserPhone,
+          channelUsername,
+        },
+      });
+      return { user: { ...user, channels: [userChannel] }, userChannel, isNew: true };
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return null;
+    }
+    throw err;
+  }
+}
+
+export async function findOrCreateUserChannel(
+  channelType: ChannelType,
+  channelUserId: string,
+  channelUserPhone?: string,
+  channelUsername?: string,
   planExpiresAt?: Date,
-): Promise<UserWithChannels> {
-  return prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: { planCode: "trial", planStatus: "active", planExpiresAt },
-    });
-    await tx.userChannel.create({
-      data: { userId: user.id, channelType, channelId, channelCode },
-    });
-    return tx.user.findUniqueOrThrow({
-      where: { id: user.id },
-      include: { channels: true },
-    });
-  });
+): Promise<UserChannelResolution> {
+  const first = await attemptFindOrCreateUserChannel(
+    channelType,
+    channelUserId,
+    channelUserPhone,
+    channelUsername,
+    planExpiresAt,
+  );
+  if (first) return first;
+
+  // A concurrent request (webhook redelivery) resolved the same channelUserId
+  // between our lookup and write; re-read instead of failing the message.
+  const retry = await attemptFindOrCreateUserChannel(
+    channelType,
+    channelUserId,
+    channelUserPhone,
+    channelUsername,
+    planExpiresAt,
+  );
+  if (retry) return retry;
+
+  throw new Error(
+    `[findOrCreateUserChannel] failed to resolve UserChannel after retry (channelUserId=${channelUserId})`,
+  );
 }

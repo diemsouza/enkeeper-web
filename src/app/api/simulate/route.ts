@@ -69,7 +69,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
       if (mediaType === "image") {
-        const user = await findOrCreateUserByChannel("whatsapp", channelId);
+        const { user } = await findOrCreateUserByChannel(
+          "whatsapp",
+          channelId,
+          undefined,
+          typeof channelCode === "string" ? channelCode : undefined,
+        );
         const visionResult = await extractTextFromImage(buffer, user.id);
         if (visionResult.transcription_type === "description") {
           const noTextMsg = formatImageNoText();
@@ -101,8 +106,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const channel = new SimulatorChannel();
       void (async () => {
         await handleIncomingMessage({
-          channelId,
-          channelCode: typeof channelCode === "string" ? channelCode : undefined,
+          channelUserId: channelId,
+          channelUsername: typeof channelCode === "string" ? channelCode : undefined,
           channelType: channelType as ChannelType,
           text: extractedText,
           externalId: typeof externalId === "string" ? externalId : undefined,
@@ -148,8 +153,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const channel = new SimulatorChannel();
     void (async () => {
       await handleIncomingMessage({
-        channelId,
-        channelCode: channelCode ?? undefined,
+        channelUserId: channelId,
+        channelUsername: channelCode ?? undefined,
         channelType: channelType as ChannelType,
         text: text ?? undefined,
         externalId: externalId ?? undefined,

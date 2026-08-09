@@ -46,8 +46,9 @@ export type ParsedMessage = {
 };
 
 export type IncomingMessage = {
-  channelId: string;
-  channelCode?: string;
+  channelUserId: string;
+  channelUserPhone?: string;
+  channelUsername?: string;
   channelType: ChannelType;
   contactName?: string;
   text?: string;

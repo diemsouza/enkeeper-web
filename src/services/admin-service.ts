@@ -1,7 +1,7 @@
 import { User } from "../lib/prisma";
 import { countAllActivitiesByUser } from "../repo/activities.repo";
 import {
-  findUserByChannel,
+  findUserByPhone,
   fetchUserStats,
   updateUserPlan,
 } from "../repo/users.repo";
@@ -39,7 +39,7 @@ export async function handleAdminCommand(text: string): Promise<string> {
 }
 
 async function applyUpgrade(waId: string): Promise<string> {
-  const user = await findUserByChannel("whatsapp", waId);
+  const user = await findUserByPhone("whatsapp", waId);
   if (!user) return `Usuário não encontrado: ${waId}`;
   const planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await updateUserPlan(user.id, {
@@ -54,7 +54,7 @@ async function applyUpgrade(waId: string): Promise<string> {
 }
 
 async function applyExpire(waId: string): Promise<string> {
-  const user = await findUserByChannel("whatsapp", waId);
+  const user = await findUserByPhone("whatsapp", waId);
   if (!user) return `Usuário não encontrado: ${waId}`;
   const planExpiresAt = new Date();
   await updateUserPlan(user.id, { planStatus: "expired", planExpiresAt });
@@ -62,7 +62,7 @@ async function applyExpire(waId: string): Promise<string> {
 }
 
 async function applyExtend(waId: string, days: number): Promise<string> {
-  const user = await findUserByChannel("whatsapp", waId);
+  const user = await findUserByPhone("whatsapp", waId);
   if (!user) return `Usuário não encontrado: ${waId}`;
   const planExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
   await updateUserPlan(user.id, { planStatus: "active", planExpiresAt });
@@ -70,7 +70,7 @@ async function applyExtend(waId: string, days: number): Promise<string> {
 }
 
 async function fetchInfo(waId: string): Promise<string> {
-  const user = await findUserByChannel("whatsapp", waId);
+  const user = await findUserByPhone("whatsapp", waId);
   if (!user) return `Usuário não encontrado: ${waId}`;
   return buildUserInfo(user, waId);
 }
@@ -96,7 +96,7 @@ async function fetchUsersReport(): Promise<string> {
     ...stats.recent.map((u) => {
       const d = u.createdAt;
       const date = `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      return `${u.channelId} - ${u.name ?? "Nao identificado"} - ${date}`;
+      return `${u.channelUserId} - ${u.name ?? "Nao identificado"} - ${date}`;
     }),
   ];
   return lines.join("\n");

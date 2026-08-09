@@ -51,6 +51,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   after(async () => {
     const channel = new WhatsAppChannel();
     let wa_id: string | undefined;
+    let channelId: string | undefined;
     try {
       const payload = body as {
         entry?: Array<{
@@ -64,7 +65,12 @@ export async function POST(req: NextRequest): Promise<Response> {
                 image?: { id: string };
                 document?: { id: string; mime_type?: string };
               }>;
-              contacts?: Array<{ wa_id: string; profile?: { name?: string } }>;
+              contacts?: Array<{
+                wa_id?: string;
+                user_id?: string;
+                username?: string;
+                profile?: { name?: string };
+              }>;
               statuses?: Array<{
                 id: string;
                 status: string;
@@ -102,9 +108,12 @@ export async function POST(req: NextRequest): Promise<Response> {
       }
 
       wa_id = value.contacts?.[0]?.wa_id;
-      if (!wa_id) {
+      const user_id = value.contacts?.[0]?.user_id;
+      const username = value.contacts?.[0]?.username;
+      channelId = user_id ?? wa_id;
+      if (!channelId) {
         console.log(
-          "[post/api/webhooks/whatsapp] no wa_id in payload, skipping",
+          "[post/api/webhooks/whatsapp] no user_id or wa_id in payload, skipping",
         );
         return;
       }
@@ -112,7 +121,9 @@ export async function POST(req: NextRequest): Promise<Response> {
       const contactName = value.contacts?.[0]?.profile?.name;
       const message = value.messages[0];
       const base: IncomingMessage = {
-        channelId: wa_id,
+        channelUserId: channelId,
+        channelUserPhone: wa_id,
+        channelUsername: username,
         channelType: "whatsapp",
         externalId: message.id,
         contactName,
@@ -123,9 +134,14 @@ export async function POST(req: NextRequest): Promise<Response> {
         const isVoiceNote = message.audio.voice === true;
 
         if (!isVoiceNote) {
-          const user = await findOrCreateUserByChannel("whatsapp", wa_id);
+          const { user } = await findOrCreateUserByChannel(
+            "whatsapp",
+            channelId,
+            wa_id,
+            username,
+          );
           if (!canUseAudio(user)) {
-            await channel.sendMessage(wa_id, formatUpgradePrompt("audio"));
+            await channel.sendMessage(channelId, formatUpgradePrompt("audio"));
             return;
           }
         }
@@ -159,9 +175,14 @@ export async function POST(req: NextRequest): Promise<Response> {
       }
 
       if (message.type === "image" && message.image) {
-        const user = await findOrCreateUserByChannel("whatsapp", wa_id);
+        const { user } = await findOrCreateUserByChannel(
+          "whatsapp",
+          channelId,
+          wa_id,
+          username,
+        );
         if (!canUseImage(user)) {
-          await channel.sendMessage(wa_id, formatUpgradePrompt("image"));
+          await channel.sendMessage(channelId, formatUpgradePrompt("image"));
           return;
         }
         const { buffer, mimeType, fileSize } = await downloadMedia(
@@ -170,7 +191,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         const visionResult = await extractTextFromImage(buffer, user.id);
 
         if (visionResult.transcription_type === "description") {
-          await channel.sendMessage(wa_id, formatImageNoText());
+          await channel.sendMessage(channelId, formatImageNoText());
           return;
         }
 
@@ -194,9 +215,14 @@ export async function POST(req: NextRequest): Promise<Response> {
       const TEXT_MIME_TYPES = new Set(["application/octet-stream"]);
 
       if (message.type === "document" && message.document) {
-        const docUser = await findOrCreateUserByChannel("whatsapp", wa_id);
+        const { user: docUser } = await findOrCreateUserByChannel(
+          "whatsapp",
+          channelId,
+          wa_id,
+          username,
+        );
         if (!canPractice(docUser)) {
-          await channel.sendMessage(wa_id, formatPlanExpired());
+          await channel.sendMessage(channelId, formatPlanExpired());
           return;
         }
 
@@ -240,7 +266,7 @@ export async function POST(req: NextRequest): Promise<Response> {
             messageId: message.id,
           },
         );
-        await channel.sendMessage(wa_id, formatUnsupportedFileType());
+        await channel.sendMessage(channelId, formatUnsupportedFileType());
         return;
       }
 
@@ -255,7 +281,7 @@ export async function POST(req: NextRequest): Promise<Response> {
             messageId: message.id,
           },
         );
-        await channel.sendMessage(wa_id, formatUnsupportedFileType());
+        await channel.sendMessage(channelId, formatUnsupportedFileType());
         return;
       }
 
@@ -276,9 +302,9 @@ export async function POST(req: NextRequest): Promise<Response> {
         return;
       }
       console.error("[post/api/webhooks/whatsapp] processing error", err);
-      if (wa_id) {
+      if (channelId) {
         try {
-          await channel.sendMessage(wa_id, formatGenericError());
+          await channel.sendMessage(channelId, formatGenericError());
         } catch (fallbackError) {
           console.error(
             "[post/api/webhooks/whatsapp] failed to send generic error fallback",

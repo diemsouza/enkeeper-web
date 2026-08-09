@@ -7,6 +7,16 @@ type MediaDownloadResult = {
   sha256?: string;
 };
 
+const BSUID_FORMAT = /^[A-Z]{2}\.[A-Za-z0-9]+$/;
+
+function isBsuidFormat(value: string): boolean {
+  return BSUID_FORMAT.test(value);
+}
+
+function buildRecipientField(to: string): { recipient: string } | { to: string } {
+  return isBsuidFormat(to) ? { recipient: to } : { to };
+}
+
 export function mapWhatsAppStatus(rawStatus: string): ExternalMessageStatus | null {
   switch (rawStatus) {
     case "sent":
@@ -46,7 +56,7 @@ export async function sendWhatsAppMessage(
       },
       body: JSON.stringify({
         messaging_product: "whatsapp",
-        to,
+        ...buildRecipientField(to),
         type: "text",
         text: { body: text },
       }),
@@ -86,7 +96,7 @@ export async function sendWhatsAppTemplate(
       },
       body: JSON.stringify({
         messaging_product: "whatsapp",
-        to,
+        ...buildRecipientField(to),
         type: "template",
         template: {
           name: templateName,
@@ -171,7 +181,7 @@ export async function sendWhatsAppAudio(
       },
       body: JSON.stringify({
         messaging_product: "whatsapp",
-        to,
+        ...buildRecipientField(to),
         type: "audio",
         audio: { id: mediaId },
       }),

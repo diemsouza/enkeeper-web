@@ -52,6 +52,7 @@ import {
   formatOnboardingMsg4,
   formatDomainQuestion,
   formatNewActivityFlowCanceled,
+  formatFeedbackToSpeech,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
 import {
@@ -155,15 +156,13 @@ export async function handleIncomingMessage(
   channel: MessageChannel,
 ): Promise<void> {
   const rawText = (input.text ?? "").trim();
-  const user = await findOrCreateUserByChannel(
+  const { user, userChannel } = await findOrCreateUserByChannel(
     input.channelType,
-    input.channelId,
-    input.channelCode,
+    input.channelUserId,
+    input.channelUserPhone,
+    input.channelUsername,
     input.contactName ?? undefined,
   );
-  const userChannel = user.channels.find(
-    (c) => c.channelId === input.channelId,
-  )!;
 
   const text = input.text ?? "";
   const today = startOfDay(new Date());
@@ -192,11 +191,11 @@ export async function handleIncomingMessage(
 
   try {
     if (/^admin(\s|$)/i.test(rawText)) {
-      if (input.channelId !== process.env.WA_SUPPORT) return;
+      if (input.channelUserPhone !== process.env.WA_SUPPORT) return;
       const reply = await handleAdminCommand(rawText);
       await sendAndSaveMessage({
         channel,
-        to: userChannel.channelId,
+        to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
         content: reply,
@@ -238,7 +237,10 @@ export async function handleIncomingMessage(
         parsed.intent !== "cancel" &&
         parsed.intent !== "cancel_no"
       ) {
-        const channelCode = userChannel.channelCode ?? userChannel.channelId;
+        const channelCode =
+          userChannel.channelUsername ??
+          userChannel.channelUserPhone ??
+          userChannel.channelUserId;
         const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
         const supportMsg = formatInternalSupportMessage(
           channelCode,
@@ -263,7 +265,7 @@ export async function handleIncomingMessage(
         const supportReply = formatSupportReceived();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: supportReply,
@@ -286,7 +288,7 @@ export async function handleIncomingMessage(
         const cmdReply = formatCommandList(user.level ?? null);
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: cmdReply,
@@ -308,7 +310,7 @@ export async function handleIncomingMessage(
         const activitiesReply = formatActivitiesList(activities);
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: activitiesReply,
@@ -329,7 +331,7 @@ export async function handleIncomingMessage(
         const supportPrompt = formatSupportRequest();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: supportPrompt,
@@ -350,7 +352,7 @@ export async function handleIncomingMessage(
         const cancelReply = formatCanceled();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: cancelReply,
@@ -370,7 +372,7 @@ export async function handleIncomingMessage(
       const expiredReply = formatPlanExpired();
       await sendAndSaveMessage({
         channel,
-        to: userChannel.channelId,
+        to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
         content: expiredReply,
@@ -384,8 +386,9 @@ export async function handleIncomingMessage(
     if (!user.onboardedAt) {
       await markUserOnboarded(user.id);
       try {
-        const normalizedPhone = userChannel.channelId.replace(/\D/g, "");
-        await markWaitlistActive(normalizedPhone);
+        if (userChannel.channelUserPhone) {
+          await markWaitlistActive(userChannel.channelUserPhone);
+        }
       } catch (e) {
         console.error(
           `[handleIncomingMessage] Error to mark user ${user.id} as active in waitlist`,
@@ -413,7 +416,7 @@ export async function handleIncomingMessage(
         if (i > 0) await delay(ONBOARDING_MESSAGE_INTERVAL_SEC);
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: msgs[i],
@@ -427,7 +430,7 @@ export async function handleIncomingMessage(
         userChannel.id,
         today,
         channel,
-        userChannel.channelId,
+        userChannel.channelUserId,
       );
       return;
     }
@@ -456,7 +459,7 @@ export async function handleIncomingMessage(
         today,
         input,
         channel,
-        userChannel.channelId,
+        userChannel.channelUserId,
       );
       return;
     }
@@ -474,7 +477,7 @@ export async function handleIncomingMessage(
       const flowCancelledReply = formatNewActivityFlowCanceled();
       await sendAndSaveMessage({
         channel,
-        to: userChannel.channelId,
+        to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
         content: flowCancelledReply,
@@ -493,7 +496,7 @@ export async function handleIncomingMessage(
       const cancelledReply = formatLevelUpdateCanceled();
       await sendAndSaveMessage({
         channel,
-        to: userChannel.channelId,
+        to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
         content: cancelledReply,
@@ -520,7 +523,7 @@ export async function handleIncomingMessage(
           const levelMsg = formatLevelQuestion();
           await sendAndSaveMessage({
             channel,
-            to: userChannel.channelId,
+            to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
             content: levelMsg,
@@ -532,7 +535,7 @@ export async function handleIncomingMessage(
         const { outcome, message } = await processLevelResponse(text, user.id);
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: message,
@@ -547,7 +550,7 @@ export async function handleIncomingMessage(
               userChannel.id,
               today,
               channel,
-              userChannel.channelId,
+              userChannel.channelUserId,
             );
             await saveUserMsg(
               user.id,
@@ -594,7 +597,7 @@ export async function handleIncomingMessage(
         const result = processDomainResponse(text);
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: result.message,
@@ -665,7 +668,7 @@ export async function handleIncomingMessage(
           const errReply = formatNewActivityFlowCanceled();
           await sendAndSaveMessage({
             channel,
-            to: userChannel.channelId,
+            to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
             content: errReply,
@@ -683,7 +686,7 @@ export async function handleIncomingMessage(
 
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: result.message,
@@ -746,7 +749,7 @@ export async function handleIncomingMessage(
           const errReply = formatNewActivityFlowCanceled();
           await sendAndSaveMessage({
             channel,
-            to: userChannel.channelId,
+            to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
             content: errReply,
@@ -779,7 +782,7 @@ export async function handleIncomingMessage(
 
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: result.message,
@@ -812,7 +815,7 @@ export async function handleIncomingMessage(
           );
           await sendAndSaveMessage({
             channel,
-            to: userChannel.channelId,
+            to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
             content: noPendingReply,
@@ -841,7 +844,7 @@ export async function handleIncomingMessage(
             originalDocType,
             today,
             channel,
-            userChannel.channelId,
+            userChannel.channelUserId,
             lastUserMessage.id,
           );
           return;
@@ -858,7 +861,7 @@ export async function handleIncomingMessage(
         const reply = formatActivityReplaceCanceled();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: reply,
@@ -870,7 +873,10 @@ export async function handleIncomingMessage(
       // Aguardando mensagem de suporte
       if (pendingIntent === "support") {
         await updateUserPendingIntent(user.id, null);
-        const channelCode = userChannel.channelCode ?? userChannel.channelId;
+        const channelCode =
+          userChannel.channelUsername ??
+          userChannel.channelUserPhone ??
+          userChannel.channelUserId;
         const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
         const supportMsg = formatInternalSupportMessage(
           channelCode,
@@ -897,7 +903,7 @@ export async function handleIncomingMessage(
         const reply = formatSupportReceived();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: reply,
@@ -946,7 +952,7 @@ export async function handleIncomingMessage(
         const levelMsg = formatLevelQuestion();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: levelMsg,
@@ -961,7 +967,7 @@ export async function handleIncomingMessage(
           userChannel.id,
           today,
           channel,
-          userChannel.channelId,
+          userChannel.channelUserId,
         );
         await saveUserMsg(
           user.id,
@@ -1052,7 +1058,7 @@ export async function handleIncomingMessage(
           );
           await sendAndSaveMessage({
             channel,
-            to: userChannel.channelId,
+            to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
             content: limitMsg,
@@ -1080,7 +1086,7 @@ export async function handleIncomingMessage(
           });
           await sendAndSaveMessage({
             channel,
-            to: userChannel.channelId,
+            to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
             content: pendingReply,
@@ -1094,7 +1100,7 @@ export async function handleIncomingMessage(
         });
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
           content: replyActivation,
@@ -1108,7 +1114,7 @@ export async function handleIncomingMessage(
           userChannel.id,
           today,
           channel,
-          userChannel.channelId,
+          userChannel.channelUserId,
         );
         await saveUserMsg(
           user.id,
@@ -1214,6 +1220,9 @@ export async function handleIncomingMessage(
               const feedbackAudioPath = evaluation
                 ? await resolveFeedbackAudioPath(evaluation, pendingQuestion.id)
                 : null;
+              const feedbackSpeechText = evaluation
+                ? formatFeedbackToSpeech(evaluation)
+                : null;
               const evalTip = evaluation?.eval_tip;
               const tipMsg = evalTip ? formatEvalTip(evalTip) : null;
               const answerType = input.mediaType === "audio" ? "audio" : "text";
@@ -1285,7 +1294,7 @@ export async function handleIncomingMessage(
               );
               await sendAndSaveMessage({
                 channel,
-                to: userChannel.channelId,
+                to: userChannel.channelUserId,
                 userId: user.id,
                 userChannelId: userChannel.id,
                 activityId: activeActivity.id,
@@ -1298,11 +1307,11 @@ export async function handleIncomingMessage(
               if (feedbackAudioPath) {
                 await sendAndSaveMessage({
                   channel,
-                  to: userChannel.channelId,
+                  to: userChannel.channelUserId,
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
-                  content: feedback,
+                  content: feedbackSpeechText ?? feedback,
                   part: { audioPath: feedbackAudioPath },
                   intent: "practice_feedback",
                   questionId: pendingQuestion.id,
@@ -1323,7 +1332,7 @@ export async function handleIncomingMessage(
                 await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
                 await sendAndSaveMessage({
                   channel,
-                  to: userChannel.channelId,
+                  to: userChannel.channelUserId,
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
@@ -1342,7 +1351,7 @@ export async function handleIncomingMessage(
                   userChannel.id,
                   today,
                   channel,
-                  userChannel.channelId,
+                  userChannel.channelUserId,
                 );
                 if (sent) return;
               }
@@ -1353,7 +1362,7 @@ export async function handleIncomingMessage(
                 if (tipMsg) {
                   await sendAndSaveMessage({
                     channel,
-                    to: userChannel.channelId,
+                    to: userChannel.channelUserId,
                     userId: user.id,
                     userChannelId: userChannel.id,
                     activityId: activeActivity.id,
@@ -1366,7 +1375,7 @@ export async function handleIncomingMessage(
                 }
                 await sendAndSaveMessage({
                   channel,
-                  to: userChannel.channelId,
+                  to: userChannel.channelUserId,
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
@@ -1381,7 +1390,7 @@ export async function handleIncomingMessage(
                 await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
                 await sendAndSaveMessage({
                   channel,
-                  to: userChannel.channelId,
+                  to: userChannel.channelUserId,
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
@@ -1426,7 +1435,7 @@ export async function handleIncomingMessage(
     );
     await sendAndSaveMessage({
       channel,
-      to: userChannel.channelId,
+      to: userChannel.channelUserId,
       userId: user.id,
       userChannelId: userChannel.id,
       content: reply,

@@ -65,7 +65,7 @@ export async function mergeDoc(
       const msg = formatDocNoQuestions();
       await sendAndSaveMessage({
         channel,
-        to: userChannel.channelId,
+        to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
         content: msg,
@@ -92,7 +92,7 @@ export async function mergeDoc(
       const msg = formatLevelQuestion();
       await sendAndSaveMessage({
         channel,
-        to: userChannel.channelId,
+        to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
         content: msg,
@@ -116,7 +116,7 @@ export async function mergeDoc(
         );
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
           content: msg,
@@ -144,7 +144,7 @@ export async function mergeDoc(
         const msg = formatDocProcessingFailed();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
           content: msg,
@@ -164,7 +164,7 @@ export async function mergeDoc(
         const msg = formatInvalidContentMessage(docSectionResult.invalidReason);
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
           content: msg,
@@ -248,7 +248,7 @@ export async function mergeDoc(
         const summary = await buildPreviousActivitySummary(userId);
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
           content: msg,
@@ -257,7 +257,7 @@ export async function mergeDoc(
           await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
           await sendAndSaveMessage({
             channel,
-            to: userChannel.channelId,
+            to: userChannel.channelUserId,
             userId,
             userChannelId: userChannel.id,
             content: summary,
@@ -274,7 +274,7 @@ export async function mergeDoc(
         const msg = formatDocNoQuestions();
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelId,
+          to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
           content: msg,
@@ -293,7 +293,7 @@ export async function mergeDoc(
       const msg = formatDocProcessingFailed();
       await sendAndSaveMessage({
         channel,
-        to: userChannel.channelId,
+        to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
         content: msg,
