@@ -216,6 +216,8 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Geração de conteúdo por tema (nova atividade) | Claude Haiku 4.5 |
 | Geração de perguntas | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Avaliação de respostas + feedback | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
+| Texto-para-voz (áudio de feedback) | OpenAI (`gpt-4o-mini-tts`, principal) e Google Cloud TTS (fallback), alternável por configuração |
+| Armazenamento de mídia gerada | Supabase Storage, bucket separado por ambiente |
 | Evolução semanal | Modelo médio em batch |
 | Jobs agendados | Vercel Cron |
 | Pagamento (MVP) | Pix manual via suporte |
@@ -240,6 +242,8 @@ Custo variável por usuário Pro ativo:
 | **Total médio** | **R$4,30–6,30** |
 
 **Margem bruta:** 68–78%.
+
+Custo de texto-para-voz do feedback (rollout parcial, Seção 3 do Product-Backlog) ainda não tem medição real em produção. Estimativa inicial, baseada em preço de mercado dos provedores usados, fica bem abaixo dos demais itens da tabela, na casa de centavos por milhares de gerações, e é reduzida ainda mais pelo reuso do áudio já gerado por pergunta (sem regeneração em revisão espaçada). Revisar quando houver volume real desse fluxo.
 
 Geração de conteúdo por tema (nova atividade) ainda não tem custo médio medido em produção, é individual por usuário e por troca de atividade, sem compartilhamento entre usuários. O fluxo passou a usar duas chamadas de LLM por troca (validação do assunto com sugestão de pontos, depois resolução do ponto e geração), em vez de uma. Vale revisar essa tabela quando houver volume real desse fluxo.
 
@@ -328,6 +332,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - [ ] Gatilhos de upgrade contextuais
 - [ ] Pix manual via suporte
 - [ ] Material institucional para professor (1 página)
+- [ ] Dica de erro (evalTip) no feedback de resposta
 
 **Testes antes do beta:**
 - [ ] Fundador usando 7 dias sem bug crítico com material real de inglês

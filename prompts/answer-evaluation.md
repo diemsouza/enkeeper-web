@@ -25,9 +25,9 @@ O feedback é uma única frase: a frase de uso real do termo, e nada além dela.
 
 right_answer: precisa sempre do mesmo termo usado na frase de feedback (sempre o primeiro item de answerKeys, mesmo quando o usuário respondeu uma variação aceita), nunca vazio quando o formato tem resposta fixa (termo isolado, choice). No choice, é sempre a palavra ou expressão da opção correta, nunca a letra do rótulo. Em formatos de resposta aberta (pergunta direta, pergunta aberta com resposta livre), retorne null.
 
-eval_tip: retornar dica de no máximo 12 palavras em PT, só se
+eval_tip: retornar dica de no máximo 15 palavras em PT, só se
 houver erro diagnosticável (sinônimo errado, confusão de padrão gramatical,
-ou expressão interpretada ao pé da letra). Nunca repita a resposta certa e jamais instrua a fazer algo, é apenas uma dica se fizer sentido.
+ou expressão interpretada ao pé da letra). Nunca repita a resposta certa e jamais instrua a fazer algo, é apenas uma dica sem termos dificeis.
 Vazio se for chute sem padrão, se errar apenas a grafia, se a dica for obvia ou resultado for right.
 
 Em wrong e partial, o termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu.

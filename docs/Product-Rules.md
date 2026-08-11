@@ -23,6 +23,8 @@ Uma activity pode nascer de duas origens: material enviado pelo usuário (upload
 | `archived` | Substituído por nova atividade com ao menos 1 resposta |
 | `cancelled` | Substituído por nova atividade sem nenhuma resposta |
 
+Cada mudança de status é registrada com a data em que ocorreu, permitindo saber precisamente há quanto tempo uma activity está em determinado status, sem depender de qualquer campo técnico genérico de atualização, que pode mudar por motivos não relacionados ao status (ex: uma edição pontual de título não deve ser confundida com uma transição de status).
+
 Activity nunca encerra por inatividade. Só muda de status por ação do usuário, envio de novo material, ou conclusão do fluxo de nova atividade. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
 
 ### Recebimento de material (buffer antes da atividade)
@@ -185,6 +187,22 @@ Avaliado contra as respostas esperadas geradas na criação da atividade. Tom di
 - Encerrar com pergunta
 - Usar travessão como separador
 
+### 6.1 Áudio no feedback
+
+Feedback pode ser acompanhado de uma versão em áudio, enviada como mensagem separada logo após o feedback em texto. Só o conteúdo de demonstração vai para o áudio, sem a abertura de resultado e sem emoji, informação redundante em áudio, já carregada pela entonação da fala.
+
+Envio de áudio é parcial, não em toda resposta, controlado por uma fração configurável do total. Falha na geração ou envio do áudio nunca atrasa nem impede o feedback em texto, que segue as regras desta seção normalmente, sem nenhuma indicação de erro visível ao usuário.
+
+Reprodução do áudio pelo usuário é rastreada quando o canal informa esse evento (ver Seção 18).
+
+### 6.2 Dica de erro (evalTip)
+
+Feedback de erro ou parcial pode ser acompanhado de uma dica curta, enviada como mensagem separada logo após o feedback. Diferente do feedback em si, a dica pode apontar a causa específica do erro (sinônimo próximo incorreto, confusão de padrão gramatical, expressão interpretada ao pé da letra), mas nunca reformula a resposta certa como explicação nem funciona como definição de dicionário. É a única exceção deliberada às proibições desta seção, restrita ao próprio campo da dica, sem afetar o texto do feedback em si.
+
+Gerada só quando há diagnóstico específico do erro do usuário. Chute sem padrão identificável ou termo direto sem nuance não geram dica, o campo fica vazio nesses casos.
+
+Vale tanto para cadência quanto para sessão intensiva. Em sessão intensiva, a dica não atrasa nem bloqueia o disparo da próxima pergunta, é enviada em sequência imediata.
+
 ---
 
 ## 7. Repetição espaçada (SM-2 adaptado)
@@ -304,7 +322,7 @@ material de aula.
 Ao longo do dia, chegam perguntas sobre o que você escolher praticar,
 aqui mesmo.
 
-Você tem {TRIAL_DAYS} dias pra praticar sem custo. Use *ajuda* quando precisar ver
+Você tem {TRIAL_DAYS} dias pra praticar sem custo. Use *ajuda* pra ver
 os comandos disponíveis.
 ```
 
@@ -493,3 +511,21 @@ Atividade criada por este fluxo segue as mesmas regras de transição e visibili
 - **O sistema nunca se personifica.** Copy não usa framing de agente em primeira pessoa ("eu vou avaliar seu material", "eu te ajudo", "eu aviso"), nem trata o produto como personagem com vontade própria. Mensagens descrevem o que acontece, não o que "eu" faço. Essa regra já existia em relação a "eu paro", "eu pauso" no contexto de comandos, passa a cobrir qualquer construção de primeira pessoa em qualquer mensagem do sistema, não só as ligadas a comandos.
 - **Verbo padrão para envio de conteúdo é "enviar", não "mandar".** "Mandar" é registro mais informal e não é usado em nenhuma copy do produto. Vale para qualquer mensagem do sistema, onboarding, comandos ou fallback.
 - Emoji só é usado em mensagens formatadas diretamente no código, nunca em texto gerado por LLM (feedback de avaliação, resumo de atividade quando tiver componente gerado, qualquer resposta que passe por geração de texto livre). Dentro das mensagens de código, emoji é estratégico, não decorativo, cada um carrega um significado fixo e reconhecível. Vocabulário atual: 📘 início de atividade ou seção, 📊 resumo numérico, ⚠️ limite ou bloqueio. Novo emoji só entra no vocabulário quando resolve ambiguidade real de leitura rápida, não para variar visual ou suavizar tom.
+
+---
+
+## 17. Mídia gerada pelo sistema
+
+Áudio e outros arquivos gerados pelo sistema (hoje: áudio de feedback, ver Seção 6.1) são armazenados, diferente de mídia recebida do usuário (Seção 14), que é descartada após extração. O texto de origem que gerou o áudio é guardado junto ao arquivo, servindo de auditoria de o que foi de fato falado, e permitindo reenvio em texto sem necessidade de gerar áudio novo, caso necessário no futuro.
+
+Mídia associada a uma pergunta é removida do armazenamento (não o registro em si, que permanece como histórico) quando a atividade correspondente está `archived` ou `cancelled` há mais de 30 dias. Atividade `active` nunca tem mídia removida, independente de quanto tempo estiver parada. A remoção roda automaticamente, uma vez por dia, em lotes, sem necessidade de intervenção manual.
+
+---
+
+## 18. Rastreio de entrega e reprodução
+
+Mensagens enviadas pelo sistema guardam o identificador que o canal de envio atribui a cada mensagem, permitindo cruzar com eventos de status enviados por esse canal depois (entregue, lido, reproduzido).
+
+Cada canal (hoje: WhatsApp) traduz seu próprio formato de evento de status para um conjunto de valores canônico antes de persistir, para que a lógica de negócio nunca dependa do formato específico de um canal. Isso vale igualmente para qualquer canal adicionado no futuro (ver Seção 7 do Product-Brief, arquitetura multicanal).
+
+Reprodução de mídia (ex: áudio de feedback) é um evento à parte, diferente do status de entrega geral da mensagem. Uma mensagem pode estar entregue ou lida sem nunca ter sido reproduzida, são duas informações independentes.

@@ -13,11 +13,15 @@ function isBsuidFormat(value: string): boolean {
   return BSUID_FORMAT.test(value);
 }
 
-function buildRecipientField(to: string): { recipient: string } | { to: string } {
+function buildRecipientField(
+  to: string,
+): { recipient: string } | { to: string } {
   return isBsuidFormat(to) ? { recipient: to } : { to };
 }
 
-export function mapWhatsAppStatus(rawStatus: string): ExternalMessageStatus | null {
+export function mapWhatsAppStatus(
+  rawStatus: string,
+): ExternalMessageStatus | null {
   switch (rawStatus) {
     case "sent":
       return ExternalMessageStatus.sent;
@@ -183,7 +187,7 @@ export async function sendWhatsAppAudio(
         messaging_product: "whatsapp",
         ...buildRecipientField(to),
         type: "audio",
-        audio: { id: mediaId },
+        audio: { id: mediaId, voice: true },
       }),
     },
   );
