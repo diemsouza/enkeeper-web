@@ -12,6 +12,13 @@
   .cz-margin-vv {
     margin-bottom: var(--cz-vv-offset, 0px);
   }
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer base {
@@ -121,6 +128,12 @@
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 
   .glass-effect {

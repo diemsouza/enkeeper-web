@@ -13,8 +13,9 @@ export default function Pricing() {
 
   return (
     <section
+      id="pricing"
       ref={ref as React.RefObject<HTMLDivElement>}
-      className="bg-[#F5F5F7] dark:bg-[#1C1C1E] py-[120px] px-6 md:py-[80px]"
+      className="bg-[#F5F5F7] dark:bg-[#1C1C1E] py-[120px] px-6 md:py-[80px] scroll-mt-24"
     >
       <div
         className={cn(

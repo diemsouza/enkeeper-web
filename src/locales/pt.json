@@ -35,55 +35,46 @@
   },
   "home": {
     "phrases": {
-      "0": "A aula de inglês foi boa. O resto do dia foi em português. <strong>De novo.</strong>",
-      "1": "Aprendeu o vocabulário na aula. <strong>Na semana seguinte, esqueceu metade.</strong>",
-      "2": "Fez exercícios, anotou tudo. <strong>Não usou nenhuma vez.</strong>",
-      "3": "Aula ótima. Saiu da sala. <strong>O inglês ficou lá dentro.</strong>",
-      "4": "Você não esquece por falta de esforço. <strong>Esquece por falta de prática.</strong>",
-      "5": "30 minutos de aula. <strong>23 horas e meia em português.</strong>"
+      "0": "Você entendeu a reunião. <strong>No e-mail de resposta, travou.</strong>",
+      "1": "Você aprendeu a frase ontem. <strong>Hoje já não lembra.</strong>",
+      "2": "Você estudou inglês de viagem. <strong>No aeroporto, esqueceu tudo.</strong>",
+      "3": "Você fez a aula de terça. <strong>Na de quinta, já esqueceu metade.</strong>"
     },
-    "tagline": "Inglês o dia inteiro, no WhatsApp, no que fizer sentido pra você.",
-    "cta": "Experimentar grátis",
+    "headline": "Pratique inglês o dia inteiro, no WhatsApp, sobre o que você quiser.",
+    "price_teaser": "Teste grátis por 3 dias. R$19,90/mês para continuar.",
+    "cta": "Comece grátis",
     "microcopy": "Abre no WhatsApp · Comece grátis · Sem cadastro",
     "waitlist_microcopy": "Garanta sua vaga · Comece grátis",
     "waitlist": {
       "cta": "Entrar na lista de espera",
       "modal": {
         "title": "Lista de espera",
-        "description": "O Fluizer abre por etapas. Entra na lista e te aviso quando chegar sua vez.",
+        "description": "O Fluizer abre por etapas. Entre na lista para ser avisado quando chegar sua vez.",
         "name_placeholder": "Como você se chama?",
         "submit": "Garantir meu lugar",
         "success": "Lugar garantido! Em breve você começa a praticar.",
-        "error": "Algo deu errado por aqui. Tenta de novo em alguns minutos.",
+        "error": "Algo deu errado por aqui. Tente de novo em alguns minutos.",
         "already_waitlisted": "Você já está na lista. Logo chega sua vez de praticar.",
         "close": "Fechar"
       }
     },
     "who": {
       "title": "Para quem estuda inglês e quer praticar mais, sem obstáculo.",
-      "subtitle": "Não importa onde você aprende. Pratica o que quiser, no seu contexto e no seu ritmo, sem travar.",
+      "subtitle": "Não importa onde você aprende. Pratique o que quiser, no seu contexto e no seu ritmo, sem travar.",
       "cards": {
         "0": {
-          "title": "Aprendi na aula. Na semana seguinte, esqueci.",
-          "description": "Envie o material, ou diga o que quer praticar, e recebe perguntas ao longo do dia, com o conteúdo fresco. O que praticou fica. O que não, some."
-        },
-        "1": {
           "title": "Tentei manter a disciplina. Não consegui.",
           "description": "As perguntas chegam no WhatsApp que você já usa. Sem abrir app, sem sessão dedicada, sem lembrar de estudar. A prática acontece sem você precisar organizar."
         },
-        "2": {
+        "1": {
           "title": "Entendo quando leio. Trava quando preciso usar.",
           "description": "Responder de cabeça, sem consultar, é o que treina o uso real. É diferente de só reconhecer. Com prática ativa no dia a dia, a lacuna entre entender e usar vai fechando."
         },
-        "3": {
-          "title": "Estudo faz meses. Não sinto que evoluí.",
-          "description": "Cada material que você envia vira prática do dia. Com o tempo, dá pra ver o que fixou, o que ainda trava e o quanto avançou desde o começo."
-        },
-        "4": {
+        "2": {
           "title": "Tenho reunião em inglês amanhã. Já travei só de pensar.",
-          "description": "Envie o material do seu contexto, técnico, profissional, do que for, e pratica o que faz sentido pro seu momento. Não cenários genéricos que nunca acontecem na vida real."
+          "description": "Envie o material do seu contexto, técnico, profissional, do que for, e pratique o que faz sentido pro seu momento. Não cenários genéricos que nunca acontecem na vida real."
         },
-        "5": {
+        "3": {
           "title": "O que aprendo hoje some em dois dias.",
           "description": "O sistema identifica o que travou e traz de volta no momento certo, antes de esquecer de vez. Sem precisar lembrar de revisar, sem montar deck, sem disciplina extra."
         }
@@ -109,17 +100,194 @@
     },
     "pricing": {
       "title": "Comece grátis.",
-      "subtitle": "Acesso completo por 3 dias. Sem cartão e sem cadastro.",
+      "subtitle": "Acesso completo por {days} dias, sem cartão e sem cadastro.",
       "description": "Diga o que quer praticar, ou envie material: texto, imagem ou PDF. Pratique durante o dia. Se fizer sentido, continua por R$19,90/mês.",
-      "cta": "Experimentar grátis"
+      "cta": "Comece grátis"
     },
     "features_demo": {
       "title": "Na prática.",
       "subtitle": "Material ou tema, você escolhe. As perguntas chegam durante o dia.",
+      "cta_link": "Quero praticar",
       "blocks": {
         "0": {
-          "title": "As perguntas saem do seu material de estudo.",
-          "description": "Texto, foto ou PDF. O vocabulário da sua aula vira prática durante o dia.",
+          "title": "Pratica o que faz sentido pro seu momento.",
+          "description": "Não ter material em mãos não pode ser motivo pra não praticar. Você conta o que faz sentido pro seu momento, trabalho, viagem, aula, o que for, e a prática começa na hora, sem precisar montar nada antes.",
+          "chat": [
+            {
+              "from": "bot",
+              "text": "Sobre qual área quer praticar?",
+              "time": "08:00"
+            },
+            {
+              "from": "user",
+              "text": "Dia a dia e lazer",
+              "time": "08:01"
+            },
+            {
+              "from": "bot",
+              "text": "Qual assunto?",
+              "time": "08:01"
+            },
+            {
+              "from": "user",
+              "text": "Redes sociais e streaming",
+              "time": "08:02"
+            },
+            {
+              "from": "bot",
+              "text": "Quer praticar sobre Vocabulário geral, Expressões, presente contínuo (-ing) ou algum outro?",
+              "time": "08:02"
+            },
+            {
+              "from": "user",
+              "text": "Vocabulário",
+              "time": "08:03"
+            },
+            {
+              "from": "bot",
+              "text": "Pronto. Em alguns minutos chega a primeira pergunta.",
+              "time": "08:03"
+            }
+          ]
+        },
+        "1": {
+          "title": "As perguntas chegam no seu ritmo.",
+          "description": "A vida não para pra você estudar. As perguntas chegam ao longo do dia, no seu tempo, sem hora marcada. Você responde quando puder, e quando erra, entende o porquê na hora, não só que errou.",
+          "chat": [
+            {
+              "from": "bot",
+              "text": "Complete: \"Precisamos ___ a proposta até sexta.\" (finalizar)",
+              "time": "10:15"
+            },
+            {
+              "from": "user",
+              "text": "finish",
+              "time": "14:40"
+            },
+            {
+              "from": "bot",
+              "text": "❌ Quase! O certo aqui é \"finalize\": \"We need to finalize the proposal by Friday.\"",
+              "time": "14:41"
+            },
+            {
+              "from": "bot",
+              "text": "💡 \"Finalize\" é o verbo certo pra fechar algo formalmente. \"Finish\" existe, mas soa informal nesse contexto.",
+              "time": "14:41"
+            }
+          ]
+        },
+        "2": {
+          "title": "Quer praticar agora? É só pedir.",
+          "description": "Tem hora que bate vontade de praticar mais. Nessas horas, um comando muda o ritmo: as perguntas passam a chegar em sequência, sem esperar o dia, no fôlego que você quiser dar.",
+          "chat": [
+            {
+              "from": "user",
+              "text": "praticar",
+              "time": "20:00"
+            },
+            {
+              "from": "bot",
+              "text": "Modo prática intensiva ativado. Perguntas chegam uma após a outra, no seu ritmo. \n\n_Pare usando *pausar* ou após 15 minutos sem resposta._",
+              "time": "20:00"
+            },
+            {
+              "from": "bot",
+              "text": "Complete: \"She ___ to the gym every morning.\" (vai)",
+              "time": "20:00"
+            },
+            {
+              "from": "user",
+              "text": "goes",
+              "time": "20:00"
+            },
+            {
+              "from": "bot",
+              "text": "✅ Boa! \"She goes to the gym every morning.\"",
+              "time": "20:01"
+            },
+            {
+              "from": "bot",
+              "text": "Qual o significado de \"deadline\"?",
+              "time": "20:01"
+            },
+            {
+              "from": "user",
+              "text": "prazo final",
+              "time": "20:01"
+            },
+            {
+              "from": "bot",
+              "text": "✅ Exato! \"The deadline is next Friday.\"",
+              "time": "20:01"
+            },
+            {
+              "from": "bot",
+              "type": "voice",
+              "duration": "0:03",
+              "time": "20:01"
+            },
+            {
+              "from": "bot",
+              "text": "Você chegou (atrasado) numa reunião importante e pediu desculpas ao entrar. Qual o termo em inglês?",
+              "time": "20:02"
+            },
+            {
+              "from": "user",
+              "text": "late",
+              "time": "20:02"
+            },
+            {
+              "from": "bot",
+              "text": "✅ Boa! \"You showed up late to an important meeting and apologized as you walked in.\"",
+              "time": "20:02"
+            },
+            {
+              "from": "bot",
+              "text": "Marque a opção certa: \"I ___ finished the report.\"\na) have\nb) has\nc) having",
+              "time": "20:03"
+            },
+            {
+              "from": "user",
+              "text": "a",
+              "time": "20:03"
+            },
+            {
+              "from": "bot",
+              "text": "✅ Correto! \"I have finished the report.\"",
+              "time": "20:03"
+            }
+          ]
+        },
+        "3": {
+          "title": "Ouça e repita. Treine o listening também.",
+          "description": "Ler e escrever não é a mesma coisa que entender e falar. O feedback pode chegar em áudio, você escuta a pronúncia certa e repete, treinando o ouvido e a fala no mesmo lugar onde já pratica o resto.",
+          "chat": [
+            {
+              "from": "bot",
+              "text": "Complete: \"I need to ___ a meeting for tomorrow.\" (agendar)",
+              "time": "16:00"
+            },
+            {
+              "from": "user",
+              "text": "schedule",
+              "time": "16:03"
+            },
+            {
+              "from": "bot",
+              "text": "✅ Boa! \"I need to schedule a meeting for tomorrow.\"",
+              "time": "16:03"
+            },
+            {
+              "from": "bot",
+              "type": "voice",
+              "duration": "0:04",
+              "time": "16:03"
+            }
+          ]
+        },
+        "4": {
+          "title": "Também aceita material pronto.",
+          "description": "Já tem material da aula? Não precisa escolher entre um ou outro. Envie foto, PDF ou texto quando quiser, e as perguntas saem exatamente daquele conteúdo.",
           "chat": [
             {
               "from": "user",
@@ -130,65 +298,39 @@
             },
             {
               "from": "bot",
-              "text": "Material recebido. Em breve começa a prática.",
+              "text": "Recebido. Você pode enviar mais materiais ou só aguardar. Use *cancelar* para descartar e começar de novo.",
               "time": "08:10"
             },
             {
               "from": "bot",
-              "text": "Como se diz \"prazo\" em inglês?",
-              "time": "09:15"
-            },
-            {
-              "from": "user",
-              "text": "deadline",
-              "time": "09:22"
-            },
-            {
-              "from": "bot",
-              "text": "✅ Boa! \"The deadline is Friday.\"",
-              "time": "09:22"
+              "text": "Pronto. Em alguns minutos chega a primeira pergunta.",
+              "time": "08:11"
             }
           ]
         },
-        "1": {
-          "title": "Prática no seu ritmo.",
-          "description": "As perguntas chegam espaçadas ao longo do dia. Você responde quando puder. O que errou volta depois.",
+        "5": {
+          "title": "Resumo a cada troca de atividade.",
+          "description": "Trocar de assunto não devia apagar o que você já tinha construído. A cada troca de atividade ou material novo, chega um resumo rápido do que ficou pra trás, antes da próxima pergunta chegar.",
           "chat": [
             {
               "from": "bot",
-              "text": "Como se diz \"lidar com\" em inglês?\na) deal with\nb) handle on\nc) face up\nd) manage to",
-              "time": "11:30"
+              "text": "📊 Resumo da última atividade: *Advérbios de Conjunção*\n\nEm 3 dias, você respondeu 20 de 25 perguntas, 85% de acerto entre as respondidas (17 certas e 3 erradas), sendo 2 delas revisadas mais de uma vez antes de fixar. Ficaram 5 perguntas sem resposta.\n\nPoucas respostas saíram erradas. Você fixou a maior parte desse conteúdo antes de trocar de material.",
+              "time": "17:30"
+            },
+            {
+              "from": "bot",
+              "text": "📘 Hora de praticar! *Vocabulário de Tarefas Domésticas*",
+              "time": "17:31"
+            },
+            {
+              "from": "bot",
+              "text": "Complete: \"I need to ___ before we run out of clean clothes.\" (lavar roupa)",
+              "time": "17:31"
             },
             {
               "from": "user",
-              "text": "C",
-              "time": "14:45"
-            },
-            {
-              "from": "bot",
-              "text": "⚠️ Quase! \"Face up\" precisa de \"to\": \"You need to face up to it.\"",
-              "time": "14:45"
-            }
-          ]
-        },
-        "2": {
-          "title": "O sistema aprende o que travou.",
-          "description": "Acertos e erros ficam registrados. O que travou volta por repetição espaçada, na hora certa.",
-          "chat": [
-            {
-              "from": "bot",
-              "text": "Complete: \"I need to ___ a meeting for tomorrow.\" (agendar)",
-              "time": "16:00"
-            },
-            {
-              "from": "user",
-              "text": "make",
-              "time": "16:03"
-            },
-            {
-              "from": "bot",
-              "text": "❌ Errado! \"Schedule\" é o certo: \"I need to schedule a meeting.\"",
-              "time": "16:03"
+              "text": "do the laundry",
+              "time": "17:35"
             }
           ]
         }

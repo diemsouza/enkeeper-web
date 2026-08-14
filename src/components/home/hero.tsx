@@ -2,9 +2,10 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
+import { ArrowDown } from "lucide-react";
 import { HomeCTA } from "@/src/components/home/home-cta";
 
-const PHRASE_COUNT = 6;
+const PHRASE_COUNT = 4;
 const TYPE_SPEED = 85;
 const DELETE_SPEED = 30;
 const PAUSE_MS = 3200;
@@ -48,7 +49,6 @@ function renderTyped(phrase: Segment[], charIndex: number) {
 }
 
 export default function Hero() {
-  const tApp = useTranslations("app");
   const t = useTranslations("home");
 
   const phrases = useMemo(
@@ -112,10 +112,15 @@ export default function Hero() {
   const displayedTotal = reducedMotion ? totalChars(currentPhrase) : charIndex;
 
   return (
-    <section className="section-light min-h-screen flex flex-col items-center justify-center pt-20 pb-24 px-6 gap-y-8">
-      {/* Typewriter */}
+    <section className="section-light relative min-h-screen flex flex-col items-center justify-center pt-20 pb-24 px-6 gap-y-8">
       <div className="max-w-3xl w-full flex flex-col items-center gap-y-3">
-        <div className="min-h-[240px] sm:min-h-[200px] lg:min-h-[240px] flex items-center justify-center w-full">
+        {/* Headline fixa */}
+        <h1 className="text-[20px] sm:text-[28px] lg:text-[30px] font-normal leading-[1.15] text-center text-muted-foreground">
+          {t("headline")}
+        </h1>
+
+        {/* Frase rotativa (typewriter) */}
+        <div className="min-h-[240px] sm:min-h-[200px] lg:min-h-[300px] flex items-center justify-center w-full">
           <p className="text-[40px] sm:text-[56px] lg:text-[64px] font-normal leading-[1.15] text-center">
             {renderTyped(currentPhrase, displayedTotal)}
             <span
@@ -130,12 +135,9 @@ export default function Hero() {
           </p>
         </div>
 
-        {/* Tagline */}
-        <p className="text-[18px] font-normal text-muted-foreground text-center">
-          <strong className="font-normal text-black dark:text-white">
-            {tApp("brand")}
-          </strong>
-          . {t("tagline")}
+        {/* Preço sutil */}
+        <p className="text-sm font-normal text-muted-foreground/80 text-center">
+          {t("price_teaser")}
         </p>
       </div>
 
@@ -145,10 +147,18 @@ export default function Hero() {
           waLabel={t("cta")}
           buttonClassName="rounded-full px-8 h-12 font-semibold gap-2 text-base"
         />
-        <p className="text-[13px] text-muted-foreground/70 text-center">
+        <p className="text-sm text-muted-foreground/70 text-center">
           {IS_WAITLIST ? t("waitlist_microcopy") : t("microcopy")}
         </p>
       </div>
+
+      <a
+        href="#features"
+        aria-label="Rolar para o próximo conteúdo"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-muted-foreground/60"
+      >
+        <ArrowDown className="w-6 h-6" />
+      </a>
     </section>
   );
 }

@@ -35,22 +35,21 @@
   },
   "home": {
     "phrases": {
-      "0": "Just learned a new English word. <strong>Where do you write it down?</strong>",
-      "1": "Heard a new expression in a show. <strong>Gone with the episode.</strong>",
-      "2": "Sent a message to yourself. <strong>Again.</strong>",
-      "3": "Wrote it on paper. <strong>The paper disappeared.</strong>",
-      "4": "Ten new words this week. <strong>How many do you remember?</strong>",
-      "5": "Left class with three new expressions. <strong>Where are they now?</strong>"
+      "0": "You understood the meeting. <strong>Writing the reply email, you froze.</strong>",
+      "1": "You learned the phrase yesterday. <strong>Today you already forgot it.</strong>",
+      "2": "You studied travel English. <strong>At the airport, you forgot everything.</strong>",
+      "3": "You took Tuesday's class. <strong>By Thursday, you'd forgotten half of it.</strong>"
     },
-    "tagline": "Your notes on WhatsApp.",
-    "cta": "Get started",
+    "headline": "Practice English all day, on WhatsApp, about anything you want.",
+    "price_teaser": "Free trial for 3 days. R$19.90/month to continue.",
+    "cta": "Start free",
     "microcopy": "Opens on WhatsApp · Get started free · No sign-up",
     "waitlist_microcopy": "Secure your spot · Get started free · No sign-up",
     "waitlist": {
       "cta": "Join the waitlist",
       "modal": {
         "title": "Waitlist",
-        "description": "Fluizer opens in stages. Join the list and I'll let you know when it's your turn.",
+        "description": "Fluizer opens in stages. Join the list to be notified when it's your turn.",
         "name_placeholder": "What's your name?",
         "submit": "Save my spot",
         "success": "Spot saved! I'll let you know when it's your turn.",
@@ -64,35 +63,27 @@
       "subtitle": "No matter how you learn. Fluizer fits the way you do it.",
       "cards": {
         "0": {
-          "title": "The self-taught learner",
-          "description": "Learns from YouTube, shows, podcasts. Has material everywhere and nothing organized. Fluizer practices with you based on what you already have."
-        },
-        "1": {
           "title": "The course student",
           "description": "Takes classes but never reviews outside them. Send the class material and Fluizer practices with you all day on the WhatsApp you already use."
         },
-        "2": {
+        "1": {
           "title": "The professional",
           "description": "Uses English at work but freezes on specific vocabulary. Send content from your context and practice throughout the day."
         },
-        "3": {
-          "title": "The binge-watcher",
-          "description": "Pauses, writes down the expression, keeps watching. Fluizer turns what you captured into practice throughout the day."
-        },
-        "4": {
+        "2": {
           "title": "The traveler",
           "description": "About to travel or already abroad. Send everyday vocabulary, real situations and slang - and practice before you need it."
         },
-        "5": {
+        "3": {
           "title": "The one who tried and quit",
           "description": "Already tried Anki, Duolingo, Quizlet. Got tired of opening yet another app. Fluizer works inside the WhatsApp you already open fifty times a day."
         }
       }
     },
     "pricing": {
-      "title": "Start now, free and no sign-up needed.",
-      "subtitle": "Use for free and upgrade when you're ready.",
-      "description": "Free to start: up to 5 notes per day and 3 tags. On the Pro plan for R$14.90/month you get 30 daily notes, unlimited tags, transcribed audio and search across everything you've saved.",
+      "title": "Start for free.",
+      "subtitle": "Full access for {days} days, no card and no sign-up.",
+      "description": "Say what you want to practice, or send material: text, image or PDF. Practice throughout the day. If it's worth it, continue for R$19.90/month.",
       "cta": "Start free"
     },
     "footer": {
@@ -101,74 +92,232 @@
       "terms": "Terms of Use"
     },
     "features_demo": {
-      "title": "That simple.",
-      "subtitle": "From new vocabulary to daily review. One message does it.",
+      "title": "In practice.",
+      "subtitle": "Material or topic, you choose. Questions arrive throughout the day.",
+      "cta_link": "I want to practice",
       "blocks": {
         "0": {
-          "title": "Send anything. It's saved.",
-          "description": "Text or transcribed audio. Any message becomes a note with no extra steps.",
+          "title": "Practice what fits your moment.",
+          "description": "Not having material on hand shouldn't stop you from practicing. Tell it what fits your moment, work, travel, class, whatever it is, and practice starts right away, no setup needed.",
           "chat": [
             {
-              "from": "user",
-              "text": "shadow of a doubt - without any doubt #english",
-              "time": "10:30"
-            },
-            {
               "from": "bot",
-              "text": "*Saved to* #english\n32 notes in this tag",
-              "time": "10:30"
+              "text": "Which area do you want to practice?",
+              "time": "08:00"
             },
             {
               "from": "user",
-              "text": "bite the bullet - face something difficult #english #idioms",
-              "time": "10:31"
+              "text": "Everyday life and leisure",
+              "time": "08:01"
             },
             {
               "from": "bot",
-              "text": "*Saved to* #english #idioms",
-              "time": "now"
+              "text": "What topic?",
+              "time": "08:01"
+            },
+            {
+              "from": "user",
+              "text": "Social media and streaming",
+              "time": "08:02"
+            },
+            {
+              "from": "bot",
+              "text": "Want to practice general vocabulary, expressions, present continuous (-ing), or something else?",
+              "time": "08:02"
+            },
+            {
+              "from": "user",
+              "text": "Vocabulary",
+              "time": "08:03"
+            },
+            {
+              "from": "bot",
+              "text": "All set. The first question arrives in a few minutes.",
+              "time": "08:03"
             }
           ]
         },
         "1": {
-          "title": "Use # to organize.",
-          "description": "Your notes organized by category. Send # to see all tags or #tag to list the notes inside.",
+          "title": "Questions arrive at your pace.",
+          "description": "Life doesn't pause for you to study. Questions arrive throughout the day, on your time, with no set schedule. You answer when you can, and when you get one wrong, you understand why right away, not just that you missed it.",
           "chat": [
             {
-              "from": "user",
-              "text": "#",
-              "time": "2:22 PM"
-            },
-            {
               "from": "bot",
-              "text": "*Your tags:*\n#english - 47\n#phrasal - 18\n#idioms - 12\n#vocabulary - 9",
-              "time": "2:22 PM"
+              "text": "Complete: \"We need to ___ the proposal by Friday.\" (finalize)",
+              "time": "10:15"
             },
             {
               "from": "user",
-              "text": "#phrasal",
-              "time": "2:23 PM"
+              "text": "finish",
+              "time": "14:40"
             },
             {
               "from": "bot",
-              "text": "*#phrasal - 18 notes:*\n- run into - come across by chance\n- give up - stop trying\n- keep up - maintain the pace\n- and 15 more",
-              "time": "now"
+              "text": "Almost! The right word here is \"finalize\": \"We need to finalize the proposal by Friday.\"",
+              "time": "14:41"
+            },
+            {
+              "from": "bot",
+              "text": "💡 \"Finalize\" is the right verb to formally wrap something up. \"Finish\" works, but sounds informal here.",
+              "time": "14:41"
             }
           ]
         },
         "2": {
-          "title": "Search by word. Results instantly.",
-          "description": "No need to remember the tag or when you saved it. Send /search and Fluizer finds it across all your notes.",
+          "title": "Want to practice right now? Just ask.",
+          "description": "Sometimes you just want to practice more. In those moments, one command changes the pace: questions start arriving back to back, without waiting for the day, at whatever speed you want to go.",
           "chat": [
             {
               "from": "user",
-              "text": "/search doubt",
-              "time": "9:14 AM"
+              "text": "practice",
+              "time": "20:00"
             },
             {
               "from": "bot",
-              "text": "*2 notes found:*\n- shadow of a doubt - without any doubt\n- beyond doubt - without question",
-              "time": "now"
+              "text": "Intensive practice mode activated. Questions arrive one after another, at your pace. \n\n_Stop using *pause* or after 15 minutes without a reply._",
+              "time": "20:00"
+            },
+            {
+              "from": "bot",
+              "text": "Complete: \"She ___ to the gym every morning.\" (goes)",
+              "time": "20:00"
+            },
+            {
+              "from": "user",
+              "text": "goes",
+              "time": "20:00"
+            },
+            {
+              "from": "bot",
+              "text": "✅ Nice! \"She goes to the gym every morning.\"",
+              "time": "20:01"
+            },
+            {
+              "from": "bot",
+              "text": "What does \"deadline\" mean?",
+              "time": "20:01"
+            },
+            {
+              "from": "user",
+              "text": "final due date",
+              "time": "20:01"
+            },
+            {
+              "from": "bot",
+              "text": "✅ Exactly! \"The deadline is next Friday.\"",
+              "time": "20:01"
+            },
+            {
+              "from": "bot",
+              "type": "voice",
+              "duration": "0:03",
+              "time": "20:01"
+            },
+            {
+              "from": "bot",
+              "text": "You showed up (late) to an important meeting and apologized as you walked in. What's the term in English?",
+              "time": "20:02"
+            },
+            {
+              "from": "user",
+              "text": "late",
+              "time": "20:02"
+            },
+            {
+              "from": "bot",
+              "text": "✅ Nice! \"You showed up late to an important meeting and apologized as you walked in.\"",
+              "time": "20:02"
+            },
+            {
+              "from": "bot",
+              "text": "Pick the right option: \"I ___ finished the report.\"\na) have\nb) has\nc) having",
+              "time": "20:03"
+            },
+            {
+              "from": "user",
+              "text": "a",
+              "time": "20:03"
+            },
+            {
+              "from": "bot",
+              "text": "✅ Correct! \"I have finished the report.\"",
+              "time": "20:03"
+            }
+          ]
+        },
+        "3": {
+          "title": "Listen and repeat. Train listening too.",
+          "description": "Reading and writing isn't the same as understanding and speaking. Feedback can arrive as audio, you hear the correct pronunciation and repeat it, training your ear and your speech in the same place where you already practice everything else.",
+          "chat": [
+            {
+              "from": "bot",
+              "text": "Complete: \"I need to ___ a meeting for tomorrow.\" (schedule)",
+              "time": "16:00"
+            },
+            {
+              "from": "user",
+              "text": "schedule",
+              "time": "16:03"
+            },
+            {
+              "from": "bot",
+              "text": "Nice! \"I need to schedule a meeting for tomorrow.\"",
+              "time": "16:03"
+            },
+            {
+              "from": "bot",
+              "type": "voice",
+              "duration": "0:04",
+              "time": "16:03"
+            }
+          ]
+        },
+        "4": {
+          "title": "Also works with material you already have.",
+          "description": "Already have material from class? You don't have to choose one or the other. Send a photo, PDF or text whenever you want, and questions come straight from that content.",
+          "chat": [
+            {
+              "from": "user",
+              "type": "file",
+              "fileName": "Vocabulary Class 3.pdf",
+              "fileSize": "5 pages · PDF · 12 kB",
+              "time": "08:10"
+            },
+            {
+              "from": "bot",
+              "text": "Received. You can send more materials or just wait. Use *cancel* to discard it and start over.",
+              "time": "08:10"
+            },
+            {
+              "from": "bot",
+              "text": "All set. The first question arrives in a few minutes.",
+              "time": "08:11"
+            }
+          ]
+        },
+        "5": {
+          "title": "A summary every time you switch activity.",
+          "description": "Switching topics shouldn't erase what you've already built. Every time you change activity or send new material, a quick summary arrives with what's behind you, before the next question comes in.",
+          "chat": [
+            {
+              "from": "bot",
+              "text": "📊 Previous activity summary: *Conjunctive Adverbs*\n\nOver 3 days, you answered 20 of 25 questions, 85% correct among the ones answered (17 right and 3 wrong), with 2 of them reviewed more than once before sticking. 5 questions were left unanswered.\n\nFew answers came out wrong. You locked in most of this content before switching material.",
+              "time": "17:30"
+            },
+            {
+              "from": "bot",
+              "text": "📘 Time to practice! *Household Chores Vocabulary*",
+              "time": "17:31"
+            },
+            {
+              "from": "bot",
+              "text": "Complete: \"I need to ___ before we run out of clean clothes.\" (do the laundry)",
+              "time": "17:31"
+            },
+            {
+              "from": "user",
+              "text": "do the laundry",
+              "time": "17:35"
             }
           ]
         }

@@ -3,25 +3,11 @@
 import { cn } from "@/src/lib/utils";
 import { useInView } from "@/src/hooks/use-in-view";
 import { useTranslations } from "next-intl";
-import {
-  BookOpen,
-  Briefcase,
-  TrendingUp,
-  Calendar,
-  MessageSquare,
-  Brain,
-} from "lucide-react";
+import { Briefcase, Calendar, MessageSquare, Brain } from "lucide-react";
 import React from "react";
 
-const CARD_COUNT = 6;
-const CARD_ICONS = [
-  BookOpen,
-  Calendar,
-  MessageSquare,
-  TrendingUp,
-  Briefcase,
-  Brain,
-] as const;
+const CARD_COUNT = 4;
+const CARD_ICONS = [Calendar, MessageSquare, Briefcase, Brain] as const;
 
 export default function WhoFor() {
   const t = useTranslations("home.who");
@@ -47,7 +33,7 @@ export default function WhoFor() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
           {Array.from({ length: CARD_COUNT }, (_, i) => (
             <div
               key={i}

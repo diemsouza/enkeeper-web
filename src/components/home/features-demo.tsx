@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { ArrowDown } from "lucide-react";
 import { WhatsAppChat } from "@/src/components/whatsapp-chat";
 import { useInView } from "@/src/hooks/use-in-view";
 import { cn } from "@/src/lib/utils";
@@ -9,23 +10,24 @@ type RawMsg = {
   from: "user" | "bot";
   text?: string;
   time: string;
-  type?: "file";
+  type?: "file" | "voice";
   fileName?: string;
   fileSize?: string;
+  duration?: string;
 };
 
 export default function FeaturesDemo() {
   const tDemo = useTranslations("home.features_demo");
   const [ref, inView] = useInView();
 
-  const blocks = [0, 1, 2].map((i) => ({
+  const blocks = [0, 1, 2, 3, 4, 5].map((i) => ({
     title: tDemo(`blocks.${i}.title`),
     description: tDemo(`blocks.${i}.description`),
     messages: tDemo.raw(`blocks.${i}.chat`) as RawMsg[],
   }));
 
   return (
-    <section className="bg-[#F5F5F7] dark:bg-[#1C1C1E] py-[80px] md:py-[120px] px-6">
+    <section id="features" className="bg-[#F5F5F7] dark:bg-[#1C1C1E] py-[80px] md:py-[120px] px-6">
       <div className="max-w-[720px] mx-auto flex flex-col gap-12">
         {/* Header */}
         <div
@@ -59,9 +61,20 @@ export default function FeaturesDemo() {
               <p className="text-[16px] text-muted-foreground leading-[1.7]">
                 {block.description}
               </p>
+              <a
+                href="#pricing"
+                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline underline-offset-4"
+              >
+                {tDemo("cta_link")}
+                <ArrowDown className="w-3.5 h-3.5" />
+              </a>
             </div>
             <div className="shrink-0">
-              <WhatsAppChat messages={block.messages} />
+              <WhatsAppChat
+                messages={block.messages}
+                widthClassName="w-full max-w-[400px] sm:max-w-[420px] mx-auto"
+                maxHeightClassName="max-h-[400px]"
+              />
             </div>
           </div>
         ))}

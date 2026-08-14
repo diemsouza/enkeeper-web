@@ -2,6 +2,7 @@
 
 import Nav from "./nav";
 import Hero from "./hero";
+import FloatingCta from "./floating-cta";
 import FeaturesDemo from "./features-demo";
 import WhoFor from "./who-for";
 import Pricing from "./pricing";
@@ -12,6 +13,7 @@ export default function HomePage() {
     <div className="flex flex-col">
       <Nav />
       <Hero />
+      <FloatingCta />
       <FeaturesDemo />
       <WhoFor />
       <Pricing />
