@@ -7,7 +7,6 @@ export const FIRST_MESSAGE_INTERVAL_MIN = 2;
 export const LOCALES = ["pt-BR", "en-US"];
 export const DEFAULT_LOCALE = "pt-BR";
 export const DEFAULT_CURRENCY = "BRL";
-export const WHATSAPP_NUMBER = "551153069000";
 export const INTENSIVE_UNTIL_MIN = 15;
 export const DAILY_PRACTICE_LIMIT = 60;
 export const CADENCE_RESERVE = 24;
