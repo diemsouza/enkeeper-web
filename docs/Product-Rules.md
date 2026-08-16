@@ -193,7 +193,7 @@ Feedback pode ser acompanhado de uma versão em áudio, enviada como mensagem se
 
 Envio de áudio é parcial, não em toda resposta, controlado por uma fração configurável do total. Falha na geração ou envio do áudio nunca atrasa nem impede o feedback em texto, que segue as regras desta seção normalmente, sem nenhuma indicação de erro visível ao usuário.
 
-Reprodução do áudio pelo usuário é rastreada quando o canal informa esse evento (ver Seção 18).
+O áudio é enviado como nota de voz reconhecida pelo canal, não como anexo de áudio comum. Essa forma de envio é o que habilita o rastreio de reprodução; um áudio enviado como anexo genérico, mesmo com o conteúdo idêntico, não gera esse rastreio. Reprodução do áudio pelo usuário é rastreada quando o canal informa esse evento (ver Seção 18).
 
 ### 6.2 Dica de erro (evalTip)
 
@@ -492,6 +492,8 @@ A combinação de nível, objetivo, assunto e ponto passa por duas chamadas de L
 
 Diferente de material de upload, conteúdo gerado por este fluxo é individual: sem pool compartilhado entre usuários, sem versionamento. Cada geração é única para o usuário e para aquela troca de atividade específica. Essa é uma diferença deliberada em relação a desenhos anteriores considerados para este fluxo, o custo de geração escala por usuário e por troca, não há reuso de conteúdo entre usuários.
 
+Sem revisão humana prévia antes da entrega ao usuário, diferente do que um pool compartilhado permitiria. A validação de encaixe e conteúdo proibido no passo de geração reduz risco, mas não substitui auditoria amostral do conteúdo já entregue.
+
 ### Criação da atividade
 
 Atividade criada por este fluxo segue as mesmas regras de transição e visibilidade da Seção 1 (arquiva ou cancela conforme a anterior teve resposta), e conta para o mesmo cap diário de 5 atividades por usuário por dia (Seção 14).
@@ -517,6 +519,8 @@ Atividade criada por este fluxo segue as mesmas regras de transição e visibili
 ## 17. Mídia gerada pelo sistema
 
 Áudio e outros arquivos gerados pelo sistema (hoje: áudio de feedback, ver Seção 6.1) são armazenados, diferente de mídia recebida do usuário (Seção 14), que é descartada após extração. O texto de origem que gerou o áudio é guardado junto ao arquivo, servindo de auditoria de o que foi de fato falado, e permitindo reenvio em texto sem necessidade de gerar áudio novo, caso necessário no futuro.
+
+O áudio armazenado é reaproveitado sempre que a mesma pergunta volta, seja por revisão espaçada (Seção 7) ou por reenvio dentro da sessão intensiva, sem gerar de novo. Regeneração só ocorre se o áudio original não existir mais no armazenamento.
 
 Mídia associada a uma pergunta é removida do armazenamento (não o registro em si, que permanece como histórico) quando a atividade correspondente está `archived` ou `cancelled` há mais de 30 dias. Atividade `active` nunca tem mídia removida, independente de quanto tempo estiver parada. A remoção roda automaticamente, uma vez por dia, em lotes, sem necessidade de intervenção manual.
 

@@ -94,6 +94,14 @@ Quando o usuário não tem material em mãos, ou quer trocar de assunto sem subi
 
 Ponto representa o aspecto da língua a praticar dentro do assunto escolhido, vocabulário geral, um tempo verbal, uma estrutura gramatical, entre outros, e pode combinar até 2 pontos numa mesma geração quando informado por texto livre.
 
+Geração é individual por usuário e por troca de atividade, sem pool compartilhado nem versionamento entre usuários. Essa é uma escolha deliberada: simplifica o desenho e evita reuso indevido de conteúdo entre pessoas diferentes, ao custo de não ter economia de cache no processo de geração.
+
+### Áudio no feedback
+
+Após o feedback em texto de uma resposta, uma fração das interações recebe também uma versão em áudio da frase de exemplo, enviada como mensagem separada, sem a abertura de resultado. É a única camada de listening do produto hoje, prática que era ausente antes dessa camada, que combinava só leitura e escrita.
+
+Rollout é parcial por configuração, o que permite validar a percepção de valor do listening antes de decidir expandir a cobertura. Frequência maior de áudio é candidata natural a virar benefício de um tier superior no futuro, uma vez validada a aceitação.
+
 ### Resumo de atividade
 
 Ao subir novo material ou concluir o fluxo de nova atividade, o usuário recebe um resumo da atividade anterior: quanto tempo durou, quantas perguntas foram respondidas, acertos e erros, e uma leitura direta do resultado. Fecha o ciclo anterior e contextualiza o novo.
@@ -243,7 +251,7 @@ Custo variável por usuário Pro ativo:
 
 **Margem bruta:** 68–78%.
 
-Custo de texto-para-voz do feedback (rollout parcial, Seção 3 do Product-Backlog) ainda não tem medição real em produção. Estimativa inicial, baseada em preço de mercado dos provedores usados, fica bem abaixo dos demais itens da tabela, na casa de centavos por milhares de gerações, e é reduzida ainda mais pelo reuso do áudio já gerado por pergunta (sem regeneração em revisão espaçada). Revisar quando houver volume real desse fluxo.
+Custo de texto-para-voz do feedback (rollout parcial, ver Seção 4) ainda não tem medição real em produção. Estimativa inicial, baseada em preço de mercado dos provedores usados, fica bem abaixo dos demais itens da tabela, na casa de centavos por milhares de gerações, e é reduzida ainda mais pelo reuso do áudio já gerado por pergunta (sem regeneração em revisão espaçada). Revisar quando houver volume real desse fluxo, inclusive para decidir se maior frequência de áudio vira benefício de tier superior.
 
 Geração de conteúdo por tema (nova atividade) ainda não tem custo médio medido em produção, é individual por usuário e por troca de atividade, sem compartilhamento entre usuários. O fluxo passou a usar duas chamadas de LLM por troca (validação do assunto com sugestão de pontos, depois resolução do ponto e geração), em vez de uma. Vale revisar essa tabela quando houver volume real desse fluxo.
 
@@ -324,6 +332,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Repetição espaçada SM-2 com timing corrigido (easeFactor, interval, nextRevisionAt, revisionCount)
 - Texto solto no chat não é mais interpretado como material, apenas arquivo (imagem, PDF, texto)
 - Fluxo de nova atividade (nível, objetivo, assunto e ponto, com sugestões de assunto por lista fixa e sugestões de ponto geradas por LLM) com geração de conteúdo individual em duas chamadas de LLM
+- Áudio no feedback de resposta (TTS), rollout parcial habilitado por configuração
 - Onboarding atualizado para refletir o fluxo de nova atividade como caminho principal
 - Site com copy atualizada, refletindo os dois caminhos de entrada (material ou tema) na home, publicado
 
