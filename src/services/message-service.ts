@@ -1223,7 +1223,9 @@ export async function handleIncomingMessage(
               const feedbackSpeechText = evaluation
                 ? formatFeedbackToSpeech(evaluation)
                 : null;
-              const evalTip = evaluation?.eval_tip;
+              const evalTip = !evaluation?.user_unknown
+                ? evaluation?.eval_tip
+                : null;
               const tipMsg = evalTip ? formatEvalTip(evalTip) : null;
               const answerType = input.mediaType === "audio" ? "audio" : "text";
               const isWrongOrPartial =
@@ -1254,7 +1256,7 @@ export async function handleIncomingMessage(
                   : {}),
                 provider: evaluation?.provider,
                 model: evaluation?.model,
-                evalTip: evaluation?.eval_tip || null,
+                evalTip: evalTip || null,
               });
               if (pendingQuestion.sectionId) {
                 await recalcSectionStatus(pendingQuestion.sectionId);

@@ -64,6 +64,12 @@ export async function POST(req: NextRequest): Promise<Response> {
                 audio?: { id: string; voice?: boolean };
                 image?: { id: string };
                 document?: { id: string; mime_type?: string };
+                button?: { text: string; payload?: string };
+                interactive?: {
+                  type: string;
+                  button_reply?: { id: string; title: string };
+                  list_reply?: { id: string; title: string };
+                };
               }>;
               contacts?: Array<{
                 wa_id?: string;
@@ -89,7 +95,11 @@ export async function POST(req: NextRequest): Promise<Response> {
             const timestamp = status.timestamp
               ? new Date(Number(status.timestamp) * 1000)
               : undefined;
-            await processWhatsAppStatusEvent(status.status, status.id, timestamp);
+            await processWhatsAppStatusEvent(
+              status.status,
+              status.id,
+              timestamp,
+            );
           } catch (err) {
             console.error(
               "[post/api/webhooks/whatsapp] failed to process status event",
@@ -273,13 +283,25 @@ export async function POST(req: NextRequest): Promise<Response> {
       let input: IncomingMessage = base;
       if (message.type === "text" && message.text) {
         input = { ...base, text: message.text.body };
+      } else if (message.type === "button" && message.button) {
+        input = { ...base, text: message.button.text };
+      } else if (message.type === "interactive" && message.interactive) {
+        const title =
+          message.interactive.button_reply?.title ??
+          message.interactive.list_reply?.title;
+        if (!title) {
+          console.log(
+            "[post/api/webhooks/whatsapp] interactive message without title, ignoring",
+            { messageId: message.id },
+          );
+          await channel.sendMessage(channelId, formatUnsupportedFileType());
+          return;
+        }
+        input = { ...base, text: title };
       } else {
         console.log(
           "[post/api/webhooks/whatsapp] unsupported message type, ignoring",
-          {
-            type: message.type,
-            messageId: message.id,
-          },
+          { type: message.type, messageId: message.id },
         );
         await channel.sendMessage(channelId, formatUnsupportedFileType());
         return;
