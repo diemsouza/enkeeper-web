@@ -14,6 +14,7 @@ import {
   sanitizeWhatsappContent,
 } from "../lib/utils";
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
+import { formatCommand } from "../lib/commands";
 import { shuffle } from "lodash";
 
 export function formatOnboardingMsg1(): string {
@@ -33,11 +34,11 @@ export function formatOnboardingMsg4(): string {
 }
 
 export function formatOnboardingMsg5(): string {
-  return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra praticar sem custo. Use *ajuda* pra ver os comandos disponíveis.`;
+  return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra praticar sem custo. Use ${formatCommand("help")} pra ver os comandos disponíveis.`;
 }
 
 export function formatMaterialGuidance(): string {
-  return `Use *nova atividade* para praticar um tema à sua escolha.\n\nOu envie um arquivo de texto em inglês: foto de página de livro, captura de tela de conversa, letra de música, post nas redes sociais, material de aula ou PDF.`;
+  return `Use ${formatCommand("new_activity")} para praticar um tema à sua escolha.\n\nOu envie um arquivo de texto em inglês: foto de página de livro, captura de tela de conversa, letra de música, post nas redes sociais, material de aula ou PDF.`;
 }
 
 export function formatNoActivity(): string {
@@ -46,7 +47,7 @@ export function formatNoActivity(): string {
     "",
     formatMaterialGuidance(),
     "",
-    "_Use *ajuda* para ver os comandos disponíveis._",
+    `_Use ${formatCommand("help")} para ver os comandos disponíveis._`,
   ].join("\n");
 }
 
@@ -56,7 +57,7 @@ export function formatPlanExpired(): string {
     "",
     "Para continuar praticando, assine o *Fluizer* por R$19,90/mês. Cancele quando quiser.",
     "",
-    "_Use *suporte* para falar com a gente e ativar sua conta._",
+    `_Use ${formatCommand("support")} para falar com a gente e ativar sua conta._`,
   ].join("\n");
 }
 
@@ -74,7 +75,7 @@ export function formatLevelQuestion(): string {
     "b) Intermediário",
     "c) Avançado",
     "",
-    "_Use *cancelar* para sair._",
+    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
   ].join("\n");
 }
 
@@ -93,53 +94,72 @@ export function formatCommandList(level: Level | null): string {
   return [
     "*Comandos disponíveis:*",
     "",
-    "*ajuda* - ver essa lista de comandos",
+    `${formatCommand("help")} - ver essa lista de comandos`,
     //"*cancelar* - sai do fluxo ou ação em andamento",
-    "*praticar* - prática intensiva",
-    "*pausar* - pausar atividade ou prática intensiva em andamento",
-    "*retomar* - retomar atividade pausada",
-    "*atividade* - sua atividade atual",
-    "*nova atividade* - cria uma atividade com tema gerado por você",
-    `*nivel* - ${nivelLabel}`,
-    "*suporte* - fala com a equipe",
+    `${formatCommand("practice_now")} - prática intensiva`,
+    `${formatCommand("pause")} - pausar atividade ou prática intensiva em andamento`,
+    `${formatCommand("resume")} - retomar atividade pausada`,
+    `${formatCommand("list_activities")} - sua atividade atual`,
+    `${formatCommand("new_activity")} - cria uma atividade com tema gerado por você`,
+    `${formatCommand("set_level")} - ${nivelLabel}`,
+    `${formatCommand("support")} - fala com a equipe`,
     "",
     "_Envie um arquivo de texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._",
   ].join("\n");
 }
 
+function getEmojiNumber(num: number): string {
+  const numberMap: Record<string, string> = {
+    "0": "0️⃣",
+    "1": "1️⃣",
+    "2": "2️⃣",
+    "3": "3️⃣",
+    "4": "4️⃣",
+    "5": "5️⃣",
+    "6": "6️⃣",
+    "7": "7️⃣",
+    "8": "8️⃣",
+    "9": "9️⃣",
+  };
+
+  return numberMap[num.toString()] || num.toString();
+}
+
 export function formatDomainQuestion(): string {
-  const options = DOMAINS.map((g, i) => `${i + 1}) ${g.label}`);
+  const options = DOMAINS.map((g, i) => `${getEmojiNumber(i + 1)} ${g.label}`);
   return [
     "Sobre qual área você quer praticar?",
     "",
     ...options,
     "",
-    "_Use *cancelar* para sair._",
+    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
   ].join("\n");
 }
 
 export function formatTopicQuestion(domain: string): string {
   const suggestions = TOPIC_SUGGESTIONS[domain as DomainId] ?? [];
-  const options = suggestions.map((s, i) => `${i + 1}) ${s}`);
+  const options = suggestions.map((s, i) => `${getEmojiNumber(i + 1)} ${s}`);
   return [
     "Escolha um dos assuntos abaixo ou informe outra opção.",
     "",
     ...options,
     "",
-    "_Use *cancelar* para sair._",
+    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
   ].join("\n");
 }
 
 export function formatFocusQuestion(
   suggestions: { key: string; label: string }[],
 ): string {
-  const options = suggestions.map((s, i) => `${i + 1}) ${s.label}`);
+  const options = suggestions.map(
+    (s, i) => `${getEmojiNumber(i + 1)} ${s.label}`,
+  );
   return [
     "Escolha um dos pontos abaixo ou informe outra opção.",
     "",
     ...options,
     "",
-    "_Use *cancelar* para sair._",
+    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
   ].join("\n");
 }
 
@@ -148,19 +168,19 @@ export function formatNewActivityFlowCanceled(): string {
 }
 
 export function formatNewActivityFlowExpired(): string {
-  return "Criação da nova atividade encerrada por inatividade. Pode recomeçar quando quiser com *nova atividade*.";
+  return `Criação da nova atividade encerrada por inatividade. Pode recomeçar quando quiser com ${formatCommand("new_activity")}.`;
 }
 
 export function formatTopicError(): string {
-  return "Assunto inválido. Envie outro, ou use *cancelar* para sair.";
+  return `Assunto inválido. Envie outro, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`;
 }
 
 export function formatFocusError(): string {
-  return "Não foi possível usar essa opção. Tente descrever de outra forma, ou use *cancelar* para sair.";
+  return `Não foi possível usar essa opção. Tente descrever de outra forma, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`;
 }
 
 export function formatFocusTooMany(): string {
-  return "Não é possível informar mais de 2 opções. Tente de novo com uma ou duas opções, ou use *cancelar* para sair.";
+  return `Não é possível informar mais de 2 opções. Tente de novo com uma ou duas opções, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`;
 }
 
 type ActivityListItem = {
@@ -210,11 +230,10 @@ export function formatActivitiesList(activities: ActivityListItem[]): string {
   const currentStatus = current.length > 0 ? current[0].status : null;
   let textFooter = "";
   if (currentStatus === "active")
-    textFooter = "_Use *pausar* para interromper._ ";
+    textFooter = `_Use ${formatCommand("pause")} para interromper._ `;
   else if (currentStatus === "paused")
-    textFooter = "_Use *retomar* para continuar._ ";
-  textFooter +=
-    "_Para criar uma atividade, use *nova atividade* ou envie um arquivo de texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._";
+    textFooter = `_Use ${formatCommand("resume")} para continuar._ `;
+  textFooter += `_Para criar uma atividade, use ${formatCommand("new_activity")} ou envie um arquivo de texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._`;
   if (textFooter) lines.push("", textFooter);
 
   return lines.join("\n");
@@ -238,7 +257,7 @@ export function formatDocProcessed(
 }
 
 export function formatGuideAfterFirstFeedback(): string {
-  return "As próximas perguntas chegam aos poucos durante o dia. Use *praticar* para iniciar agora com um ritmo mais rápido.";
+  return `As próximas perguntas chegam aos poucos durante o dia. Use ${formatCommand("practice_now")} para iniciar agora com um ritmo mais rápido.`;
 }
 
 export function formatDocProcessingFailed(): string {
@@ -279,7 +298,7 @@ export function formatActivityReplacePrompt(
   return [
     `Você já tem uma atividade em andamento${title ? `: *"${title}"*` : ""}. Deseja arquivar e começar uma nova?`,
     "",
-    `_Use *sim* para continuar ou *não* para manter o atual._${limitNote}`,
+    `_Use ${formatCommand("confirm_yes")} para continuar ou ${formatCommand("confirm_no")} para manter o atual._${limitNote}`,
   ].join("\n");
 }
 
@@ -288,8 +307,7 @@ export function formatDailyActivityLimitReached(): string {
 }
 
 export function formatDocItemReceived(itemCount: number): string {
-  const suffix =
-    "Você pode enviar mais materiais ou só aguardar. Use *cancelar* para descartar e começar de novo.";
+  const suffix = `Você pode enviar mais materiais ou só aguardar. Use ${formatCommand("cancel")} para descartar e começar de novo.`;
   if (itemCount === 1) return `Recebido. ${suffix}`;
   return `Recebido ${itemCount}/${MAX_DOC_ITEMS_PER_DOC}. ${suffix}`;
 }
@@ -299,7 +317,7 @@ export function formatDocItemLimitReached(): string {
 }
 
 export function formatPauseSuccess(title: string): string {
-  return `Atividade *${title || "Sem título"}* pausada. Use *retomar* para continuar de onde parou.`;
+  return `Atividade *${title || "Sem título"}* pausada. Use ${formatCommand("resume")} para continuar de onde parou.`;
 }
 
 export function formatNoPausableDocs(): string {
@@ -315,7 +333,7 @@ export function formatNoPausedDocs(): string {
 }
 
 export function formatSupportRequest(): string {
-  return "Escreva em uma única mensagem como podemos ajudar ou use *cancelar* para sair.";
+  return `Escreva em uma única mensagem como podemos ajudar ou use ${formatCommand("cancel", { strictMode: false })} para sair.`;
 }
 
 export function formatSupportReceived(): string {
@@ -323,11 +341,11 @@ export function formatSupportReceived(): string {
 }
 
 export function formatShortTextWithDocs(): string {
-  return "Material recebido. Aguarde ou use *ajuda* para ver os comandos disponíveis.";
+  return `Material recebido. Aguarde ou use ${formatCommand("help")} para ver os comandos disponíveis.`;
 }
 
 export function formatShortTextNoDocs(): string {
-  return "Use *nova atividade* para praticar um tema à sua escolha, ou envie um arquivo de texto, imagem ou PDF para praticar durante o dia.\n\n_Use *ajuda* para ver todos os comandos._";
+  return `Use ${formatCommand("new_activity")} para praticar um tema à sua escolha, ou envie um arquivo de texto, imagem ou PDF para praticar durante o dia.\n\n_Use ${formatCommand("help")} para ver todos os comandos._`;
 }
 
 export function getRoundCompletedReadingLine(right: number, responses: number) {
@@ -476,7 +494,7 @@ export function formatIntensiveModeActivated({
   if (hasPendingQuestion) {
     msg += "\n\n⚠️ Você tem uma pergunta pendente para responder! ";
   }
-  msg += `\n\n_Pare usando *pausar* ou após ${INTENSIVE_UNTIL_MIN} minutos sem resposta._`;
+  msg += `\n\n_Pare usando ${formatCommand("pause")} ou após ${INTENSIVE_UNTIL_MIN} minutos sem resposta._`;
   return msg;
 }
 
@@ -525,10 +543,8 @@ type PreviousActivitySummaryData = {
 
 export function formatUpgradePrompt(reason: "audio" | "image"): string {
   const messages: Record<typeof reason, string> = {
-    audio:
-      "Envio de áudio é exclusivo do plano Pro. _Use *suporte* para saber mais._",
-    image:
-      "Envio de imagem é exclusivo do plano Pro. _Use *suporte* para saber mais._",
+    audio: `Envio de áudio é exclusivo do plano Pro. _Use ${formatCommand("support")} para saber mais._`,
+    image: `Envio de imagem é exclusivo do plano Pro. _Use ${formatCommand("support")} para saber mais._`,
   };
   return messages[reason];
 }
@@ -608,7 +624,7 @@ export function formatActivityReplaceCanceled(): string {
 }
 
 export function formatInvalidResumeIndex(): string {
-  return "Número inválido. Use *atividade* para ver as opções.";
+  return `Número inválido. Use ${formatCommand("list_activities")} para ver as opções.`;
 }
 
 export function formatNoActiveActivity(): string {

@@ -132,6 +132,7 @@ import {
   generateQuestionIfPoolNotFull,
 } from "./activity-cron.service";
 import { handleAdminCommand } from "./admin-service";
+import { resolveCommand } from "../lib/commands";
 import { markWaitlistActive } from "../repo/waitlist.repo";
 import { startOfDay } from "date-fns";
 import { validateDocItemInput } from "./doc-item-service";
@@ -190,7 +191,8 @@ export async function handleIncomingMessage(
   await updateUserLastRequest(user.id, messageId);
 
   try {
-    if (/^admin(\s|$)/i.test(rawText)) {
+    const [firstWord] = rawText.split(/\s+/);
+    if (resolveCommand(firstWord) === "admin") {
       if (input.channelUserPhone !== process.env.WA_SUPPORT) return;
       const reply = await handleAdminCommand(rawText);
       await sendAndSaveMessage({

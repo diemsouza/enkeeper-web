@@ -1,6 +1,7 @@
 import { ParsedMessage } from "../types/domain";
 import { Level } from "../lib/prisma";
 import { DOMAINS, DomainId } from "../lib/constants";
+import { resolveCommand } from "../lib/commands";
 
 function normalize(s: string): string {
   // eslint-disable-next-line no-misleading-character-class
@@ -12,7 +13,7 @@ export function parseLevelInput(text: string): Level | "cancel" | null {
   if (n === "a" || n === "basico") return Level.basic;
   if (n === "b" || n === "intermediario") return Level.intermediate;
   if (n === "c" || n === "avancado") return Level.advanced;
-  if (n === "cancelar") return "cancel";
+  if (resolveCommand(text) === "cancel") return "cancel";
   return null;
 }
 
@@ -21,7 +22,7 @@ function parseFixedChoiceInput<T extends { id: string; label: string }>(
   options: readonly T[],
 ): T["id"] | "cancel" | null {
   const n = normalize(text.trim());
-  if (n === "cancelar") return "cancel";
+  if (resolveCommand(text) === "cancel") return "cancel";
   const num = parseInt(n, 10);
   if (!isNaN(num) && num >= 1 && num <= options.length) {
     return options[num - 1].id;
@@ -46,7 +47,7 @@ export function parseTopicSelectionInput(
   const trimmed = text.trim();
   if (trimmed.length === 0) return null;
   const n = normalize(trimmed);
-  if (n === "cancelar") return "cancel";
+  if (resolveCommand(text) === "cancel") return "cancel";
 
   if (/^\d+$/.test(n)) {
     const num = parseInt(n, 10);
@@ -69,7 +70,7 @@ export function parseFocusSelectionInput(
   const trimmed = text.trim();
   if (trimmed.length === 0) return null;
   const n = normalize(trimmed);
-  if (n === "cancelar") return "cancel";
+  if (resolveCommand(text) === "cancel") return "cancel";
 
   if (/^\d+$/.test(n)) {
     const num = parseInt(n, 10);
@@ -87,31 +88,41 @@ export function parseMessage(
 ): ParsedMessage {
   const raw = text;
   const trimmed = text.trim();
-  const n = normalize(trimmed);
+  const commandId = resolveCommand(trimmed);
 
-  if (n === "ajuda") return { intent: "list_commands", raw };
-  if (n === "atividade" || n === "atividades")
-    return { intent: "list_activities", raw };
-  if (n === "nivel") return { intent: "set_level", raw };
-  if (n === "suporte") return { intent: "support", raw };
-  if (n === "nova atividade" || n === "trocar atividade")
-    return { intent: "new_activity", raw };
-
-  if (n === "sim") return { intent: "confirm", raw };
-  if (n === "nao") return { intent: "cancel_no", raw };
-  if (n === "cancelar") return { intent: "cancel", raw };
-
-  if (n === "praticar") return { intent: "practice_now", raw };
-
-  if (n === "pausar") {
-    return {
-      intent: context.isIntensiveMode ? "pause_practice" : "pause_activity",
-      raw,
-    };
+  switch (commandId) {
+    case "help":
+      return { intent: "list_commands", raw };
+    case "list_activities":
+      return { intent: "list_activities", raw };
+    case "set_level":
+      return { intent: "set_level", raw };
+    case "support":
+      return { intent: "support", raw };
+    case "new_activity":
+      return { intent: "new_activity", raw };
+    case "confirm_yes":
+      return { intent: "confirm", raw };
+    case "confirm_no":
+      return { intent: "cancel_no", raw };
+    case "cancel":
+      return { intent: "cancel", raw };
+    case "practice_now":
+      return { intent: "practice_now", raw };
+    case "pause":
+      return {
+        intent: context.isIntensiveMode ? "pause_practice" : "pause_activity",
+        raw,
+      };
+    case "resume":
+      return { intent: "resume_activity", raw };
   }
 
-  if (n.startsWith("pausar ")) {
-    const num = parseInt(n.slice("pausar ".length).trim(), 10);
+  const [firstWord, ...rest] = trimmed.split(/\s+/);
+  const firstWordCommand = resolveCommand(firstWord);
+
+  if (firstWordCommand === "pause") {
+    const num = parseInt(rest.join(" "), 10);
     return {
       intent: "pause_activity",
       raw,
@@ -119,9 +130,8 @@ export function parseMessage(
     };
   }
 
-  if (n === "retomar") return { intent: "resume_activity", raw };
-  if (n.startsWith("retomar ")) {
-    const num = parseInt(n.slice("retomar ".length).trim(), 10);
+  if (firstWordCommand === "resume") {
+    const num = parseInt(rest.join(" "), 10);
     return {
       intent: "resume_activity",
       raw,
