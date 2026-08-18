@@ -1,7 +1,8 @@
+import { formatCommand } from "../lib/commands";
 import { User } from "../lib/prisma";
 import { countAllActivitiesByUser } from "../repo/activities.repo";
 import {
-  findUserByPhone,
+  findUserByIdentifier,
   fetchUserStats,
   updateUserPlan,
 } from "../repo/users.repo";
@@ -20,27 +21,27 @@ export async function handleAdminCommand(text: string): Promise<string> {
 
   if (subcommand === "users") return fetchUsersReport();
 
-  const waId = parts[2];
-  if (!waId) {
-    return `Uso: admin ${subcommand} <wa_number>`;
+  const identifier = parts[2];
+  if (!identifier) {
+    return `Uso: admin ${subcommand} <identificador>`;
   }
 
   if (subcommand === "extend") {
     const days = parseInt(parts[3] ?? "", 10);
     if (!parts[3] || isNaN(days) || days <= 0) {
-      return "Uso: admin extend <wa_number> <dias>";
+      return "Uso: admin extend <identificador> <dias>";
     }
-    return applyExtend(waId, days);
+    return applyExtend(identifier, days);
   }
 
-  if (subcommand === "upgrade") return applyUpgrade(waId);
-  if (subcommand === "expire") return applyExpire(waId);
-  return fetchInfo(waId);
+  if (subcommand === "upgrade") return applyUpgrade(identifier);
+  if (subcommand === "expire") return applyExpire(identifier);
+  return fetchInfo(identifier);
 }
 
-async function applyUpgrade(waId: string): Promise<string> {
-  const user = await findUserByPhone("whatsapp", waId);
-  if (!user) return `Usuário não encontrado: ${waId}`;
+async function applyUpgrade(identifier: string): Promise<string> {
+  const user = await findUserByIdentifier("whatsapp", identifier);
+  if (!user) return `Usuário não encontrado: ${identifier}`;
   const planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await updateUserPlan(user.id, {
     planCode: "pro",
@@ -49,35 +50,41 @@ async function applyUpgrade(waId: string): Promise<string> {
   });
   return buildUserInfo(
     { ...user, planCode: "pro", planStatus: "active", planExpiresAt },
-    waId,
+    identifier,
   );
 }
 
-async function applyExpire(waId: string): Promise<string> {
-  const user = await findUserByPhone("whatsapp", waId);
-  if (!user) return `Usuário não encontrado: ${waId}`;
+async function applyExpire(identifier: string): Promise<string> {
+  const user = await findUserByIdentifier("whatsapp", identifier);
+  if (!user) return `Usuário não encontrado: ${identifier}`;
   const planExpiresAt = new Date();
   await updateUserPlan(user.id, { planStatus: "expired", planExpiresAt });
-  return buildUserInfo({ ...user, planStatus: "expired", planExpiresAt }, waId);
+  return buildUserInfo(
+    { ...user, planStatus: "expired", planExpiresAt },
+    identifier,
+  );
 }
 
-async function applyExtend(waId: string, days: number): Promise<string> {
-  const user = await findUserByPhone("whatsapp", waId);
-  if (!user) return `Usuário não encontrado: ${waId}`;
+async function applyExtend(identifier: string, days: number): Promise<string> {
+  const user = await findUserByIdentifier("whatsapp", identifier);
+  if (!user) return `Usuário não encontrado: ${identifier}`;
   const planExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
   await updateUserPlan(user.id, { planStatus: "active", planExpiresAt });
-  return buildUserInfo({ ...user, planStatus: "active", planExpiresAt }, waId);
+  return buildUserInfo(
+    { ...user, planStatus: "active", planExpiresAt },
+    identifier,
+  );
 }
 
-async function fetchInfo(waId: string): Promise<string> {
-  const user = await findUserByPhone("whatsapp", waId);
-  if (!user) return `Usuário não encontrado: ${waId}`;
-  return buildUserInfo(user, waId);
+async function fetchInfo(identifier: string): Promise<string> {
+  const user = await findUserByIdentifier("whatsapp", identifier);
+  if (!user) return `Usuário não encontrado: ${identifier}`;
+  return buildUserInfo(user, identifier);
 }
 
-async function buildUserInfo(user: User, waId: string): Promise<string> {
+async function buildUserInfo(user: User, identifier: string): Promise<string> {
   const countActivities = await countAllActivitiesByUser(user.id);
-  return formatAdminUserInfo(user, waId, countActivities);
+  return formatAdminUserInfo(user, identifier, countActivities);
 }
 
 async function fetchUsersReport(): Promise<string> {
@@ -106,25 +113,25 @@ function formatAdminHelp(): string {
   return [
     "*Admin*",
     "",
-    "admin help - lista este menu",
-    "admin users - relatorio de cadastros",
-    "admin info <wa_number> - estado atual do usuario",
-    "admin upgrade <wa_number> - pro ativo por 30 dias",
-    "admin expire <wa_number> - expirar plano agora",
-    "admin extend <wa_number> <dias> - estender plano por N dias",
+    `${formatCommand("admin")} help - lista este menu`,
+    `${formatCommand("admin")} users - relatorio de cadastros`,
+    `${formatCommand("admin")} info <identificador> - estado atual do usuario`,
+    `${formatCommand("admin")} upgrade <identificador> - pro ativo por 30 dias`,
+    `${formatCommand("admin")} expire <identificador> - expirar plano agora`,
+    `${formatCommand("admin")} extend <identificador> <dias> - estender plano por N dias`,
   ].join("\n");
 }
 
 function formatAdminUserInfo(
   user: User,
-  waId: string,
+  identifier: string,
   activityCount: number,
 ): string {
   const expiresAt = user.planExpiresAt
     ? user.planExpiresAt.toISOString().slice(0, 10)
     : "sem expiracao";
   return [
-    `wa_id: ${waId}`,
+    `identificador: ${identifier}`,
     `planCode: ${user.planCode}`,
     `planStatus: ${user.planStatus}`,
     `planExpiresAt: ${expiresAt}`,

@@ -22,11 +22,11 @@ export function formatOnboardingMsg1(): string {
 }
 
 export function formatOnboardingMsg2(): string {
-  return "Pratique inglês no seu ritmo, sobre o que fizer sentido pra você.";
+  return "Pratique inglês com IA, no seu ritmo, sobre o que você quiser.";
 }
 
 export function formatOnboardingMsg3(): string {
-  return "Só me conta o que quer praticar, ou envie um arquivo de texto, imagem ou PDF com conteúdo em inglês: página de livro, post nas redes sociais ou material de aula.";
+  return "Conte o que quer praticar, ou envie um arquivo de texto, imagem ou PDF com conteúdo em inglês: página de livro, post nas redes sociais ou material de aula.";
 }
 
 export function formatOnboardingMsg4(): string {
@@ -69,6 +69,7 @@ const LEVEL_LABEL: Record<Level, string> = {
 
 export function formatLevelQuestion(): string {
   return [
+    "*Nível de Inglês*",
     "Informe a letra que corresponde ao nível do seu inglês.",
     "",
     "a) Básico",
@@ -128,7 +129,8 @@ function getEmojiNumber(num: number): string {
 export function formatDomainQuestion(): string {
   const options = DOMAINS.map((g, i) => `${getEmojiNumber(i + 1)} ${g.label}`);
   return [
-    "Sobre qual área você quer praticar?",
+    "*Objetivo (1/3)*",
+    "Escolha um objetivo para praticar. Ele ajuda a direcionar o melhor conteúdo pra você.",
     "",
     ...options,
     "",
@@ -140,7 +142,8 @@ export function formatTopicQuestion(domain: string): string {
   const suggestions = TOPIC_SUGGESTIONS[domain as DomainId] ?? [];
   const options = suggestions.map((s, i) => `${getEmojiNumber(i + 1)} ${s}`);
   return [
-    "Escolha um dos assuntos abaixo ou informe outra opção.",
+    "*Assunto (2/3)*",
+    "Escolha um assunto do seu interesse, ou informe outro mais específico.",
     "",
     ...options,
     "",
@@ -155,7 +158,8 @@ export function formatFocusQuestion(
     (s, i) => `${getEmojiNumber(i + 1)} ${s.label}`,
   );
   return [
-    "Escolha um dos pontos abaixo ou informe outra opção.",
+    "*Foco (3/3)*",
+    "Para finalizar, o que você precisa praticar? Escolha uma opção abaixo ou informe outro ponto de seu interesse.",
     "",
     ...options,
     "",
@@ -164,7 +168,19 @@ export function formatFocusQuestion(
 }
 
 export function formatNewActivityFlowCanceled(): string {
-  return "Ok, nova atividade cancelada.";
+  return "Ok, cancelado.";
+}
+
+export function formatNewActivityFlowCanceledGuidance(): string {
+  return `Use ${formatCommand("new_activity")} para começar, ou ${formatCommand("help")} para ver a lista de comandos.`;
+}
+
+export function formatSetFirstLevelCanceled(): string {
+  return `Use ${formatCommand("new_activity")} para tentar de novo, ou ${formatCommand("help")} para ver a lista de comandos.`;
+}
+
+export function formatFirstNewActivityCanceled(): string {
+  return `Use ${formatCommand("new_activity")} para começar quando quiser, ou ${formatCommand("help")} para ver a lista de comandos.`;
 }
 
 export function formatNewActivityFlowExpired(): string {
@@ -172,7 +188,7 @@ export function formatNewActivityFlowExpired(): string {
 }
 
 export function formatTopicError(): string {
-  return `Assunto inválido. Envie outro, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`;
+  return `Assunto inválido. Envie outra opção, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`;
 }
 
 export function formatFocusError(): string {
@@ -247,7 +263,9 @@ export function formatDocProcessed(
   hasWarning: boolean,
   remaining: number,
 ): string {
-  const lines = ["Pronto. Em alguns minutos chega a primeira pergunta."];
+  const lines = [
+    "Pronto. Em alguns minutos chega a primeira pergunta. Nunca envie mais de uma mensagem por vez.",
+  ];
   if (hasWarning)
     lines.push("\nAlguns termos pareceram inconsistentes e foram ignorados.");
   if (remaining === 1)
@@ -615,10 +633,6 @@ export function formatCanceled(): string {
   return "Cancelado.";
 }
 
-export function formatLevelUpdateCanceled(): string {
-  return "Atualização de nível cancelada.";
-}
-
 export function formatActivityReplaceCanceled(): string {
   return "Ok, seguindo com a atividade atual.";
 }
@@ -653,6 +667,14 @@ export function formatGenericError(): string {
 
 export function formatUnsupportedFileType(): string {
   return "Formato não suportado. Envie um arquivo de texto, imagem ou PDF.";
+}
+
+export function formatVideoUnsupported(): string {
+  return `Vídeo ainda não é suportado, mas é um formato considerado para o futuro. Envie texto, imagem ou PDF, ou use ${formatCommand("help")} para ver os comandos disponíveis.`;
+}
+
+export function formatInvalidMessageType(): string {
+  return `Mensagem inválida. Use ${formatCommand("help")} para ver os comandos disponíveis.`;
 }
 
 export function formatIntensivePendingQuestion(): string {

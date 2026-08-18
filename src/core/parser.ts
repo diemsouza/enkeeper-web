@@ -9,7 +9,7 @@ function normalize(s: string): string {
 }
 
 export function parseLevelInput(text: string): Level | "cancel" | null {
-  const n = normalize(text.trim());
+  const n = normalize(text.trim()).replace(/[).\s]+$/g, "");
   if (n === "a" || n === "basico") return Level.basic;
   if (n === "b" || n === "intermediario") return Level.intermediate;
   if (n === "c" || n === "avancado") return Level.advanced;

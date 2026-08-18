@@ -17,6 +17,8 @@ import {
   formatPlanExpired,
   formatGenericError,
   formatUnsupportedFileType,
+  formatVideoUnsupported,
+  formatInvalidMessageType,
 } from "../../../../core/formatters";
 import { IncomingMessage } from "../../../../types/domain";
 import { processWhatsAppStatusEvent } from "../../../../services/message-status-service";
@@ -298,12 +300,25 @@ export async function POST(req: NextRequest): Promise<Response> {
           return;
         }
         input = { ...base, text: title };
+      } else if (message.type === "reaction" || message.type === "sticker") {
+        console.log(
+          "[post/api/webhooks/whatsapp] reaction/sticker received, ignoring",
+          { type: message.type, messageId: message.id },
+        );
+        return;
+      } else if (message.type === "video") {
+        console.log(
+          "[post/api/webhooks/whatsapp] video message received, unsupported",
+          { messageId: message.id },
+        );
+        await channel.sendMessage(channelId, formatVideoUnsupported());
+        return;
       } else {
         console.log(
           "[post/api/webhooks/whatsapp] unsupported message type, ignoring",
           { type: message.type, messageId: message.id },
         );
-        await channel.sendMessage(channelId, formatUnsupportedFileType());
+        await channel.sendMessage(channelId, formatInvalidMessageType());
         return;
       }
 

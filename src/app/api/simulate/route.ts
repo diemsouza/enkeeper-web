@@ -107,6 +107,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       void (async () => {
         await handleIncomingMessage({
           channelUserId: channelId,
+          channelUserPhone: channelId,
           channelUsername: typeof channelCode === "string" ? channelCode : undefined,
           channelType: channelType as ChannelType,
           text: extractedText,
@@ -154,6 +155,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     void (async () => {
       await handleIncomingMessage({
         channelUserId: channelId,
+        channelUserPhone: channelId,
         channelUsername: channelCode ?? undefined,
         channelType: channelType as ChannelType,
         text: text ?? undefined,

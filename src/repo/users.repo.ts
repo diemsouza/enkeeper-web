@@ -26,15 +26,27 @@ export async function findUserByChannel(
   return channel?.user ?? null;
 }
 
-export async function findUserByPhone(
+export async function findUserByIdentifier(
   channelType: ChannelType,
-  channelUserPhone: string,
+  identifier: string,
 ): Promise<User | null> {
-  const channel = await prisma.userChannel.findFirst({
-    where: { channelType, channelUserPhone },
+  const byPhone = await prisma.userChannel.findFirst({
+    where: { channelType, channelUserPhone: identifier },
     include: { user: true },
   });
-  return channel?.user ?? null;
+  if (byPhone) return byPhone.user;
+
+  const byUsername = await prisma.userChannel.findFirst({
+    where: { channelType, channelUsername: identifier },
+    include: { user: true },
+  });
+  if (byUsername) return byUsername.user;
+
+  const byChannelUserId = await prisma.userChannel.findFirst({
+    where: { channelType, channelUserId: identifier },
+    include: { user: true },
+  });
+  return byChannelUserId?.user ?? null;
 }
 
 export async function markUserOnboarded(userId: string): Promise<void> {

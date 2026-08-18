@@ -35,7 +35,6 @@ import {
   formatIntensiveModeStopped,
   formatGuideAfterFirstFeedback,
   formatCanceled,
-  formatLevelUpdateCanceled,
   formatActivityReplaceCanceled,
   formatInvalidResumeIndex,
   formatNoActiveActivity,
@@ -52,6 +51,9 @@ import {
   formatOnboardingMsg4,
   formatDomainQuestion,
   formatNewActivityFlowCanceled,
+  formatNewActivityFlowCanceledGuidance,
+  formatSetFirstLevelCanceled,
+  formatFirstNewActivityCanceled,
   formatFeedbackToSpeech,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
@@ -82,6 +84,7 @@ import {
   findCurrentActivityByUser,
   findActivitiesForList,
   updateActivity,
+  countAllActivitiesByUser,
 } from "../repo/activities.repo";
 import { switchToActivity } from "./activity-service";
 import { resolveFeedbackAudioPath } from "./feedback-audio-service";
@@ -485,6 +488,25 @@ export async function handleIncomingMessage(
         content: flowCancelledReply,
         today,
       });
+
+      const activitiesForList = await findActivitiesForList(user.id);
+      if (activitiesForList.length > 0) {
+        return;
+      }
+
+      const activityCount = await countAllActivitiesByUser(user.id);
+      const guidanceReply =
+        activityCount === 0
+          ? formatFirstNewActivityCanceled()
+          : formatNewActivityFlowCanceledGuidance();
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelUserId,
+        userId: user.id,
+        userChannelId: userChannel.id,
+        content: guidanceReply,
+        today,
+      });
       return;
     }
 
@@ -495,7 +517,7 @@ export async function handleIncomingMessage(
       if (pendingDocForLevel) {
         await updateDoc(pendingDocForLevel.id, user.id, { status: "canceled" });
       }
-      const cancelledReply = formatLevelUpdateCanceled();
+      const cancelledReply = formatNewActivityFlowCanceled();
       await sendAndSaveMessage({
         channel,
         to: userChannel.channelUserId,
@@ -504,6 +526,18 @@ export async function handleIncomingMessage(
         content: cancelledReply,
         today,
       });
+
+      if (user.level === null) {
+        const guidanceReply = formatSetFirstLevelCanceled();
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelUserId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          content: guidanceReply,
+          today,
+        });
+      }
       return;
     }
 
