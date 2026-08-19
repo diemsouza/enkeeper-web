@@ -308,7 +308,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 
 - Sem Product Hunt
 - Sem Twitter/X tech brasileiro, HackerNews, Reddit
-- Copy nunca menciona "IA" ou "agente conversacional"
+- Copy pode mencionar "IA" como qualificador funcional, nunca como identidade declarada nem framing de "agente conversacional". Ver Product-Rules Seção 16.
 - Linguagem tangível: "pratique o vocabulário da sua aula", "seu inglês o dia inteiro"
 
 ---

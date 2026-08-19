@@ -112,7 +112,7 @@ export default function Hero() {
   const displayedTotal = reducedMotion ? totalChars(currentPhrase) : charIndex;
 
   return (
-    <section className="section-light relative min-h-screen flex flex-col items-center justify-center pt-20 pb-24 px-6 gap-y-8">
+    <section className="section-light relative min-h-[100lvh] flex flex-col items-center justify-center pt-20 pb-24 px-6 gap-y-8">
       <div className="max-w-3xl w-full flex flex-col items-center gap-y-3">
         {/* Headline fixa */}
         <h1 className="text-[20px] sm:text-[28px] lg:text-[30px] font-normal leading-[1.15] text-center text-muted-foreground">
@@ -136,16 +136,16 @@ export default function Hero() {
         </div>
 
         {/* Preço sutil */}
-        <p className="text-sm font-normal text-muted-foreground/80 text-center">
+        <p className="text-md font-normal  text-muted-foreground text-center mb-2">
           {t("price_teaser")}
         </p>
       </div>
 
       {/* CTA */}
-      <div className="flex flex-col items-center gap-y-3">
+      <div className="flex flex-col items-center gap-y-2">
         <HomeCTA
           waLabel={t("cta")}
-          buttonClassName="rounded-full px-8 h-12 font-semibold gap-2 text-base"
+          buttonClassName="rounded-full px-12 h-12 font-semibold gap-2 text-base"
         />
         <p className="text-sm text-muted-foreground/70 text-center">
           {IS_WAITLIST ? t("waitlist_microcopy") : t("microcopy")}
@@ -155,7 +155,7 @@ export default function Hero() {
       <a
         href="#features"
         aria-label="Rolar para o próximo conteúdo"
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-muted-foreground/60"
+        className="absolute bottom-12 md:bottom-6 left-1/2 -translate-x-1/2 text-muted-foreground/60 pb-[env(safe-area-inset-bottom)]"
       >
         <ArrowDown className="w-6 h-6" />
       </a>
