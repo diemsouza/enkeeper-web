@@ -5,6 +5,7 @@ import {
   AnswerType,
   QuestionType,
   AiProvider,
+  Prisma,
 } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
@@ -44,12 +45,12 @@ export async function createQuestions(
   });
 }
 
-export async function findQuestionRevisionStatsByActivity(
+export async function findQuestionScoresByActivity(
   activityId: string,
-): Promise<{ revisionCount: number; status: QuestionStatus | null }[]> {
+): Promise<{ score: number }[]> {
   return prisma.question.findMany({
     where: { activityId },
-    select: { revisionCount: true, status: true },
+    select: { score: true },
   });
 }
 
@@ -201,7 +202,18 @@ export async function updateQuestion(
     evalTip?: string | null;
     questionAudioMediaId?: string | null;
     feedbackAudioMediaId?: string | null;
+    metadata?: Record<string, unknown>;
+    score?: number;
   },
 ): Promise<void> {
-  await prisma.question.update({ where: { id }, data });
+  await prisma.question.update({
+    where: { id },
+    data: {
+      ...data,
+      metadata:
+        data.metadata !== undefined
+          ? (data.metadata as Prisma.InputJsonObject)
+          : undefined,
+    },
+  });
 }

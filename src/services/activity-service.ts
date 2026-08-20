@@ -4,8 +4,13 @@ import {
   findCurrentActivityByUser,
   findLatestArchivedActivityForSummary,
   updateActivity,
+  updateActivityScore,
 } from "../repo/activities.repo";
-import { findQuestionRevisionStatsByActivity } from "../repo/questions.repo";
+import {
+  findQuestionById,
+  findQuestionScoresByActivity,
+  updateQuestion,
+} from "../repo/questions.repo";
 import {
   formatActivitySuggestion,
   formatActivitySuggestionInteractive,
@@ -13,11 +18,12 @@ import {
   formatRoundCompletedFallback,
   formatRoundCompletedSummary,
 } from "../core/formatters";
+import { AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC } from "../lib/constants";
 import {
-  ACTIVITY_SUGGESTION_ACCURACY_THRESHOLD,
-  ACTIVITY_SUGGESTION_COVERAGE_THRESHOLD,
-  AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
-} from "../lib/constants";
+  ACTIVITY_ELIGIBLE_SCORE,
+  computeQuestionScore,
+  ScoreMetadata,
+} from "../lib/activity-score";
 import { delay } from "../lib/utils";
 import { MessageChannel } from "../types/message-channel";
 import { sendAndSaveMessage } from "./message-sender-service";
@@ -123,7 +129,7 @@ export async function buildRoundCompletedSummary(
 export async function isActivitySuggestionEligible(
   activityId: string,
 ): Promise<boolean> {
-  const questions = await findQuestionRevisionStatsByActivity(activityId);
+  const questions = await findQuestionScoresByActivity(activityId);
 
   if (questions.length === 0) {
     console.log(
@@ -132,31 +138,38 @@ export async function isActivitySuggestionEligible(
     return false;
   }
 
-  const reviewed = questions.filter((q) => q.revisionCount >= 1);
-  const coverageRatio = reviewed.length / questions.length;
+  const mean =
+    questions.reduce((sum, q) => sum + q.score, 0) / questions.length;
+  const eligible = mean >= ACTIVITY_ELIGIBLE_SCORE;
+  const reason = eligible ? "eligible" : "below_threshold";
 
-  const rightCount = reviewed.filter((q) => q.status === "right").length;
-  const accuracyRatio = reviewed.length > 0 ? rightCount / reviewed.length : 0;
-
-  const coveragePass = coverageRatio >= ACTIVITY_SUGGESTION_COVERAGE_THRESHOLD;
-  const accuracyPass = accuracyRatio >= ACTIVITY_SUGGESTION_ACCURACY_THRESHOLD;
-  const eligible = coveragePass && accuracyPass;
-
-  const reason = !coveragePass
-    ? "coverage_below_threshold"
-    : !accuracyPass
-      ? "accuracy_below_threshold"
-      : "eligible";
+  await updateActivityScore(activityId, mean);
 
   console.log(
     `[isActivitySuggestionEligible] activityId=${activityId} ` +
-      `questions=${questions.length} reviewed=${reviewed.length} ` +
-      `coverageRatio=${coverageRatio.toFixed(2)}/${ACTIVITY_SUGGESTION_COVERAGE_THRESHOLD} ` +
-      `accuracyRatio=${accuracyRatio.toFixed(2)}/${ACTIVITY_SUGGESTION_ACCURACY_THRESHOLD} ` +
+      `questions=${questions.length} mean_score=${mean.toFixed(2)}/${ACTIVITY_ELIGIBLE_SCORE} ` +
       `eligible=${eligible} reason=${reason}`,
   );
 
   return eligible;
+}
+
+export async function recordFeedbackAudioPlayed(
+  questionId: string,
+): Promise<void> {
+  const question = await findQuestionById(questionId);
+  if (!question) return;
+
+  const current = (question.metadata as ScoreMetadata | null) ?? {};
+  const metadata: ScoreMetadata = {
+    ...current,
+    audioPlayedCount: (current.audioPlayedCount ?? 0) + 1,
+  };
+
+  await updateQuestion(questionId, {
+    metadata,
+    score: computeQuestionScore(metadata),
+  });
 }
 
 type MaybeSendActivitySuggestionParams = {

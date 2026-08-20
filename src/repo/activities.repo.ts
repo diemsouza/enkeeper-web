@@ -115,6 +115,16 @@ export async function updateActivity(
   });
 }
 
+export async function updateActivityScore(
+  id: string,
+  score: number,
+): Promise<void> {
+  await prisma.activity.updateMany({
+    where: { id, deletedAt: null },
+    data: { score },
+  });
+}
+
 export async function softDeleteActivity(
   id: string,
   userId: string,

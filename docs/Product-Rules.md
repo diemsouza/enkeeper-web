@@ -205,7 +205,42 @@ Vale tanto para cadência quanto para sessão intensiva. Em sessão intensiva, a
 
 ### 6.3 Sugestão de troca de atividade
 
-Quando a atividade ativa já foi suficientemente revisada, o feedback de uma resposta correta pode vir acompanhado da sugestão de trocar de atividade (🔄, ver vocabulário de emoji), com botão (ou o comando por extenso, dependendo do canal) para iniciar o fluxo de nova atividade. Nunca acompanha feedback de erro ou parcial, para não soar como reação ao erro.
+Quando a atividade ativa já atingiu uma nota alta o suficiente, o feedback de uma resposta correta pode vir acompanhado da sugestão de trocar de atividade (🔄, ver vocabulário de emoji), com botão (ou o comando por extenso, dependendo do canal) para iniciar o fluxo de nova atividade. Nunca acompanha feedback de erro ou parcial, para não soar como reação ao erro.
+
+Cada pergunta tem uma nota de 0 a 10, calculada a partir de dois eixos independentes.
+
+Qualidade (único eixo que move a elegibilidade de forma significativa):
+- Acerto: 4 pontos
+- Parcial: 2 pontos
+- Erro: 0 pontos
+- Acerto respondido por áudio: +1 ponto adicional sobre o acerto
+
+Prática passiva (bônus limitado a 2 pontos por pergunta, independente do volume):
+- Revisão espaçada real (dia distinto, mesmo gatilho da Seção 7): +1
+- Áudio de feedback ouvido (evento de reprodução confirmado, ver Seção 18): +1
+
+A nota de cada pergunta é a soma dos dois eixos, com teto de 10.
+A nota da atividade é a média das notas de todas as perguntas, com aprovação em 7.
+
+Propriedades importantes do modelo:
+- Erro nunca contribui para elegibilidade. Volume de tentativas erradas não empurra a sugestão.
+- Passada única, mesmo gabaritada, não elege (nota máxima sem revisão é 4 de 10).
+- Prática passiva sozinha nunca elege. O bônus máximo de 2 não alcança 7 sem acertos.
+
+Exemplos:
+- Acertou tudo numa passada: média 4. Não elegível.
+- Acertou tudo, revisão espaçada, ouviu áudio: média 7+. Elegível.
+- Errou tudo várias vezes, nunca acertou: média 0. Nunca elegível por volume.
+- Acertou maioria + revisão espaçada + respondeu por áudio em algumas: elegível.
+- Acertou tudo + respondeu tudo por áudio: média 5 (sem revisão ainda). Não elegível.
+
+Comportamento esperado: a contagem de áudio ouvido da última pergunta antes do check pode não refletir a reprodução daquele turno, pois o evento de reprodução é assíncrono. Sem impacto relevante, o check seguinte já terá o dado atualizado.
+
+Parâmetros atuais (sujeitos a calibração com dado real de produção):
+- Acerto 4 | Parcial 2 | Erro 0 | Bônus áudio respondido 1
+- Teto bônus passivo por pergunta: 2
+- Teto de nota por pergunta: 10
+- Nota de aprovação da atividade (média): 7
 
 ---
 

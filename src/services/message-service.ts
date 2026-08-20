@@ -103,6 +103,7 @@ import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
 import { getFeedbackExamples } from "../core/format-loader";
 import { calcSm2 } from "../core/sm2";
+import { updateScoreMetadata, computeQuestionScore } from "../lib/activity-score";
 import {
   findNextUnansweredQuestion,
   findNextGeneralQuestion,
@@ -1296,12 +1297,20 @@ export async function handleIncomingMessage(
                 pendingQuestion.nextRevisionAt,
                 evalStatus,
               );
+              const isRealRevision =
+                pendingQuestion.attemptCount > 0 && sm2 !== null;
+              const scoreMetadata = updateScoreMetadata(
+                pendingQuestion,
+                evalStatus,
+                answerType,
+                isRealRevision,
+              );
               await updateQuestion(pendingQuestion.id, {
                 answer: text,
                 status: evalStatus,
                 attemptCount: pendingQuestion.attemptCount + 1,
                 answerType,
-                ...(pendingQuestion.attemptCount > 0 && sm2 !== null
+                ...(isRealRevision
                   ? { revisionCount: pendingQuestion.revisionCount + 1 }
                   : {}),
                 ...(isWrongOrPartial
@@ -1317,6 +1326,8 @@ export async function handleIncomingMessage(
                 provider: evaluation?.provider,
                 model: evaluation?.model,
                 evalTip: evalTip || null,
+                metadata: scoreMetadata,
+                score: computeQuestionScore(scoreMetadata),
               });
               if (pendingQuestion.sectionId) {
                 await recalcSectionStatus(pendingQuestion.sectionId);

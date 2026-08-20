@@ -5,6 +5,7 @@ import {
   markMessagePlayedIfUnset,
   updateMessageExternalStatus,
 } from "../repo/messages.repo";
+import { recordFeedbackAudioPlayed } from "./activity-service";
 
 export async function markMessageAsPlayed(
   externalId: string,
@@ -12,7 +13,13 @@ export async function markMessageAsPlayed(
 ): Promise<void> {
   const message = await findMessageByExternalId(externalId);
   if (!message) return;
-  await markMessagePlayedIfUnset(message.id, timestamp ?? new Date());
+  const wasPlayed = await markMessagePlayedIfUnset(
+    message.id,
+    timestamp ?? new Date(),
+  );
+  if (wasPlayed && message.questionId && message.mediaType === "audio") {
+    await recordFeedbackAudioPlayed(message.questionId);
+  }
 }
 
 export async function markMessageExternalStatus(
@@ -22,7 +29,11 @@ export async function markMessageExternalStatus(
 ): Promise<void> {
   const message = await findMessageByExternalId(externalId);
   if (!message) return;
-  await updateMessageExternalStatus(message.id, status, timestamp ?? new Date());
+  await updateMessageExternalStatus(
+    message.id,
+    status,
+    timestamp ?? new Date(),
+  );
 }
 
 export async function processWhatsAppStatusEvent(
@@ -30,10 +41,6 @@ export async function processWhatsAppStatusEvent(
   externalId: string,
   timestamp?: Date,
 ): Promise<void> {
-  console.log("[processWhatsAppStatusEvent] received status", {
-    rawStatus,
-    externalId,
-  });
   if (rawStatus === "played") {
     await markMessageAsPlayed(externalId, timestamp);
     return;

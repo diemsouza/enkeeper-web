@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "activities" ADD COLUMN     "score" DOUBLE PRECISION NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "questions" ADD COLUMN     "score" DOUBLE PRECISION NOT NULL DEFAULT 0;

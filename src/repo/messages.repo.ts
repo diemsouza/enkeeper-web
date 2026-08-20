@@ -103,11 +103,12 @@ export async function findMessageByExternalId(
 export async function markMessagePlayedIfUnset(
   id: string,
   playedAt: Date,
-): Promise<void> {
-  await prisma.message.updateMany({
+): Promise<boolean> {
+  const result = await prisma.message.updateMany({
     where: { id, playedAt: null },
     data: { playedAt },
   });
+  return result.count > 0;
 }
 
 export async function updateMessageExternalStatus(
