@@ -173,7 +173,6 @@ type MaybeSendActivitySuggestionParams = {
 export async function maybeSendActivitySuggestion(
   params: MaybeSendActivitySuggestionParams,
 ): Promise<void> {
-  console.log(params);
   const {
     activity,
     userId,
