@@ -18,6 +18,7 @@ export type MessageIntent =
   | "waiting_set_activity_domain"
   | "waiting_set_activity_topic"
   | "waiting_set_activity_focus"
+  | "waiting_admin_send_message"
   | "set_level"
   | "new_activity"
   | "free_text"
@@ -36,6 +37,13 @@ export type NewActivityIntentData = {
 
 export type UserIntentMetadata = {
   intent_data: NewActivityIntentData;
+};
+
+export type AdminSendMessageIntentData = {
+  targetUserId: string;
+  targetUserChannelId: string;
+  targetChannelUserId: string;
+  identifier: string;
 };
 
 export type ParsedMessage = {

@@ -1,4 +1,5 @@
 import { ExternalMessageStatus } from "../lib/prisma";
+import { OutMessageButton } from "../types/out-message";
 
 type MediaDownloadResult = {
   buffer: Buffer;
@@ -63,6 +64,56 @@ export async function sendWhatsAppMessage(
         ...buildRecipientField(to),
         type: "text",
         text: { body: text },
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Meta API error ${res.status}: ${detail}`);
+  }
+
+  const data = (await res.json()) as { messages?: { id: string }[] };
+  return data.messages?.[0]?.id ?? null;
+}
+
+export async function sendWhatsAppInteractiveButtons(
+  to: string,
+  body: string,
+  buttons: OutMessageButton[],
+): Promise<string | null> {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[sendWhatsAppInteractiveButtons] Skipping sending message to ${to} in non-production environment`,
+    );
+    return null;
+  }
+
+  const token = process.env.WABA_TOKEN;
+  const phoneNumberId = process.env.WABA_PHONE_ID;
+
+  const res = await fetch(
+    `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        ...buildRecipientField(to),
+        type: "interactive",
+        interactive: {
+          type: "button",
+          body: { text: body },
+          action: {
+            buttons: buttons.map((b) => ({
+              type: "reply",
+              reply: { id: b.id, title: b.title },
+            })),
+          },
+        },
       }),
     },
   );

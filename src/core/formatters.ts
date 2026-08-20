@@ -1,5 +1,6 @@
 import { ActivityStatus, Level, QuestionFormat } from "../lib/prisma";
 import {
+  ACTIVITY_SUGGESTION_EMOJI,
   ANSWER_EMOJI,
   DOMAINS,
   DomainId,
@@ -167,8 +168,12 @@ export function formatFocusQuestion(
   ].join("\n");
 }
 
-export function formatNewActivityFlowCanceled(): string {
-  return "Ok, cancelado.";
+export function formatNewActivityFlowCanceled(
+  hasActiveActivity = false,
+): string {
+  return hasActiveActivity
+    ? "Ok, cancelado. Seguindo com a atividade atual."
+    : "Ok, cancelado.";
 }
 
 export function formatNewActivityFlowCanceledGuidance(): string {
@@ -445,6 +450,22 @@ function getCoverageClause(responses: number, questionCount: number): string {
   return `Ficaram ${missing} perguntas sem resposta.`;
 }
 
+export function formatActivitySuggestion(): string {
+  return [
+    `${ACTIVITY_SUGGESTION_EMOJI} *Sugestão de nova atividade*`,
+    "",
+    `Você já domina boa parte do que esse material trouxe. Use ${formatCommand("new_activity")}, envie um material novo, ou apenas aguarde a próxima pergunta.`,
+  ].join("\n");
+}
+
+export function formatActivitySuggestionInteractive(): string {
+  return [
+    `${ACTIVITY_SUGGESTION_EMOJI} *Sugestão de nova atividade*`,
+    "",
+    `Você já domina boa parte do que esse material trouxe. Clique em *Nova atividade*, envie um material novo, ou apenas aguarde a próxima pergunta.`,
+  ].join("\n");
+}
+
 export function formatPreviousActivitySummary(
   data: PreviousActivitySummaryData,
 ): string {
@@ -630,7 +651,7 @@ export function formatNudgeMessage(step: string): NudgePayload {
 }
 
 export function formatCanceled(): string {
-  return "Cancelado.";
+  return "Ok, cancelado.";
 }
 
 export function formatActivityReplaceCanceled(): string {

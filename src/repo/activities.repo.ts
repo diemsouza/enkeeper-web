@@ -33,6 +33,7 @@ type UpdateActivityData = {
   questionCount?: number;
   sectionCount?: number;
   roundCompleted?: boolean;
+  activitySuggestedAt?: Date;
   lastQuestionId?: string | null;
   summary?: string | null;
   lastNudgeStep?: string | null;

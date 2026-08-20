@@ -86,7 +86,10 @@ import {
   updateActivity,
   countAllActivitiesByUser,
 } from "../repo/activities.repo";
-import { switchToActivity } from "./activity-service";
+import {
+  maybeSendActivitySuggestion,
+  switchToActivity,
+} from "./activity-service";
 import { resolveFeedbackAudioPath } from "./feedback-audio-service";
 import {
   getTodayActivityCount,
@@ -134,7 +137,10 @@ import {
   completeRoundZero,
   generateQuestionIfPoolNotFull,
 } from "./activity-cron.service";
-import { handleAdminCommand } from "./admin-service";
+import {
+  handleAdminCommand,
+  handleAdminPendingSendMessage,
+} from "./admin-service";
 import { resolveCommand } from "../lib/commands";
 import { markWaitlistActive } from "../repo/waitlist.repo";
 import { startOfDay } from "date-fns";
@@ -197,7 +203,23 @@ export async function handleIncomingMessage(
     const [firstWord] = rawText.split(/\s+/);
     if (resolveCommand(firstWord) === "admin") {
       if (input.channelUserPhone !== process.env.WA_SUPPORT) return;
-      const reply = await handleAdminCommand(rawText);
+      const reply = await handleAdminCommand(rawText, user.id, channel);
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelUserId,
+        userId: user.id,
+        userChannelId: userChannel.id,
+        content: reply,
+        today,
+      });
+      return;
+    }
+
+    if (
+      user.pendingIntent === "waiting_admin_send_message" &&
+      input.channelUserPhone === process.env.WA_SUPPORT
+    ) {
+      const reply = await handleAdminPendingSendMessage(user, channel, rawText);
       await sendAndSaveMessage({
         channel,
         to: userChannel.channelUserId,
@@ -479,7 +501,9 @@ export async function handleIncomingMessage(
     ) {
       await updateUserPendingIntent(user.id, null);
       await saveUserMsg(user.id, userChannel.id, text, "cancel", input, today);
-      const flowCancelledReply = formatNewActivityFlowCanceled();
+      const flowCancelledReply = formatNewActivityFlowCanceled(
+        Boolean(activeActivity),
+      );
       await sendAndSaveMessage({
         channel,
         to: userChannel.channelUserId,
@@ -1277,7 +1301,7 @@ export async function handleIncomingMessage(
                 status: evalStatus,
                 attemptCount: pendingQuestion.attemptCount + 1,
                 answerType,
-                ...(pendingQuestion.attemptCount > 0
+                ...(pendingQuestion.attemptCount > 0 && sm2 !== null
                   ? { revisionCount: pendingQuestion.revisionCount + 1 }
                   : {}),
                 ...(isWrongOrPartial
@@ -1437,8 +1461,18 @@ export async function handleIncomingMessage(
                   questionId: pendingQuestion.id,
                   today,
                 });
-                return;
               }
+
+              await maybeSendActivitySuggestion({
+                activity: activeActivity,
+                userId: user.id,
+                userChannelId: userChannel.id,
+                isIntensiveMode,
+                isLastAnswerCorrect: evalStatus === "right",
+                channel,
+                to: userChannel.channelUserId,
+                today,
+              });
 
               return;
             }

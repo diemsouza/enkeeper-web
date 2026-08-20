@@ -121,9 +121,7 @@ export async function updateUserPendingIntent(
       pendingIntent: intent,
       pendingIntentAt: intent ? new Date() : null,
       metadata:
-        intent && metadata !== null
-          ? { intent_data: metadata }
-          : Prisma.DbNull,
+        intent && metadata !== null ? { intent_data: metadata } : Prisma.DbNull,
     },
   });
 }
@@ -141,7 +139,9 @@ export async function updateUserPlan(
     data: {
       ...data,
       ...(data.planCode !== undefined ? { planCodeUpdatedAt: new Date() } : {}),
-      ...(data.planStatus !== undefined ? { planStatusUpdatedAt: new Date() } : {}),
+      ...(data.planStatus !== undefined
+        ? { planStatusUpdatedAt: new Date() }
+        : {}),
     },
   });
 }
@@ -152,7 +152,7 @@ type UserStat = {
   trial: number;
   pro: number;
   expired: number;
-  recent: { channelUserId: string; name: string | null; createdAt: Date }[];
+  recent: { channelIdentity: string; name: string | null; createdAt: Date }[];
 };
 
 export async function fetchUserStats(): Promise<UserStat> {
@@ -176,7 +176,11 @@ export async function fetchUserStats(): Promise<UserStat> {
         name: true,
         createdAt: true,
         channels: {
-          select: { channelUserId: true },
+          select: {
+            channelUserId: true,
+            channelUsername: true,
+            channelUserPhone: true,
+          },
           where: { channelType: "whatsapp" },
           take: 1,
         },
@@ -190,7 +194,11 @@ export async function fetchUserStats(): Promise<UserStat> {
     pro,
     expired,
     recent: recent.map((u) => ({
-      channelUserId: u.channels[0]?.channelUserId ?? "?",
+      channelIdentity:
+        u.channels[0]?.channelUserPhone ||
+        u.channels[0]?.channelUsername ||
+        u.channels[0]?.channelUserId ||
+        "?",
       name: u.name,
       createdAt: u.createdAt,
     })),
@@ -275,10 +283,17 @@ async function attemptFindOrCreateUserChannel(
           channelUsername,
         },
       });
-      return { user: { ...user, channels: [userChannel] }, userChannel, isNew: true };
+      return {
+        user: { ...user, channels: [userChannel] },
+        userChannel,
+        isNew: true,
+      };
     });
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
       return null;
     }
     throw err;

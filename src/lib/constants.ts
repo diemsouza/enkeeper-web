@@ -74,6 +74,10 @@ export const ANSWER_EMOJI = {
   wrong: "❌",
 } as const;
 
+export const ACTIVITY_SUGGESTION_COVERAGE_THRESHOLD = 0.7;
+export const ACTIVITY_SUGGESTION_ACCURACY_THRESHOLD = 0.8;
+export const ACTIVITY_SUGGESTION_EMOJI = "🔄";
+
 export const MESSAGE_SUPPRESSION_SEC = 10;
 export const MAX_RETRY_ATTEMPTS = 3;
 export const RETRY_DELAY_MS = 1000;

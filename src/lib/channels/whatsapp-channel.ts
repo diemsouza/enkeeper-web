@@ -9,6 +9,7 @@ import {
   sendWhatsAppTemplate,
   uploadWhatsAppMedia,
   sendWhatsAppAudio,
+  sendWhatsAppInteractiveButtons,
 } from "../../vendors/whatsapp.vendor";
 import { downloadFile } from "../../vendors/storage.vendor";
 import { TTS_MIME_TYPE } from "../../vendors/tts.vendor";
@@ -29,10 +30,18 @@ async function sendAudioPart(
 
 export class WhatsAppChannel implements MessageChannel {
   async sendMessage(to: string, message: OutMessage): Promise<ChannelSendResult> {
-    const externalId =
-      typeof message === "object"
-        ? await sendAudioPart(to, message)
-        : await sendWhatsAppMessage(to, message);
+    let externalId: string | null;
+    if (typeof message === "string") {
+      externalId = await sendWhatsAppMessage(to, message);
+    } else if ("audioPath" in message) {
+      externalId = await sendAudioPart(to, message);
+    } else {
+      externalId = await sendWhatsAppInteractiveButtons(
+        to,
+        message.content,
+        message.buttons,
+      );
+    }
     return { externalId };
   }
 

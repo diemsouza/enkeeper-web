@@ -44,6 +44,15 @@ export async function createQuestions(
   });
 }
 
+export async function findQuestionRevisionStatsByActivity(
+  activityId: string,
+): Promise<{ revisionCount: number; status: QuestionStatus | null }[]> {
+  return prisma.question.findMany({
+    where: { activityId },
+    select: { revisionCount: true, status: true },
+  });
+}
+
 export async function findNextUnansweredQuestion(
   docId: string,
   lastQuestionId: string | null,

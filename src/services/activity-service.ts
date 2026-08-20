@@ -5,11 +5,22 @@ import {
   findLatestArchivedActivityForSummary,
   updateActivity,
 } from "../repo/activities.repo";
+import { findQuestionRevisionStatsByActivity } from "../repo/questions.repo";
 import {
+  formatActivitySuggestion,
+  formatActivitySuggestionInteractive,
   formatPreviousActivitySummary,
   formatRoundCompletedFallback,
   formatRoundCompletedSummary,
 } from "../core/formatters";
+import {
+  ACTIVITY_SUGGESTION_ACCURACY_THRESHOLD,
+  ACTIVITY_SUGGESTION_COVERAGE_THRESHOLD,
+  AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
+} from "../lib/constants";
+import { delay } from "../lib/utils";
+import { MessageChannel } from "../types/message-channel";
+import { sendAndSaveMessage } from "./message-sender-service";
 
 export async function archiveOrCancelActivity(
   activity: Activity,
@@ -107,4 +118,99 @@ export async function buildRoundCompletedSummary(
   } catch {
     return formatRoundCompletedFallback();
   }
+}
+
+export async function isActivitySuggestionEligible(
+  activityId: string,
+): Promise<boolean> {
+  const questions = await findQuestionRevisionStatsByActivity(activityId);
+
+  if (questions.length === 0) {
+    console.log(
+      `[isActivitySuggestionEligible] activityId=${activityId} questions=0 eligible=false reason=no_questions`,
+    );
+    return false;
+  }
+
+  const reviewed = questions.filter((q) => q.revisionCount >= 1);
+  const coverageRatio = reviewed.length / questions.length;
+
+  const rightCount = reviewed.filter((q) => q.status === "right").length;
+  const accuracyRatio = reviewed.length > 0 ? rightCount / reviewed.length : 0;
+
+  const coveragePass = coverageRatio >= ACTIVITY_SUGGESTION_COVERAGE_THRESHOLD;
+  const accuracyPass = accuracyRatio >= ACTIVITY_SUGGESTION_ACCURACY_THRESHOLD;
+  const eligible = coveragePass && accuracyPass;
+
+  const reason = !coveragePass
+    ? "coverage_below_threshold"
+    : !accuracyPass
+      ? "accuracy_below_threshold"
+      : "eligible";
+
+  console.log(
+    `[isActivitySuggestionEligible] activityId=${activityId} ` +
+      `questions=${questions.length} reviewed=${reviewed.length} ` +
+      `coverageRatio=${coverageRatio.toFixed(2)}/${ACTIVITY_SUGGESTION_COVERAGE_THRESHOLD} ` +
+      `accuracyRatio=${accuracyRatio.toFixed(2)}/${ACTIVITY_SUGGESTION_ACCURACY_THRESHOLD} ` +
+      `eligible=${eligible} reason=${reason}`,
+  );
+
+  return eligible;
+}
+
+type MaybeSendActivitySuggestionParams = {
+  activity: Activity;
+  userId: string;
+  userChannelId: string;
+  isIntensiveMode: boolean;
+  isLastAnswerCorrect: boolean;
+  channel: MessageChannel;
+  to: string;
+  today: Date;
+};
+
+export async function maybeSendActivitySuggestion(
+  params: MaybeSendActivitySuggestionParams,
+): Promise<void> {
+  console.log(params);
+  const {
+    activity,
+    userId,
+    userChannelId,
+    isIntensiveMode,
+    isLastAnswerCorrect,
+    channel,
+    to,
+    today,
+  } = params;
+  if (isIntensiveMode) return;
+  if (!isLastAnswerCorrect) return;
+  if (!activity.roundCompleted) return;
+  if (activity.activitySuggestedAt !== null) return;
+
+  const eligible = await isActivitySuggestionEligible(activity.id);
+  if (!eligible) return;
+
+  await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+  const content = formatActivitySuggestion();
+  const contentInteractive = formatActivitySuggestionInteractive();
+  await sendAndSaveMessage({
+    channel,
+    to,
+    userId,
+    userChannelId,
+    activityId: activity.id,
+    content,
+    part: {
+      content: contentInteractive,
+      buttons: [{ id: "new_activity_suggestion", title: "Nova atividade" }],
+    },
+    intent: "activity_suggestion",
+    today,
+  });
+
+  await updateActivity(activity.id, userId, {
+    activitySuggestedAt: new Date(),
+  });
 }

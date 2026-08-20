@@ -172,6 +172,7 @@ model Activity {
     questionLimit     Int            @default(0) @map("question_limit")
     sectionCount      Int            @default(0) @map("section_count")
     roundCompleted    Boolean        @default(false) @map("round_completed")
+    activitySuggestedAt DateTime?    @map("activity_suggested_at")
     lastQuestionId    String?        @map("last_question_id")
     summary           String?        @map("summary")
     userLevel         Level          @default(basic) @map("user_level")
