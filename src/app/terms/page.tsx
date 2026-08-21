@@ -20,9 +20,8 @@ export default function TermsPage() {
         </p>
 
         <p className="text-sm bg-[#F5F5F7] dark:bg-[#111111] border border-border rounded-lg px-4 py-3 mb-10 leading-relaxed">
-          Este site e o produto Fluizer são de propriedade e operados por Diego
-          Souza Consultoria em Tecnologia da Informação LTDA - CNPJ
-          49.481.141/0001-62
+          Este site e o produto Fluizer são de propriedade e operados por Head
+          Souza Serviços Digitais LTDA - CNPJ 49.481.141/0001-62
         </p>
 
         <section>

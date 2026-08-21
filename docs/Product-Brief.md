@@ -191,7 +191,7 @@ Não é teaser - é o produto inteiro por tempo limitado. Quem sente o valor no 
 - Campanha sazonal: 7 dias
 - Beta testers / cortesia permanente: sem expiração (planExpiresAt = 2099-12-31)
 
-### Pro - R$19,90/mês recorrente
+### Pro - R$21,90/mês recorrente
 
 - Troca de atividade diária com até 3 materiais cada
 - Prática diária com repetição espaçada
@@ -200,7 +200,7 @@ Não é teaser - é o produto inteiro por tempo limitado. Quem sente o valor no 
 - Texto, imagem, PDF
 - Histórico permanente
 
-### Pro - R$19,90/30 dias avulso (Pix)
+### Pro - R$21,90/30 dias avulso (Pix)
 
 Mesmo preço. Sem fricção para quem quer um mês pontual.
 
@@ -232,6 +232,8 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Pagamento (futuro) | Stripe + recorrência automática |
 | Número virtual | BRDID - (11) 5306-9000 |
 
+Arquitetura multicanal: cada canal de envio (hoje WhatsApp e o simulador de desenvolvimento) implementa sua própria interface de envio e decide sozinho se suporta camadas extras de apresentação (botão interativo, template, áudio) além do texto puro, que é sempre a representação canônica salva no histórico. Um canal novo pode nascer só com suporte a texto. Detalhe do contrato em `docs/Product-Rules.md`, Seção 19.
+
 ---
 
 ## 10. Custos operacionais
@@ -261,7 +263,7 @@ Geração de conteúdo por tema (nova atividade) ainda não tem custo médio med
 
 **Meta de independência:** R$25.000 líquido/mês.
 
-Com R$19,90/mês e custo médio R$5,30, margem bruta de R$14,60/usuário.
+Com R$21,90/mês e custo médio R$5,30, margem bruta de R$14,60/usuário.
 
 | Marco | Pagantes | MRR bruto | Líquido estimado | O que habilita |
 | ----- | -------- | --------- | ---------------- | -------------- |

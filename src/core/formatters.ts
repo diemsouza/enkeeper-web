@@ -17,49 +17,62 @@ import {
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { formatCommand } from "../lib/commands";
 import { shuffle } from "lodash";
+import type { FormattedMessage } from "../types/out-message";
 
-export function formatOnboardingMsg1(): string {
-  return "Hi 👋 Bem-vindo a *Fluizer*.";
+export function formatOnboardingMsg1(): FormattedMessage {
+  return { text: "Hi 👋 Bem-vindo a *Fluizer*." };
 }
 
-export function formatOnboardingMsg2(): string {
-  return "Pratique inglês com IA, no seu ritmo, sobre o que você quiser.";
+export function formatOnboardingMsg2(): FormattedMessage {
+  return {
+    text: "Pratique inglês com IA, no seu ritmo, sobre o que você quiser.",
+  };
 }
 
-export function formatOnboardingMsg3(): string {
-  return "Conte o que quer praticar, ou envie um arquivo de texto, imagem ou PDF com conteúdo em inglês: página de livro, post nas redes sociais ou material de aula.";
+export function formatOnboardingMsg3(): FormattedMessage {
+  return {
+    text: "Conte o que quer praticar, ou envie um arquivo de texto, imagem ou PDF com conteúdo em inglês: página de livro, post nas redes sociais ou material de aula.",
+  };
 }
 
-export function formatOnboardingMsg4(): string {
-  return "Ao longo do dia, chegam perguntas sobre o que você escolher praticar, aqui mesmo.";
+export function formatOnboardingMsg4(): FormattedMessage {
+  return {
+    text: "Ao longo do dia, chegam perguntas sobre o que você escolher praticar, aqui mesmo.",
+  };
 }
 
-export function formatOnboardingMsg5(): string {
-  return `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra praticar sem custo. Use ${formatCommand("help")} pra ver os comandos disponíveis.`;
+export function formatOnboardingMsg5(): FormattedMessage {
+  return {
+    text: `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra praticar sem custo. Use ${formatCommand("help")} pra ver os comandos disponíveis.`,
+  };
 }
 
 export function formatMaterialGuidance(): string {
   return `Use ${formatCommand("new_activity")} para praticar um tema à sua escolha.\n\nOu envie um arquivo de texto em inglês: foto de página de livro, captura de tela de conversa, letra de música, post nas redes sociais, material de aula ou PDF.`;
 }
 
-export function formatNoActivity(): string {
-  return [
-    "Você ainda não tem atividade ativa.",
-    "",
-    formatMaterialGuidance(),
-    "",
-    `_Use ${formatCommand("help")} para ver os comandos disponíveis._`,
-  ].join("\n");
+export function formatNoActivity(): FormattedMessage {
+  return {
+    text: [
+      "Você ainda não tem atividade ativa.",
+      "",
+      formatMaterialGuidance(),
+      "",
+      `_Use ${formatCommand("help")} para ver os comandos disponíveis._`,
+    ].join("\n"),
+  };
 }
 
-export function formatPlanExpired(): string {
-  return [
-    "*Seu período de teste encerrou!*",
-    "",
-    "Para continuar praticando, assine o *Fluizer* por R$19,90/mês. Cancele quando quiser.",
-    "",
-    `_Use ${formatCommand("support")} para falar com a gente e ativar sua conta._`,
-  ].join("\n");
+export function formatPlanExpired(): FormattedMessage {
+  return {
+    text: [
+      "*Seu período de teste encerrou!*",
+      "",
+      "Para continuar praticando, assine o *Fluizer* por R$21,90/mês. Cancele quando quiser.",
+      "",
+      `_Use ${formatCommand("support")} para falar com a gente e ativar sua conta._`,
+    ].join("\n"),
+  };
 }
 
 const LEVEL_LABEL: Record<Level, string> = {
@@ -68,46 +81,50 @@ const LEVEL_LABEL: Record<Level, string> = {
   [Level.advanced]: "avançado",
 };
 
-export function formatLevelQuestion(): string {
-  return [
-    "*Nível de Inglês*",
-    "Informe a letra que corresponde ao nível do seu inglês.",
-    "",
-    "a) Básico",
-    "b) Intermediário",
-    "c) Avançado",
-    "",
-    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-  ].join("\n");
+export function formatLevelQuestion(): FormattedMessage {
+  return {
+    text: [
+      "*Nível de Inglês*",
+      "Informe a letra que corresponde ao nível do seu inglês.",
+      "",
+      "a) Básico",
+      "b) Intermediário",
+      "c) Avançado",
+      "",
+      `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
+    ].join("\n"),
+  };
 }
 
-export function formatLevelConfirmed(): string {
-  return "Nível atualizado com sucesso.";
+export function formatLevelConfirmed(): FormattedMessage {
+  return { text: "Nível atualizado com sucesso." };
 }
 
-export function formatLevelCanceled(): string {
-  return "Ok, nenhuma alteração feita.";
+export function formatLevelCanceled(): FormattedMessage {
+  return { text: "Ok, nenhuma alteração feita." };
 }
 
-export function formatCommandList(level: Level | null): string {
+export function formatCommandList(level: Level | null): FormattedMessage {
   const nivelLabel = level
     ? `atualiza o nível do seu inglês. atual: ${LEVEL_LABEL[level]}`
     : "define o nível do seu inglês";
-  return [
-    "*Comandos disponíveis:*",
-    "",
-    `${formatCommand("help")} - ver essa lista de comandos`,
-    //"*cancelar* - sai do fluxo ou ação em andamento",
-    `${formatCommand("practice_now")} - prática intensiva`,
-    `${formatCommand("pause")} - pausar atividade ou prática intensiva em andamento`,
-    `${formatCommand("resume")} - retomar atividade pausada`,
-    `${formatCommand("list_activities")} - sua atividade atual`,
-    `${formatCommand("new_activity")} - cria uma atividade com tema gerado por você`,
-    `${formatCommand("set_level")} - ${nivelLabel}`,
-    `${formatCommand("support")} - fala com a equipe`,
-    "",
-    "_Envie um arquivo de texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._",
-  ].join("\n");
+  return {
+    text: [
+      "*Comandos disponíveis:*",
+      "",
+      `${formatCommand("help")} - ver essa lista de comandos`,
+      //"*cancelar* - sai do fluxo ou ação em andamento",
+      `${formatCommand("practice_now")} - prática intensiva`,
+      `${formatCommand("pause")} - pausar atividade ou prática intensiva em andamento`,
+      `${formatCommand("resume")} - retomar atividade pausada`,
+      `${formatCommand("list_activities")} - sua atividade atual`,
+      `${formatCommand("new_activity")} - cria uma atividade com tema gerado por você`,
+      `${formatCommand("set_level")} - ${nivelLabel}`,
+      `${formatCommand("support")} - fala com a equipe`,
+      "",
+      "_Envie um arquivo de texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._",
+    ].join("\n"),
+  };
 }
 
 function getEmojiNumber(num: number): string {
@@ -127,81 +144,103 @@ function getEmojiNumber(num: number): string {
   return numberMap[num.toString()] || num.toString();
 }
 
-export function formatDomainQuestion(): string {
+export function formatDomainQuestion(): FormattedMessage {
   const options = DOMAINS.map((g, i) => `${getEmojiNumber(i + 1)} ${g.label}`);
-  return [
-    "*Objetivo (1/3)*",
-    "Escolha um objetivo para praticar. Ele ajuda a direcionar o melhor conteúdo pra você.",
-    "",
-    ...options,
-    "",
-    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-  ].join("\n");
+  return {
+    text: [
+      "*Objetivo (1/3)*",
+      "Escolha um objetivo para praticar. Ele ajuda a direcionar o melhor conteúdo pra você.",
+      "",
+      ...options,
+      "",
+      `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
+    ].join("\n"),
+  };
 }
 
-export function formatTopicQuestion(domain: string): string {
+export function formatTopicQuestion(domain: string): FormattedMessage {
   const suggestions = TOPIC_SUGGESTIONS[domain as DomainId] ?? [];
   const options = suggestions.map((s, i) => `${getEmojiNumber(i + 1)} ${s}`);
-  return [
-    "*Assunto (2/3)*",
-    "Escolha um assunto do seu interesse, ou informe outro mais específico.",
-    "",
-    ...options,
-    "",
-    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-  ].join("\n");
+  return {
+    text: [
+      "*Assunto (2/3)*",
+      "Escolha um assunto do seu interesse, ou informe outro mais específico.",
+      "",
+      ...options,
+      "",
+      `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
+    ].join("\n"),
+  };
 }
 
 export function formatFocusQuestion(
   suggestions: { key: string; label: string }[],
-): string {
+): FormattedMessage {
   const options = suggestions.map(
     (s, i) => `${getEmojiNumber(i + 1)} ${s.label}`,
   );
-  return [
-    "*Foco (3/3)*",
-    "Para finalizar, o que você precisa praticar? Escolha uma opção abaixo ou informe outro ponto de seu interesse.",
-    "",
-    ...options,
-    "",
-    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-  ].join("\n");
+  return {
+    text: [
+      "*Foco (3/3)*",
+      "Para finalizar, o que você precisa praticar? Escolha uma opção abaixo ou informe outro ponto de seu interesse.",
+      "",
+      ...options,
+      "",
+      `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
+    ].join("\n"),
+  };
 }
 
 export function formatNewActivityFlowCanceled(
   hasActiveActivity = false,
-): string {
-  return hasActiveActivity
-    ? "Ok, cancelado. Seguindo com a atividade atual."
-    : "Ok, cancelado.";
+): FormattedMessage {
+  return {
+    text: hasActiveActivity
+      ? "Ok, cancelado. Seguindo com a atividade atual."
+      : "Ok, cancelado.",
+  };
 }
 
-export function formatNewActivityFlowCanceledGuidance(): string {
-  return `Use ${formatCommand("new_activity")} para começar, ou ${formatCommand("help")} para ver a lista de comandos.`;
+export function formatNewActivityFlowCanceledGuidance(): FormattedMessage {
+  return {
+    text: `Use ${formatCommand("new_activity")} para começar, ou ${formatCommand("help")} para ver a lista de comandos.`,
+  };
 }
 
-export function formatSetFirstLevelCanceled(): string {
-  return `Use ${formatCommand("new_activity")} para tentar de novo, ou ${formatCommand("help")} para ver a lista de comandos.`;
+export function formatSetFirstLevelCanceled(): FormattedMessage {
+  return {
+    text: `Use ${formatCommand("new_activity")} para tentar de novo, ou ${formatCommand("help")} para ver a lista de comandos.`,
+  };
 }
 
-export function formatFirstNewActivityCanceled(): string {
-  return `Use ${formatCommand("new_activity")} para começar quando quiser, ou ${formatCommand("help")} para ver a lista de comandos.`;
+export function formatFirstNewActivityCanceled(): FormattedMessage {
+  return {
+    text: `Use ${formatCommand("new_activity")} para começar quando quiser, ou ${formatCommand("help")} para ver a lista de comandos.`,
+  };
 }
 
-export function formatNewActivityFlowExpired(): string {
-  return `Criação da nova atividade encerrada por inatividade. Pode recomeçar quando quiser com ${formatCommand("new_activity")}.`;
+export function formatNewActivityFlowExpired(): FormattedMessage {
+  return {
+    text: `Criação da nova atividade encerrada por inatividade. Pode recomeçar quando quiser com ${formatCommand("new_activity")}.`,
+  };
 }
 
-export function formatTopicError(): string {
-  return `Assunto inválido. Envie outra opção, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`;
+export function formatTopicError(): FormattedMessage {
+  return {
+    text: `Assunto inválido. Envie outra opção, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`,
+  };
 }
 
-export function formatFocusError(): string {
-  return `Não foi possível usar essa opção. Tente descrever de outra forma, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`;
+export function formatFocusError(): FormattedMessage {
+  return {
+    text: `Não foi possível usar essa opção. Tente descrever de outra forma, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`,
+  };
 }
 
-export function formatFocusTooMany(): string {
-  return `Não é possível informar mais de 2 opções. Tente de novo com uma ou duas opções, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`;
+export function formatFocusTooMany(): FormattedMessage {
+  return {
+    text: `Não é possível informar mais de 2 opções. Tente de novo com uma ou duas opções, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`,
+  };
 }
 
 type ActivityListItem = {
@@ -217,7 +256,9 @@ export function selectArchivedActivities<T extends { status: ActivityStatus }>(
   return activities.filter((a) => a.status === "archived").slice(0, 3);
 }
 
-export function formatActivitiesList(activities: ActivityListItem[]): string {
+export function formatActivitiesList(
+  activities: ActivityListItem[],
+): FormattedMessage {
   const current = activities.filter((a) =>
     ["active", "paused"].includes(a.status),
   );
@@ -257,17 +298,17 @@ export function formatActivitiesList(activities: ActivityListItem[]): string {
   textFooter += `_Para criar uma atividade, use ${formatCommand("new_activity")} ou envie um arquivo de texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._`;
   if (textFooter) lines.push("", textFooter);
 
-  return lines.join("\n");
+  return { text: lines.join("\n") };
 }
 
-export function formatDocReceiving(): string {
-  return "✅ Recebido e processando...";
+export function formatDocReceiving(): FormattedMessage {
+  return { text: "✅ Recebido e processando..." };
 }
 
 export function formatDocProcessed(
   hasWarning: boolean,
   remaining: number,
-): string {
+): FormattedMessage {
   const lines = [
     "Pronto. Em alguns minutos chega a primeira pergunta. Nunca envie mais de uma mensagem por vez.",
   ];
@@ -276,41 +317,51 @@ export function formatDocProcessed(
   if (remaining === 1)
     lines.push("\n_Você ainda pode enviar mais 1 atividade hoje._");
   if (remaining === 0) lines.push("\n_Essa é sua última atividade do dia._");
-  return lines.join("");
+  return { text: lines.join("") };
 }
 
-export function formatGuideAfterFirstFeedback(): string {
-  return `As próximas perguntas chegam aos poucos durante o dia. Use ${formatCommand("practice_now")} para iniciar agora com um ritmo mais rápido.`;
+export function formatGuideAfterFirstFeedback(): FormattedMessage {
+  return {
+    text: `As próximas perguntas chegam aos poucos durante o dia. Use ${formatCommand("practice_now")} para iniciar agora com um ritmo mais rápido.`,
+  };
 }
 
-export function formatDocProcessingFailed(): string {
-  return "Algo deu errado no processamento. Tente outro material.";
+export function formatDocProcessingFailed(): FormattedMessage {
+  return { text: "Algo deu errado no processamento. Tente outro material." };
 }
 
-export function formatDocNoQuestions(): string {
-  return "Não foi possível gerar perguntas a partir desse material. Tente outro material.";
+export function formatDocNoQuestions(): FormattedMessage {
+  return {
+    text: "Não foi possível gerar perguntas a partir desse material. Tente outro material.",
+  };
 }
 
-export function formatIntensiveModeStopped(pendingQuestion: boolean): string {
+export function formatIntensiveModeStopped(
+  pendingQuestion: boolean,
+): FormattedMessage {
   let message = "Modo prática intensiva pausado. Voltando para o ritmo normal.";
   if (pendingQuestion) {
     message += "\n\n⚠️ Encerre respondendo a última pergunta em aberto.";
   }
-  return message;
+  return { text: message };
 }
 
-export function formatDailyPracticeLimitReached(): string {
-  return "Você usou toda sua prática disponível de hoje, mas amanhã tem mais.";
+export function formatDailyPracticeLimitReached(): FormattedMessage {
+  return {
+    text: "Você usou toda sua prática disponível de hoje, mas amanhã tem mais.",
+  };
 }
 
-export function formatIntensiveDailyLimitReached(): string {
-  return "Você atingiu o limite diário de prática intensiva. Sua prática ao longo do dia continua normal.";
+export function formatIntensiveDailyLimitReached(): FormattedMessage {
+  return {
+    text: "Você atingiu o limite diário de prática intensiva. Sua prática ao longo do dia continua normal.",
+  };
 }
 
 export function formatActivityReplacePrompt(
   title: string,
   activitiesRemaining: number,
-): string {
+): FormattedMessage {
   const limitNote =
     activitiesRemaining === 1
       ? "\n_Você só pode criar mais uma atividade hoje._"
@@ -318,57 +369,71 @@ export function formatActivityReplacePrompt(
         ? "\n_Esse foi sua última atividade do dia._"
         : "";
 
-  return [
-    `Você já tem uma atividade em andamento${title ? `: *"${title}"*` : ""}. Deseja arquivar e começar uma nova?`,
-    "",
-    `_Use ${formatCommand("confirm_yes")} para continuar ou ${formatCommand("confirm_no")} para manter o atual._${limitNote}`,
-  ].join("\n");
+  return {
+    text: [
+      `Você já tem uma atividade em andamento${title ? `: *"${title}"*` : ""}. Deseja arquivar e começar uma nova?`,
+      "",
+      `_Use ${formatCommand("confirm_yes")} para continuar ou ${formatCommand("confirm_no")} para manter o atual._${limitNote}`,
+    ].join("\n"),
+  };
 }
 
-export function formatDailyActivityLimitReached(): string {
-  return "⚠️ Você atingiu o limite de atividades de hoje.";
+export function formatDailyActivityLimitReached(): FormattedMessage {
+  return { text: "⚠️ Você atingiu o limite de atividades de hoje." };
 }
 
-export function formatDocItemReceived(itemCount: number): string {
+export function formatDocItemReceived(itemCount: number): FormattedMessage {
   const suffix = `Você pode enviar mais materiais ou só aguardar. Use ${formatCommand("cancel")} para descartar e começar de novo.`;
-  if (itemCount === 1) return `Recebido. ${suffix}`;
-  return `Recebido ${itemCount}/${MAX_DOC_ITEMS_PER_DOC}. ${suffix}`;
+  if (itemCount === 1) return { text: `Recebido. ${suffix}` };
+  return { text: `Recebido ${itemCount}/${MAX_DOC_ITEMS_PER_DOC}. ${suffix}` };
 }
 
-export function formatDocItemLimitReached(): string {
-  return `⚠️ Essa atividade já atingiu o limite de ${MAX_DOC_ITEMS_PER_DOC} materiais. Continuando com o que já foi enviado...`;
+export function formatDocItemLimitReached(): FormattedMessage {
+  return {
+    text: `⚠️ Essa atividade já atingiu o limite de ${MAX_DOC_ITEMS_PER_DOC} materiais. Continuando com o que já foi enviado...`,
+  };
 }
 
-export function formatPauseSuccess(title: string): string {
-  return `Atividade *${title || "Sem título"}* pausada. Use ${formatCommand("resume")} para continuar de onde parou.`;
+export function formatPauseSuccess(title: string): FormattedMessage {
+  return {
+    text: `Atividade *${title || "Sem título"}* pausada. Use ${formatCommand("resume")} para continuar de onde parou.`,
+  };
 }
 
-export function formatNoPausableDocs(): string {
-  return "Nenhuma atividade ativa no momento.";
+export function formatNoPausableDocs(): FormattedMessage {
+  return { text: "Nenhuma atividade ativa no momento." };
 }
 
-export function formatResumeSuccess(title: string): string {
-  return `Retomando *${title || "Sem título"}*, de onde parou.`;
+export function formatResumeSuccess(title: string): FormattedMessage {
+  return { text: `Retomando *${title || "Sem título"}*, de onde parou.` };
 }
 
-export function formatNoPausedDocs(): string {
-  return "Nenhuma atividade pausada no momento.";
+export function formatNoPausedDocs(): FormattedMessage {
+  return { text: "Nenhuma atividade pausada no momento." };
 }
 
-export function formatSupportRequest(): string {
-  return `Escreva em uma única mensagem como podemos ajudar ou use ${formatCommand("cancel", { strictMode: false })} para sair.`;
+export function formatSupportRequest(): FormattedMessage {
+  return {
+    text: `Escreva em uma única mensagem como podemos ajudar ou use ${formatCommand("cancel", { strictMode: false })} para sair.`,
+  };
 }
 
-export function formatSupportReceived(): string {
-  return "Sua mensagem foi enviada! Um especialista entrará em contato em breve.";
+export function formatSupportReceived(): FormattedMessage {
+  return {
+    text: "Sua mensagem foi enviada! Um especialista entrará em contato em breve.",
+  };
 }
 
-export function formatShortTextWithDocs(): string {
-  return `Material recebido. Aguarde ou use ${formatCommand("help")} para ver os comandos disponíveis.`;
+export function formatShortTextWithDocs(): FormattedMessage {
+  return {
+    text: `Material recebido. Aguarde ou use ${formatCommand("help")} para ver os comandos disponíveis.`,
+  };
 }
 
-export function formatShortTextNoDocs(): string {
-  return `Use ${formatCommand("new_activity")} para praticar um tema à sua escolha, ou envie um arquivo de texto, imagem ou PDF para praticar durante o dia.\n\n_Use ${formatCommand("help")} para ver todos os comandos._`;
+export function formatShortTextNoDocs(): FormattedMessage {
+  return {
+    text: `Use ${formatCommand("new_activity")} para praticar um tema à sua escolha, ou envie um arquivo de texto, imagem ou PDF para praticar durante o dia.\n\n_Use ${formatCommand("help")} para ver todos os comandos._`,
+  };
 }
 
 export function getRoundCompletedReadingLine(right: number, responses: number) {
@@ -390,24 +455,28 @@ export function getRoundCompletedReadingLine(right: number, responses: number) {
   return { rate, reading };
 }
 
-export function formatRoundCompletedFallback(): string {
-  return "Você concluiu as perguntas dessa atividade. Envie um novo material ou continue revisando no ritmo normal para fixar mais.";
+export function formatRoundCompletedFallback(): FormattedMessage {
+  return {
+    text: "Você concluiu as perguntas dessa atividade. Envie um novo material ou continue revisando no ritmo normal para fixar mais.",
+  };
 }
 
 export function formatRoundCompletedSummary(data: {
   questionCount: number;
   right: number;
   responses: number;
-}): string {
+}): FormattedMessage {
   const { questionCount, right, responses } = data;
   const { rate, reading } = getRoundCompletedReadingLine(right, responses);
   const percentual = Math.round(rate * 100);
 
-  return [
-    `📊 Você concluiu as ${questionCount} perguntas dessa atividade, ${percentual}% de acerto. ${reading}`,
-    "",
-    "Continue praticando no seu ritmo.",
-  ].join("\n");
+  return {
+    text: [
+      `📊 Você concluiu as ${questionCount} perguntas dessa atividade, ${percentual}% de acerto. ${reading}`,
+      "",
+      "Continue praticando no seu ritmo.",
+    ].join("\n"),
+  };
 }
 
 export function getActivitySummaryReadingLine(
@@ -450,25 +519,28 @@ function getCoverageClause(responses: number, questionCount: number): string {
   return `Ficaram ${missing} perguntas sem resposta.`;
 }
 
-export function formatActivitySuggestion(): string {
-  return [
+export function formatActivitySuggestion(): FormattedMessage {
+  const text = [
     `${ACTIVITY_SUGGESTION_EMOJI} *Sugestão de nova atividade*`,
     "",
     `Você já domina boa parte do que esse material trouxe. Use ${formatCommand("new_activity")}, envie um material novo, ou apenas aguarde a próxima pergunta.`,
   ].join("\n");
-}
-
-export function formatActivitySuggestionInteractive(): string {
-  return [
-    `${ACTIVITY_SUGGESTION_EMOJI} *Sugestão de nova atividade*`,
-    "",
-    `Você já domina boa parte do que esse material trouxe. Clique em *Nova atividade*, envie um material novo, ou apenas aguarde a próxima pergunta.`,
-  ].join("\n");
+  return {
+    text,
+    interactive: {
+      body: [
+        `${ACTIVITY_SUGGESTION_EMOJI} *Sugestão de nova atividade*`,
+        "",
+        "Você já domina boa parte do que esse material trouxe. Clique em *Nova atividade*, envie um material novo, ou apenas aguarde a próxima pergunta.",
+      ].join("\n"),
+      buttons: [{ id: "new_activity_suggestion", label: "Nova atividade" }],
+    },
+  };
 }
 
 export function formatPreviousActivitySummary(
   data: PreviousActivitySummaryData,
-): string {
+): FormattedMessage {
   const {
     activityTitle,
     questionCount,
@@ -507,17 +579,21 @@ export function formatPreviousActivitySummary(
 
   const stats = `Em ${period}, ${rightClause}${coverageClause ? ` ${coverageClause}` : ""}`;
 
-  return [
-    `📊 Resumo da última atividade: *${activityTitle}*`,
-    "",
-    stats,
-    "",
-    `${reading} ${tip}`,
-  ].join("\n");
+  return {
+    text: [
+      `📊 Resumo da última atividade: *${activityTitle}*`,
+      "",
+      stats,
+      "",
+      `${reading} ${tip}`,
+    ].join("\n"),
+  };
 }
 
-export function formatImageNoText(): string {
-  return "Não foi possível identificar texto em inglês suficiente nessa imagem. Envie outro material como texto, imagem ou PDF.";
+export function formatImageNoText(): FormattedMessage {
+  return {
+    text: "Não foi possível identificar texto em inglês suficiente nessa imagem. Envie outro material como texto, imagem ou PDF.",
+  };
 }
 
 export function formatIntensiveModeActivated({
@@ -526,7 +602,7 @@ export function formatIntensiveModeActivated({
 }: {
   isIntensiveMode: boolean;
   hasPendingQuestion?: boolean;
-}): string {
+}): FormattedMessage {
   let msg = isIntensiveMode
     ? "O modo prática intensiva já está ativado. "
     : "Modo prática intensiva ativado. Perguntas chegam uma após a outra, no seu ritmo. ";
@@ -534,7 +610,7 @@ export function formatIntensiveModeActivated({
     msg += "\n\n⚠️ Você tem uma pergunta pendente para responder! ";
   }
   msg += `\n\n_Pare usando ${formatCommand("pause")} ou após ${INTENSIVE_UNTIL_MIN} minutos sem resposta._`;
-  return msg;
+  return { text: msg };
 }
 
 const START_MESSAGES = [
@@ -554,10 +630,10 @@ const CONTINUE_MESSAGES = [
 export function formatSectionTransition(
   title: string,
   isFirst: boolean,
-): string {
+): FormattedMessage {
   const pool = isFirst ? START_MESSAGES : CONTINUE_MESSAGES;
   const prefix = pool[Math.floor(Math.random() * pool.length)];
-  return `📘 ${prefix} *${sanitizeWhatsappContent(title)}*`;
+  return { text: `📘 ${prefix} *${sanitizeWhatsappContent(title)}*` };
 }
 
 export function formatChoiceQuestion(
@@ -580,15 +656,11 @@ type PreviousActivitySummaryData = {
   period: string;
 };
 
-export function formatUpgradePrompt(reason: "audio" | "image"): string {
-  const messages: Record<typeof reason, string> = {
-    audio: `Envio de áudio é exclusivo do plano Pro. _Use ${formatCommand("support")} para saber mais._`,
-    image: `Envio de imagem é exclusivo do plano Pro. _Use ${formatCommand("support")} para saber mais._`,
+export function formatUpgradePrompt(): FormattedMessage {
+  return {
+    text: `Envio de imagem é exclusivo do plano Pro. _Use ${formatCommand("support")} para saber mais._`,
   };
-  return messages[reason];
 }
-
-export type NudgePayload = { text: string; templateName: string | null };
 
 const NUDGE_BODY_POOL = [
   "Não deixa o inglês esfriar.",
@@ -639,7 +711,7 @@ const NUDGE_TEMPLATE_CONFIG: Record<
   },
 };
 
-export function formatNudgeMessage(step: string): NudgePayload {
+export function formatNudgeMessage(step: string): FormattedMessage {
   const template = NUDGE_TEMPLATE_CONFIG[step];
   if (template)
     return { text: template.text, templateName: template.templateName };
@@ -650,64 +722,82 @@ export function formatNudgeMessage(step: string): NudgePayload {
   return { text: `${body} ${closing}`, templateName: null };
 }
 
-export function formatCanceled(): string {
-  return "Ok, cancelado.";
+export function formatCanceled(): FormattedMessage {
+  return { text: "Ok, cancelado." };
 }
 
-export function formatActivityReplaceCanceled(): string {
-  return "Ok, seguindo com a atividade atual.";
+export function formatActivityReplaceCanceled(): FormattedMessage {
+  return { text: "Ok, seguindo com a atividade atual." };
 }
 
-export function formatInvalidResumeIndex(): string {
-  return `Número inválido. Use ${formatCommand("list_activities")} para ver as opções.`;
+export function formatInvalidResumeIndex(): FormattedMessage {
+  return {
+    text: `Número inválido. Use ${formatCommand("list_activities")} para ver as opções.`,
+  };
 }
 
-export function formatNoActiveActivity(): string {
-  return "Nenhuma atividade ativa no momento.";
+export function formatNoActiveActivity(): FormattedMessage {
+  return { text: "Nenhuma atividade ativa no momento." };
 }
 
-export function formatAllQuestionsAnswered(): string {
-  return "Todas as perguntas já foram respondidas.";
+export function formatAllQuestionsAnswered(): FormattedMessage {
+  return { text: "Todas as perguntas já foram respondidas." };
 }
 
-export function formatNoPendingAction(): string {
-  return "Nenhuma ação pendente.";
+export function formatNoPendingAction(): FormattedMessage {
+  return { text: "Nenhuma ação pendente." };
 }
 
-export function formatFeedbackFailed(): string {
-  return "Não foi possível avaliar essa resposta.";
+export function formatFeedbackFailed(): FormattedMessage {
+  return { text: "Não foi possível avaliar essa resposta." };
 }
 
-export function formatPracticeWaiting(): string {
-  return "Aguarde, a próxima mensagem chega em breve. Para mudar de atividade, envie um novo material.";
+export function formatPracticeWaiting(): FormattedMessage {
+  return {
+    text: "Aguarde, a próxima mensagem chega em breve. Para mudar de atividade, envie um novo material.",
+  };
 }
 
-export function formatGenericError(): string {
-  return "Não foi possível processar sua mensagem agora. Tente em instantes.";
+export function formatGenericError(): FormattedMessage {
+  return {
+    text: "Não foi possível processar sua mensagem agora. Tente em instantes.",
+  };
 }
 
-export function formatUnsupportedFileType(): string {
-  return "Formato não suportado. Envie um arquivo de texto, imagem ou PDF.";
+export function formatUnsupportedFileType(): FormattedMessage {
+  return { text: "Formato não suportado. Envie um arquivo de texto, imagem ou PDF." };
 }
 
-export function formatVideoUnsupported(): string {
-  return `Vídeo ainda não é suportado, mas é um formato considerado para o futuro. Envie texto, imagem ou PDF, ou use ${formatCommand("help")} para ver os comandos disponíveis.`;
+export function formatVideoUnsupported(): FormattedMessage {
+  return {
+    text: `Vídeo ainda não é suportado, mas é um formato considerado para o futuro. Envie texto, imagem ou PDF, ou use ${formatCommand("help")} para ver os comandos disponíveis.`,
+  };
 }
 
-export function formatInvalidMessageType(): string {
-  return `Mensagem inválida. Use ${formatCommand("help")} para ver os comandos disponíveis.`;
+export function formatAudioUnsupported(): FormattedMessage {
+  return {
+    text: `Esse áudio não é suportado por aqui. Pra responder às perguntas, grave um áudio segurando o microfone. Envie texto, imagem ou PDF, ou use ${formatCommand("help")} para ver os comandos disponíveis.`,
+  };
 }
 
-export function formatIntensivePendingQuestion(): string {
-  return "Estamos preparando sua próxima pergunta.";
+export function formatInvalidMessageType(): FormattedMessage {
+  return {
+    text: `Mensagem inválida. Use ${formatCommand("help")} para ver os comandos disponíveis.`,
+  };
+}
+
+export function formatIntensivePendingQuestion(): FormattedMessage {
+  return { text: "Estamos preparando sua próxima pergunta." };
 }
 
 export function formatInternalSupportMessage(
   channelCode: string,
   planLabel: string,
   text: string,
-): string {
-  return `*Suporte*\n\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`;
+): FormattedMessage {
+  return {
+    text: `*Suporte*\n\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`,
+  };
 }
 
 type EvaluationStatus = "right" | "wrong" | "partial";
@@ -768,7 +858,7 @@ export function getFeedbackOpening(
 export function formatFeedback(
   feedbackResult: AnswerEvaluationResult,
   level?: Level,
-): string {
+): FormattedMessage {
   const {
     status: evalStatus,
     feedback: agentFeedback,
@@ -788,23 +878,19 @@ export function formatFeedback(
   if (feedback)
     result.push(feedback.indexOf('"') === -1 ? `"${feedback}"` : feedback);
 
-  return result.join(" ");
+  return { text: result.join(" ") };
 }
 
 export function formatFeedbackToSpeech(
   feedbackResult: AnswerEvaluationResult,
-): string {
-  const {
-    status: evalStatus,
-    feedback: agentFeedback,
-    right_answer: rightAnswer,
-  } = feedbackResult;
+): FormattedMessage {
+  const { feedback: agentFeedback } = feedbackResult;
 
-  return sanitizeText(agentFeedback);
+  return { text: sanitizeText(agentFeedback) };
 }
 
-export function formatEvalTip(tip: string): string {
-  return `💡 ${tip}`;
+export function formatEvalTip(tip: string): FormattedMessage {
+  return { text: `💡 ${tip}` };
 }
 
 function insertTermHint(
@@ -832,14 +918,17 @@ export function formatQuestion(question: {
   questionFormat: QuestionFormat | null;
   questionOptions: string[];
   termHint?: string | null;
-}): string {
+}): FormattedMessage {
   const withHint = insertTermHint(
     question.question,
     question.termHint,
     question.questionFormat,
   );
-  return question.questionFormat === QuestionFormat.choice &&
-    question.questionOptions.length > 0
-    ? formatChoiceQuestion(withHint, question.questionOptions)
-    : withHint;
+  return {
+    text:
+      question.questionFormat === QuestionFormat.choice &&
+      question.questionOptions.length > 0
+        ? formatChoiceQuestion(withHint, question.questionOptions)
+        : withHint,
+  };
 }

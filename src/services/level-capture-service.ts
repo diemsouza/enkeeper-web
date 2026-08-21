@@ -6,10 +6,11 @@ import {
   formatLevelQuestion,
 } from "../core/formatters";
 import { updateUserLevel } from "../repo/users.repo";
+import { FormattedMessage } from "../types/out-message";
 
 export type LevelCaptureResult = {
   outcome: "captured" | "canceled" | "invalid";
-  message: string;
+  message: FormattedMessage;
 };
 
 export async function processLevelResponse(

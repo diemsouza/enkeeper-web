@@ -53,12 +53,13 @@ import { calculatePoolSize } from "../core/pool-size";
 import { sanitizeText, delay } from "../lib/utils";
 import { MessageChannel } from "../types/message-channel";
 import { FocusSuggestion } from "../types/domain";
+import { FormattedMessage } from "../types/out-message";
 import { sendAndSaveMessage } from "./message-sender-service";
 
 export type DomainCaptureResult =
-  | { outcome: "captured"; domain: DomainId; message: string }
-  | { outcome: "canceled"; message: string }
-  | { outcome: "invalid"; message: string };
+  | { outcome: "captured"; domain: DomainId; message: FormattedMessage }
+  | { outcome: "canceled"; message: FormattedMessage }
+  | { outcome: "invalid"; message: FormattedMessage };
 
 export function processDomainResponse(text: string): DomainCaptureResult {
   const parsed = parseDomainInput(text);
@@ -80,10 +81,10 @@ export type TopicCaptureResult =
       outcome: "captured";
       topic: string;
       focusSuggestions: FocusSuggestion[];
-      message: string;
+      message: FormattedMessage;
     }
-  | { outcome: "retry"; message: string }
-  | { outcome: "invalid"; message: string };
+  | { outcome: "retry"; message: FormattedMessage }
+  | { outcome: "invalid"; message: FormattedMessage };
 
 export async function processTopicResponse(
   text: string,
@@ -124,8 +125,8 @@ export async function processTopicResponse(
 }
 
 export type FocusCaptureResult =
-  | { outcome: "invalid"; message: string }
-  | { outcome: "retry"; message: string }
+  | { outcome: "invalid"; message: FormattedMessage }
+  | { outcome: "retry"; message: FormattedMessage }
   | { outcome: "done" };
 
 export async function processFocusResponse(
@@ -283,7 +284,7 @@ async function sendActivityCreatedConfirmation(
     to: userChannel.channelUserId,
     userId,
     userChannelId: userChannel.id,
-    content: msg,
+    message: msg,
   });
   if (summary) {
     await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
@@ -292,7 +293,7 @@ async function sendActivityCreatedConfirmation(
       to: userChannel.channelUserId,
       userId,
       userChannelId: userChannel.id,
-      content: summary,
+      message: { text: summary },
     });
   }
 }

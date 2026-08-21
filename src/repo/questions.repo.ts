@@ -150,6 +150,7 @@ export async function countQuestionsEligibleForAudioCleanup(
       OR: [
         { questionAudioMediaId: { not: null } },
         { feedbackAudioMediaId: { not: null } },
+        { answerAudioMediaId: { not: null } },
       ],
       activity: {
         status: { in: ["archived", "cancelled"] },
@@ -170,6 +171,7 @@ export async function findQuestionsEligibleForAudioCleanup(
       OR: [
         { questionAudioMediaId: { not: null } },
         { feedbackAudioMediaId: { not: null } },
+        { answerAudioMediaId: { not: null } },
       ],
       activity: {
         status: { in: ["archived", "cancelled"] },
@@ -202,6 +204,7 @@ export async function updateQuestion(
     evalTip?: string | null;
     questionAudioMediaId?: string | null;
     feedbackAudioMediaId?: string | null;
+    answerAudioMediaId?: string | null;
     metadata?: Record<string, unknown>;
     score?: number;
   },

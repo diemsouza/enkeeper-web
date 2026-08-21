@@ -1,5 +1,6 @@
 import { ExternalMessageStatus } from "../lib/prisma";
-import { OutMessageButton } from "../types/out-message";
+
+type WhatsAppInteractiveButton = { id: string; title: string };
 
 type MediaDownloadResult = {
   buffer: Buffer;
@@ -80,7 +81,7 @@ export async function sendWhatsAppMessage(
 export async function sendWhatsAppInteractiveButtons(
   to: string,
   body: string,
-  buttons: OutMessageButton[],
+  buttons: WhatsAppInteractiveButton[],
 ): Promise<string | null> {
   if (process.env.NODE_ENV !== "production") {
     console.warn(

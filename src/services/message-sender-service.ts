@@ -1,6 +1,6 @@
 import { Message } from "../lib/prisma";
 import { MessageChannel } from "../types/message-channel";
-import { OutMessage } from "../types/out-message";
+import { FormattedMessage } from "../types/out-message";
 import { saveMessage } from "../repo/messages.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 
@@ -9,8 +9,7 @@ type SendAndSaveMessageParams = {
   to: string;
   userId: string;
   userChannelId: string;
-  content: string;
-  part?: OutMessage;
+  message: FormattedMessage;
   intent?: string;
   activityId?: string;
   questionId?: string;
@@ -22,14 +21,16 @@ type SendAndSaveMessageParams = {
 export async function sendAndSaveMessage(
   params: SendAndSaveMessageParams,
 ): Promise<Message> {
-  const { channel, to, part, content, today, ...rest } = params;
-  const result = await channel.sendMessage(to, part ?? content);
-  const message = await saveMessage({
+  const { channel, to, message, today, ...rest } = params;
+  const result = await channel.sendMessage(to, message);
+  const saved = await saveMessage({
     ...rest,
     role: "assistant",
-    content,
+    content: message.text,
+    templateName: message.templateName,
+    interactive: message.interactive,
     externalId: result.externalId ?? undefined,
   });
   if (today) await incrementAgentMessageCount(rest.userId, today);
-  return message;
+  return saved;
 }

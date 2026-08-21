@@ -130,7 +130,7 @@ export async function processActivityCron(
               to: userChannel.channelUserId,
               userId: activity.userId,
               userChannelId: userChannel.id,
-              content: msg,
+              message: { text: msg },
               intent: "system_error",
               today: startOfDay(new Date()),
             });
@@ -162,7 +162,7 @@ export async function processActivityCron(
               to: userChannel.channelUserId,
               userId: activity.userId,
               userChannelId: userChannel.id,
-              content: msg,
+              message: { text: msg },
               intent: "system_error",
               today: startOfDay(new Date()),
             });
@@ -244,12 +244,10 @@ export async function processActivityCron(
 
         let nudgeExternalId: string | null = null;
         try {
-          const result = nudge.templateName
-            ? await channel.sendTemplate(
-                userChannel.channelUserId,
-                nudge.templateName,
-              )
-            : await channel.sendMessage(userChannel.channelUserId, nudge.text);
+          const result = await channel.sendMessage(
+            userChannel.channelUserId,
+            nudge,
+          );
           nudgeExternalId = result.externalId;
         } catch (err) {
           console.error(
@@ -266,6 +264,7 @@ export async function processActivityCron(
           activityId: activity.id,
           role: "assistant",
           content: nudge.text,
+          templateName: nudge.templateName,
           intent: "practice_nudge",
           externalId: nudgeExternalId ?? undefined,
         });
@@ -348,7 +347,7 @@ async function sendCadenceQuestion(
         userId: activity.userId,
         userChannelId: userChannel.id,
         activityId: activity.id,
-        content: transitionMsg,
+        message: transitionMsg,
         intent: "section_transition",
         today,
       });
@@ -363,7 +362,7 @@ async function sendCadenceQuestion(
     userId: activity.userId,
     userChannelId: userChannel.id,
     activityId: activity.id,
-    content: questionText,
+    message: questionText,
     intent: "practice_question",
     questionId: question.id,
     today,
@@ -416,7 +415,7 @@ export async function processExpiredFlowIntents(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: msg,
+          message: msg,
           today: startOfDay(new Date()),
         });
       }
@@ -620,7 +619,7 @@ export async function completeRoundZero(
     userId,
     userChannelId,
     activityId,
-    content: msg,
+    message: { text: msg },
     intent: "practice_complete",
     today,
   });

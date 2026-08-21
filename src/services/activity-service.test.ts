@@ -204,8 +204,10 @@ describe("maybeSendActivitySuggestion", () => {
     expect(sendAndSaveMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         intent: "activity_suggestion",
-        part: expect.objectContaining({
-          buttons: [{ id: "new_activity_suggestion", title: "Nova atividade" }],
+        message: expect.objectContaining({
+          interactive: expect.objectContaining({
+            buttons: [{ id: "new_activity_suggestion", label: "Nova atividade" }],
+          }),
         }),
       }),
     );

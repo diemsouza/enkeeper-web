@@ -75,7 +75,7 @@ export async function handleAdminPendingSendMessage(
   const [firstWord] = text.trim().split(/\s+/);
   if (resolveCommand(firstWord) === "cancel") {
     await updateUserPendingIntent(adminUser.id, null);
-    return `${formatCanceled()}\n\nUse ${formatCommand("admin")} help para ver os comandos.`;
+    return `${formatCanceled().text}\n\nUse ${formatCommand("admin")} help para ver os comandos.`;
   }
 
   const data = getAdminSendMessageData(adminUser);
@@ -83,7 +83,9 @@ export async function handleAdminPendingSendMessage(
   if (!data) return "Estado invalido, tente novamente.";
 
   try {
-    const result = await channel.sendMessage(data.targetChannelUserId, text);
+    const result = await channel.sendMessage(data.targetChannelUserId, {
+      text,
+    });
     await saveMessage({
       userId: data.targetUserId,
       userChannelId: data.targetUserChannelId,

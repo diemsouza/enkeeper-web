@@ -68,7 +68,7 @@ export async function mergeDoc(
         to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
-        content: msg,
+        message: msg,
         intent: "system_error",
       });
     }
@@ -95,7 +95,7 @@ export async function mergeDoc(
         to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
-        content: msg,
+        message: msg,
         intent: "waiting_set_level",
       });
     }
@@ -119,7 +119,7 @@ export async function mergeDoc(
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
-          content: msg,
+          message: msg,
           intent: "system_error",
         });
       }
@@ -147,7 +147,7 @@ export async function mergeDoc(
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
-          content: msg,
+          message: msg,
           intent: "system_error",
         });
       }
@@ -167,7 +167,7 @@ export async function mergeDoc(
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
-          content: msg,
+          message: msg,
           intent: "system_error",
         });
       }
@@ -251,7 +251,7 @@ export async function mergeDoc(
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
-          content: msg,
+          message: msg,
         });
         if (summary) {
           await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
@@ -260,7 +260,7 @@ export async function mergeDoc(
             to: userChannel.channelUserId,
             userId,
             userChannelId: userChannel.id,
-            content: summary,
+            message: { text: summary },
           });
         }
       }
@@ -277,7 +277,7 @@ export async function mergeDoc(
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
-          content: msg,
+          message: msg,
           intent: "system_error",
         });
       }
@@ -296,7 +296,7 @@ export async function mergeDoc(
         to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
-        content: msg,
+        message: msg,
         intent: "system_error",
       });
     }

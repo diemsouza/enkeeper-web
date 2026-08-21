@@ -1,5 +1,5 @@
 import { ulid } from "ulid";
-import type { OutMessage } from "../../types/out-message";
+import type { FormattedMessage } from "../../types/out-message";
 import type {
   ChannelSendResult,
   MessageChannel,
@@ -8,9 +8,9 @@ import type {
 import { emitToSession } from "../simulator-emitter";
 
 export class SimulatorChannel implements MessageChannel {
-  async sendMessage(to: string, message: OutMessage): Promise<ChannelSendResult> {
+  async sendMessage(to: string, message: FormattedMessage): Promise<ChannelSendResult> {
     const externalId = `simulator-${ulid()}`;
-    if (typeof message === "object" && "audioPath" in message) {
+    if (message.audioPath) {
       emitToSession(to, {
         type: "audio",
         audioPath: message.audioPath,
@@ -18,10 +18,9 @@ export class SimulatorChannel implements MessageChannel {
         externalId,
       });
     } else {
-      const text = typeof message === "string" ? message : message.content;
       emitToSession(to, {
         type: "message",
-        text,
+        text: message.text,
         time: new Date().toISOString(),
         externalId,
       });

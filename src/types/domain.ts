@@ -65,5 +65,8 @@ export type IncomingMessage = {
   mediaType?: string;
   mediaId?: string;
   mediaMetadata?: Record<string, string | number | null>;
+  isVoiceNote?: boolean;
+  voiceAudioBuffer?: Buffer;
+  voiceAudioMimeType?: string;
   receivedAt: Date;
 };

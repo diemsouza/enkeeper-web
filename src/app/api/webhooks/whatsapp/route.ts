@@ -9,7 +9,7 @@ import {
   extractTextFromImage,
   extractTextFromPdf,
 } from "../../../../vendors/llm.vendor";
-import { canUseAudio, canUseImage } from "../../../../core/limits";
+import { canUseImage } from "../../../../core/limits";
 import { canPractice } from "../../../../core/access";
 import {
   formatUpgradePrompt,
@@ -18,6 +18,7 @@ import {
   formatGenericError,
   formatUnsupportedFileType,
   formatVideoUnsupported,
+  formatAudioUnsupported,
   formatInvalidMessageType,
 } from "../../../../core/formatters";
 import { IncomingMessage } from "../../../../types/domain";
@@ -146,41 +147,27 @@ export async function POST(req: NextRequest): Promise<Response> {
         const isVoiceNote = message.audio.voice === true;
 
         if (!isVoiceNote) {
-          const { user } = await findOrCreateUserByChannel(
-            "whatsapp",
-            channelId,
-            wa_id,
-            username,
+          console.log(
+            "[post/api/webhooks/whatsapp] audio file (not voice note) received, unsupported",
+            { messageId: message.id },
           );
-          if (!canUseAudio(user)) {
-            await channel.sendMessage(channelId, formatUpgradePrompt("audio"));
-            return;
-          }
+          await channel.sendMessage(channelId, formatAudioUnsupported());
+          return;
         }
 
-        const { buffer, mimeType, fileSize } = await downloadMedia(
-          message.audio.id,
+        const { buffer, mimeType } = await downloadMedia(message.audio.id);
+        const { text: transcription } = await transcribeAudio(
+          buffer,
+          mimeType,
         );
-        const {
-          text: transcription,
-          duration,
-          format,
-        } = await transcribeAudio(buffer, mimeType);
 
-        const input: IncomingMessage = isVoiceNote
-          ? { ...base, text: transcription }
-          : {
-              ...base,
-              text: transcription,
-              mediaType: "audio",
-              mediaId: message.audio.id,
-              mediaMetadata: {
-                media_type: "audio",
-                size_bytes: fileSize ?? null,
-                duration: duration ?? null,
-                format,
-              },
-            };
+        const input: IncomingMessage = {
+          ...base,
+          text: transcription,
+          isVoiceNote: true,
+          voiceAudioBuffer: buffer,
+          voiceAudioMimeType: mimeType,
+        };
 
         await handleIncomingMessage(input, channel);
         return;
@@ -194,7 +181,7 @@ export async function POST(req: NextRequest): Promise<Response> {
           username,
         );
         if (!canUseImage(user)) {
-          await channel.sendMessage(channelId, formatUpgradePrompt("image"));
+          await channel.sendMessage(channelId, formatUpgradePrompt());
           return;
         }
         const { buffer, mimeType, fileSize } = await downloadMedia(

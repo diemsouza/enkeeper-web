@@ -1,4 +1,4 @@
-import type { OutMessage } from "../../types/out-message";
+import type { FormattedMessage } from "../../types/out-message";
 import type {
   ChannelSendResult,
   MessageChannel,
@@ -16,10 +16,10 @@ import { TTS_MIME_TYPE } from "../../vendors/tts.vendor";
 
 async function sendAudioPart(
   to: string,
-  part: { audioPath: string },
+  audioPath: string,
 ): Promise<string | null> {
   try {
-    const buffer = await downloadFile({ filePath: part.audioPath });
+    const buffer = await downloadFile({ filePath: audioPath });
     const mediaId = await uploadWhatsAppMedia(buffer, TTS_MIME_TYPE);
     return await sendWhatsAppAudio(to, mediaId);
   } catch (err) {
@@ -29,20 +29,27 @@ async function sendAudioPart(
 }
 
 export class WhatsAppChannel implements MessageChannel {
-  async sendMessage(to: string, message: OutMessage): Promise<ChannelSendResult> {
-    let externalId: string | null;
-    if (typeof message === "string") {
-      externalId = await sendWhatsAppMessage(to, message);
-    } else if ("audioPath" in message) {
-      externalId = await sendAudioPart(to, message);
-    } else {
-      externalId = await sendWhatsAppInteractiveButtons(
-        to,
-        message.content,
-        message.buttons,
-      );
+  async sendMessage(to: string, message: FormattedMessage): Promise<ChannelSendResult> {
+    if (message.audioPath) {
+      return { externalId: await sendAudioPart(to, message.audioPath) };
     }
-    return { externalId };
+    if (message.templateName) {
+      return this.sendTemplate(to, message.templateName);
+    }
+    if (message.interactive) {
+      const buttons = message.interactive.buttons.map((b) => ({
+        id: b.id,
+        title: b.label,
+      }));
+      return {
+        externalId: await sendWhatsAppInteractiveButtons(
+          to,
+          message.interactive.body,
+          buttons,
+        ),
+      };
+    }
+    return { externalId: await sendWhatsAppMessage(to, message.text) };
   }
 
   async sendTemplate(to: string, template: NudgeTemplate): Promise<ChannelSendResult> {

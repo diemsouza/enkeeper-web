@@ -13,7 +13,6 @@ import {
 } from "../repo/questions.repo";
 import {
   formatActivitySuggestion,
-  formatActivitySuggestionInteractive,
   formatPreviousActivitySummary,
   formatRoundCompletedFallback,
   formatRoundCompletedSummary,
@@ -93,7 +92,7 @@ export async function buildPreviousActivitySummary(
       responses,
       reviews,
       period,
-    });
+    }).text;
 
     await updateActivity(data.id, userId, { summary: text });
     return text;
@@ -107,22 +106,22 @@ export async function buildRoundCompletedSummary(
 ): Promise<string> {
   try {
     const data = await findActivityForSummary(activityId);
-    if (!data) return formatRoundCompletedFallback();
-    if (data.questions.length === 0) return formatRoundCompletedFallback();
+    if (!data) return formatRoundCompletedFallback().text;
+    if (data.questions.length === 0) return formatRoundCompletedFallback().text;
 
     const right = data.questions.filter((q) => q.status === "right").length;
     const partial = data.questions.filter((q) => q.status === "partial").length;
     const wrong = data.questions.filter((q) => q.status === "wrong").length;
     const responses = right + partial + wrong;
-    if (responses === 0) return formatRoundCompletedFallback();
+    if (responses === 0) return formatRoundCompletedFallback().text;
 
     return formatRoundCompletedSummary({
       questionCount: data.questionLimit,
       right,
       responses,
-    });
+    }).text;
   } catch {
-    return formatRoundCompletedFallback();
+    return formatRoundCompletedFallback().text;
   }
 }
 
@@ -205,19 +204,14 @@ export async function maybeSendActivitySuggestion(
   if (!eligible) return;
 
   await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
-  const content = formatActivitySuggestion();
-  const contentInteractive = formatActivitySuggestionInteractive();
+  const message = formatActivitySuggestion();
   await sendAndSaveMessage({
     channel,
     to,
     userId,
     userChannelId,
     activityId: activity.id,
-    content,
-    part: {
-      content: contentInteractive,
-      buttons: [{ id: "new_activity_suggestion", title: "Nova atividade" }],
-    },
+    message,
     intent: "activity_suggestion",
     today,
   });

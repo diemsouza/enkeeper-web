@@ -23,7 +23,7 @@ export async function resolveFeedbackAudioPath(
   }
 
   try {
-    const speechText = formatFeedbackToSpeech(feedbackResult);
+    const speechText = formatFeedbackToSpeech(feedbackResult).text;
 
     const speech = await generateSpeech(speechText);
     if (speech.status === "error") {

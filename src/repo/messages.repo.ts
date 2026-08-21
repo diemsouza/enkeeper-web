@@ -1,5 +1,6 @@
 import { ExternalMessageStatus, Message, MessageRole, Prisma } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
+import type { FormattedMessage } from "../types/out-message";
 
 type SaveMessageData = {
   userId: string;
@@ -11,6 +12,8 @@ type SaveMessageData = {
   mediaType?: string;
   mediaId?: string;
   metadata?: Record<string, string | number | null>;
+  templateName?: string | null;
+  interactive?: FormattedMessage["interactive"];
   activityId?: string;
   questionId?: string;
   receivedAt?: Date;
@@ -30,6 +33,11 @@ export async function saveMessage(data: SaveMessageData): Promise<Message> {
       metadata:
         data.metadata !== undefined
           ? (data.metadata as Prisma.InputJsonObject)
+          : undefined,
+      templateName: data.templateName,
+      interactive:
+        data.interactive !== undefined
+          ? (data.interactive as Prisma.InputJsonObject)
           : undefined,
       activityId: data.activityId,
       questionId: data.questionId,

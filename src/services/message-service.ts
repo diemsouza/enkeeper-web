@@ -91,6 +91,7 @@ import {
   switchToActivity,
 } from "./activity-service";
 import { resolveFeedbackAudioPath } from "./feedback-audio-service";
+import { resolveAnswerAudioPath } from "./answer-audio-service";
 import {
   getTodayActivityCount,
   getTodayUsage,
@@ -147,6 +148,7 @@ import { markWaitlistActive } from "../repo/waitlist.repo";
 import { startOfDay } from "date-fns";
 import { validateDocItemInput } from "./doc-item-service";
 import { MessageChannel } from "../types/message-channel";
+import { FormattedMessage } from "../types/out-message";
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
@@ -210,7 +212,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
-        content: reply,
+        message: { text: reply },
         today,
       });
       return;
@@ -226,7 +228,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
-        content: reply,
+        message: { text: reply },
         today,
       });
       return;
@@ -277,7 +279,7 @@ export async function handleIncomingMessage(
         );
         if (process.env.WA_SUPPORT) {
           try {
-            await sendWhatsAppMessage(process.env.WA_SUPPORT, supportMsg);
+            await sendWhatsAppMessage(process.env.WA_SUPPORT, supportMsg.text);
           } catch {
             // notificação interna, falha silenciosa
           }
@@ -296,7 +298,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: supportReply,
+          message: supportReply,
           today,
         });
         return;
@@ -319,7 +321,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: cmdReply,
+          message: cmdReply,
           today,
         });
         return;
@@ -341,7 +343,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: activitiesReply,
+          message: activitiesReply,
           today,
         });
         return;
@@ -362,7 +364,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: supportPrompt,
+          message: supportPrompt,
           today,
         });
         return;
@@ -383,7 +385,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: cancelReply,
+          message: cancelReply,
           today,
         });
         return;
@@ -403,7 +405,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
-        content: expiredReply,
+        message: expiredReply,
         today,
       });
       return;
@@ -447,7 +449,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: msgs[i],
+          message: msgs[i],
           today,
         });
       }
@@ -466,7 +468,6 @@ export async function handleIncomingMessage(
     // ─── Mídia → buffer de Doc ───────────────────────────────────────────────
 
     if (
-      input.mediaType === "audio" ||
       input.mediaType === "image" ||
       input.mediaType === "pdf" ||
       input.mediaType === "text"
@@ -510,7 +511,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
-        content: flowCancelledReply,
+        message: flowCancelledReply,
         today,
       });
 
@@ -529,7 +530,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
-        content: guidanceReply,
+        message: guidanceReply,
         today,
       });
       return;
@@ -548,7 +549,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
-        content: cancelledReply,
+        message: cancelledReply,
         today,
       });
 
@@ -559,7 +560,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: guidanceReply,
+          message: guidanceReply,
           today,
         });
       }
@@ -587,7 +588,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
-            content: levelMsg,
+            message: levelMsg,
             today,
           });
           return;
@@ -599,7 +600,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: message,
+          message,
           today,
         });
 
@@ -661,7 +662,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: result.message,
+          message: result.message,
           today,
         });
 
@@ -732,7 +733,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
-            content: errReply,
+            message: errReply,
             today,
           });
           return;
@@ -750,7 +751,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: result.message,
+          message: result.message,
           today,
         });
 
@@ -813,7 +814,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
-            content: errReply,
+            message: errReply,
             today,
           });
           return;
@@ -846,7 +847,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: result.message,
+          message: result.message,
           today,
         });
         await saveUserMsg(
@@ -879,7 +880,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
-            content: noPendingReply,
+            message: noPendingReply,
             today,
           });
           return;
@@ -925,7 +926,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: reply,
+          message: reply,
           today,
         });
         return;
@@ -947,7 +948,7 @@ export async function handleIncomingMessage(
         const supportNumber = process.env.WA_SUPPORT;
         if (supportNumber) {
           try {
-            await sendWhatsAppMessage(supportNumber, supportMsg);
+            await sendWhatsAppMessage(supportNumber, supportMsg.text);
           } catch {
             // notificação interna, falha silenciosa
           }
@@ -967,7 +968,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: reply,
+          message: reply,
           today,
         });
         return;
@@ -985,7 +986,7 @@ export async function handleIncomingMessage(
         : parsed.intent;
 
     let messageIntent: MessageIntent = effectiveIntent;
-    let reply = "";
+    let reply: FormattedMessage = { text: "" };
 
     switch (effectiveIntent) {
       case "list_commands":
@@ -1016,7 +1017,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: levelMsg,
+          message: levelMsg,
           today,
         });
         return;
@@ -1122,7 +1123,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
-            content: limitMsg,
+            message: limitMsg,
             today,
           });
           return;
@@ -1150,7 +1151,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
-            content: pendingReply,
+            message: pendingReply,
             today,
           });
           return;
@@ -1164,7 +1165,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
-          content: replyActivation,
+          message: replyActivation,
           today,
         });
 
@@ -1259,7 +1260,7 @@ export async function handleIncomingMessage(
                 questionFormat: pendingQuestion.questionFormat,
                 questionOptions: pendingQuestion.questionOptions,
                 termHint: pendingQuestion.termHint,
-              });
+              }).text;
 
               const evaluation = await generateAnswerEvaluation({
                 question: questionForEvaluation,
@@ -1288,7 +1289,15 @@ export async function handleIncomingMessage(
                 ? evaluation?.eval_tip
                 : null;
               const tipMsg = evalTip ? formatEvalTip(evalTip) : null;
-              const answerType = input.mediaType === "audio" ? "audio" : "text";
+              const answerType = input.isVoiceNote ? "audio" : "text";
+              if (input.isVoiceNote && input.voiceAudioBuffer) {
+                await resolveAnswerAudioPath(
+                  input.voiceAudioBuffer,
+                  input.voiceAudioMimeType ?? "audio/ogg",
+                  text,
+                  pendingQuestion.id,
+                );
+              }
               const isWrongOrPartial =
                 evalStatus === "wrong" || evalStatus === "partial";
               const sm2 = calcSm2(
@@ -1371,7 +1380,7 @@ export async function handleIncomingMessage(
                 userId: user.id,
                 userChannelId: userChannel.id,
                 activityId: activeActivity.id,
-                content: feedback,
+                message: feedback,
                 intent: "practice_feedback",
                 questionId: pendingQuestion.id,
                 today,
@@ -1384,8 +1393,10 @@ export async function handleIncomingMessage(
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
-                  content: feedbackSpeechText ?? feedback,
-                  part: { audioPath: feedbackAudioPath },
+                  message: {
+                    ...(feedbackSpeechText ?? feedback),
+                    audioPath: feedbackAudioPath,
+                  },
                   intent: "practice_feedback",
                   questionId: pendingQuestion.id,
                   mediaType: "audio",
@@ -1409,7 +1420,7 @@ export async function handleIncomingMessage(
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
-                  content: limitMsg,
+                  message: limitMsg,
                   intent: "practice_feedback",
                   today,
                 });
@@ -1439,7 +1450,7 @@ export async function handleIncomingMessage(
                     userId: user.id,
                     userChannelId: userChannel.id,
                     activityId: activeActivity.id,
-                    content: tipMsg,
+                    message: tipMsg,
                     intent: "eval_tip",
                     questionId: pendingQuestion.id,
                     today,
@@ -1452,7 +1463,7 @@ export async function handleIncomingMessage(
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
-                  content: guideMsg,
+                  message: guideMsg,
                   intent: "guide_after_first_feedback",
                   today,
                 });
@@ -1467,7 +1478,7 @@ export async function handleIncomingMessage(
                   userId: user.id,
                   userChannelId: userChannel.id,
                   activityId: activeActivity.id,
-                  content: tipMsg,
+                  message: tipMsg,
                   intent: "eval_tip",
                   questionId: pendingQuestion.id,
                   today,
@@ -1521,7 +1532,7 @@ export async function handleIncomingMessage(
       to: userChannel.channelUserId,
       userId: user.id,
       userChannelId: userChannel.id,
-      content: reply,
+      message: reply,
       today,
     });
     return;
@@ -1604,7 +1615,7 @@ async function handleIntensiveNextQuestion(
         userId,
         userChannelId,
         activityId,
-        content: pendingMsg,
+        message: pendingMsg,
         intent: "pending_question",
         today,
       });
@@ -1689,7 +1700,7 @@ async function sendIntensiveQuestion(
         userId,
         userChannelId,
         activityId: activity.id,
-        content: transitionMsg,
+        message: transitionMsg,
         intent: "section_transition",
         today,
       });
@@ -1707,7 +1718,7 @@ async function sendIntensiveQuestion(
     userId,
     userChannelId,
     activityId: activity.id,
-    content: questionText,
+    message: questionText,
     intent: "practice_question",
     questionId: question.id,
     today,
@@ -1780,7 +1791,7 @@ async function sendDomainQuestion(
     to,
     userId,
     userChannelId,
-    content: domainMsg,
+    message: domainMsg,
     today,
   });
 }
@@ -1801,7 +1812,7 @@ async function startNewActivityFlow(
       to,
       userId: user.id,
       userChannelId,
-      content: levelMsg,
+      message: levelMsg,
       today,
     });
     return { nextIntent: "waiting_set_level" };
@@ -1840,7 +1851,7 @@ async function createPendingBuffer(
     to,
     userId,
     userChannelId,
-    content: reply,
+    message: reply,
     today,
   });
 }
@@ -1876,7 +1887,7 @@ async function handleDocUpload(
         to,
         userId,
         userChannelId,
-        content: reply,
+        message: reply,
         today,
       });
       return;
@@ -1901,7 +1912,7 @@ async function handleDocUpload(
         to,
         userId,
         userChannelId,
-        content: itemValidation.error,
+        message: { text: itemValidation.error },
         today,
       });
       return;
@@ -1921,7 +1932,7 @@ async function handleDocUpload(
       to,
       userId,
       userChannelId,
-      content: reply,
+      message: reply,
       today,
     });
     return;
@@ -1943,7 +1954,7 @@ async function handleDocUpload(
       to,
       userId,
       userChannelId,
-      content: reply,
+      message: reply,
       today,
     });
     return;
@@ -1964,7 +1975,7 @@ async function handleDocUpload(
       to,
       userId,
       userChannelId,
-      content: itemValidation.error,
+      message: { text: itemValidation.error },
       today,
     });
     return;
@@ -1990,7 +2001,7 @@ async function handleDocUpload(
       to,
       userId,
       userChannelId,
-      content: reply,
+      message: reply,
       today,
     });
     return;

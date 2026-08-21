@@ -105,6 +105,8 @@ model Message {
     mediaType     String?     @map("media_type")
     mediaId       String?     @map("media_id")
     metadata      Json?       @map("metadata")
+    templateName  String?     @map("template_name")
+    interactive   Json?       @map("interactive")
     questionId    String?     @map("question_id")
     createdAt     DateTime    @default(now()) @map("created_at")
     updatedAt     DateTime    @default(now()) @updatedAt @map("updated_at")
@@ -251,6 +253,7 @@ model Question {
     evalTip         String?         @map("eval_tip") @db.Text
     questionAudioMediaId String?    @map("question_audio_media_id")
     feedbackAudioMediaId String?    @map("feedback_audio_media_id")
+    answerAudioMediaId String?      @map("answer_audio_media_id")
     metadata        Json?           @map("metadata")
     createdAt       DateTime        @default(now()) @map("created_at")
     updatedAt       DateTime        @updatedAt @map("updated_at")
@@ -260,6 +263,7 @@ model Question {
     section             Section? @relation(fields: [sectionId], references: [id])
     questionAudioMedia Media?   @relation("QuestionAudio", fields: [questionAudioMediaId], references: [id], onDelete: SetNull)
     feedbackAudioMedia Media?   @relation("FeedbackAudio", fields: [feedbackAudioMediaId], references: [id], onDelete: SetNull)
+    answerAudioMedia   Media?   @relation("AnswerAudio", fields: [answerAudioMediaId], references: [id], onDelete: SetNull)
 
     @@index([activityId, status])
     @@index([sectionId])
@@ -281,6 +285,7 @@ model Media {
 
     questionAudioFor Question[] @relation("QuestionAudio")
     feedbackAudioFor Question[] @relation("FeedbackAudio")
+    answerAudioFor   Question[] @relation("AnswerAudio")
 
     @@index([parentType, parentId])
     @@map("medias")

@@ -577,3 +577,16 @@ Mensagens enviadas pelo sistema guardam o identificador que o canal de envio atr
 Cada canal (hoje: WhatsApp) traduz seu próprio formato de evento de status para um conjunto de valores canônico antes de persistir, para que a lógica de negócio nunca dependa do formato específico de um canal. Isso vale igualmente para qualquer canal adicionado no futuro (ver Seção 7 do Product-Brief, arquitetura multicanal).
 
 Reprodução de mídia (ex: áudio de feedback) é um evento à parte, diferente do status de entrega geral da mensagem. Uma mensagem pode estar entregue ou lida sem nunca ter sido reproduzida, são duas informações independentes.
+
+---
+
+## 19. Mensagens formatadas e suporte a canal interativo
+
+Toda mensagem enviada pelo sistema é representada por um `FormattedMessage`: um texto (`text`) sempre presente, e três camadas opcionais de apresentação — `audioPath`, `templateName` e `interactive` (corpo com botões). O `text` é a representação canônica: é o que fica salvo no histórico (`Message.content`) e o que qualquer canal sem suporte às camadas opcionais usa para enviar.
+
+Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje:
+
+- **WhatsApp**: usa `audioPath` se presente (envia o áudio); senão `templateName` se presente (envia via template aprovado da Meta, necessário fora da janela de 24h); senão `interactive` se presente (envia com botões); senão `text` puro.
+- **Simulador**: usa `audioPath` se presente; senão sempre `text` puro, ignorando `templateName` e `interactive`. Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais depois, sem quebrar nada que já existe (ver Seção 7 do Product-Brief, arquitetura multicanal).
+
+`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário — não só o texto equivalente. O caso concreto de `interactive` em produção é a sugestão de troca de atividade (Seção 6.3), que envia um botão "Nova atividade" no WhatsApp e cai para texto puro no simulador.

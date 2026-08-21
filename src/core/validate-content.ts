@@ -3,6 +3,7 @@ import {
   MIN_UNIQUE_WORDS,
   MIN_UNIQUE_RATIO,
 } from "../lib/constants";
+import type { FormattedMessage } from "../types/out-message";
 
 type ValidationResult = {
   isValid: boolean;
@@ -16,12 +17,14 @@ const REASON_TRANSLATIONS: Record<string, string> = {
 
 export function formatInvalidContentMessage(
   invalidReason?: string | null,
-): string {
+): FormattedMessage {
   const translated = invalidReason
     ? (REASON_TRANSLATIONS[invalidReason] ?? invalidReason)
     : null;
   const reasonPart = translated ? `\n${translated} ` : "";
-  return `Não foi possível usar esse material. ${reasonPart}\n\n_Tente uma lista de palavras, texto corrido ou exercícios em inglês. Envie novamente ou tente outro formato._`;
+  return {
+    text: `Não foi possível usar esse material. ${reasonPart}\n\n_Tente uma lista de palavras, texto corrido ou exercícios em inglês. Envie novamente ou tente outro formato._`,
+  };
 }
 
 export function validateContent(text: string): ValidationResult {

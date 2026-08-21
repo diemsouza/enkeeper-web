@@ -80,7 +80,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           const noTextMsg = formatImageNoText();
           emitToSession(channelId, {
             type: "message",
-            text: noTextMsg,
+            text: noTextMsg.text,
             time: new Date().toISOString(),
           });
           emitToSession(channelId, { type: "done" });

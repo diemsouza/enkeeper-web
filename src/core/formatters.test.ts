@@ -6,26 +6,29 @@ import {
 
 describe("formatNewActivityFlowCanceled", () => {
   it("sem atividade ativa, mensagem simples", () => {
-    expect(formatNewActivityFlowCanceled()).toBe("Ok, cancelado.");
+    expect(formatNewActivityFlowCanceled().text).toBe("Ok, cancelado.");
   });
 
   it("com atividade ativa, avisa que ela continua normal", () => {
-    expect(formatNewActivityFlowCanceled(true)).toBe(
+    expect(formatNewActivityFlowCanceled(true).text).toBe(
       "Ok, cancelado. Seguindo com a atividade atual.",
     );
   });
 
   it("false explícito equivale a default", () => {
-    expect(formatNewActivityFlowCanceled(false)).toBe(
-      formatNewActivityFlowCanceled(),
+    expect(formatNewActivityFlowCanceled(false).text).toBe(
+      formatNewActivityFlowCanceled().text,
     );
   });
 });
 
 describe("formatActivitySuggestion", () => {
-  it("menciona o comando por extenso, funciona com ou sem botão", () => {
-    const text = formatActivitySuggestion();
-    expect(text).toContain("🔄");
-    expect(text).toContain("`/nova atividade`");
+  it("menciona o comando por extenso no text e traz botão no interactive", () => {
+    const message = formatActivitySuggestion();
+    expect(message.text).toContain("🔄");
+    expect(message.text).toContain("`/nova atividade`");
+    expect(message.interactive?.buttons).toEqual([
+      { id: "new_activity_suggestion", label: "Nova atividade" },
+    ]);
   });
 });
