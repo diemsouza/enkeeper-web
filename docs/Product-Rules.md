@@ -385,9 +385,17 @@ Dois planos: Trial e Pro. Sem tier gratuito permanente.
 | Cortesia permanente | Sem expiração | Produto completo |
 | Pro | 30 dias renovável | Produto completo |
 
-Após expirar o trial: conta bloqueada até converter. Sem degradação gradual, o produto inteiro ou nada.
+Após expirar o acesso, trial ou Pro: conta bloqueada até converter. Sem degradação gradual, o produto inteiro ou nada.
 
 A regra de acesso é simples: plano ativo com data de expiração no futuro. Independe do tipo de plano.
+
+### 11.1 Cobrança e liberação automática
+
+Ao bloquear o acesso, o sistema gera um link de pagamento individual para aquele usuário e envia junto da mensagem de bloqueio. Enquanto esse link ainda estiver dentro do prazo de validade, novas tentativas de uso durante o bloqueio reaproveitam o mesmo link em vez de gerar um novo a cada mensagem.
+
+Cobrança é avulsa: R$21,90 liberam 30 dias de acesso, sem assinatura nem renovação automática no cartão. Ao fim dos 30 dias o acesso expira normalmente, e a próxima interação bloqueada gera um novo link, repetindo o ciclo.
+
+Pagamento confirmado libera o acesso automaticamente, sem intervenção manual: o plano passa a Pro, ativo, por mais 30 dias a partir da confirmação, e o usuário recebe uma mensagem de confirmação pelo WhatsApp. Pix continua disponível como alternativa, por atendimento manual via `suporte`.
 
 ---
 
@@ -589,4 +597,6 @@ Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje
 - **WhatsApp**: usa `audioPath` se presente (envia o áudio); senão `templateName` se presente (envia via template aprovado da Meta, necessário fora da janela de 24h); senão `interactive` se presente (envia com botões); senão `text` puro.
 - **Simulador**: usa `audioPath` se presente; senão sempre `text` puro, ignorando `templateName` e `interactive`. Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais depois, sem quebrar nada que já existe (ver Seção 7 do Product-Brief, arquitetura multicanal).
 
-`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário — não só o texto equivalente. O caso concreto de `interactive` em produção é a sugestão de troca de atividade (Seção 6.3), que envia um botão "Nova atividade" no WhatsApp e cai para texto puro no simulador.
+Dentro de `interactive`, um botão pode ser de dois tipos: ação (resposta rápida nativa do canal, ex: "Nova atividade") ou link (abre uma URL externa, ex: link de pagamento do bloqueio de acesso, Seção 11.1). Mensagem com botão de link sempre inclui a mesma URL também no `text` puro, como fallback para quem recebe só a camada canônica (ex: simulador).
+
+`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário — não só o texto equivalente. O `interactive` em produção cobre hoje dois casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade" que cai para texto puro no simulador, e o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre o checkout no WhatsApp e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão.

@@ -39,6 +39,7 @@ model User {
     pendingIntent   String?    @map("pending_intent")
     pendingIntentAt DateTime?  @map("pending_intent_at")
     metadata        Json?      @map("metadata")
+    checkoutData    Json?      @map("checkout_data")
     onboardedAt     DateTime?  @map("onboarded_at")
     // lastRequestAt não representa a última mensagem recebida; representa a
     // última mensagem aceita para processamento. Mensagens bloqueadas pelo lock

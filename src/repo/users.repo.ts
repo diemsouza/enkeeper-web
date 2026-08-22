@@ -8,6 +8,7 @@ import {
   UserChannel,
 } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
+import { CheckoutData } from "../types/domain";
 
 type UserWithChannels = User & { channels: UserChannel[] };
 
@@ -143,6 +144,16 @@ export async function updateUserPlan(
         ? { planStatusUpdatedAt: new Date() }
         : {}),
     },
+  });
+}
+
+export async function updateUserCheckoutData(
+  userId: string,
+  checkoutData: CheckoutData | null,
+): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { checkoutData: checkoutData ?? Prisma.DbNull },
   });
 }
 

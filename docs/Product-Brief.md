@@ -1,7 +1,7 @@
 # Fluizer - Product Brief
 
 > Documento vivo - base de decisão para produto e negócio.
-> Versão 14 - Julho 2026
+> Versão 15 - Agosto 2026
 > Regras de negócio e produto em Product-Rules.md
 
 ---
@@ -191,7 +191,7 @@ Não é teaser - é o produto inteiro por tempo limitado. Quem sente o valor no 
 - Campanha sazonal: 7 dias
 - Beta testers / cortesia permanente: sem expiração (planExpiresAt = 2099-12-31)
 
-### Pro - R$21,90/mês recorrente
+### Pro - R$21,90 a cada 30 dias
 
 - Troca de atividade diária com até 3 materiais cada
 - Prática diária com repetição espaçada
@@ -200,9 +200,7 @@ Não é teaser - é o produto inteiro por tempo limitado. Quem sente o valor no 
 - Texto, imagem, PDF
 - Histórico permanente
 
-### Pro - R$21,90/30 dias avulso (Pix)
-
-Mesmo preço. Sem fricção para quem quer um mês pontual.
+Cobrança avulsa, não é assinatura recorrente. Pagamento via Stripe Checkout (cartão), com link gerado automaticamente e enviado pelo WhatsApp sempre que o acesso expira - o usuário paga, o acesso é liberado na hora, e o ciclo se repete a cada 30 dias sem cobrança automática no cartão. Pix continua disponível como alternativa, via atendimento manual (`suporte`).
 
 ### Plano anual
 
@@ -228,8 +226,7 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Armazenamento de mídia gerada | Supabase Storage, bucket separado por ambiente |
 | Evolução semanal | Modelo médio em batch |
 | Jobs agendados | Vercel Cron |
-| Pagamento (MVP) | Pix manual via suporte |
-| Pagamento (futuro) | Stripe + recorrência automática |
+| Pagamento | Stripe Checkout (cartão), cobrança avulsa de 30 dias sem renovação automática; Pix manual via `suporte` como alternativa |
 | Número virtual | BRDID - (11) 5306-9000 |
 
 Arquitetura multicanal: cada canal de envio (hoje WhatsApp e o simulador de desenvolvimento) implementa sua própria interface de envio e decide sozinho se suporta camadas extras de apresentação (botão interativo, template, áudio) além do texto puro, que é sempre a representação canônica salva no histórico. Um canal novo pode nascer só com suporte a texto. Detalhe do contrato em `docs/Product-Rules.md`, Seção 19.
@@ -252,6 +249,8 @@ Custo variável por usuário Pro ativo:
 | **Total médio** | **R$4,30–6,30** |
 
 **Margem bruta:** 68–78%.
+
+Taxa de processamento do Stripe por transação ainda não medida nem incluída na tabela acima. Revisar quando houver volume real de cobranças.
 
 Custo de texto-para-voz do feedback (rollout parcial, ver Seção 4) ainda não tem medição real em produção. Estimativa inicial, baseada em preço de mercado dos provedores usados, fica bem abaixo dos demais itens da tabela, na casa de centavos por milhares de gerações, e é reduzida ainda mais pelo reuso do áudio já gerado por pergunta (sem regeneração em revisão espaçada). Revisar quando houver volume real desse fluxo, inclusive para decidir se maior frequência de áudio vira benefício de tier superior.
 
@@ -337,6 +336,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Áudio no feedback de resposta (TTS), rollout parcial habilitado por configuração
 - Onboarding atualizado para refletir o fluxo de nova atividade como caminho principal
 - Site com copy atualizada, refletindo os dois caminhos de entrada (material ou tema) na home, publicado
+- Cobrança de acesso Pro via Stripe Checkout, pagamento avulso de 30 dias sem renovação automática, com liberação automática do plano após confirmação de pagamento
 
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou

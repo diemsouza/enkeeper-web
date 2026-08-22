@@ -1,4 +1,4 @@
-import { ActivityStatus, Level, QuestionFormat } from "../lib/prisma";
+import { ActivityStatus, Level, PlanCode, QuestionFormat } from "../lib/prisma";
 import {
   ACTIVITY_SUGGESTION_EMOJI,
   ANSWER_EMOJI,
@@ -63,14 +63,44 @@ export function formatNoActivity(): FormattedMessage {
   };
 }
 
-export function formatPlanExpired(): FormattedMessage {
+export function formatPlanExpired(
+  planCode: PlanCode,
+  checkoutUrl: string,
+): FormattedMessage {
+  const title =
+    planCode === "trial"
+      ? "⏳ *Seu período de teste encerrou.*"
+      : "🔒 *Seu acesso encerrou.*";
+
+  const text = `Continue praticando por mais 30 dias por R$21,90. Acesse o link abaixo para pagar ou use ${formatCommand("support")} para qualquer dúvida ou dificuldade.`;
+  const body = `Continue praticando por mais 30 dias por R$21,90. Toque no botão abaixo para pagar ou use ${formatCommand("support")} para qualquer dúvida ou dificuldade.`;
+
+  return {
+    text: [title, "", text, "", checkoutUrl].join("\n"),
+    interactive: {
+      body: [title, "", body].join("\n"),
+      buttons: [
+        {
+          id: "checkout",
+          label: "Pagar agora",
+          type: "link",
+          url: checkoutUrl,
+        },
+      ],
+    },
+  };
+}
+
+export function formatPaymentConfirmed(): FormattedMessage {
   return {
     text: [
-      "*Seu período de teste encerrou!*",
+      "✅ *Pagamento confirmado.*",
       "",
-      "Para continuar praticando, assine o *Fluizer* por R$21,90/mês. Cancele quando quiser.",
+      "Seu acesso está liberado pelos próximos 30 dias.",
       "",
-      `_Use ${formatCommand("support")} para falar com a gente e ativar sua conta._`,
+      `Sempre que precisar, use ${formatCommand("help")} para listar os comandos disponíveis e ${formatCommand("support")} para fala com a gente.`,
+      "",
+      "Boa prática.",
     ].join("\n"),
   };
 }
@@ -765,7 +795,9 @@ export function formatGenericError(): FormattedMessage {
 }
 
 export function formatUnsupportedFileType(): FormattedMessage {
-  return { text: "Formato não suportado. Envie um arquivo de texto, imagem ou PDF." };
+  return {
+    text: "Formato não suportado. Envie um arquivo de texto, imagem ou PDF.",
+  };
 }
 
 export function formatVideoUnsupported(): FormattedMessage {

@@ -10,6 +10,7 @@ import {
   uploadWhatsAppMedia,
   sendWhatsAppAudio,
   sendWhatsAppInteractiveButtons,
+  sendWhatsAppCtaUrl,
 } from "../../vendors/whatsapp.vendor";
 import { downloadFile } from "../../vendors/storage.vendor";
 import { TTS_MIME_TYPE } from "../../vendors/tts.vendor";
@@ -37,6 +38,19 @@ export class WhatsAppChannel implements MessageChannel {
       return this.sendTemplate(to, message.templateName);
     }
     if (message.interactive) {
+      const linkButton = message.interactive.buttons.find(
+        (b) => b.type === "link",
+      );
+      if (linkButton?.url) {
+        return {
+          externalId: await sendWhatsAppCtaUrl(
+            to,
+            message.interactive.body,
+            linkButton.url,
+            linkButton.label,
+          ),
+        };
+      }
       const buttons = message.interactive.buttons.map((b) => ({
         id: b.id,
         title: b.label,

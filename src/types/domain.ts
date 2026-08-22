@@ -39,6 +39,8 @@ export type UserIntentMetadata = {
   intent_data: NewActivityIntentData;
 };
 
+export type CheckoutData = { url: string; expiresAt: string };
+
 export type AdminSendMessageIntentData = {
   targetUserId: string;
   targetUserChannelId: string;

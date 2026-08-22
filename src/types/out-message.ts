@@ -1,4 +1,9 @@
-export type FormattedMessageButton = { id: string; label: string };
+export type FormattedMessageButton = {
+  id: string;
+  label: string;
+  type?: "reply" | "link";
+  url?: string;
+};
 
 // text é obrigatório: usado sempre para persistência (Message.content) e por
 // canais sem suporte a áudio/interativo/template. audioPath, templateName e

@@ -128,6 +128,55 @@ export async function sendWhatsAppInteractiveButtons(
   return data.messages?.[0]?.id ?? null;
 }
 
+export async function sendWhatsAppCtaUrl(
+  to: string,
+  body: string,
+  url: string,
+  buttonLabel: string,
+): Promise<string | null> {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[sendWhatsAppCtaUrl] Skipping sending message to ${to} in non-production environment`,
+    );
+    return null;
+  }
+
+  const token = process.env.WABA_TOKEN;
+  const phoneNumberId = process.env.WABA_PHONE_ID;
+
+  const res = await fetch(
+    `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        ...buildRecipientField(to),
+        type: "interactive",
+        interactive: {
+          type: "cta_url",
+          body: { text: body },
+          action: {
+            name: "cta_url",
+            parameters: { display_text: buttonLabel, url },
+          },
+        },
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Meta API error ${res.status}: ${detail}`);
+  }
+
+  const data = (await res.json()) as { messages?: { id: string }[] };
+  return data.messages?.[0]?.id ?? null;
+}
+
 export async function sendWhatsAppTemplate(
   to: string,
   templateName: string,

@@ -155,7 +155,7 @@ export default function Hero() {
       <a
         href="#features"
         aria-label="Rolar para o próximo conteúdo"
-        className="absolute bottom-16 md:bottom-6 left-1/2 -translate-x-1/2 text-muted-foreground/60 pb-[env(safe-area-inset-bottom)]"
+        className="absolute bottom-[60px] md:bottom-6 left-1/2 -translate-x-1/2 text-muted-foreground/60 pb-[env(safe-area-inset-bottom)]"
       >
         <ArrowDown className="w-6 h-6" />
       </a>

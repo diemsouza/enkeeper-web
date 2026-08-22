@@ -194,7 +194,7 @@ export function WhatsAppChat({
             ) : msg.type === "voice" ? (
               <VoiceNoteCard duration={msg.duration ?? ""} />
             ) : (
-              <p className="whitespace-pre-line leading-[1.5]">
+              <p className="whitespace-pre-line leading-[1.5] break-words">
                 <WhatsAppText text={msg.text ?? ""} />
               </p>
             )}

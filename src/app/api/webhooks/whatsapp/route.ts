@@ -23,6 +23,7 @@ import {
 } from "../../../../core/formatters";
 import { IncomingMessage } from "../../../../types/domain";
 import { processWhatsAppStatusEvent } from "../../../../services/message-status-service";
+import { getOrCreateCheckoutUrl } from "../../../../services/stripe-checkout-service";
 import {
   verifyMetaSignature,
   verifyWebhookToken,
@@ -221,7 +222,11 @@ export async function POST(req: NextRequest): Promise<Response> {
           username,
         );
         if (!canPractice(docUser)) {
-          await channel.sendMessage(channelId, formatPlanExpired());
+          const checkoutUrl = await getOrCreateCheckoutUrl(docUser.id);
+          await channel.sendMessage(
+            channelId,
+            formatPlanExpired(docUser.planCode, checkoutUrl),
+          );
           return;
         }
 
