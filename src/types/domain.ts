@@ -28,11 +28,22 @@ export type MessageIntent =
 
 export type FocusSuggestion = { key: string; label: string };
 
+export type GeneratedDocMetadata = {
+  domainKey: string;
+  domain: string;
+  topic: string;
+  subtopics: string[];
+  subtopic: string;
+  focusKeys: string[];
+  focus: string[];
+};
+
 export type NewActivityIntentData = {
   flow: "new_activity";
   domain?: DomainId;
   topic?: string;
   focusSuggestions?: FocusSuggestion[];
+  subtopics?: string[];
 };
 
 export type UserIntentMetadata = {

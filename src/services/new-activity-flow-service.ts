@@ -15,7 +15,8 @@ import {
   formatNewActivityFlowCanceled,
   formatDocProcessed,
 } from "../core/formatters";
-import { isValidFocusKey } from "../core/focus";
+import { isValidFocusKey, findFocusLabel } from "../core/focus";
+import { pickSubtopic } from "../core/subtopic-picker";
 import {
   DomainId,
   MAX_ACTIVITIES_PER_DAY,
@@ -34,6 +35,7 @@ import { createDoc, updateDoc } from "../repo/docs.repo";
 import {
   createActivity,
   findCurrentActivityByUser,
+  findRecentGeneratedDocMetadataByUser,
   updateActivity,
 } from "../repo/activities.repo";
 import { createSection } from "../repo/sections.repo";
@@ -52,7 +54,7 @@ import {
 import { calculatePoolSize } from "../core/pool-size";
 import { sanitizeText, delay } from "../lib/utils";
 import { MessageChannel } from "../types/message-channel";
-import { FocusSuggestion } from "../types/domain";
+import { FocusSuggestion, GeneratedDocMetadata } from "../types/domain";
 import { FormattedMessage } from "../types/out-message";
 import { sendAndSaveMessage } from "./message-sender-service";
 
@@ -81,6 +83,7 @@ export type TopicCaptureResult =
       outcome: "captured";
       topic: string;
       focusSuggestions: FocusSuggestion[];
+      subtopics: string[];
       message: FormattedMessage;
     }
   | { outcome: "retry"; message: FormattedMessage }
@@ -120,6 +123,7 @@ export async function processTopicResponse(
     outcome: "captured",
     topic: resolvedTopic,
     focusSuggestions,
+    subtopics: validated.subtopics,
     message: formatFocusQuestion(focusSuggestions),
   };
 }
@@ -132,6 +136,7 @@ export type FocusCaptureResult =
 export async function processFocusResponse(
   text: string,
   focusSuggestions: FocusSuggestion[],
+  subtopics: string[],
   userId: string,
   level: Level,
   domain: string,
@@ -146,10 +151,13 @@ export async function processFocusResponse(
     };
   }
 
+  const subtopicValue = await resolveSubtopic(userId, domain, topic, subtopics);
+
   const generated = await generateFocusContent({
     level,
     domain: getDomainLabel(domain),
     topic,
+    subtopic: subtopicValue,
     focusSelection: parsed,
     userId,
   });
@@ -170,7 +178,15 @@ export async function processFocusResponse(
     return { outcome: "retry", message: formatFocusError() };
   }
 
-  const doc = await createGeneratedDoc(userId, domain, topic, focusKeys, data);
+  const doc = await createGeneratedDoc({
+    userId,
+    domainKey: domain,
+    topic,
+    subtopics,
+    subtopic: subtopicValue,
+    focusKeys,
+    data,
+  });
 
   const currentActivity = await findCurrentActivityByUser(userId);
   if (currentActivity) {
@@ -191,14 +207,42 @@ export async function processFocusResponse(
   return { outcome: "done" };
 }
 
-async function createGeneratedDoc(
+async function resolveSubtopic(
   userId: string,
-  domain: string,
+  domainKey: string,
   topic: string,
-  focus: string[],
-  data: FocusContentResult,
-): Promise<Doc> {
+  subtopics: string[],
+): Promise<string> {
+  const recentMetadata = await findRecentGeneratedDocMetadataByUser(userId);
+  const lastMatch = recentMetadata.find((metadata) => {
+    const m = metadata as GeneratedDocMetadata | null;
+    return m?.domainKey === domainKey && m?.topic === topic;
+  }) as GeneratedDocMetadata | undefined;
+
+  return pickSubtopic(subtopics, lastMatch?.subtopic ?? null);
+}
+
+async function createGeneratedDoc(params: {
+  userId: string;
+  domainKey: string;
+  topic: string;
+  subtopics: string[];
+  subtopic: string;
+  focusKeys: string[];
+  data: FocusContentResult;
+}): Promise<Doc> {
+  const { userId, domainKey, topic, subtopics, subtopic, focusKeys, data } =
+    params;
   const combinedContent = data.sections.map((s) => s.content).join("\n\n");
+  const metadata: GeneratedDocMetadata = {
+    domainKey,
+    domain: getDomainLabel(domainKey),
+    topic,
+    subtopics,
+    subtopic,
+    focusKeys,
+    focus: focusKeys.map((key) => findFocusLabel(key) ?? key),
+  };
   return createDoc({
     userId,
     docType: "text",
@@ -207,7 +251,7 @@ async function createGeneratedDoc(
     level: data.level,
     status: "active",
     source: "generated",
-    metadata: { domain, topic, focus },
+    metadata,
   });
 }
 

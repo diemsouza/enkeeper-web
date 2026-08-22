@@ -37,6 +37,10 @@ function parseFixedChoiceInput<T extends { id: string; label: string }>(
 }
 
 export function parseDomainInput(text: string): DomainId | "cancel" | null {
+  const n = normalize(text.trim());
+  if (n === normalize("Primeira opção")) return DOMAINS[0].id;
+  if (n === normalize("Escolha para mim"))
+    return DOMAINS[Math.floor(Math.random() * DOMAINS.length)].id;
   return parseFixedChoiceInput(text, DOMAINS);
 }
 
@@ -48,6 +52,10 @@ export function parseTopicSelectionInput(
   if (trimmed.length === 0) return null;
   const n = normalize(trimmed);
   if (resolveCommand(text) === "cancel") return "cancel";
+
+  if (n === normalize("Primeira opção")) return suggestions[0];
+  if (n === normalize("Escolha para mim"))
+    return suggestions[Math.floor(Math.random() * suggestions.length)];
 
   if (/^\d+$/.test(n)) {
     const num = parseInt(n, 10);
@@ -71,6 +79,13 @@ export function parseFocusSelectionInput(
   if (trimmed.length === 0) return null;
   const n = normalize(trimmed);
   if (resolveCommand(text) === "cancel") return "cancel";
+
+  if (n === normalize("Primeira opção"))
+    return { type: "known", keys: [suggestions[0].key] };
+  if (n === normalize("Escolha para mim")) {
+    const picked = suggestions[Math.floor(Math.random() * suggestions.length)];
+    return { type: "known", keys: [picked.key] };
+  }
 
   if (/^\d+$/.test(n)) {
     const num = parseInt(n, 10);

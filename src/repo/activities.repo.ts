@@ -1,4 +1,4 @@
-import { Activity, ActivityStatus, Level } from "../lib/prisma";
+import { Activity, ActivityStatus, Level, Prisma } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type CreateActivityData = {
@@ -81,6 +81,19 @@ export async function findLastActivityByUser(
     orderBy: { createdAt: "desc" },
   });
   return result;
+}
+
+export async function findRecentGeneratedDocMetadataByUser(
+  userId: string,
+  limit = 30,
+): Promise<Prisma.JsonValue[]> {
+  const activities = await prisma.activity.findMany({
+    where: { userId, deletedAt: null, doc: { source: "generated" } },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    select: { doc: { select: { metadata: true } } },
+  });
+  return activities.map((a) => a.doc.metadata);
 }
 
 export async function findEligibleActivities(limit = 100): Promise<Activity[]> {

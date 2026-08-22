@@ -28,6 +28,8 @@ Sempre inclua a chave "vocabulary" como uma das 5 sugestões, em qualquer tema, 
 
 Ordene as sugestões da mais comum e didática dentro do tema para a mais específica. Por exemplo, num tema onde o foco "to_be" se aplica bem, ele aparece perto do topo da lista, não no fim.
 
+Se isValid for true, gere também exatamente 5 subtópicos em subtopics. Cada subtópico é um recorte específico e concreto dentro do tema, combinando uma situação ou contexto com um ângulo distinto. Nunca repita o próprio tema reformulado, nunca use rótulo de uma palavra só. Os 5 subtópicos devem ser ortogonais entre si, cobrindo ângulos diferentes do tema sem sobreposição. Se isValid for false, subtopics é array vazio.
+
 ## Output
 
 Retorne APENAS UM JSON válido. Sem markdown, sem cercas de código (```), sem texto antes ou depois.
@@ -36,5 +38,6 @@ Estrutura do JSON:
 {
   "isValid": boolean,
   "invalidReason": string | null,
-  "focusSuggestions": array de { "key": string, "label": string }
+  "focusSuggestions": array de { "key": string, "label": string },
+  "subtopics": array de string (5 itens, vazio se isValid false)
 }

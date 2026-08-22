@@ -66,6 +66,7 @@ export const topicValidationSchema = z.object({
   isValid: z.boolean(),
   invalidReason: z.string().nullable(),
   focusSuggestions: z.array(z.object({ key: z.string(), label: z.string() })),
+  subtopics: z.array(z.string()),
 });
 
 export type TopicValidationResult = z.infer<typeof topicValidationSchema>;

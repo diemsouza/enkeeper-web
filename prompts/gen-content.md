@@ -18,7 +18,7 @@ Se `Foco em texto livre` não estiver vazio, classifique esse texto contra a lis
 3. Se o texto pedir 1 foco, ou 2 focos cuja combinação faz sentido prático para uma sessão de prática, colapse chaves repetidas em uma só, defina focusKeys com essas 1 ou 2 chaves, isValid true, tooManyFocus false, e gere.
 4. Se o texto pedir uma combinação de 2 focos sem sentido semântico prático (não relacionada a aprendizado real de inglês), ou não corresponder a nenhuma chave da lista, retorne isValid false, tooManyFocus false, invalidReason curto de uso interno, focusKeys vazio, sections vazio.
 
-Quando isValid for true, gere uma lista de vocabulário sobre o tema, filtrada pelo(s) foco(s) resolvido(s) em focusKeys, no nível declarado, no idioma inglês com tradução em português. A seção gerada tem sectionType sempre "vocabulary", nunca "text" ou "exercise".
+Quando isValid for true, gere uma lista de vocabulário ancorada no subtópico informado (não no tema amplo), filtrada pelo(s) foco(s) resolvido(s) em focusKeys, no nível declarado, no idioma inglês com tradução em português. A seção gerada tem sectionType sempre "vocabulary", nunca "text" ou "exercise".
 
 Gere exatamente 25 itens, cada um um termo, expressão ou frase curta relacionada ao tema e ao(s) foco(s) escolhido(s).
 
@@ -55,7 +55,7 @@ Nível do conteúdo gerado:
 
 Use o nível declarado do usuário como referência direta de dificuldade, sem depender de heurística de material real.
 
-O título da seção (`sections[].title`) segue o mesmo padrão de título curto usado no título raiz, descrevendo o conteúdo daquela seção especificamente. Como existe sempre uma única seção neste fluxo, `order` é sempre 1.
+O título da seção (`sections[].title`) e o título raiz (`title`) devem refletir o subtópico, não o tema amplo. Mesmo padrão de título curto, descritivo, sem linguagem de módulo, etapa ou percurso. Como existe sempre uma única seção neste fluxo, `order` é sempre 1.
 
 ## Output
 
@@ -84,5 +84,6 @@ Estrutura do JSON:
 Nível declarado do usuário: {level}
 Objetivo (domain): {domain}
 Tema (topic, já validado antes desta etapa): {topic}
+Subtópico desta geração (recorte específico dentro do tema): {subtopic}
 Foco já resolvido (chaves separadas por vírgula, vazio se o usuário respondeu com texto livre): {focus_known}
 Foco em texto livre do usuário (vazio se o foco já veio resolvido acima): {focus_free_text}

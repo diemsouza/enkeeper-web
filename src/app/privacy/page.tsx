@@ -3,7 +3,7 @@ import Nav from "@/src/components/home/nav";
 import Footer from "@/src/components/home/footer";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidade - Fluizer",
+  title: "Fluizer | Política de Privacidade",
   robots: "noindex",
 };
 

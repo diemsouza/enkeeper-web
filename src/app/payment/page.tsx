@@ -7,7 +7,7 @@ import Footer from "@/src/components/home/footer";
 import { Button } from "@/src/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Pagamento - Fluizer",
+  title: "Fluizer | Pagamento",
   robots: "noindex",
 };
 

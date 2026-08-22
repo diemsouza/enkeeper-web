@@ -3,7 +3,7 @@ import Nav from "@/src/components/home/nav";
 import Footer from "@/src/components/home/footer";
 
 export const metadata: Metadata = {
-  title: "Termos de Uso - Fluizer",
+  title: "Fluizer | Termos de Uso",
   robots: "noindex",
 };
 

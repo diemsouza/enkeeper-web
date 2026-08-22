@@ -73,7 +73,7 @@ export function formatPlanExpired(
       : "🔒 *Seu acesso encerrou.*";
 
   const text = `Continue praticando por mais 30 dias por R$21,90. Acesse o link abaixo para pagar ou use ${formatCommand("support")} para qualquer dúvida ou dificuldade.`;
-  const body = `Continue praticando por mais 30 dias por R$21,90. Toque no botão abaixo para pagar ou use ${formatCommand("support")} para qualquer dúvida ou dificuldade.`;
+  const body = `Continue praticando por mais 30 dias por R$21,90. Use ${formatCommand("support")} para qualquer dúvida ou dificuldade.`;
 
   return {
     text: [title, "", text, "", checkoutUrl].join("\n"),
@@ -176,30 +176,46 @@ function getEmojiNumber(num: number): string {
 
 export function formatDomainQuestion(): FormattedMessage {
   const options = DOMAINS.map((g, i) => `${getEmojiNumber(i + 1)} ${g.label}`);
+  const body = [
+    "*Objetivo (1/3)*",
+    "Informe o número de um objetivo abaixo.",
+    "",
+    ...options,
+    "",
+    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
+  ].join("\n");
   return {
-    text: [
-      "*Objetivo (1/3)*",
-      "Escolha um objetivo para praticar. Ele ajuda a direcionar o melhor conteúdo pra você.",
-      "",
-      ...options,
-      "",
-      `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-    ].join("\n"),
+    text: body,
+    interactive: {
+      body,
+      buttons: [
+        { id: "first_option", type: "reply", label: "Primeira opção" },
+        { id: "random", type: "reply", label: "Escolha para mim" },
+      ],
+    },
   };
 }
 
 export function formatTopicQuestion(domain: string): FormattedMessage {
   const suggestions = TOPIC_SUGGESTIONS[domain as DomainId] ?? [];
   const options = suggestions.map((s, i) => `${getEmojiNumber(i + 1)} ${s}`);
+  const body = [
+    "*Assunto (2/3)*",
+    "Informe o número de um assunto abaixo ou escreva outro que não esteja na lista de opções.",
+    "",
+    ...options,
+    "",
+    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
+  ].join("\n");
   return {
-    text: [
-      "*Assunto (2/3)*",
-      "Escolha um assunto do seu interesse, ou informe outro mais específico.",
-      "",
-      ...options,
-      "",
-      `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-    ].join("\n"),
+    text: body,
+    interactive: {
+      body,
+      buttons: [
+        { id: "first_option", type: "reply", label: "Primeira opção" },
+        { id: "random", type: "reply", label: "Escolha para mim" },
+      ],
+    },
   };
 }
 
@@ -209,15 +225,23 @@ export function formatFocusQuestion(
   const options = suggestions.map(
     (s, i) => `${getEmojiNumber(i + 1)} ${s.label}`,
   );
+  const body = [
+    "*Foco (3/3)*",
+    "Informe o número de um foco abaixo ou escreva outro.",
+    "",
+    ...options,
+    "",
+    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
+  ].join("\n");
   return {
-    text: [
-      "*Foco (3/3)*",
-      "Para finalizar, o que você precisa praticar? Escolha uma opção abaixo ou informe outro ponto de seu interesse.",
-      "",
-      ...options,
-      "",
-      `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-    ].join("\n"),
+    text: body,
+    interactive: {
+      body,
+      buttons: [
+        { id: "first_option", type: "reply", label: "Primeira opção" },
+        { id: "random", type: "reply", label: "Escolha para mim" },
+      ],
+    },
   };
 }
 

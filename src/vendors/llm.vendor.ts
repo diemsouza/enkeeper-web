@@ -167,7 +167,7 @@ export async function generateTopicValidation(params: {
   topic: string;
   userId: string;
 }): Promise<
-  | { status: "valid"; focusSuggestions: FocusSuggestion[] }
+  | { status: "valid"; focusSuggestions: FocusSuggestion[]; subtopics: string[] }
   | { status: "error"; reason: string }
 > {
   const { level, domain, topic, userId } = params;
@@ -252,7 +252,11 @@ export async function generateTopicValidation(params: {
     return { status: "error", reason: TOPIC_VALIDATION_ERROR_REASON };
   }
 
-  return { status: "valid", focusSuggestions: result.focusSuggestions || [] };
+  return {
+    status: "valid",
+    focusSuggestions: result.focusSuggestions || [],
+    subtopics: result.subtopics || [],
+  };
 }
 
 // ─── Focus content generation ────────────────────────────────────────────────
@@ -264,13 +268,14 @@ export async function generateFocusContent(params: {
   level: Level;
   domain: string;
   topic: string;
+  subtopic: string;
   focusSelection: FocusSelectionInput;
   userId: string;
 }): Promise<
   | { status: "content"; data: FocusContentResult }
   | { status: "error"; kind: "invalid" | "too_many_focus"; reason: string }
 > {
-  const { level, domain, topic, focusSelection, userId } = params;
+  const { level, domain, topic, subtopic, focusSelection, userId } = params;
   let inputTokens = 0;
   let outputTokens = 0;
   let cachedTokens = 0;
@@ -287,6 +292,7 @@ export async function generateFocusContent(params: {
   const systemPrompt = GEN_CONTENT_PROMPT.replace("{level}", level)
     .replace("{domain}", domain)
     .replace("{topic}", topic)
+    .replace("{subtopic}", subtopic)
     .replace("{focus_enum}", getFocusEnumPromptText())
     .replace("{focus_known}", focusKnown)
     .replace("{focus_free_text}", focusFreeText);

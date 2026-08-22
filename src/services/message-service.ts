@@ -774,6 +774,7 @@ export async function handleIncomingMessage(
           domain,
           topic: result.topic,
           focusSuggestions: result.focusSuggestions,
+          subtopics: result.subtopics,
         };
         await updateUserPendingIntent(
           user.id,
@@ -797,9 +798,10 @@ export async function handleIncomingMessage(
         const domain = flowData?.domain;
         const topic = flowData?.topic;
         const focusSuggestions = flowData?.focusSuggestions;
+        const subtopics = flowData?.subtopics;
         const userLevel = user.level;
 
-        if (!userLevel || !domain || !topic || !focusSuggestions) {
+        if (!userLevel || !domain || !topic || !focusSuggestions || !subtopics) {
           // não deveria acontecer: nível, objetivo e tema são sempre capturados antes deste passo
           await updateUserPendingIntent(user.id, null);
           await saveUserMsg(
@@ -825,6 +827,7 @@ export async function handleIncomingMessage(
         const result = await processFocusResponse(
           text,
           focusSuggestions,
+          subtopics,
           user.id,
           userLevel,
           domain,

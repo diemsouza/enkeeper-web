@@ -512,6 +512,8 @@ Pergunta e resposta fixa, na ordem:
 
 Nenhum termo técnico de categoria aparece em copy voltada ao usuário, tanto assunto quanto ponto são perguntados em linguagem natural.
 
+Cada um dos três passos acima também aceita os atalhos de botão "Primeira opção" e "Escolha para mim" (ver Seção 19), além de número ou texto livre.
+
 ### Catálogo de foco linguístico
 
 Ponto é escolhido de um catálogo fixo de aspectos da língua: vocabulário geral, classes de palavra (substantivos, adjetivos), tempos verbais, conectores, phrasal verbs, estruturas gramaticais, entre outros. O catálogo vale igualmente para os três níveis, sem restrição por nível, o que muda por nível é só o peso de prioridade nas 5 sugestões exibidas, não a disponibilidade do item.
@@ -534,8 +536,8 @@ Controlado por um campo de intenção pendente por usuário, com um valor por pa
 
 A combinação de nível, objetivo, assunto e ponto passa por duas chamadas de LLM em sequência:
 
-1. **Validação do assunto.** Valida o assunto em duas camadas: encaixe (o assunto faz sentido dentro do objetivo escolhido) e conteúdo proibido (pornografia, sexualização, drogas, armas, discurso de ódio, xenofobia, racismo ou equivalente, mesmo quando tecnicamente se encaixaria no objetivo). Falhando qualquer uma, retorna erro curto e genérico, sem revelar qual camada falhou, e o usuário pode tentar outro assunto ou cancelar. Passando, retorna as 5 sugestões de ponto usadas no passo seguinte.
-2. **Resolução do ponto e geração.** Se o ponto veio da lista, gera direto, sem reclassificar. Se veio como texto livre, classifica contra o catálogo de foco antes de gerar, podendo identificar até 2 pontos válidos numa mesma resposta. Gera 25 itens de vocabulário (quantidade de config, sujeita a revisão) no mesmo formato de documento e seção que o processamento de upload já produz, `sectionType` sempre `vocabulary`.
+1. **Validação do assunto.** Valida o assunto em duas camadas: encaixe (o assunto faz sentido dentro do objetivo escolhido) e conteúdo proibido (pornografia, sexualização, drogas, armas, discurso de ódio, xenofobia, racismo ou equivalente, mesmo quando tecnicamente se encaixaria no objetivo). Falhando qualquer uma, retorna erro curto e genérico, sem revelar qual camada falhou, e o usuário pode tentar outro assunto ou cancelar. Passando, retorna as 5 sugestões de ponto usadas no passo seguinte, além de 5 subtópicos, recortes específicos dentro do assunto.
+2. **Resolução do ponto e geração.** Se o ponto veio da lista, gera direto, sem reclassificar. Se veio como texto livre, classifica contra o catálogo de foco antes de gerar, podendo identificar até 2 pontos válidos numa mesma resposta. Antes de gerar, o sistema sorteia um dos 5 subtópicos retornados na validação, excluindo o último subtópico usado por aquele usuário na geração mais recente com o mesmo objetivo e assunto (se houver), e ancora o conteúdo nesse subtópico sorteado, não no assunto amplo. O sorteio é interno, o usuário não escolhe nem vê o subtópico diretamente. Na prática, permite repetir o mesmo assunto várias vezes sem receber o mesmo vocabulário. Gera 25 itens de vocabulário (quantidade de config, sujeita a revisão) no mesmo formato de documento e seção que o processamento de upload já produz, `sectionType` sempre `vocabulary`.
 
 ### Sem compartilhamento entre usuários
 
@@ -599,4 +601,4 @@ Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje
 
 Dentro de `interactive`, um botão pode ser de dois tipos: ação (resposta rápida nativa do canal, ex: "Nova atividade") ou link (abre uma URL externa, ex: link de pagamento do bloqueio de acesso, Seção 11.1). Mensagem com botão de link sempre inclui a mesma URL também no `text` puro, como fallback para quem recebe só a camada canônica (ex: simulador).
 
-`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário — não só o texto equivalente. O `interactive` em produção cobre hoje dois casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade" que cai para texto puro no simulador, e o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre o checkout no WhatsApp e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão.
+`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário — não só o texto equivalente. O `interactive` em produção cobre hoje três casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade" que cai para texto puro no simulador; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre o checkout no WhatsApp e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; e os passos de objetivo/assunto/ponto do fluxo de nova atividade (Seção 15), com botões de ação "Primeira opção" e "Escolha para mim" que caem para texto puro no simulador.
