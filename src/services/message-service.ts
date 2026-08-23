@@ -1,6 +1,7 @@
 import {
   Activity,
   DocType,
+  EvalTipClass,
   Level,
   Message,
   QuestionFormat,
@@ -105,7 +106,10 @@ import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
 import { getFeedbackExamples } from "../core/format-loader";
 import { calcSm2 } from "../core/sm2";
-import { updateScoreMetadata, computeQuestionScore } from "../lib/activity-score";
+import {
+  updateScoreMetadata,
+  computeQuestionScore,
+} from "../lib/activity-score";
 import {
   findNextUnansweredQuestion,
   findNextGeneralQuestion,
@@ -801,7 +805,13 @@ export async function handleIncomingMessage(
         const subtopics = flowData?.subtopics;
         const userLevel = user.level;
 
-        if (!userLevel || !domain || !topic || !focusSuggestions || !subtopics) {
+        if (
+          !userLevel ||
+          !domain ||
+          !topic ||
+          !focusSuggestions ||
+          !subtopics
+        ) {
           // não deveria acontecer: nível, objetivo e tema são sempre capturados antes deste passo
           await updateUserPendingIntent(user.id, null);
           await saveUserMsg(
@@ -1293,7 +1303,15 @@ export async function handleIncomingMessage(
               const evalTip = !evaluation?.user_unknown
                 ? evaluation?.eval_tip
                 : null;
+              const silent =
+                evaluation?.eval_tip_class === "none" ||
+                evaluation?.eval_tip_class === "spelling";
+              // silent já exclui "none" e "spelling"; cast seguro para o enum do banco
+              const tipClass = evalTip && !silent
+                ? (evaluation?.eval_tip_class as EvalTipClass)
+                : null;
               const tipMsg = evalTip ? formatEvalTip(evalTip) : null;
+              let tipSent = false;
               const answerType = input.isVoiceNote ? "audio" : "text";
               if (input.isVoiceNote && input.voiceAudioBuffer) {
                 await resolveAnswerAudioPath(
@@ -1340,6 +1358,7 @@ export async function handleIncomingMessage(
                 provider: evaluation?.provider,
                 model: evaluation?.model,
                 evalTip: evalTip || null,
+                evalTipClass: tipClass ?? null,
                 metadata: scoreMetadata,
                 score: computeQuestionScore(scoreMetadata),
               });
@@ -1419,6 +1438,19 @@ export async function handleIncomingMessage(
                   intensiveUntil: null,
                 });
                 await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                if (tipMsg) {
+                  await sendAndSaveMessage({
+                    channel,
+                    to: userChannel.channelUserId,
+                    userId: user.id,
+                    userChannelId: userChannel.id,
+                    activityId: activeActivity.id,
+                    message: tipMsg,
+                    intent: "eval_tip",
+                    questionId: pendingQuestion.id,
+                    today,
+                  });
+                }
                 await sendAndSaveMessage({
                   channel,
                   to: userChannel.channelUserId,
@@ -1434,6 +1466,20 @@ export async function handleIncomingMessage(
 
               if (isPracticingSessionActive) {
                 await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                if (tipMsg) {
+                  tipSent = true;
+                  await sendAndSaveMessage({
+                    channel,
+                    to: userChannel.channelUserId,
+                    userId: user.id,
+                    userChannelId: userChannel.id,
+                    activityId: activeActivity.id,
+                    message: tipMsg,
+                    intent: "eval_tip",
+                    questionId: pendingQuestion.id,
+                    today,
+                  });
+                }
                 const sent = await handleIntensiveNextQuestion(
                   activeActivity,
                   user.id,
@@ -1445,10 +1491,10 @@ export async function handleIncomingMessage(
                 if (sent) return;
               }
 
-              if (interactionCount == 1) {
+              if (interactionCount === 1) {
                 const guideMsg = formatGuideAfterFirstFeedback();
                 await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
-                if (tipMsg) {
+                if (tipMsg && !tipSent) {
                   await sendAndSaveMessage({
                     channel,
                     to: userChannel.channelUserId,
@@ -1475,7 +1521,7 @@ export async function handleIncomingMessage(
                 return;
               }
 
-              if (tipMsg) {
+              if (tipMsg && !tipSent) {
                 await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
                 await sendAndSaveMessage({
                   channel,

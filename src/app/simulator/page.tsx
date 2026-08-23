@@ -8,6 +8,9 @@ import { http } from "../../lib/http";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
 import { startOfDay } from "date-fns";
+import type { FormattedMessageButton } from "../../types/out-message";
+
+type ApiInteractive = { body: string; buttons: FormattedMessageButton[] };
 
 type ApiMessage = {
   role: string;
@@ -17,6 +20,7 @@ type ApiMessage = {
   mediaId?: string | null;
   metadata?: Record<string, string | number | null> | null;
   externalId?: string | null;
+  interactive?: ApiInteractive | null;
 };
 
 function normalizeSimulatorText(text: string): string {
@@ -95,7 +99,7 @@ function mapApiMessages(raw: ApiMessage[]): Message[] {
         externalId: m.externalId ?? undefined,
       };
     }
-    return { from, text: m.content, time };
+    return { from, text: m.content, time, interactive: m.interactive ?? undefined };
   });
 }
 
@@ -148,11 +152,17 @@ export default function SimulatorPage() {
         audioPath?: string;
         textFallback?: string;
         externalId?: string;
+        interactive?: ApiInteractive | null;
       };
       if (data.type === "message" && data.text && data.time) {
         setMessages((prev) => [
           ...prev,
-          { from: "bot", text: data.text!, time: formatTime(data.time!) },
+          {
+            from: "bot",
+            text: data.text!,
+            time: formatTime(data.time!),
+            interactive: data.interactive ?? undefined,
+          },
         ]);
         scrollToBottom("smooth");
       }
@@ -178,6 +188,38 @@ export default function SimulatorPage() {
 
     return () => es.close();
   }, [channelId, fetchAll, scrollToBottom]);
+
+  async function sendText(text: string) {
+    setMessages((prev) => [...prev, { from: "user", text, time: nowTime() }]);
+    scrollToBottom("smooth");
+
+    try {
+      await http("/api/simulate", {
+        method: "POST",
+        body: JSON.stringify({
+          channelId,
+          channelCode: channelId,
+          channelType: "whatsapp",
+          text,
+        }),
+        headers: { "x-simulate-secret": SECRET },
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: `⚠️ ${msg}`, time: nowTime() },
+      ]);
+    }
+  }
+
+  function handleButtonClick(button: FormattedMessageButton) {
+    if (button.type === "link" && button.url) {
+      window.open(button.url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    void sendText(button.label);
+  }
 
   async function sendMessage() {
     const text = input.trim();
@@ -227,27 +269,7 @@ export default function SimulatorPage() {
     }
 
     setInput("");
-    setMessages((prev) => [...prev, { from: "user", text, time: nowTime() }]);
-    scrollToBottom("smooth");
-
-    try {
-      await http("/api/simulate", {
-        method: "POST",
-        body: JSON.stringify({
-          channelId,
-          channelCode: channelId,
-          channelType: "whatsapp",
-          text,
-        }),
-        headers: { "x-simulate-secret": SECRET },
-      });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro desconhecido";
-      setMessages((prev) => [
-        ...prev,
-        { from: "bot", text: `⚠️ ${msg}`, time: nowTime() },
-      ]);
-    }
+    await sendText(text);
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -301,7 +323,11 @@ export default function SimulatorPage() {
           ref={containerRef}
           className="overflow-y-auto max-h-[80vh] w-full md:w-[480px]"
         >
-          <WhatsAppChat messages={messages} onAudioPlay={handleAudioPlay} />
+          <WhatsAppChat
+            messages={messages}
+            onAudioPlay={handleAudioPlay}
+            onButtonClick={handleButtonClick}
+          />
           <div ref={endRef} />
         </div>
       )}
@@ -338,7 +364,7 @@ export default function SimulatorPage() {
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+          className="text-gray-400 hover:text-gray-600 transition-colors shrink-0 h-9"
           aria-label="Anexar arquivo"
           title="Enviar imagem, PDF ou texto"
         >

@@ -50,8 +50,6 @@ export async function POST(req: NextRequest): Promise<Response> {
     return new Response(null, { status: 200 });
   }
 
-  //console.log("[post/api/webhooks/whatsapp] received payload", body);
-
   after(async () => {
     const channel = new WhatsAppChannel();
     let wa_id: string | undefined;
@@ -157,10 +155,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         }
 
         const { buffer, mimeType } = await downloadMedia(message.audio.id);
-        const { text: transcription } = await transcribeAudio(
-          buffer,
-          mimeType,
-        );
+        const { text: transcription } = await transcribeAudio(buffer, mimeType);
 
         const input: IncomingMessage = {
           ...base,

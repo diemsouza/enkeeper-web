@@ -87,6 +87,15 @@ enum QuestionFormat {
     open_question // pergunta direta com resposta objetiva
 }
 
+enum EvalTipClass {
+    calque
+    near_synonym
+    structure
+    collocation
+    literal_idiom
+    register
+}
+
 enum Level {
     basic
     intermediate
@@ -251,6 +260,7 @@ model Question {
     provider        AiProvider?     @map("provider")
     model           String?         @map("model")
     evalTip         String?         @map("eval_tip") @db.Text
+    evalTipClass    EvalTipClass?   @map("eval_tip_class")
     questionAudioMediaId String?    @map("question_audio_media_id")
     feedbackAudioMediaId String?    @map("feedback_audio_media_id")
     answerAudioMediaId String?      @map("answer_audio_media_id")

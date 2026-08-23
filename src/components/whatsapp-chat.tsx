@@ -2,6 +2,7 @@
 
 import { cn } from "@/src/lib/utils";
 import { WhatsAppText } from "./shared/whatsapp-text";
+import type { FormattedMessageButton } from "@/src/types/out-message";
 
 export interface Message {
   from: "user" | "bot";
@@ -15,6 +16,7 @@ export interface Message {
   textFallback?: string;
   externalId?: string;
   duration?: string;
+  interactive?: { body: string; buttons: FormattedMessageButton[] } | null;
 }
 
 function FileCard({
@@ -141,14 +143,78 @@ function VoiceNoteCard({ duration }: { duration: string }) {
   );
 }
 
+function LinkIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      className="w-3.5 h-3.5 shrink-0"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M13.5 6H18a2 2 0 012 2v4.5M18 6L9.75 14.25M10.5 6H8a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-2.5"
+      />
+    </svg>
+  );
+}
+
+function InteractiveButtonList({
+  buttons,
+  onButtonClick,
+}: {
+  buttons: FormattedMessageButton[];
+  onButtonClick?: (button: FormattedMessageButton) => void;
+}) {
+  return (
+    <div className="-mx-3 mt-2 border-t border-black/10 dark:border-white/10">
+      {buttons.map((button, i) => {
+        const rowClassName = cn(
+          "flex w-full items-center justify-center gap-1.5 px-3 py-2.5 text-[13.5px] font-medium text-[#0a84c7] dark:text-[#53bdeb] transition-colors hover:bg-black/5 dark:hover:bg-white/5",
+          i > 0 && "border-t border-black/10 dark:border-white/10",
+        );
+        if (button.type === "link" && button.url) {
+          return (
+            <a
+              key={button.id}
+              href={button.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={rowClassName}
+            >
+              {button.label}
+              <LinkIcon />
+            </a>
+          );
+        }
+        return (
+          <button
+            key={button.id}
+            type="button"
+            onClick={() => onButtonClick?.(button)}
+            className={rowClassName}
+          >
+            {button.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function WhatsAppChat({
   messages,
   onAudioPlay,
+  onButtonClick,
   widthClassName = "w-full md:w-[480px]",
   maxHeightClassName,
 }: {
   messages: Message[];
   onAudioPlay?: (externalId: string) => void;
+  onButtonClick?: (button: FormattedMessageButton) => void;
   widthClassName?: string;
   maxHeightClassName?: string;
 }) {
@@ -173,7 +239,7 @@ export function WhatsAppChat({
                 ? "bg-[#DCF8C6] dark:bg-[#005C4B] text-[#1a1a1a] dark:text-[#e9edef] rounded-[10px_10px_2px_10px]"
                 : "bg-white dark:bg-[#202C33] text-[#1a1a1a] dark:text-[#e9edef] border border-black/[0.08] rounded-[10px_10px_10px_2px]",
               "px-3 pt-2 pb-1.5 text-[13.5px]",
-              msg.type === "file" || msg.type === "voice"
+              msg.type === "file" || msg.type === "voice" || msg.interactive
                 ? "max-w-[85%]"
                 : "max-w-[70%]",
             )}
@@ -195,12 +261,18 @@ export function WhatsAppChat({
               <VoiceNoteCard duration={msg.duration ?? ""} />
             ) : (
               <p className="whitespace-pre-line leading-[1.5] break-words">
-                <WhatsAppText text={msg.text ?? ""} />
+                <WhatsAppText text={msg.interactive?.body ?? msg.text ?? ""} />
               </p>
             )}
             <p className="text-[10.5px] opacity-55 mt-0.5 text-right">
               {msg.time}
             </p>
+            {msg.interactive && (
+              <InteractiveButtonList
+                buttons={msg.interactive.buttons}
+                onButtonClick={onButtonClick}
+              />
+            )}
           </div>
         </div>
       ))}

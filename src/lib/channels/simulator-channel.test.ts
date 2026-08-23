@@ -8,17 +8,22 @@ import { SimulatorChannel } from "./simulator-channel";
 describe("SimulatorChannel.sendMessage", () => {
   const channel = new SimulatorChannel();
 
-  it("interactive cai para texto puro, ignorando os botões", async () => {
+  it("interactive é repassado junto do texto", async () => {
+    const interactive = {
+      body: "escolha uma opção (interativo)",
+      buttons: [{ id: "new_activity_suggestion", label: "Nova atividade" }],
+    };
     await channel.sendMessage("session_1", {
       text: "escolha uma opção",
-      interactive: {
-        body: "escolha uma opção (interativo)",
-        buttons: [{ id: "new_activity_suggestion", label: "Nova atividade" }],
-      },
+      interactive,
     });
     expect(emitToSession).toHaveBeenCalledWith(
       "session_1",
-      expect.objectContaining({ type: "message", text: "escolha uma opção" }),
+      expect.objectContaining({
+        type: "message",
+        text: "escolha uma opção",
+        interactive,
+      }),
     );
   });
 

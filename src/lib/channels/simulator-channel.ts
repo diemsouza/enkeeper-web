@@ -23,6 +23,7 @@ export class SimulatorChannel implements MessageChannel {
         text: message.text,
         time: new Date().toISOString(),
         externalId,
+        interactive: message.interactive,
       });
     }
     return { externalId };

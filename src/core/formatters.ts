@@ -115,7 +115,7 @@ export function formatLevelQuestion(): FormattedMessage {
   return {
     text: [
       "*Nível de Inglês*",
-      "Informe a letra que corresponde ao nível do seu inglês.",
+      "Qual é o seu nível de inglês? Isso define o idioma e o formato das perguntas que você vai receber.",
       "",
       "a) Básico",
       "b) Intermediário",
@@ -123,6 +123,19 @@ export function formatLevelQuestion(): FormattedMessage {
       "",
       `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
     ].join("\n"),
+    interactive: {
+      body: [
+        "*Nível de Inglês*",
+        "Qual é o seu nível de inglês? Isso define o idioma e o formato das perguntas que você vai receber.",
+        "",
+        `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
+      ].join("\n"),
+      buttons: [
+        { id: "level_basic", label: "Básico" },
+        { id: "level_intermediate", label: "Intermediário" },
+        { id: "level_advanced", label: "Avançado" },
+      ],
+    },
   };
 }
 

@@ -34,6 +34,7 @@ export {
   QuestionType,
   ActivityStatus,
   AiProvider,
+  EvalTipClass,
   Prisma,
 } from "../../prisma/generated/client";
 

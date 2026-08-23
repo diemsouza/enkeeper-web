@@ -5,6 +5,7 @@ import {
   AnswerType,
   QuestionType,
   AiProvider,
+  EvalTipClass,
   Prisma,
 } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
@@ -202,6 +203,7 @@ export async function updateQuestion(
     provider?: AiProvider;
     model?: string;
     evalTip?: string | null;
+    evalTipClass?: EvalTipClass | null;
     questionAudioMediaId?: string | null;
     feedbackAudioMediaId?: string | null;
     answerAudioMediaId?: string | null;

@@ -113,6 +113,16 @@ export const answerEvaluationSchema = z.object({
   feedback: z.string(),
   right_answer: z.string().nullable(),
   user_unknown: z.boolean().nullable(),
+  eval_tip_class: z.enum([
+    "calque",
+    "near_synonym",
+    "structure",
+    "collocation",
+    "literal_idiom",
+    "register",
+    "spelling",
+    "none",
+  ]),
   eval_tip: z.string().nullable(),
 });
 
