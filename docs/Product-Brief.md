@@ -59,7 +59,7 @@ A interseção "prática contextual contínua, ancorada no material do aluno, de
 ## 4. Como funciona
 
 1. Usuário conta o que quer praticar, ou envia o material da aula - texto, imagem ou PDF.
-2. Sistema identifica seções do material por tipo (ou gera o conteúdo a partir do tema informado), detecta o nível e gera perguntas específicas por seção.
+2. Sistema extrai o vocabulário do material (ou gera o conteúdo a partir do tema informado), detecta o nível e gera perguntas de prática.
 3. Durante o dia, perguntas chegam no WhatsApp. Usuário responde de cabeça.
 4. Sistema avalia a resposta, dá feedback natural e registra acerto/erro.
 5. Perguntas que travaram voltam com prioridade, calculadas por repetição espaçada.
@@ -76,7 +76,7 @@ O usuário pode informar seu próprio nível, que passa a valer para qualquer at
 
 ### Formatos de pergunta
 
-Vocabulário usa variação automática entre: gap fill, recall, recall invertido, cenário e múltipla escolha. Texto usa pergunta aberta. Exercise usa pergunta direta baseada no material.
+Todo material vira uma lista de vocabulário, com variação automática entre 5 formatos: gap fill, recall, recall invertido, cenário e múltipla escolha.
 
 ### Repetição espaçada
 
@@ -223,7 +223,7 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Geração de perguntas | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Avaliação de respostas + feedback | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Texto-para-voz (áudio de feedback) | OpenAI (`gpt-4o-mini-tts`, principal) e Google Cloud TTS (fallback), alternável por configuração |
-| Armazenamento de mídia gerada | Supabase Storage, bucket separado por ambiente |
+| Armazenamento de mídia | Supabase Storage, bucket separado por ambiente — cobre áudio gerado (feedback), áudio de resposta do usuário e a imagem original enviada para OCR |
 | Evolução semanal | Modelo médio em batch |
 | Jobs agendados | Vercel Cron |
 | Pagamento | Stripe Checkout (cartão), cobrança avulsa de 30 dias sem renovação automática; Pix manual via `suporte` como alternativa |
@@ -322,10 +322,10 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Número virtual aprovado e funcionando
 - Transcrição de áudio (Whisper)
 - OCR e descrição de imagem (Vision)
-- Schema atualizado com Section, Question, QuestionFormat, llm_logs
+- Schema atualizado com Question, QuestionFormat, llm_logs
 - Motor de prática com loop acerto/erro
 - Cadência e sessão ativa (praticar)
-- Sistema de formatos granulares (gap_fill, recall, recall_inverted, scenario, choice, open_text, open_question)
+- Sistema de formatos granulares de vocabulário (gap_fill, recall, recall_inverted, scenario, choice) — open_text e open_question ficaram legados desde a simplificação de material (ver checklist abaixo)
 - Detecção automática de nível do material no upload
 - Múltipla escolha (choice) com opções embaralhadas
 - Logs de LLM com DISABLE_LLM_LOGS
@@ -337,6 +337,11 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Onboarding atualizado para refletir o fluxo de nova atividade como caminho principal
 - Site com copy atualizada, refletindo os dois caminhos de entrada (material ou tema) na home, publicado
 - Cobrança de acesso Pro via Stripe Checkout, pagamento avulso de 30 dias sem renovação automática, com liberação automática do plano após confirmação de pagamento
+- Extração de material simplificada para lista única de vocabulário, sem seções tipadas, reduzindo a complexidade do pipeline de geração e de formatos de pergunta
+- OCR de imagem gera conteúdo de prática a partir de descrição da cena quando não há texto legível (antes era descartada), com tratamento dedicado para conteúdo impróprio (bloqueado) e imagem ilegível
+- Formatação de gap fill e cenário aplicada em código, independente do modelo reproduzir a formatação certa; cenário com variação de fechamento
+- Classificação de dica de erro (evalTip) expandida para 8 categorias, com contrato de formatação de texto
+- Botões interativos reais no simulador, incluindo seleção de nível
 
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou

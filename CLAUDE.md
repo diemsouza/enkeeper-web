@@ -93,7 +93,7 @@ docs/             -- Product-Brief.md, Product-Rules.md, Product-Backlog.md
 Todas as rotas de fila validam assinatura Upstash.
 
 **Processamento de documento:**
-Upload -> `POST /api/queue/process-doc` -> `process-doc-service` -> `llm.vendor.ts` (extracao de secoes + geracao de perguntas)
+Upload -> `POST /api/queue/process-doc` -> `process-doc-service` -> `llm.vendor.ts` (extracao de vocabulario + geracao de perguntas)
 
 **Cadencia de pratica:**
 Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.service` envia a proxima pergunta pendente via WhatsApp.
@@ -113,7 +113,7 @@ Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.servic
 | `User`         | Conta; `planCode`, `planStatus`, `planExpiresAt`, `locale`, `currency`                |
 | `UserChannel`  | Canal conectado (whatsapp); `channelUserId`, `phoneNumber`                            |
 | `Doc`          | Material enviado; `rawContent`, `content`, `docType`, `level`, `status`               |
-| `Section`      | Secao do material (vocabulary/text/exercise); ligada ao `Doc`                         |
+| `Section`      | Nao usado hoje (schema legado de quando material era dividido por tipo, ver Product-Rules.md Secao 3) |
 | `Question`     | Pergunta gerada; `questionFormat`, `answerKeys`, `questionOptions`, `status`, `revisionCount` |
 | `Activity`     | Sessao de pratica por `[userId, docId, date]`; `nextMessageAt`, cadencia              |
 | `WeeklyReport` | Relatorio semanal enviado aos domingos                                                |
@@ -128,13 +128,15 @@ Formatos validos (`QuestionFormat` enum): `gap_fill`, `recall`, `recall_inverted
 
 Cada formato tem um arquivo de exemplo em `prompts/examples/<format>.md` com blocos por nivel (`## BASIC`, `## INTERMEDIATE`, `## ADVANCED`) e secao (`### question`, `### feedback`).
 
+Selecao de formato ativa hoje: `pickNextFormat()` em `src/core/question-format-picker.ts`, que rotaciona os 5 formatos de vocabulario (`gap_fill`, `recall`, `recall_inverted`, `scenario`, `choice`). `open_text`/`open_question` existem no enum mas nao tem call site ativo (eram usados por `text`/`exercise`, que nao existem mais como tipo de conteudo, ver Product-Rules.md Secao 3).
+
 Funcoes em `src/core/format-loader.ts`:
-- `getFormatsBySectionType(sectionType)` -- retorna formatos validos para o tipo de secao
 - `getQuestionExamples(formats, level)` -- string formatada com exemplos de pergunta por formato
 - `getFeedbackExamples(formats, level)` -- string formatada com exemplos de feedback por formato
-- `validateGeneratedQuestion(questions, sectionType)` -- filtra perguntas invalidas por sourceItem
+- `validateGeneratedQuestion(questions, sectionType)` -- filtra perguntas invalidas por sourceItem; `sectionType` e sempre o literal `"vocabulary"` hoje
+- `getFormatsBySectionType(sectionType)` -- orfao, sem call site hoje
 
-O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotacao manual.
+O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotacao manual do texto da pergunta, so decide qual formato pedir (`pickNextFormat`).
 
 **Choice shuffle:** opcoes sao embaralhadas uma vez antes de salvar no banco (`updateQuestion`). `formatChoiceQuestion` apenas aplica labels `a) b) c)` -- nao embaralha.
 
@@ -145,7 +147,7 @@ O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotac
 | Funcao                    | Stage             | Modelo padrao      |
 | ------------------------- | ----------------- | ------------------ |
 | `generateDocSections`     | doc-extraction    | gpt-4.1-mini       |
-| `generateSectionQuestions`| gen-{sectionType} | PROVIDER_STANDARD  |
+| `generateNextQuestion`    | gen-vocabulary (unico stage hoje) | PROVIDER_STANDARD |
 | `generateTopicValidation` | topic-validation  | PROVIDER_STANDARD  |
 | `generateFocusContent`    | gen-content        | PROVIDER_STANDARD  |
 | `generateAnswerEvaluation`| answer-evaluation | PROVIDER_STANDARD  |
@@ -171,12 +173,14 @@ Textos dos prompts: `prompts/*.md`, exemplos de formato em `prompts/examples/*.m
 Cada prompt vive em `prompts/<etapa>.md`. Formato e convencoes em `prompts/standard.md`.
 
 Arquivos de prompt ativos:
-- `doc-extraction.md` -- extrai secoes do material
+- `doc-extraction.md` -- extrai vocabulario do material (lista unica, sem seçoes tipadas, ver Product-Rules.md Secao 3)
 - `topic-validation.md` -- valida tema do fluxo de nova atividade e sugere focos linguisticos
 - `gen-content.md` -- resolve o foco linguistico (lista numerada ou texto livre) e gera o conteudo do fluxo de nova atividade
-- `gen-vocabulary.md`, `gen-text.md`, `gen-exercise.md` -- geram perguntas por tipo de secao
+- `gen-vocabulary.md` -- gera perguntas de vocabulario (unico prompt de geracao de pergunta em uso hoje)
 - `answer-evaluation.md` -- avalia resposta do usuario e gera feedback
 - `voice.md` -- persona e tom de voz (injetado nos prompts acima)
+
+`gen-text.md` e `gen-exercise.md` ainda existem em disco mas ficaram sem call site desde que `text`/`exercise` deixaram de existir como tipo de conteudo.
 
 ## Infra
 

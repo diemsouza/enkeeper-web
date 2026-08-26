@@ -83,7 +83,7 @@ O comando `atividade` exibe apenas activities `active` e `archived`. Os demais s
 
 ## 2. Perguntas
 
-Geradas na criação da atividade (upload ou fluxo de nova atividade), uma por item de vocabulário e por trecho relevante de texto ou exercício. Cada pergunta pertence a uma seção do material.
+Geradas na criação da atividade (upload ou fluxo de nova atividade), uma por item de vocabulário extraído do material.
 
 ### Estados de uma pergunta
 
@@ -121,25 +121,19 @@ Mensagem enviada ao usuário:
 
 ---
 
-## 3. Seções do material
+## 3. Extração de vocabulário do material
 
-O material é dividido em blocos por tipo antes de gerar as perguntas. Cada bloco tem seu próprio conjunto de perguntas e formatos.
+O material enviado, qualquer que seja o formato de entrada — texto corrido, lista de palavras, lista PT/EN, lista de-para, frase solta, lista de exercícios — é normalizado numa lista única de vocabulário antes de gerar as perguntas, até um teto de aproximadamente 25 termos.
 
-| Tipo | Descrição | Formatos de pergunta |
-| ---- | --------- | --------------------- |
-| `vocabulary` | Lista de palavras ou expressões isoladas | gap fill, recall, recall invertido, cenário, múltipla escolha |
-| `text` | Texto corrido, frase, diálogo ou parágrafo | pergunta aberta |
-| `exercise` | Lista de perguntas do próprio material | pergunta direta |
+Não existe mais classificação do material em tipos de seção com regras próprias para cada um. Essa era uma fonte real de complexidade: cada tipo tinha sua própria segmentação, mínimo de itens e cálculo de tamanho de pool. Hoje há um único formato de conteúdo canônico, e o restante do pipeline (formatos de pergunta, geração, avaliação) opera sobre ele sem ramificação por tipo.
 
-`exercise` só é classificado assim quando o material contém uma lista explícita de perguntas. Uma ou duas perguntas soltas num texto não qualificam.
-
-Conteúdo gerado pelo fluxo de nova atividade (Seção 15) já nasce classificado como `vocabulary`, não passa pela classificação desta seção.
+Conteúdo gerado pelo fluxo de nova atividade (Seção 15) segue o mesmo formato de lista de vocabulário.
 
 ---
 
 ## 4. Formatos de pergunta
 
-Sete formatos disponíveis. O sorteio de formato para vocabulário acontece antes de gerar, o modelo executa, não decide.
+Cinco formatos em uso ativo, todos de vocabulário — hoje todo material vira uma lista de vocabulário (Seção 3), então são os únicos que entram em jogo. O sorteio de formato acontece antes de gerar, o modelo executa, não decide.
 
 | Formato | O que faz |
 | ------- | --------- |
@@ -148,8 +142,10 @@ Sete formatos disponíveis. O sorteio de formato para vocabulário acontece ante
 | recall invertido | Dado o termo, trazer o significado ou uso |
 | cenário | Situação realista que leva ao uso do termo |
 | múltipla escolha | 2 a 5 opções, embaralhadas antes de salvar |
-| pergunta aberta | Sobre texto corrido, compreensão, reformulação, inferência |
-| pergunta direta | Baseada nas perguntas do próprio material |
+
+O prefixo "Complete:" do gap fill e a pergunta de fechamento do cenário não vêm mais do modelo — são aplicados depois, de forma determinística. Isso elimina falha de formatação (prefixo esquecido, fechamento reformulado ou fora do padrão). O fechamento do cenário hoje sorteia entre 4 variações em português e 4 em inglês, em vez de repetir sempre a mesma frase.
+
+`pergunta aberta` e `pergunta direta` (usadas antes para material de texto corrido e de exercício, respectivamente) ficaram sem uso desde que esses tipos de conteúdo deixaram de existir (Seção 3) — formatos legados, fora do fluxo ativo hoje.
 
 ---
 
@@ -197,9 +193,11 @@ O áudio é enviado como nota de voz reconhecida pelo canal, não como anexo de 
 
 ### 6.2 Dica de erro (evalTip)
 
-Feedback de erro ou parcial pode ser acompanhado de uma dica curta, enviada como mensagem separada logo após o feedback. Diferente do feedback em si, a dica pode apontar a causa específica do erro (sinônimo próximo incorreto, confusão de padrão gramatical, expressão interpretada ao pé da letra), mas nunca reformula a resposta certa como explicação nem funciona como definição de dicionário. É a única exceção deliberada às proibições desta seção, restrita ao próprio campo da dica, sem afetar o texto do feedback em si.
+Feedback de erro ou parcial pode ser acompanhado de uma dica curta, enviada como mensagem separada logo após o feedback. Diferente do feedback em si, a dica pode apontar a causa específica do erro, mas nunca reformula a resposta certa como explicação nem funciona como definição de dicionário. É a única exceção deliberada às proibições desta seção, restrita ao próprio campo da dica, sem afetar o texto do feedback em si.
 
-Gerada só quando há diagnóstico específico do erro do usuário. Chute sem padrão identificável ou termo direto sem nuance não geram dica, o campo fica vazio nesses casos.
+A causa do erro é classificada em uma de oito categorias: calque (tradução literal de estrutura), sinônimo próximo incorreto, estrutura (padrão gramatical confundido), colocação (combinação de palavras que não se usa junto em inglês), expressão interpretada ao pé da letra, registro (formal/informal fora de lugar), ortografia, ou sem classificação. Ortografia e sem classificação não geram dica — o campo fica vazio nesses casos, não só no caso de chute sem padrão identificável.
+
+O texto da dica segue uma marcação própria: negrito para a forma contrastada, itálico para um termo curto em inglês, aspas duplas para uma frase completa em inglês, riscado só para uma forma que não existe em inglês.
 
 Vale tanto para cadência quanto para sessão intensiva. Em sessão intensiva, a dica não atrasa nem bloqueia o disparo da próxima pergunta, é enviada em sequência imediata.
 
@@ -327,7 +325,7 @@ Limite do intensivo atingido, cadência ainda disponível:
 | `retomar` | Retoma após pausa |
 | `atividade` | Lista a atividade ativa e as anteriores |
 | `nova atividade` | Inicia o fluxo de captura de nível, objetivo, assunto e ponto, e gera uma atividade individual a partir da combinação escolhida (ver Seção 15) |
-| `nivel` | Atualiza o nível de inglês declarado pelo usuário (básico, intermediário ou avançado) |
+| `nivel` | Atualiza o nível de inglês declarado pelo usuário (básico, intermediário ou avançado), com atalho de botão para cada opção |
 | `cancelar` | Sai do fluxo ou ação em andamento: processamento de material dentro da janela de buffer (ver Seção 1), ou qualquer passo do fluxo de nova atividade (ver Seção 15) |
 | `suporte` | Aciona suporte via WhatsApp do admin |
 
@@ -479,17 +477,23 @@ Conteúdo planejado: materiais enviados, atividades geradas por tema, trocas tot
 
 Texto solto enviado no chat nunca é interpretado como material. Só arquivo (imagem, PDF, texto em arquivo) dispara o processamento desta seção. Texto no chat tem só duas leituras possíveis: comando, ou resposta a uma pergunta de prática ou a um passo do fluxo de nova atividade (Seção 15) em andamento.
 
-Áudio, imagem e PDF são processados em memória e descartados após extração. Nada é armazenado além do texto extraído, das seções identificadas e das perguntas geradas.
+Áudio não faz mais parte do processamento de material: só imagem, PDF e texto em arquivo geram Doc. Nota de voz (áudio) serve exclusivamente para responder a uma pergunta de prática pendente (ver Seção 17). PDF e texto em arquivo são processados em memória e descartados após extração — a imagem é a exceção, ver Seção 14.1 e Seção 17.
 
 **Cap diário invisível: 5 atividades por usuário por dia.** O cap conta atividades criadas, não peças de material enviadas nem conclusões do fluxo de nova atividade, várias fotos ou páginas enviadas dentro da janela de buffer de 45 segundos (Seção 1) formam um único material e consomem uma única vaga do cap. Material abortado via `cancelar` antes do fechamento da janela não consome o cap, porque nenhuma atividade chegou a ser criada. O mesmo vale para o fluxo de nova atividade cancelado antes de gerar conteúdo.
-
-Caps adicionais por tipo de envio, por usuário por dia: 30 áudios (máximo 60s cada), 10 imagens.
 
 Após o processamento, a primeira pergunta é agendada com um atraso de 3 minutos, para garantir que o usuário receba a confirmação de processamento antes da primeira interação de prática. O mesmo atraso se aplica à primeira pergunta de uma atividade criada pelo fluxo de nova atividade.
 
 **Origem do material:** cada material grava sua origem, `upload` ou `generated` (ver Seção 15). Material com origem `generated` grava também o objetivo, o assunto e o(s) ponto(s) que originaram aquele conteúdo, para rastreabilidade. Material com origem `upload` não grava esses dados por enquanto.
 
 O webhook classifica a mensagem recebida pelo type informado pelo canal antes de decidir o processamento. text, image, audio, document, button e interactive seguem o processamento normal. reaction e sticker são ignorados silenciosamente, sem gerar resposta nem entrar no pipeline de avaliação. video recebe mensagem própria informando que ainda não é suportado. Os demais tipos (location, contacts, order, system, unknown, e qualquer tipo não mapeado) recebem mensagem de comando inválido, orientando o uso de /ajuda.
+
+### 14.1 Processamento de imagem (OCR)
+
+Uma imagem enviada como material passa por três desfechos possíveis:
+
+- **Texto extraído.** A imagem tem um foco textual claro (post, página de caderno, slide, documento) — o texto legível é extraído e vira o material, como antes.
+- **Descrição da cena.** A imagem não tem texto predominante, mas mostra uma cena, ambiente ou objeto reconhecível — o sistema gera uma descrição rica em inglês do que aparece, detalhada o suficiente para servir de material de prática. Essa descrição alimenta o pipeline normalmente, como se fosse um texto enviado. Antes, esse caso era descartado com mensagem genérica de que não foi possível identificar texto; hoje vira conteúdo de prática.
+- **Bloqueada ou ilegível.** Conteúdo impróprio (nudez, abuso, violência explícita, drogas, armas) é bloqueado com mensagem dedicada, sem gerar atividade. Imagem tecnicamente inutilizável (resolução baixa demais, sem foco identificável) recebe mensagem pedindo reenvio com melhor qualidade, também sem gerar atividade.
 
 ---
 
@@ -537,7 +541,7 @@ Controlado por um campo de intenção pendente por usuário, com um valor por pa
 A combinação de nível, objetivo, assunto e ponto passa por duas chamadas de LLM em sequência:
 
 1. **Validação do assunto.** Valida o assunto em duas camadas: encaixe (o assunto faz sentido dentro do objetivo escolhido) e conteúdo proibido (pornografia, sexualização, drogas, armas, discurso de ódio, xenofobia, racismo ou equivalente, mesmo quando tecnicamente se encaixaria no objetivo). Falhando qualquer uma, retorna erro curto e genérico, sem revelar qual camada falhou, e o usuário pode tentar outro assunto ou cancelar. Passando, retorna as 5 sugestões de ponto usadas no passo seguinte, além de 5 subtópicos, recortes específicos dentro do assunto.
-2. **Resolução do ponto e geração.** Se o ponto veio da lista, gera direto, sem reclassificar. Se veio como texto livre, classifica contra o catálogo de foco antes de gerar, podendo identificar até 2 pontos válidos numa mesma resposta. Antes de gerar, o sistema sorteia um dos 5 subtópicos retornados na validação, excluindo o último subtópico usado por aquele usuário na geração mais recente com o mesmo objetivo e assunto (se houver), e ancora o conteúdo nesse subtópico sorteado, não no assunto amplo. O sorteio é interno, o usuário não escolhe nem vê o subtópico diretamente. Na prática, permite repetir o mesmo assunto várias vezes sem receber o mesmo vocabulário. Gera 25 itens de vocabulário (quantidade de config, sujeita a revisão) no mesmo formato de documento e seção que o processamento de upload já produz, `sectionType` sempre `vocabulary`.
+2. **Resolução do ponto e geração.** Se o ponto veio da lista, gera direto, sem reclassificar. Se veio como texto livre, classifica contra o catálogo de foco antes de gerar, podendo identificar até 2 pontos válidos numa mesma resposta. Antes de gerar, o sistema sorteia um dos 5 subtópicos retornados na validação, excluindo o último subtópico usado por aquele usuário na geração mais recente com o mesmo objetivo e assunto (se houver), e ancora o conteúdo nesse subtópico sorteado, não no assunto amplo. O sorteio é interno, o usuário não escolhe nem vê o subtópico diretamente. Na prática, permite repetir o mesmo assunto várias vezes sem receber o mesmo vocabulário. Gera 25 itens de vocabulário (quantidade de config, sujeita a revisão) no mesmo formato de lista de vocabulário que o processamento de upload já produz (ver Seção 3).
 
 ### Sem compartilhamento entre usuários
 
@@ -570,13 +574,19 @@ Comportamento pós-cancelamento depende do contexto. Sem Activity ativa (onboard
 
 ---
 
-## 17. Mídia gerada pelo sistema
+## 17. Mídia armazenada
 
-Áudio e outros arquivos gerados pelo sistema (hoje: áudio de feedback, ver Seção 6.1) são armazenados, diferente de mídia recebida do usuário (Seção 14), que é descartada após extração. O texto de origem que gerou o áudio é guardado junto ao arquivo, servindo de auditoria de o que foi de fato falado, e permitindo reenvio em texto sem necessidade de gerar áudio novo, caso necessário no futuro.
+Nem toda mídia é descartada após uso. PDF e texto em arquivo continuam sendo processados em memória e descartados após extração (Seção 14). Três exceções são armazenadas:
 
-O áudio armazenado é reaproveitado sempre que a mesma pergunta volta, seja por revisão espaçada (Seção 7) ou por reenvio dentro da sessão intensiva, sem gerar de novo. Regeneração só ocorre se o áudio original não existir mais no armazenamento.
+- **Áudio de feedback**, gerado pelo sistema (Seção 6.1).
+- **Áudio de resposta**: quando o usuário responde uma pergunta pendente por nota de voz, o áudio é armazenado e usado no cálculo da nota da pergunta (Seção 6.3), diferente de uma resposta por texto, que não é retida.
+- **Imagem original de OCR**: a imagem enviada como material é armazenada junto com o texto (ou descrição) extraído dela (Seção 14.1), independente do desfecho ser texto, descrição, bloqueio ou imagem ilegível.
 
-Mídia associada a uma pergunta é removida do armazenamento (não o registro em si, que permanece como histórico) quando a atividade correspondente está `archived` ou `cancelled` há mais de 30 dias. Atividade `active` nunca tem mídia removida, independente de quanto tempo estiver parada. A remoção roda automaticamente, uma vez por dia, em lotes, sem necessidade de intervenção manual.
+Em todos os casos, o conteúdo de origem (texto do feedback falado, transcrição da resposta em áudio, transcrição ou descrição da imagem) é guardado junto ao arquivo, servindo de auditoria do que foi de fato produzido ou extraído, e permitindo reenvio em texto sem necessidade de gerar áudio novo, caso necessário no futuro.
+
+O áudio de feedback armazenado é reaproveitado sempre que a mesma pergunta volta, seja por revisão espaçada (Seção 7) ou por reenvio dentro da sessão intensiva, sem gerar de novo. Regeneração só ocorre se o áudio original não existir mais no armazenamento.
+
+Mídia associada a uma pergunta (áudio de feedback, áudio de resposta) é removida do armazenamento (não o registro em si, que permanece como histórico) quando a atividade correspondente está `archived` ou `cancelled` há mais de 30 dias. Atividade `active` nunca tem mídia removida, independente de quanto tempo estiver parada. Imagem original de OCR segue o mesmo critério de 30 dias, mas contado a partir do próprio registro de mídia, sem depender de status de activity. A remoção roda automaticamente, uma vez por dia, em lotes, sem necessidade de intervenção manual.
 
 ---
 
@@ -597,8 +607,8 @@ Toda mensagem enviada pelo sistema é representada por um `FormattedMessage`: um
 Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje:
 
 - **WhatsApp**: usa `audioPath` se presente (envia o áudio); senão `templateName` se presente (envia via template aprovado da Meta, necessário fora da janela de 24h); senão `interactive` se presente (envia com botões); senão `text` puro.
-- **Simulador**: usa `audioPath` se presente; senão sempre `text` puro, ignorando `templateName` e `interactive`. Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais depois, sem quebrar nada que já existe (ver Seção 7 do Product-Brief, arquitetura multicanal).
+- **Simulador**: usa `audioPath` se presente; senão `interactive` se presente (renderiza os botões de verdade, clicáveis); senão `text` puro, ignorando `templateName` (que só faz sentido para o template aprovado da Meta). Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais depois, sem quebrar nada que já existe (ver Seção 7 do Product-Brief, arquitetura multicanal).
 
 Dentro de `interactive`, um botão pode ser de dois tipos: ação (resposta rápida nativa do canal, ex: "Nova atividade") ou link (abre uma URL externa, ex: link de pagamento do bloqueio de acesso, Seção 11.1). Mensagem com botão de link sempre inclui a mesma URL também no `text` puro, como fallback para quem recebe só a camada canônica (ex: simulador).
 
-`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário — não só o texto equivalente. O `interactive` em produção cobre hoje três casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade" que cai para texto puro no simulador; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre o checkout no WhatsApp e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; e os passos de objetivo/assunto/ponto do fluxo de nova atividade (Seção 15), com botões de ação "Primeira opção" e "Escolha para mim" que caem para texto puro no simulador.
+`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário — não só o texto equivalente. O `interactive` em produção cobre hoje quatro casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade"; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre o checkout no WhatsApp e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; os passos de objetivo/assunto/ponto do fluxo de nova atividade (Seção 15), com botões de ação "Primeira opção" e "Escolha para mim"; e a seleção de nível (Seção 5, comando `nivel`), com um botão por nível. Todos os botões de ação são renderizados de verdade tanto no WhatsApp quanto no simulador.

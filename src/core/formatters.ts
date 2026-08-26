@@ -215,7 +215,8 @@ export function formatTopicQuestion(domain: string): FormattedMessage {
   const options = suggestions.map((s, i) => `${getEmojiNumber(i + 1)} ${s}`);
   const body = [
     "*Assunto (2/3)*",
-    "Informe o número de um assunto abaixo ou escreva outro que não esteja na lista de opções.",
+    "Do que você gosta? Escreva qualquer assunto que queira praticar.",
+    "Se preferir, escolha um número abaixo.",
     "",
     ...options,
     "",
