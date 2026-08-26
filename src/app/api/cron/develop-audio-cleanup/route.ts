@@ -1,7 +1,10 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { processAudioCleanup } from "@/src/services/audio-cleanup-cron.service";
+import {
+  processAudioCleanup,
+  processImageCleanup,
+} from "@/src/services/audio-cleanup-cron.service";
 
 export async function GET(): Promise<NextResponse> {
   if (process.env.NODE_ENV !== "development") {
@@ -9,8 +12,14 @@ export async function GET(): Promise<NextResponse> {
   }
 
   try {
-    const result = await processAudioCleanup();
-    return NextResponse.json({ audioCleanup: result });
+    const [audioResult, imageResult] = await Promise.all([
+      processAudioCleanup(),
+      processImageCleanup(),
+    ]);
+    return NextResponse.json({
+      audioCleanup: audioResult,
+      imageCleanup: imageResult,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     console.error("[get/api/cron/develop-audio-cleanup] error:", err);

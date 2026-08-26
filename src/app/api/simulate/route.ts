@@ -9,8 +9,9 @@ import {
   extractTextFromImage,
   extractTextFromPdf,
 } from "../../../vendors/llm.vendor";
-import { formatImageNoText } from "../../../core/formatters";
+import { uploadFile } from "../../../vendors/storage.vendor";
 import { SimulatorChannel } from "../../../lib/channels/simulator-channel";
+import { ulid } from "ulid";
 
 const jsonSchema = z.object({
   channelId: z.string().min(1),
@@ -66,6 +67,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     let extractedText: string;
+    let imageMediaMetadata:
+      | Record<string, string | number | null>
+      | undefined;
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
       if (mediaType === "image") {
@@ -75,18 +79,34 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           undefined,
           typeof channelCode === "string" ? channelCode : undefined,
         );
-        const visionResult = await extractTextFromImage(buffer, user.id);
-        if (visionResult.transcription_type === "description") {
-          const noTextMsg = formatImageNoText();
-          emitToSession(channelId, {
-            type: "message",
-            text: noTextMsg.text,
-            time: new Date().toISOString(),
+        const mimeType = file.type || "image/jpeg";
+        const format = mimeType.split("/")[1]?.split(";")[0] ?? "jpeg";
+        let mediaPath: string | null = null;
+        try {
+          mediaPath = `ocr/${ulid()}.${format}`;
+          await uploadFile({
+            filePath: mediaPath,
+            file: new Blob([new Uint8Array(buffer)], { type: mimeType }),
           });
-          emitToSession(channelId, { type: "done" });
-          return NextResponse.json({ ok: true });
+        } catch (err) {
+          console.error(
+            "[post/api/simulate] falha ao salvar imagem no storage:",
+            err,
+          );
+          mediaPath = null;
         }
+
+        const visionResult = await extractTextFromImage(buffer, user.id);
         extractedText = visionResult.content;
+        imageMediaMetadata = {
+          mediaType: "image",
+          status: visionResult.status,
+          transcriptionType: visionResult.transcription_type,
+          statusMessage: visionResult.status_message,
+          sizeBytes: file.size,
+          format,
+          mediaPath,
+        };
       } else if (mediaType === "pdf") {
         extractedText = await extractTextFromPdf(buffer);
       } else if (mediaType === "text") {
@@ -113,7 +133,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           text: extractedText,
           externalId: typeof externalId === "string" ? externalId : undefined,
           mediaType: mediaType ?? undefined,
-          mediaMetadata: {
+          mediaMetadata: imageMediaMetadata ?? {
             media_type: mediaType,
             file_name: file.name,
             size_bytes: file.size,

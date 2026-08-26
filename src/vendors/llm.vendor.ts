@@ -735,6 +735,13 @@ export async function extractTextFromImage(
     userId,
   });
 
-  if (!result) throw new Error("OCR failed");
+  if (!result) {
+    result = {
+      status: "unreadable",
+      transcription_type: "",
+      content: "",
+      status_message: logError ?? "Falha ao processar a imagem.",
+    };
+  }
   return result;
 }

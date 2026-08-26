@@ -24,7 +24,9 @@ export type MessageIntent =
   | "free_text"
   | "unknown_command"
   | "practice_now"
-  | "pause_practice";
+  | "pause_practice"
+  | "image_blocked"
+  | "image_unreadable";
 
 export type FocusSuggestion = { key: string; label: string };
 

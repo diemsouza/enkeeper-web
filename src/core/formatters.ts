@@ -684,9 +684,13 @@ export function formatPreviousActivitySummary(
   };
 }
 
-export function formatImageNoText(): FormattedMessage {
+export function formatImageBlocked(): FormattedMessage {
+  return { text: "Não foi possível processar esse material." };
+}
+
+export function formatImageUnreadable(): FormattedMessage {
   return {
-    text: "Não foi possível identificar texto em inglês suficiente nessa imagem. Envie outro material como texto, imagem ou PDF.",
+    text: "Não conseguimos ler essa imagem. Tente enviar com melhor iluminação ou resolução.",
   };
 }
 

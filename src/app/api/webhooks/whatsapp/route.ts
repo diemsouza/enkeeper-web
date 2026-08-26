@@ -13,7 +13,6 @@ import { canUseImage } from "../../../../core/limits";
 import { canPractice } from "../../../../core/access";
 import {
   formatUpgradePrompt,
-  formatImageNoText,
   formatPlanExpired,
   formatGenericError,
   formatUnsupportedFileType,
@@ -21,6 +20,7 @@ import {
   formatAudioUnsupported,
   formatInvalidMessageType,
 } from "../../../../core/formatters";
+import { uploadFile } from "../../../../vendors/storage.vendor";
 import { IncomingMessage } from "../../../../types/domain";
 import { processWhatsAppStatusEvent } from "../../../../services/message-status-service";
 import { getOrCreateCheckoutUrl } from "../../../../services/stripe-checkout-service";
@@ -183,24 +183,37 @@ export async function POST(req: NextRequest): Promise<Response> {
         const { buffer, mimeType, fileSize } = await downloadMedia(
           message.image.id,
         );
-        const visionResult = await extractTextFromImage(buffer, user.id);
-
-        if (visionResult.transcription_type === "description") {
-          await channel.sendMessage(channelId, formatImageNoText());
-          return;
+        const format = mimeType.split("/")[1]?.split(";")[0] ?? "jpeg";
+        let mediaPath: string | null = null;
+        try {
+          mediaPath = `ocr/${message.image.id}.${format}`;
+          await uploadFile({
+            filePath: mediaPath,
+            file: new Blob([new Uint8Array(buffer)], { type: mimeType }),
+          });
+        } catch (err) {
+          console.error(
+            "[post/api/webhooks/whatsapp] falha ao salvar imagem no storage:",
+            err,
+          );
+          mediaPath = null;
         }
 
-        const format = mimeType.split("/")[1]?.split(";")[0] ?? "jpeg";
+        const visionResult = await extractTextFromImage(buffer, user.id);
+
         const input: IncomingMessage = {
           ...base,
           text: visionResult.content,
           mediaType: "image",
           mediaId: message.image.id,
           mediaMetadata: {
-            media_type: "image",
-            transcription_type: visionResult.transcription_type,
-            size_bytes: fileSize ?? null,
+            mediaType: "image",
+            status: visionResult.status,
+            transcriptionType: visionResult.transcription_type,
+            statusMessage: visionResult.status_message,
+            sizeBytes: fileSize ?? null,
             format,
+            mediaPath,
           },
         };
         await handleIncomingMessage(input, channel);

@@ -56,8 +56,11 @@ import {
   formatSetFirstLevelCanceled,
   formatFirstNewActivityCanceled,
   formatFeedbackToSpeech,
+  formatImageBlocked,
+  formatImageUnreadable,
 } from "../core/formatters";
 import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
+import { createMedia } from "../repo/media.repo";
 import {
   markUserOnboarded,
   updateUserPlanStatus,
@@ -130,6 +133,7 @@ import {
   ONBOARDING_MESSAGE_INTERVAL_SEC,
   DAILY_PRACTICE_LIMIT,
   DEFAULT_MESSAGE_INTERVAL_SEC,
+  MEDIA_PARENT_TYPE,
 } from "../lib/constants";
 import { delay } from "../lib/utils";
 import { sendAndSaveMessage } from "./message-sender-service";
@@ -467,6 +471,40 @@ export async function handleIncomingMessage(
         channel,
         userChannel.channelUserId,
       );
+      return;
+    }
+
+    // ─── Imagem bloqueada ou ilegível ────────────────────────────────────────
+
+    if (
+      input.mediaType === "image" &&
+      (input.mediaMetadata?.status === "blocked" ||
+        input.mediaMetadata?.status === "unreadable")
+    ) {
+      const intent: MessageIntent =
+        input.mediaMetadata.status === "blocked"
+          ? "image_blocked"
+          : "image_unreadable";
+      await saveUserMsg(
+        user.id,
+        userChannel.id,
+        String(input.mediaMetadata.statusMessage ?? ""),
+        intent,
+        input,
+        today,
+      );
+      const reply =
+        input.mediaMetadata.status === "blocked"
+          ? formatImageBlocked()
+          : formatImageUnreadable();
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelUserId,
+        userId: user.id,
+        userChannelId: userChannel.id,
+        message: reply,
+        today,
+      });
       return;
     }
 
@@ -1798,7 +1836,28 @@ async function saveUserMsg(
     receivedAt: input.receivedAt,
   });
   await incrementUserMessageCount(userId, today);
+  await saveImageMedia(message.id, input, content);
   return message;
+}
+
+async function saveImageMedia(
+  messageId: string,
+  input: Pick<IncomingMessage, "mediaType" | "mediaMetadata">,
+  transcription: string,
+): Promise<void> {
+  const mediaPath = input.mediaMetadata?.mediaPath;
+  if (input.mediaType !== "image" || typeof mediaPath !== "string") return;
+  const format = input.mediaMetadata?.format;
+  const sizeBytes = input.mediaMetadata?.sizeBytes;
+  await createMedia({
+    parentId: messageId,
+    parentType: MEDIA_PARENT_TYPE.MESSAGE,
+    mediaType: "image",
+    contentType: `image/${typeof format === "string" ? format : "jpeg"}`,
+    mediaPath,
+    mediaSize: typeof sizeBytes === "number" ? sizeBytes : 0,
+    mediaTranscription: transcription,
+  });
 }
 
 function getIntentData(user: {
@@ -1942,6 +2001,7 @@ async function handleDocUpload(
       receivedAt: input.receivedAt,
     });
     await incrementUserMessageCount(userId, today);
+    await saveImageMedia(savedMsg.id, input, rawContent);
     if (!itemValidation.success) {
       await sendAndSaveMessage({
         channel,
@@ -2056,6 +2116,7 @@ async function handleDocUpload(
     receivedAt: input.receivedAt,
   });
   await incrementUserMessageCount(userId, today);
+  await saveImageMedia(savedMsg.id, input, rawContent);
   await createPendingBuffer(
     userId,
     userChannelId,

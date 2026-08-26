@@ -39,8 +39,10 @@ export const schemaToJsonLite = (schema: z.ZodType<any>): any => {
 };
 
 export const visionSchema = z.object({
-  transcription_type: z.enum(["text", "description"]),
+  status: z.enum(["ok", "blocked", "unreadable"]),
+  transcription_type: z.enum(["text", "description", ""]),
   content: z.string(),
+  status_message: z.string(),
 });
 
 export type VisionResult = z.infer<typeof visionSchema>;

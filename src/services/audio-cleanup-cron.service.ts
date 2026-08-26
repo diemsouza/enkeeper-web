@@ -3,7 +3,12 @@ import {
   findQuestionsEligibleForAudioCleanup,
   countQuestionsEligibleForAudioCleanup,
 } from "../repo/questions.repo";
-import { findMediaByParentIds, softDeleteMedia } from "../repo/media.repo";
+import {
+  findMediaByParentIds,
+  softDeleteMedia,
+  findMediaEligibleForCleanup,
+  countMediaEligibleForCleanup,
+} from "../repo/media.repo";
 import { deleteFiles } from "../vendors/storage.vendor";
 import {
   MEDIA_PARENT_TYPE,
@@ -50,6 +55,38 @@ export async function processAudioCleanup(): Promise<AudioCleanupResult> {
   if (totalEligible > questions.length) {
     console.warn(
       `[processAudioCleanup] teto de ${AUDIO_CLEANUP_BATCH_LIMIT} atingido, ${totalEligible - questions.length} pendentes para proxima execucao`,
+    );
+  }
+
+  return { totalEligible, processed: medias.length, deleted, failures };
+}
+
+export async function processImageCleanup(): Promise<AudioCleanupResult> {
+  const threshold = new Date(
+    Date.now() - AUDIO_CLEANUP_TTL_DAYS * 24 * 60 * 60 * 1000,
+  );
+
+  const [totalEligible, medias] = await Promise.all([
+    countMediaEligibleForCleanup("image", threshold),
+    findMediaEligibleForCleanup("image", threshold, AUDIO_CLEANUP_BATCH_LIMIT),
+  ]);
+
+  let deleted = 0;
+  let failures = 0;
+
+  for (let i = 0; i < medias.length; i += AUDIO_CLEANUP_SUBBATCH_SIZE) {
+    const subBatch = medias.slice(i, i + AUDIO_CLEANUP_SUBBATCH_SIZE);
+    const result = await deleteSubBatch(subBatch);
+    deleted += result.deleted;
+    failures += result.failures;
+  }
+
+  console.log(
+    `[processImageCleanup] processadas ${medias.length}/${totalEligible} midias de imagem elegiveis, deletadas: ${deleted}, falhas: ${failures}`,
+  );
+  if (totalEligible > medias.length) {
+    console.warn(
+      `[processImageCleanup] teto de ${AUDIO_CLEANUP_BATCH_LIMIT} atingido, ${totalEligible - medias.length} pendentes para proxima execucao`,
     );
   }
 
