@@ -736,6 +736,7 @@ export async function handleIncomingMessage(
         const topicData: NewActivityIntentData = {
           flow: "new_activity",
           domain: result.domain,
+          topics: result.topics,
         };
         await updateUserPendingIntent(
           user.id,
@@ -757,9 +758,10 @@ export async function handleIncomingMessage(
       if (pendingIntent === "waiting_set_activity_topic") {
         const flowData = getIntentData(user);
         const domain = flowData?.domain;
+        const topics = flowData?.topics;
         const userLevel = user.level;
 
-        if (!userLevel || !domain) {
+        if (!userLevel || !domain || !topics) {
           // não deveria acontecer: nível e objetivo são sempre capturados antes deste passo
           await updateUserPendingIntent(user.id, null);
           await saveUserMsg(
@@ -787,6 +789,7 @@ export async function handleIncomingMessage(
           user.id,
           userLevel,
           domain,
+          topics,
         );
 
         await sendAndSaveMessage({

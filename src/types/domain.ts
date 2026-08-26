@@ -43,6 +43,7 @@ export type GeneratedDocMetadata = {
 export type NewActivityIntentData = {
   flow: "new_activity";
   domain?: DomainId;
+  topics?: string[];
   topic?: string;
   focusSuggestions?: FocusSuggestion[];
   subtopics?: string[];

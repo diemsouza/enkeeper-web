@@ -3,10 +3,8 @@ import {
   ACTIVITY_SUGGESTION_EMOJI,
   ANSWER_EMOJI,
   DOMAINS,
-  DomainId,
   INTENSIVE_UNTIL_MIN,
   MAX_DOC_ITEMS_PER_DOC,
-  TOPIC_SUGGESTIONS,
   TRIAL_DAYS,
 } from "../lib/constants";
 import {
@@ -210,9 +208,8 @@ export function formatDomainQuestion(): FormattedMessage {
   };
 }
 
-export function formatTopicQuestion(domain: string): FormattedMessage {
-  const suggestions = TOPIC_SUGGESTIONS[domain as DomainId] ?? [];
-  const options = suggestions.map((s, i) => `${getEmojiNumber(i + 1)} ${s}`);
+export function formatTopicQuestion(topics: string[]): FormattedMessage {
+  const options = topics.map((s, i) => `${getEmojiNumber(i + 1)} ${s}`);
   const body = [
     "*Assunto (2/3)*",
     "Do que você gosta? Escreva qualquer assunto que queira praticar.",

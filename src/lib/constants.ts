@@ -95,6 +95,8 @@ export function getDomainLabel(id: string): string {
   return DOMAINS.find((g) => g.id === id)?.label ?? id;
 }
 
+export const TOPIC_SUGGESTIONS_DISPLAY_COUNT = 5;
+
 export const TOPIC_SUGGESTIONS: Record<DomainId, string[]> = {
   work: [
     "Entrevista de emprego",
@@ -102,11 +104,11 @@ export const TOPIC_SUGGESTIONS: Record<DomainId, string[]> = {
     "Negociação e vendas",
     "Networking e eventos",
     "Liderança e gestão de time",
-    // "Feedback e avaliações",
-    // "E-mails profissionais",
-    // "Currículo e LinkedIn",
-    // "Trabalho remoto e ferramentas",
-    // "Termos técnicos da sua área",
+    "Feedback e avaliações",
+    "E-mails profissionais",
+    "Currículo e LinkedIn",
+    "Trabalho remoto e ferramentas",
+    "Termos técnicos da sua área",
   ],
   travel: [
     "Conversar com nativos",
@@ -114,11 +116,11 @@ export const TOPIC_SUGGESTIONS: Record<DomainId, string[]> = {
     "Passeios e pontos turísticos",
     "Fazer amigos na viagem",
     "Compras e lojas",
-    // "Hospedagem e hotel",
-    // "Pedir informações e direções",
-    // "Aeroporto e embarque",
-    // "Transporte e deslocamento",
-    // "Situações de emergência",
+    "Hospedagem e hotel",
+    "Pedir informações e direções",
+    "Aeroporto e embarque",
+    "Transporte e deslocamento",
+    "Situações de emergência",
   ],
   education: [
     "Intercâmbio e vida fora",
@@ -126,11 +128,11 @@ export const TOPIC_SUGGESTIONS: Record<DomainId, string[]> = {
     "Vida no campus",
     "Universidade e aulas",
     "Apresentar trabalhos e seminários",
-    // "Bolsas e processos seletivos",
-    // "Entrevista de intercâmbio",
-    // "Estágios e primeira experiência",
-    // "Moradia estudantil",
-    // "Provas de proficiência (TOEFL, IELTS)",
+    "Bolsas e processos seletivos",
+    "Entrevista de intercâmbio",
+    "Estágios e primeira experiência",
+    "Moradia estudantil",
+    "Provas de proficiência (TOEFL, IELTS)",
   ],
   daily_life: [
     "Séries, filmes e streaming",
@@ -138,11 +140,11 @@ export const TOPIC_SUGGESTIONS: Record<DomainId, string[]> = {
     "Games e cultura pop",
     "Comida e culinária",
     "Encontros e vida social",
-    // "Viagens e passeios",
-    // "Esportes e academia",
-    // "Redes sociais e internet",
-    // "Compras e mercado",
-    // "Rotina e casa",
+    "Viagens e passeios",
+    "Esportes e academia",
+    "Redes sociais e internet",
+    "Compras e mercado",
+    "Rotina e casa",
   ],
 };
 

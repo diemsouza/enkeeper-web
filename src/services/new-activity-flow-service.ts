@@ -17,6 +17,7 @@ import {
 } from "../core/formatters";
 import { isValidFocusKey, findFocusLabel } from "../core/focus";
 import { pickSubtopic } from "../core/subtopic-picker";
+import { pickTopicSuggestions } from "../core/topic-picker";
 import {
   DomainId,
   MAX_ACTIVITIES_PER_DAY,
@@ -57,7 +58,12 @@ import { FormattedMessage } from "../types/out-message";
 import { sendAndSaveMessage } from "./message-sender-service";
 
 export type DomainCaptureResult =
-  | { outcome: "captured"; domain: DomainId; message: FormattedMessage }
+  | {
+      outcome: "captured";
+      domain: DomainId;
+      topics: string[];
+      message: FormattedMessage;
+    }
   | { outcome: "canceled"; message: FormattedMessage }
   | { outcome: "invalid"; message: FormattedMessage };
 
@@ -69,10 +75,12 @@ export function processDomainResponse(text: string): DomainCaptureResult {
   if (parsed === null) {
     return { outcome: "invalid", message: formatDomainQuestion() };
   }
+  const topics = pickTopicSuggestions(TOPIC_SUGGESTIONS[parsed]);
   return {
     outcome: "captured",
     domain: parsed,
-    message: formatTopicQuestion(parsed),
+    topics,
+    message: formatTopicQuestion(topics),
   };
 }
 
@@ -92,11 +100,11 @@ export async function processTopicResponse(
   userId: string,
   level: Level,
   domain: string,
+  topics: string[],
 ): Promise<TopicCaptureResult> {
-  const suggestions = TOPIC_SUGGESTIONS[domain as DomainId] ?? [];
-  const resolvedTopic = parseTopicSelectionInput(text, suggestions);
+  const resolvedTopic = parseTopicSelectionInput(text, topics);
   if (resolvedTopic === null || resolvedTopic === "cancel") {
-    return { outcome: "invalid", message: formatTopicQuestion(domain) };
+    return { outcome: "invalid", message: formatTopicQuestion(topics) };
   }
 
   const validated = await generateTopicValidation({
