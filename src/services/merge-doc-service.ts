@@ -7,9 +7,7 @@ import {
 import {
   createActivity,
   findCurrentActivityByUser,
-  updateActivity,
 } from "../repo/activities.repo";
-import { createSection } from "../repo/sections.repo";
 import {
   archiveOrCancelActivity,
   buildPreviousActivitySummary,
@@ -37,7 +35,7 @@ import {
 import { sanitizeText, delay } from "../lib/utils";
 import { sendAndSaveMessage } from "./message-sender-service";
 import { calculatePoolSize } from "../core/pool-size";
-import { DocType, SectionType } from "../lib/prisma";
+import { DocType } from "../lib/prisma";
 
 export async function mergeDoc(
   docId: string,
@@ -174,9 +172,7 @@ export async function mergeDoc(
       return;
     }
 
-    const combinedContent = docSectionResult.sections
-      .map((s) => s.content)
-      .join("\n\n");
+    const combinedContent = docSectionResult.content;
 
     await updateDoc(docId, userId, {
       title: docSectionResult.title,
@@ -201,15 +197,7 @@ export async function mergeDoc(
     );
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const questionLimit = docSectionResult.sections.reduce(
-      (sum, s) =>
-        sum +
-        calculatePoolSize({
-          sectionType: s.sectionType as SectionType,
-          content: sanitizeText(s.content),
-        }),
-      0,
-    );
+    const questionLimit = calculatePoolSize(sanitizeText(combinedContent));
 
     const activity = await createActivity({
       userId,
@@ -223,24 +211,7 @@ export async function mergeDoc(
       questionLimit,
     });
 
-    for (const sectionData of [...docSectionResult.sections].sort(
-      (a, b) => a.order - b.order,
-    )) {
-      await createSection({
-        userId,
-        docId,
-        activityId: activity.id,
-        sectionType: sectionData.sectionType,
-        title: sanitizeText(sectionData.title),
-        content: sanitizeText(sectionData.content),
-        order: sectionData.order,
-      });
-    }
-
-    if (docSectionResult.sections.length > 0) {
-      await updateActivity(activity.id, userId, {
-        sectionCount: docSectionResult.sections.length,
-      });
+    if (docSectionResult.content.trim().length > 0) {
       const activityCount = await incrementDailyActivityCount(userId, date);
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {

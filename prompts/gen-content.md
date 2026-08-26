@@ -14,11 +14,11 @@ Se `Foco já resolvido` não estiver vazio, use exatamente essas chaves como foc
 Se `Foco em texto livre` não estiver vazio, classifique esse texto contra a lista de focos disponíveis, nessa ordem:
 
 1. Identifique quais chaves da lista o texto do usuário está pedindo, usando os rótulos e variações reconhecidas como guia. Nunca invente uma chave fora da lista.
-2. Se o texto claramente pedir mais de 2 focos distintos, não gere nada: retorne isValid false, tooManyFocus true, focusKeys vazio, sections vazio.
+2. Se o texto claramente pedir mais de 2 focos distintos, não gere nada: retorne isValid false, tooManyFocus true, focusKeys vazio, content vazio.
 3. Se o texto pedir 1 foco, ou 2 focos cuja combinação faz sentido prático para uma sessão de prática, colapse chaves repetidas em uma só, defina focusKeys com essas 1 ou 2 chaves, isValid true, tooManyFocus false, e gere.
-4. Se o texto pedir uma combinação de 2 focos sem sentido semântico prático (não relacionada a aprendizado real de inglês), ou não corresponder a nenhuma chave da lista, retorne isValid false, tooManyFocus false, invalidReason curto de uso interno, focusKeys vazio, sections vazio.
+4. Se o texto pedir uma combinação de 2 focos sem sentido semântico prático (não relacionada a aprendizado real de inglês), ou não corresponder a nenhuma chave da lista, retorne isValid false, tooManyFocus false, invalidReason curto de uso interno, focusKeys vazio, content vazio.
 
-Quando isValid for true, gere uma lista de vocabulário ancorada no subtópico informado (não no tema amplo), filtrada pelo(s) foco(s) resolvido(s) em focusKeys, no nível declarado, no idioma inglês com tradução em português. A seção gerada tem sectionType sempre "vocabulary", nunca "text" ou "exercise".
+Quando isValid for true, gere uma lista de vocabulário sobre o tema, usando o subtópico apenas como ângulo para escolher e contextualizar os itens, nunca como o campo lexical em si, filtrada pelo(s) foco(s) resolvido(s) em focusKeys, no nível declarado, no idioma inglês com tradução em português.
 
 Gere exatamente 25 itens, cada um um termo, expressão ou frase curta relacionada ao tema e ao(s) foco(s) escolhido(s).
 
@@ -55,7 +55,7 @@ Nível do conteúdo gerado:
 
 Use o nível declarado do usuário como referência direta de dificuldade, sem depender de heurística de material real.
 
-O título da seção (`sections[].title`) e o título raiz (`title`) devem refletir o subtópico, não o tema amplo. Mesmo padrão de título curto, descritivo, sem linguagem de módulo, etapa ou percurso. Como existe sempre uma única seção neste fluxo, `order` é sempre 1.
+O título (`title`) deve refletir o subtópico, não o tema amplo. Título curto, descritivo, sem linguagem de módulo, etapa ou percurso.
 
 ## Output
 
@@ -64,6 +64,7 @@ Retorne APENAS UM JSON válido. Sem markdown, sem cercas de código (```), sem t
 Formato do campo content: um item por linha, termo e tradução separados por hífen, linha em branco entre itens. Tradução pode incluir distinção de sentido entre parênteses quando necessário (ver regra acima).
 
 Estrutura do JSON:
+
 {
   "isValid": boolean,
   "invalidReason": string | null,
@@ -71,12 +72,7 @@ Estrutura do JSON:
   "focusKeys": array de string,
   "title": string,
   "level": "basic" | "intermediate" | "advanced",
-  "sections": array de {
-    "title": string,
-    "sectionType": "vocabulary" | "text" | "exercise",
-    "order": number,
-    "content": string
-  }
+  "content": string
 }
 
 ## Context

@@ -31,7 +31,7 @@ Regras do JSON:
 - questionFormat: sempre "open_text".
 - questionOptions: sempre array vazio.
 
-Nível: {level}
+Nível do inglês: {level}
 Tipo de pergunta desta geração: {question_focus}
 
 O bloco de exemplos abaixo cobre esse nível. Siga a fórmula, a nota e o padrão exatos.

@@ -44,7 +44,7 @@ Regras do JSON:
 - warning: string curta em português descrevendo a inconsistência. Omita o campo quando não houver inconsistência.
 
 Formato desta pergunta: {format}
-Nível: {level}
+Nível do inglês: {level}
 
 O bloco de exemplos abaixo cobre esse formato e nível. Siga a fórmula, a nota e o padrão exatos. Depois de redigir a pergunta e antes de retornar, verifique cada critério da validação e cada regra da fórmula, incluindo o limite de palavras. Se qualquer um falhar, regenere até cumprir todos.
 

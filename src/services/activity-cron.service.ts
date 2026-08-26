@@ -14,10 +14,9 @@ import {
   findNextGeneralQuestion,
   findSm2EligibleQuestion,
   updateQuestion,
-  countQuestionsForSection,
   createQuestions,
   findQuestionById,
-  findLatestUnansweredInSection,
+  findLatestUnansweredQuestion,
 } from "../repo/questions.repo";
 import {
   findUserChannelByUserId,
@@ -31,13 +30,9 @@ import { sendAndSaveMessage } from "./message-sender-service";
 import {
   formatNudgeMessage,
   formatQuestion,
-  formatSectionTransition,
+  formatActivityStart,
   formatNewActivityFlowExpired,
 } from "../core/formatters";
-import {
-  findSectionById,
-  getSectionsByActivityId,
-} from "../repo/sections.repo";
 import { canPractice } from "../core/access";
 import {
   DOC_PROCESSING_TIMEOUT_MS,
@@ -55,12 +50,11 @@ import {
   QuestionFormat,
   QuestionStatus,
 } from "../lib/prisma";
-import { calculatePoolSize, splitContentIntoBlocks } from "../core/pool-size";
+import { splitContentIntoBlocks } from "../core/pool-size";
 import { pickNextFormat } from "../core/question-format-picker";
 import { generateNextQuestion } from "../vendors/llm.vendor";
 import { SectionQuestionResult } from "../lib/llm-schemas";
 import {
-  getFormatsBySectionType,
   getQuestionExamples,
   validateGeneratedQuestion,
   sanitizeQuestionData,
@@ -324,7 +318,6 @@ async function sendCadenceQuestion(
   question: {
     id: string;
     question: string;
-    sectionId: string | null;
     questionFormat: QuestionFormat | null;
     questionOptions: string[];
     termHint: string | null;
@@ -334,24 +327,18 @@ async function sendCadenceQuestion(
   today: Date,
   channel: MessageChannel,
 ): Promise<void> {
-  if (question.sectionId) {
-    const section = await findSectionById(question.sectionId);
-    if (section?.status === null) {
-      const transitionMsg = formatSectionTransition(
-        section.title,
-        activity.executionCount === 0,
-      );
-      await sendAndSaveMessage({
-        channel,
-        to: userChannel.channelUserId,
-        userId: activity.userId,
-        userChannelId: userChannel.id,
-        activityId: activity.id,
-        message: transitionMsg,
-        intent: "section_transition",
-        today,
-      });
-    }
+  if (activity.executionCount === 0) {
+    const startMsg = formatActivityStart(activity.title);
+    await sendAndSaveMessage({
+      channel,
+      to: userChannel.channelUserId,
+      userId: activity.userId,
+      userChannelId: userChannel.id,
+      activityId: activity.id,
+      message: startMsg,
+      intent: "activity_start",
+      today,
+    });
   }
 
   const questionText = formatQuestion(question);
@@ -443,7 +430,6 @@ async function selectNextQuestion(
   id: string;
   question: string;
   status: QuestionStatus | null;
-  sectionId: string | null;
   questionFormat: QuestionFormat | null;
   questionOptions: string[];
   termHint: string | null;
@@ -477,13 +463,6 @@ async function selectNextQuestion(
   return findNextGeneralQuestion(activity.id, lastId);
 }
 
-const TEXT_FOCUS_CYCLE = [
-  "comprehension",
-  "rephrase",
-  "production",
-  "inference",
-] as const;
-
 export type GenerateOutcome =
   | { poolExhausted: true }
   | { poolExhausted: false; question: Question | null };
@@ -498,21 +477,8 @@ export async function generateQuestionIfPoolNotFull(
     return { poolExhausted: true };
   }
 
-  const sections = await getSectionsByActivityId(activity.id);
-
-  let targetSection: (typeof sections)[number] | null = null;
-  let sectionQuestionCount = 0;
-  for (const section of sections) {
-    const count = await countQuestionsForSection(section.id);
-    const poolSize = calculatePoolSize(section);
-    if (count < poolSize) {
-      targetSection = section;
-      sectionQuestionCount = count;
-      break;
-    }
-  }
-
-  if (!targetSection) return { poolExhausted: true };
+  const doc = await findDocById(activity.docId, activity.userId);
+  if (!doc?.content) return { poolExhausted: true };
 
   let lastFormat: QuestionFormat | null = null;
   if (activity.lastQuestionId) {
@@ -520,43 +486,21 @@ export async function generateQuestionIfPoolNotFull(
     lastFormat = lastQuestion?.questionFormat ?? null;
   }
 
-  const format =
-    targetSection.sectionType === "vocabulary"
-      ? pickNextFormat(lastFormat)
-      : targetSection.sectionType === "text"
-        ? QuestionFormat.open_text
-        : QuestionFormat.open_question;
+  const format = pickNextFormat(lastFormat);
+  const questionExamples = getQuestionExamples([format], activity.userLevel);
 
-  const questionExamples = getQuestionExamples(
-    targetSection.sectionType === "vocabulary"
-      ? [format]
-      : getFormatsBySectionType(targetSection.sectionType),
-    activity.userLevel,
-  );
-
-  const blocks = splitContentIntoBlocks(targetSection.content);
-  let sectionContent: string;
-  let questionFocus: string | undefined;
-
-  if (targetSection.sectionType === "text") {
-    sectionContent = targetSection.content;
-    questionFocus =
-      TEXT_FOCUS_CYCLE[sectionQuestionCount % TEXT_FOCUS_CYCLE.length];
-  } else {
-    sectionContent = blocks[sectionQuestionCount % blocks.length];
-  }
+  const blocks = splitContentIntoBlocks(doc.content);
+  const docContent = blocks[activity.questionCount % blocks.length];
 
   const genParams = {
-    sectionType: targetSection.sectionType,
-    sectionTitle: targetSection.title,
-    sectionContent,
+    sectionType: "vocabulary" as const,
+    sectionTitle: doc.title ?? "",
+    sectionContent: docContent,
     level: activity.userLevel,
     format,
     questionExamples,
-    questionFocus,
     userId: activity.userId,
     docId: activity.docId,
-    sectionId: targetSection.id,
     retryContext: undefined as string | undefined,
   };
 
@@ -571,7 +515,7 @@ export async function generateQuestionIfPoolNotFull(
 
     genParams.retryContext = validateGeneratedQuestion(
       generated,
-      targetSection.sectionType,
+      "vocabulary",
     );
     if (!genParams.retryContext) {
       validated = generated;
@@ -581,9 +525,7 @@ export async function generateQuestionIfPoolNotFull(
 
   if (!validated) return { poolExhausted: false, question: null };
 
-  await createQuestions(activity.id, targetSection.id, [
-    sanitizeQuestionData(validated),
-  ]);
+  await createQuestions(activity.id, [sanitizeQuestionData(validated)]);
 
   await updateActivity(activity.id, activity.userId, {
     questionCount: activity.questionCount + 1,
@@ -591,7 +533,7 @@ export async function generateQuestionIfPoolNotFull(
 
   return {
     poolExhausted: false,
-    question: await findLatestUnansweredInSection(targetSection.id),
+    question: await findLatestUnansweredQuestion(activity.id),
   };
 }
 

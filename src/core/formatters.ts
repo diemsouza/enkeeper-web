@@ -18,6 +18,7 @@ import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { formatCommand } from "../lib/commands";
 import { shuffle } from "lodash";
 import type { FormattedMessage } from "../types/out-message";
+import type { GeneratedDocMetadata } from "../types/domain";
 
 export function formatOnboardingMsg1(): FormattedMessage {
   return { text: "Hi 👋 Bem-vindo a *Fluizer*." };
@@ -375,10 +376,20 @@ export function formatDocReceiving(): FormattedMessage {
 export function formatDocProcessed(
   hasWarning: boolean,
   remaining: number,
+  metadata?: GeneratedDocMetadata | null,
 ): FormattedMessage {
-  const lines = [
-    "Pronto. Em alguns minutos chega a primeira pergunta. Nunca envie mais de uma mensagem por vez.",
-  ];
+  const topicContext =
+    metadata?.domain && metadata?.topic && metadata?.focus?.length
+      ? {
+          domain: metadata.domain,
+          topic: metadata.topic,
+          focus: metadata.focus.join(" e "),
+        }
+      : null;
+  const intro = topicContext
+    ? `Pronto. A primeira pergunta chega em instantes.\nObjetivo: ${sanitizeWhatsappContent(topicContext.domain)}\nTema: ${sanitizeWhatsappContent(topicContext.topic)}\nFoco: ${sanitizeWhatsappContent(topicContext.focus)}`
+    : "Pronto. A primeira pergunta chega em instantes.";
+  const lines = [intro];
   if (hasWarning)
     lines.push("\nAlguns termos pareceram inconsistentes e foram ignorados.");
   if (remaining === 1)
@@ -436,12 +447,28 @@ export function formatActivityReplacePrompt(
         ? "\n_Esse foi sua última atividade do dia._"
         : "";
 
+  const text = [
+    `Você já tem uma atividade em andamento${title ? `: *"${title}"*` : ""}. Deseja arquivar esta atividade e começar uma nova?`,
+    "",
+    `_Use ${formatCommand("confirm_yes")} para continuar ou ${formatCommand("confirm_no")} para manter o atual._${limitNote}`,
+  ].join("\n");
+
+  const body = [
+    `Você já tem uma atividade em andamento${title ? `: *"${title}"*` : ""}. Deseja arquivar esta atividade e começar uma nova?`,
+  ].join("\n");
+
   return {
-    text: [
-      `Você já tem uma atividade em andamento${title ? `: *"${title}"*` : ""}. Deseja arquivar e começar uma nova?`,
-      "",
-      `_Use ${formatCommand("confirm_yes")} para continuar ou ${formatCommand("confirm_no")} para manter o atual._${limitNote}`,
-    ].join("\n"),
+    text,
+    interactive: {
+      body,
+      buttons: [
+        {
+          id: "confirm_yes",
+          label: "Sim, continuar",
+        },
+        { id: "confir_no", label: "Não, cancelar" },
+      ],
+    },
   };
 }
 
@@ -680,26 +707,17 @@ export function formatIntensiveModeActivated({
   return { text: msg };
 }
 
-const START_MESSAGES = [
+const ACTIVITY_START_MESSAGES = [
   "Vamos praticar!",
   "Começando agora!",
   "Hora de praticar!",
 ];
 
-const CONTINUE_MESSAGES = [
-  "Continuando!",
-  "Próxima parte!",
-  "Seguindo em frente!",
-  "Vamos lá!",
-  "Próximo!",
-];
-
-export function formatSectionTransition(
-  title: string,
-  isFirst: boolean,
-): FormattedMessage {
-  const pool = isFirst ? START_MESSAGES : CONTINUE_MESSAGES;
-  const prefix = pool[Math.floor(Math.random() * pool.length)];
+export function formatActivityStart(title: string): FormattedMessage {
+  const prefix =
+    ACTIVITY_START_MESSAGES[
+      Math.floor(Math.random() * ACTIVITY_START_MESSAGES.length)
+    ];
   return { text: `📘 ${prefix} *${sanitizeWhatsappContent(title)}*` };
 }
 
@@ -794,7 +812,7 @@ export function formatCanceled(): FormattedMessage {
 }
 
 export function formatActivityReplaceCanceled(): FormattedMessage {
-  return { text: "Ok, seguindo com a atividade atual." };
+  return { text: "Ok, cancelado e seguindo com a atividade atual." };
 }
 
 export function formatInvalidResumeIndex(): FormattedMessage {
@@ -982,22 +1000,54 @@ function insertTermHint(
   return question;
 }
 
+const scenarioEnClosings = [
+  "What's the term in English?",
+  "What's the word in parentheses in English?",
+  "Write the term in English.",
+  "Type the word in English.",
+];
+
+const scenarioPtClosings = [
+  "Qual o termo em inglês?",
+  "Qual a palavra entre parênteses em inglês?",
+  "Escreva o termo em inglês.",
+  "Digite a palavra em inglês.",
+];
+
+function pickScenarioClosing(level: Level | null): string {
+  const pool = level === Level.basic ? scenarioPtClosings : scenarioEnClosings;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 export function formatQuestion(question: {
   question: string;
   questionFormat: QuestionFormat | null;
   questionOptions: string[];
   termHint?: string | null;
+  level?: Level | null;
 }): FormattedMessage {
   const withHint = insertTermHint(
     question.question,
     question.termHint,
     question.questionFormat,
   );
-  return {
-    text:
-      question.questionFormat === QuestionFormat.choice &&
-      question.questionOptions.length > 0
-        ? formatChoiceQuestion(withHint, question.questionOptions)
-        : withHint,
-  };
+
+  if (
+    question.questionFormat === QuestionFormat.choice &&
+    question.questionOptions.length > 0
+  ) {
+    return { text: formatChoiceQuestion(withHint, question.questionOptions) };
+  }
+
+  if (question.questionFormat === QuestionFormat.gap_fill) {
+    return { text: `Complete: ${withHint}` };
+  }
+
+  if (question.questionFormat === QuestionFormat.scenario) {
+    return {
+      text: `${withHint} ${pickScenarioClosing(question.level ?? null)}`,
+    };
+  }
+
+  return { text: withHint };
 }

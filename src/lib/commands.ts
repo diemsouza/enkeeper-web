@@ -23,31 +23,31 @@ export const COMMANDS: Command[] = [
   {
     id: "help",
     display: "ajuda",
-    aliases: ["help", "menu", "comandos"],
+    aliases: ["help", "menu"],
     strictMode: true,
   },
   {
     id: "practice_now",
     display: "praticar",
-    aliases: ["practice", "praticar agora"],
+    aliases: ["modo intensivo"],
     strictMode: true,
   },
   {
     id: "pause",
     display: "pausar",
-    aliases: ["pause", "parar"],
+    aliases: ["parar"],
     strictMode: true,
   },
   {
     id: "resume",
     display: "retomar",
-    aliases: ["resume", "continuar", "voltar"],
+    aliases: ["retomar atividade", "voltar atividade"],
     strictMode: true,
   },
   {
     id: "list_activities",
     display: "atividade",
-    aliases: ["atividades", "minhas atividades", "status"],
+    aliases: ["atividades", "minha atividade", "minhas atividades", "status"],
     strictMode: true,
   },
   {
@@ -59,7 +59,7 @@ export const COMMANDS: Command[] = [
       "mudar atividade",
       "mudar de atividade",
       "criar atividade",
-      "new activity",
+      "criar nova atividade",
     ],
     strictMode: true,
   },
@@ -67,12 +67,10 @@ export const COMMANDS: Command[] = [
     id: "set_level",
     display: "nivel",
     aliases: [
-      "level",
       "mudar nivel",
       "mudar de nivel",
       "trocar nivel",
       "trocar de nivel",
-      "set level",
     ],
     strictMode: true,
   },
@@ -93,7 +91,7 @@ export const COMMANDS: Command[] = [
   {
     id: "cancel",
     display: "cancelar",
-    aliases: ["cancel", "sair", "parar fluxo"],
+    aliases: ["sair"],
     // Dentro de um fluxo de confirmacao (nova atividade, nivel) e exibido
     // sem "/" -- usar formatCommand("cancel", { strictMode: false }) nesses casos.
     strictMode: true,
@@ -101,13 +99,13 @@ export const COMMANDS: Command[] = [
   {
     id: "confirm_yes",
     display: "sim",
-    aliases: ["yes", "ok", "confirmar"],
+    aliases: ["yes", "ok", "confirmar", "sim, continuar", "continuar"],
     strictMode: false,
   },
   {
     id: "confirm_no",
     display: "não",
-    aliases: ["no", "negativo"],
+    aliases: ["no", "negativo", "não, cancelar"],
     strictMode: false,
   },
   {

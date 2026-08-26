@@ -1,23 +1,23 @@
 ## BASIC
 
 ### question
-fórmula: situação curta em PT (até 15 palavras), com o termo em PT entre parênteses no lugar exato onde a palavra em inglês entraria, terminando em "Qual o termo em inglês?".
+fórmula: situação curta em PT (até 15 palavras), com o termo em PT entre parênteses no lugar exato onde a palavra em inglês entraria. Apenas a frase, sem pergunta, comando ou observação ao final.
 
 nota: A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não influenciam a situação. O parêntese é a tradução literal desse primeiro termo e ocupa a posição sintática da palavra dentro da frase, nunca a descreve ao lado nem aparece como apêndice no fim. O limite de palavras é rígido. Se a situação não couber, simplifique o cenário até caber, nunca ultrapasse o limite. Em conectivos sem referente concreto (de qualquer forma, entretanto, embora), siga o terceiro exemplo, sem reescrever a frase com outra palavra no lugar. Nunca nomeie categoria gramatical. Se mais de um termo resolve a situação, adicione detalhe concreto até sobrar só um.
 
 exemplos:
-- Você esquece o (guarda-chuva) em casa e acaba se molhando todo no caminho. Qual o termo em inglês?
-- Sua mãe pede pra você (lavar a louça) antes de sair com os amigos. Qual o termo em inglês?
-- Estava chovendo muito, mas você saiu (de qualquer forma). Qual o termo em inglês?
+- Você esquece o (guarda-chuva) em casa e acaba se molhando todo no caminho.
+- Sua mãe pede pra você (lavar a louça) antes de sair com os amigos.
+- Estava chovendo muito, mas você saiu (de qualquer forma).
 
 validação:
-- Situação toda em PT, com termo entre parêntese, terminando em "Qual o termo em inglês?".
+- Situação toda em PT, com termo entre parêntese, sem nada após a frase.
 - O parêntese é a tradução literal do primeiro termo de answerKeys, não uma descrição, paráfrase ou explicação.
 - O parêntese está na posição exata em que a palavra em inglês entraria na frase.
 - O termo em inglês não aparece em nenhum ponto da situação.
 - A situação aponta para um único termo possível.
 - O termo em parêntese deve aparecer na situação, nunca na pergunta final.
-- Situação com no máximo 15 palavras, sem contar termo em parêntese nem a pergunta final.
+- Situação com no máximo 15 palavras, sem contar termo em parêntese.
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
@@ -43,23 +43,23 @@ validação:
 ## INTERMEDIATE
 
 ### question
-fórmula: situação em EN A2-B1 (até 15 palavras), com o termo em PT entre parênteses no lugar exato onde a palavra em inglês entraria, terminando em "What's the term in English?".
+fórmula: situação em EN A2-B1 (até 15 palavras), com o termo em PT entre parênteses no lugar exato onde a palavra em inglês entraria. Apenas a frase, sem pergunta, comando ou observação ao final.
 
 nota: A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não influenciam a situação. O parêntese é a tradução literal desse primeiro termo e ocupa a posição sintática da palavra dentro da frase, nunca a descreve ao lado nem aparece como apêndice no fim. Fora do parêntese, nenhuma palavra em português. A frase de estímulo fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a frase ao redor. O limite de palavras é rígido. A situação é uma única frase, nunca duas orações separadas por ponto. Se a situação não couber, simplifique o cenário até caber, nunca ultrapasse o limite. Em conectivos sem referente concreto (anyway, however, although, instead, unless), siga o terceiro exemplo, sem reescrever a frase com outra palavra no lugar. Nunca nomeie categoria gramatical. Se mais de um termo resolve a situação, adicione detalhe concreto até sobrar só um.
 
 exemplos:
-- You forgot your (guarda-chuva) at home and got soaked walking to work. What's the term in English?
-- Your mom asked you to (lavar a louça) before going out tonight. What's the term in English?
-- It was raining hard, but you went out (de qualquer forma). What's the term in English?
+- You forgot your (guarda-chuva) at home and got soaked walking to work.
+- Your mom asked you to (lavar a louça) before going out tonight.
+- It was raining hard, but you went out (de qualquer forma).
 
 validação:
-- Situação toda em EN com termo em PT entre parêntese, terminando em "What's the term in English?".
+- Situação toda em EN com termo em PT entre parêntese, sem nada após a frase.
 - O parêntese é a tradução literal do primeiro termo de answerKeys, não uma descrição, paráfrase ou explicação.
 - O parêntese está na posição exata em que a palavra em inglês entraria na frase.
 - O termo em inglês não aparece em nenhum ponto da situação.
 - A situação aponta para um único termo possível.
 - O termo em parêntese deve aparecer na situação, nunca na pergunta final.
-- Situação com no máximo 15 palavras, sem contar termo em parêntese nem a pergunta final.
+- Situação com no máximo 15 palavras, sem contar termo em parêntese.
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
@@ -85,23 +85,23 @@ validação:
 ## ADVANCED
 
 ### question
-fórmula: situação em EN B1-B2 (até 15 palavras), com o termo em PT entre parênteses no lugar exato onde a palavra em inglês entraria, terminando em "What's the term in English?".
+fórmula: situação em EN B1-B2 (até 15 palavras), com o termo em PT entre parênteses no lugar exato onde a palavra em inglês entraria. Apenas a frase, sem pergunta, comando ou observação ao final.
 
 nota: A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não influenciam a situação. O parêntese é a tradução literal desse primeiro termo e ocupa a posição sintática da palavra dentro da frase, nunca a descreve ao lado nem aparece como apêndice no fim. Fora do parêntese, nenhuma palavra em português. A frase de estímulo fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a frase ao redor. O limite de palavras é rígido. A situação é uma única frase, nunca duas orações separadas por ponto. Se a situação não couber, simplifique o cenário até caber, nunca ultrapasse o limite. Em conectivos sem referente concreto (anyway, however, although, instead, unless), siga o terceiro exemplo, sem reescrever a frase com outra palavra no lugar, e quando o conectivo normalmente abre a frase, o parêntese pode vir no início. Nunca nomeie categoria gramatical. Se mais de um termo resolve a situação, adicione detalhe concreto até sobrar só um.
 
 exemplos:
-- You forgot your (guarda-chuva) at home, so you ended up soaked by the time you got to the office. What's the term in English?
-- Your mom asked you to (lavar a louça) before heading out, but you were already running late. What's the term in English?
-- (Apesar de) the rain, you decided to go for a long walk in the park. What's the term in English?
+- You forgot your (guarda-chuva) at home, so you ended up soaked by the time you got to the office.
+- Your mom asked you to (lavar a louça) before heading out, but you were already running late.
+- (Apesar de) the rain, you decided to go for a long walk in the park.
 
 validação:
-- Situação toda em EN com termo em PT entre parêntese, terminando em "What's the term in English?".
+- Situação toda em EN com termo em PT entre parêntese, sem nada após a frase.
 - O parêntese é a tradução literal do primeiro termo de answerKeys, não uma descrição, paráfrase ou explicação.
 - O parêntese está na posição exata em que a palavra em inglês entraria na frase.
 - O termo em inglês não aparece em nenhum ponto da situação, incluindo a oração que vem antes ou depois do parêntese na mesma frase de duas cláusulas.
 - A situação aponta para um único termo possível.
 - O termo em parêntese deve aparecer na situação, nunca na pergunta final.
-- Situação com no máximo 15 palavras, sem contar termo em parêntese nem a pergunta final.
+- Situação com no máximo 15 palavras, sem contar termo em parêntese.
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback

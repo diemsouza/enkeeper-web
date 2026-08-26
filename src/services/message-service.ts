@@ -117,11 +117,10 @@ import {
   updateQuestion,
   findSm2EligibleQuestion,
 } from "../repo/questions.repo";
-import { findSectionById, recalcSectionStatus } from "../repo/sections.repo";
 import {
-  formatSectionTransition,
   formatIntensivePendingQuestion,
   formatQuestion,
+  formatActivityStart,
 } from "../core/formatters";
 import {
   INTENSIVE_UNTIL_MIN,
@@ -1362,9 +1361,6 @@ export async function handleIncomingMessage(
                 metadata: scoreMetadata,
                 score: computeQuestionScore(scoreMetadata),
               });
-              if (pendingQuestion.sectionId) {
-                await recalcSectionStatus(pendingQuestion.sectionId);
-              }
               const updatedCounts = await incrementDailyPracticeCount(
                 user.id,
                 today,
@@ -1722,7 +1718,6 @@ async function sendIntensiveQuestion(
   question: {
     id: string;
     question: string;
-    sectionId: string | null;
     questionFormat: QuestionFormat | null;
     questionOptions: string[];
     termHint?: string | null;
@@ -1736,30 +1731,20 @@ async function sendIntensiveQuestion(
   channel: MessageChannel,
   to: string,
 ): Promise<void> {
-  let sentTransition = false;
-
-  if (question.sectionId) {
-    const section = await findSectionById(question.sectionId);
-    if (section?.status === null) {
-      const transitionMsg = formatSectionTransition(
-        section.title,
-        executionCount === 0,
-      );
-      await sendAndSaveMessage({
-        channel,
-        to,
-        userId,
-        userChannelId,
-        activityId: activity.id,
-        message: transitionMsg,
-        intent: "section_transition",
-        today,
-      });
-      sentTransition = true;
-    }
+  if (executionCount === 0) {
+    const startMsg = formatActivityStart(activity.title);
+    await sendAndSaveMessage({
+      channel,
+      to,
+      userId,
+      userChannelId,
+      activityId: activity.id,
+      message: startMsg,
+      intent: "activity_start",
+      today,
+    });
+    await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
   }
-
-  if (sentTransition) await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
 
   const questionText = formatQuestion(question);
 

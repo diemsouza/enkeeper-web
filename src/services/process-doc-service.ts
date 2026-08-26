@@ -3,9 +3,7 @@ import { formatInvalidContentMessage } from "../core/validate-content";
 import {
   createActivity,
   findCurrentActivityByUser,
-  updateActivity,
 } from "../repo/activities.repo";
-import { createSection } from "../repo/sections.repo";
 import {
   archiveOrCancelActivity,
   buildPreviousActivitySummary,
@@ -28,7 +26,6 @@ import {
 import { sanitizeText, delay } from "../lib/utils";
 import { sendAndSaveMessage } from "./message-sender-service";
 import { calculatePoolSize } from "../core/pool-size";
-import { SectionType } from "../lib/prisma";
 
 export async function processDoc(docId: string, userId: string, channel: MessageChannel): Promise<void> {
   const doc = await findDocById(docId, userId);
@@ -77,7 +74,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
       return;
     }
 
-    const combinedContent = result.sections.map((s) => s.content).join("\n\n");
+    const combinedContent = result.content;
 
     await updateDoc(docId, userId, {
       title: result.title,
@@ -101,15 +98,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
     );
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const questionLimit = result.sections.reduce(
-      (sum, s) =>
-        sum +
-        calculatePoolSize({
-          sectionType: s.sectionType as SectionType,
-          content: sanitizeText(s.content),
-        }),
-      0,
-    );
+    const questionLimit = calculatePoolSize(sanitizeText(combinedContent));
 
     const activity = await createActivity({
       userId,
@@ -123,24 +112,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
       questionLimit,
     });
 
-    for (const sectionData of [...result.sections].sort(
-      (a, b) => a.order - b.order,
-    )) {
-      await createSection({
-        userId,
-        docId,
-        activityId: activity.id,
-        sectionType: sectionData.sectionType,
-        title: sanitizeText(sectionData.title),
-        content: sanitizeText(sectionData.content),
-        order: sectionData.order,
-      });
-    }
-
-    if (result.sections.length > 0) {
-      await updateActivity(activity.id, userId, {
-        sectionCount: result.sections.length,
-      });
+    if (result.content.trim().length > 0) {
       const activityCount = await incrementDailyActivityCount(userId, date);
       await incrementDailyDocCount(userId, date);
       const userChannel = await findUserChannelByUserId(userId);

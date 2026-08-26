@@ -167,7 +167,11 @@ export async function generateTopicValidation(params: {
   topic: string;
   userId: string;
 }): Promise<
-  | { status: "valid"; focusSuggestions: FocusSuggestion[]; subtopics: string[] }
+  | {
+      status: "valid";
+      focusSuggestions: FocusSuggestion[];
+      subtopics: string[];
+    }
   | { status: "error"; reason: string }
 > {
   const { level, domain, topic, userId } = params;
@@ -297,10 +301,10 @@ export async function generateFocusContent(params: {
     .replace("{focus_known}", focusKnown)
     .replace("{focus_free_text}", focusFreeText);
 
-  const userPrompt = `Tema: {topic}
-  Número de variação: {variation_seed} (sem significado, serve só pra gerar contextos e situações diferentes entre chamadas parecidas)`
-    .replace("{topic}", topic)
-    .replace("{variation_seed}", String(Math.floor(Math.random() * 1000)));
+  const userPrompt = `Variação: {variation_seed}`.replace(
+    "{variation_seed}",
+    String(Math.floor(Math.random() * 1000)),
+  );
 
   try {
     const llmResult = await generateText({
@@ -402,7 +406,7 @@ export async function generateNextQuestion(params: {
   questionFocus?: string;
   userId: string;
   docId: string;
-  sectionId: string;
+  sectionId?: string;
   retryContext?: string;
 }): Promise<SectionQuestionResult | null> {
   const {
@@ -435,8 +439,8 @@ export async function generateNextQuestion(params: {
 
   let userPrompt = `Seção: {section_title}
 Conteúdo: {section_content}
-Nível: {level}
-Número de variação: {variation_seed} (sem significado, serve só pra gerar contextos e situações diferentes entre chamadas parecidas)`
+Nível do inglês: {level}
+Variação: {variation_seed}`
     .replace("{section_title}", sectionTitle)
     .replace("{section_content}", sectionContent)
     .replace("{level}", level)
@@ -561,7 +565,7 @@ export async function generateAnswerEvaluation(params: {
 Formato: {question_format}
 Respostas válidas: {answer_keys}
 Tentativas: {attempt_count}
-Nível: {level}
+Nível do inglês: {level}
 Resposta do usuário: {user_answer}`
     .replace("{question}", question)
     .replace("{answer_keys}", answerKeys.join(", "))

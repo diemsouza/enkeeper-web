@@ -1,21 +1,21 @@
 ## BASIC
 
 ### question
-fórmula: `Complete: "<frase em EN com ______>" (<tradução em PT do primeiro termo de answerKeys>)`. As três partes são obrigatórias: prefixo, frase entre aspas, parêntese de tradução ao final.
+fórmula: `"<frase em EN com ______>" (<tradução em PT do primeiro termo de answerKeys>)`. O prefixo de apresentação vem de fora deste prompt. As duas partes são obrigatórias: frase entre aspas, parêntese de tradução ao final.
 
 nota: Banda de nível A1-A2. A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não entram na pergunta. Se o primeiro termo é uma frase completa (sujeito e verbo), a lacuna representa a resposta inteira. Se não é, a lacuna cobre o termo por inteiro dentro de uma frase maior. Em ambos os casos: frase até 15 palavras sem contar o parêntese, underline longo (`______`). A posição da lacuna é livre, início, meio ou fim, determinada pela construção natural da frase, nunca escolhida para variar. A frase de estímulo fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a frase ao redor. Se a frase não couber na banda sem perder naturalidade ou o contexto necessário para a lacuna, use o nível mínimo que ela exigir. Varie o contexto entre exemplos.
 
 exemplo (garden):
-- Complete: "I have a ______ behind my house." (jardim)
+- "I have a ______ behind my house." (jardim)
 
 exemplo (bus):
-- Complete: "______ arrives at eight every day." (o ônibus)
+- "______ arrives at eight every day." (o ônibus)
 
 exemplo (ready):
-- Complete: "How are you feeling about the trip? ______" (estou pronto)
+- "How are you feeling about the trip? ______" (estou pronto)
 
 validação:
-- Prefixo `Complete:` presente, frase entre aspas, parêntese de tradução ao final.
+- Frase entre aspas, parêntese de tradução ao final.
 - `______` aparece exatamente uma vez e cobre o primeiro termo de answerKeys por inteiro.
 - O parêntese é a tradução literal do primeiro termo de answerKeys, não uma descrição, paráfrase ou explicação.
 - O primeiro termo de answerKeys não aparece escrito nem parafraseado em nenhum outro ponto da frase.
@@ -43,21 +43,21 @@ validação:
 ## INTERMEDIATE
 
 ### question
-fórmula: `Complete: "<frase em EN com ______>" (<tradução em PT do primeiro termo de answerKeys>)`. As três partes são obrigatórias: prefixo, frase entre aspas, parêntese de tradução ao final.
+fórmula: `"<frase em EN com ______>" (<tradução em PT do primeiro termo de answerKeys>)`. O prefixo de apresentação vem de fora deste prompt. As duas partes são obrigatórias: frase entre aspas, parêntese de tradução ao final.
 
 nota: Banda de nível A2-B1. A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não entram na pergunta. Se o primeiro termo é uma frase completa (sujeito e verbo), a lacuna representa a resposta inteira. Se não é, a lacuna cobre a expressão ou phrasal verb por inteiro dentro de uma frase maior, incluindo artigos e preposições que fazem parte do termo. Em ambos os casos: frase até 20 palavras sem contar o parêntese, underline longo (`______`). A posição da lacuna é livre, início, meio ou fim, determinada pela construção natural da frase, nunca escolhida para variar. A frase de estímulo fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a frase ao redor. Se a frase não couber na banda sem perder naturalidade ou o contexto necessário para a lacuna, use o nível mínimo que ela exigir. Varie o tipo de item entre exemplos.
 
 exemplo (never mind):
-- Complete: "Just ______, it's not a big deal." (deixa pra lá)
+- "Just ______, it's not a big deal." (deixa pra lá)
 
 exemplo (get ready):
-- Complete: "______ before the meeting starts." (se preparar)
+- "______ before the meeting starts." (se preparar)
 
 exemplo (agreed):
-- Complete: "They shook hands. ______ And the meeting was over." (combinado)
+- "They shook hands. ______ And the meeting was over." (combinado)
 
 validação:
-- Prefixo `Complete:` presente, frase entre aspas, parêntese de tradução ao final.
+- Frase entre aspas, parêntese de tradução ao final.
 - `______` aparece exatamente uma vez e cobre o primeiro termo de answerKeys por inteiro, não só parte dele (ex: não deixar "the" fora da lacuna se o termo for "the sweet spot").
 - O parêntese é a tradução literal do primeiro termo de answerKeys, não uma descrição, paráfrase ou explicação.
 - O primeiro termo de answerKeys não aparece escrito nem parafraseado em nenhum outro ponto da frase.
@@ -85,21 +85,21 @@ validação:
 ## ADVANCED
 
 ### question
-fórmula: `Complete: "<frase em EN com ______>" (<tradução em PT do primeiro termo de answerKeys>)`. As três partes são obrigatórias: prefixo, frase entre aspas, parêntese de tradução ao final.
+fórmula: `"<frase em EN com ______>" (<tradução em PT do primeiro termo de answerKeys>)`. O prefixo de apresentação vem de fora deste prompt. As duas partes são obrigatórias: frase entre aspas, parêntese de tradução ao final.
 
 nota: Banda de nível B1-B2. A resposta é sempre o primeiro termo de answerKeys, os demais são variações aceitas na avaliação e não entram na pergunta. Se o primeiro termo é uma frase completa (sujeito e verbo), a lacuna representa a resposta inteira. Se não é, a lacuna cobre o idiom ou expressão idiomática por inteiro dentro de uma frase maior. Em ambos os casos: frase até 25 palavras sem contar o parêntese, underline longo (`______`). A posição da lacuna é livre, início, meio ou fim, determinada pela construção natural da frase, nunca escolhida para variar. A frase de estímulo fica um passo abaixo do termo em foco, o esforço do aluno é o termo, não decodificar a frase ao redor. Se a frase não couber na banda sem perder naturalidade ou o contexto necessário para a lacuna, use o nível mínimo que ela exigir. Varie o tipo de item entre exemplos.
 
 exemplo (sweet spot):
-- Complete: "We negotiated for hours, and we finally hit the ______ on pricing." (ponto ideal)
+- "We negotiated for hours, and we finally hit the ______ on pricing." (ponto ideal)
 
 exemplo (let's wrap this up):
-- Complete: "______ and we can move on to the next item." (resolver de uma vez)
+- "______ and we can move on to the next item." (resolver de uma vez)
 
 exemplo (hit the sweet spot):
-- Complete: "Both sides pushed hard on pricing, and after hours of back and forth, ______." (acertamos o ponto ideal)
+- "Both sides pushed hard on pricing, and after hours of back and forth, ______." (acertamos o ponto ideal)
 
 validação:
-- Prefixo `Complete:` presente, frase entre aspas, parêntese de tradução ao final.
+- Frase entre aspas, parêntese de tradução ao final.
 - `______` aparece exatamente uma vez e cobre o primeiro termo de answerKeys por inteiro, não só parte dele.
 - O parêntese é a tradução literal do primeiro termo de answerKeys, não uma descrição, paráfrase ou explicação.
 - O primeiro termo de answerKeys não aparece escrito nem parafraseado em nenhum outro ponto da frase, incluindo a oração que vem antes ou depois da lacuna na mesma frase de duas cláusulas.

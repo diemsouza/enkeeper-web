@@ -39,7 +39,7 @@ Regras do JSON:
 - questionOptions: sempre array vazio.
 - warning: string curta em português descrevendo o gabarito inconsistente. Omita o campo quando não houver inconsistência.
 
-Nível: {level}
+Nível do inglês: {level}
 
 O bloco de exemplos abaixo cobre esse nível. Siga a fórmula, a nota e o padrão exatos.
 

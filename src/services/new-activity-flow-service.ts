@@ -1,4 +1,4 @@
-import { Doc, Level, SectionType } from "../lib/prisma";
+import { Doc, Level } from "../lib/prisma";
 import {
   parseDomainInput,
   parseTopicSelectionInput,
@@ -36,9 +36,7 @@ import {
   createActivity,
   findCurrentActivityByUser,
   findRecentGeneratedDocMetadataByUser,
-  updateActivity,
 } from "../repo/activities.repo";
-import { createSection } from "../repo/sections.repo";
 import {
   archiveOrCancelActivity,
   buildPreviousActivitySummary,
@@ -195,14 +193,19 @@ export async function processFocusResponse(
 
   await updateUserPendingIntent(userId, null);
 
-  if (data.sections.length === 0) {
+  if (data.content.trim().length === 0) {
     await updateDoc(doc.id, userId, { status: "failed" });
     return { outcome: "retry", message: formatFocusError() };
   }
 
-  const date = await createActivityWithSections(userId, doc.id, level, data);
+  const date = await createActivityForDoc(userId, doc.id, level, data);
 
-  await sendActivityCreatedConfirmation(userId, date, channel);
+  await sendActivityCreatedConfirmation(
+    userId,
+    date,
+    channel,
+    doc.metadata as GeneratedDocMetadata | null,
+  );
 
   return { outcome: "done" };
 }
@@ -233,7 +236,6 @@ async function createGeneratedDoc(params: {
 }): Promise<Doc> {
   const { userId, domainKey, topic, subtopics, subtopic, focusKeys, data } =
     params;
-  const combinedContent = data.sections.map((s) => s.content).join("\n\n");
   const metadata: GeneratedDocMetadata = {
     domainKey,
     domain: getDomainLabel(domainKey),
@@ -247,7 +249,7 @@ async function createGeneratedDoc(params: {
     userId,
     docType: "text",
     title: data.title,
-    content: combinedContent,
+    content: data.content,
     level: data.level,
     status: "active",
     source: "generated",
@@ -255,7 +257,7 @@ async function createGeneratedDoc(params: {
   });
 }
 
-async function createActivityWithSections(
+async function createActivityForDoc(
   userId: string,
   docId: string,
   level: Level,
@@ -267,15 +269,7 @@ async function createActivityWithSections(
   );
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const questionLimit = data.sections.reduce(
-    (sum, s) =>
-      sum +
-      calculatePoolSize({
-        sectionType: s.sectionType as SectionType,
-        content: sanitizeText(s.content),
-      }),
-    0,
-  );
+  const questionLimit = calculatePoolSize(sanitizeText(data.content));
 
   const activity = await createActivity({
     userId,
@@ -289,24 +283,6 @@ async function createActivityWithSections(
     questionLimit,
   });
 
-  for (const sectionData of [...data.sections].sort(
-    (a, b) => a.order - b.order,
-  )) {
-    await createSection({
-      userId,
-      docId,
-      activityId: activity.id,
-      sectionType: sectionData.sectionType,
-      title: sanitizeText(sectionData.title),
-      content: sanitizeText(sectionData.content),
-      order: sectionData.order,
-    });
-  }
-
-  await updateActivity(activity.id, userId, {
-    sectionCount: data.sections.length,
-  });
-
   return date;
 }
 
@@ -314,6 +290,7 @@ async function sendActivityCreatedConfirmation(
   userId: string,
   date: Date,
   channel: MessageChannel,
+  metadata: GeneratedDocMetadata | null,
 ): Promise<void> {
   const activityCount = await incrementDailyActivityCount(userId, date);
   await incrementDailyDocCount(userId, date);
@@ -321,7 +298,11 @@ async function sendActivityCreatedConfirmation(
   const userChannel = await findUserChannelByUserId(userId);
   if (!userChannel) return;
 
-  const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
+  const msg = formatDocProcessed(
+    false,
+    MAX_ACTIVITIES_PER_DAY - activityCount,
+    metadata,
+  );
   const summary = await buildPreviousActivitySummary(userId);
   await sendAndSaveMessage({
     channel,

@@ -221,61 +221,67 @@ export function WhatsAppChat({
   return (
     <div
       className={cn(
-        "bg-[#EBE5DC] dark:bg-[#0B141A] md:rounded-[20px] p-4 flex flex-col gap-1.5",
+        "bg-[#EBE5DC] dark:bg-[#0B141A] md:rounded-[20px] relative z-0 overflow-hidden flex flex-col",
         widthClassName,
-        maxHeightClassName && [maxHeightClassName, "overflow-y-auto scrollbar-hide"],
+        maxHeightClassName && [maxHeightClassName], // A altura máxima limita este container fixo
       )}
     >
-      {messages.map((msg, i) => (
-        <div
-          key={i}
-          className={
-            msg.from === "user" ? "flex justify-end" : "flex justify-start"
-          }
-        >
+      <div className="absolute inset-0 bg-[url('/images/wa-background.svg')] bg-repeat opacity-[0.06] dark:opacity-[0.05] dark:invert pointer-events-none z-0" />
+      <div className="w-full h-full p-4 flex flex-col gap-1.5 overflow-y-auto scrollbar-hide relative z-10">
+        {messages.map((msg, i) => (
           <div
+            key={i}
             className={cn(
-              msg.from === "user"
-                ? "bg-[#DCF8C6] dark:bg-[#005C4B] text-[#1a1a1a] dark:text-[#e9edef] rounded-[10px_10px_2px_10px]"
-                : "bg-white dark:bg-[#202C33] text-[#1a1a1a] dark:text-[#e9edef] border border-black/[0.08] rounded-[10px_10px_10px_2px]",
-              "px-3 pt-2 pb-1.5 text-[13.5px]",
-              msg.type === "file" || msg.type === "voice" || msg.interactive
-                ? "max-w-[85%]"
-                : "max-w-[70%]",
+              "relative z-10",
+              msg.from === "user" ? "flex justify-end" : "flex justify-start",
             )}
           >
-            {msg.type === "file" ? (
-              <FileCard
-                fileName={msg.fileName!}
-                fileSize={msg.fileSize!}
-                mediaType={msg.mediaType}
-              />
-            ) : msg.type === "audio" ? (
-              <AudioCard
-                audioUrl={msg.audioUrl!}
-                textFallback={msg.textFallback}
-                externalId={msg.externalId}
-                onPlay={onAudioPlay}
-              />
-            ) : msg.type === "voice" ? (
-              <VoiceNoteCard duration={msg.duration ?? ""} />
-            ) : (
-              <p className="whitespace-pre-line leading-[1.5] break-words">
-                <WhatsAppText text={msg.interactive?.body ?? msg.text ?? ""} />
+            <div
+              className={cn(
+                msg.from === "user"
+                  ? "bg-[#DCF8C6] dark:bg-[#005C4B] text-[#1a1a1a] dark:text-[#e9edef] rounded-[10px_10px_2px_10px]"
+                  : "bg-white dark:bg-[#202C33] text-[#1a1a1a] dark:text-[#e9edef] border border-black/[0.08] rounded-[10px_10px_10px_2px]",
+                "px-3 pt-2 pb-1.5 text-[13.5px]",
+                msg.type === "file" || msg.type === "voice" || msg.interactive
+                  ? "max-w-[85%]"
+                  : "max-w-[70%]",
+              )}
+            >
+              {msg.type === "file" ? (
+                <FileCard
+                  fileName={msg.fileName!}
+                  fileSize={msg.fileSize!}
+                  mediaType={msg.mediaType}
+                />
+              ) : msg.type === "audio" ? (
+                <AudioCard
+                  audioUrl={msg.audioUrl!}
+                  textFallback={msg.textFallback}
+                  externalId={msg.externalId}
+                  onPlay={onAudioPlay}
+                />
+              ) : msg.type === "voice" ? (
+                <VoiceNoteCard duration={msg.duration ?? ""} />
+              ) : (
+                <p className="whitespace-pre-line leading-[1.5] break-words">
+                  <WhatsAppText
+                    text={msg.interactive?.body ?? msg.text ?? ""}
+                  />
+                </p>
+              )}
+              <p className="text-[10.5px] opacity-55 mt-0.5 text-right">
+                {msg.time}
               </p>
-            )}
-            <p className="text-[10.5px] opacity-55 mt-0.5 text-right">
-              {msg.time}
-            </p>
-            {msg.interactive && (
-              <InteractiveButtonList
-                buttons={msg.interactive.buttons}
-                onButtonClick={onButtonClick}
-              />
-            )}
+              {msg.interactive && (
+                <InteractiveButtonList
+                  buttons={msg.interactive.buttons}
+                  onButtonClick={onButtonClick}
+                />
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

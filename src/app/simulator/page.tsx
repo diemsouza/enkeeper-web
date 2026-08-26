@@ -99,7 +99,12 @@ function mapApiMessages(raw: ApiMessage[]): Message[] {
         externalId: m.externalId ?? undefined,
       };
     }
-    return { from, text: m.content, time, interactive: m.interactive ?? undefined };
+    return {
+      from,
+      text: m.content,
+      time,
+      interactive: m.interactive ?? undefined,
+    };
   });
 }
 
@@ -298,8 +303,6 @@ export default function SimulatorPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-0 gap-3">
-      <h1 className="text-lg font-semibold text-gray-700">Simulador</h1>
-
       <div className="flex items-center gap-4 text-sm text-gray-600">
         <span className="flex items-center gap-1.5 font-medium">
           Canal
@@ -327,6 +330,7 @@ export default function SimulatorPage() {
             messages={messages}
             onAudioPlay={handleAudioPlay}
             onButtonClick={handleButtonClick}
+            //maxHeightClassName="max-h-[80vh]"
           />
           <div ref={endRef} />
         </div>

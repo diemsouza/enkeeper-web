@@ -50,14 +50,7 @@ export const docProcessingSchema = z.object({
   level: z.enum(["basic", "intermediate", "advanced"]),
   isValid: z.boolean(),
   invalidReason: z.string().nullable(),
-  sections: z.array(
-    z.object({
-      title: z.string(),
-      sectionType: z.enum(["vocabulary", "text", "exercise"]),
-      order: z.number().int(),
-      content: z.string(),
-    }),
-  ),
+  content: z.string(),
 });
 
 export type DocProcessingResult = z.infer<typeof docProcessingSchema>;
@@ -78,14 +71,7 @@ export const focusContentSchema = z.object({
   focusKeys: z.array(z.string()).max(2),
   title: z.string(),
   level: z.enum(["basic", "intermediate", "advanced"]),
-  sections: z.array(
-    z.object({
-      title: z.string(),
-      sectionType: z.enum(["vocabulary", "text", "exercise"]),
-      order: z.number().int(),
-      content: z.string(),
-    }),
-  ),
+  content: z.string(),
 });
 
 export type FocusContentResult = z.infer<typeof focusContentSchema>;

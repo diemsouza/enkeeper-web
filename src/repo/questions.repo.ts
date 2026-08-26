@@ -25,13 +25,11 @@ export type CreateQuestionData = {
 
 export async function createQuestions(
   activityId: string,
-  sectionId: string,
   questions: CreateQuestionData[],
 ): Promise<void> {
   await prisma.question.createMany({
     data: questions.map((q) => ({
       activityId,
-      sectionId,
       question: q.question,
       answerKeys: q.answerKeys,
       ...(q.questionFormat ? { questionFormat: q.questionFormat } : {}),
@@ -66,7 +64,7 @@ export async function findNextUnansweredQuestion(
       ...(lastQuestionId ? { NOT: { id: lastQuestionId } } : {}),
       activity: { docId, deletedAt: null },
     },
-    orderBy: [{ section: { order: "asc" } }, { createdAt: "asc" }],
+    orderBy: { createdAt: "asc" },
   });
 }
 
@@ -127,17 +125,11 @@ export async function findQuestionById(id: string): Promise<Question | null> {
   return prisma.question.findFirst({ where: { id, deletedAt: null } });
 }
 
-export async function countQuestionsForSection(
-  sectionId: string,
-): Promise<number> {
-  return prisma.question.count({ where: { sectionId, deletedAt: null } });
-}
-
-export async function findLatestUnansweredInSection(
-  sectionId: string,
+export async function findLatestUnansweredQuestion(
+  activityId: string,
 ): Promise<Question | null> {
   return prisma.question.findFirst({
-    where: { sectionId, status: null, deletedAt: null },
+    where: { activityId, status: null, deletedAt: null },
     orderBy: { createdAt: "desc" },
   });
 }
