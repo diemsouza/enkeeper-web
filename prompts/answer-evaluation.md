@@ -16,7 +16,7 @@ Alguns formatos são binários e não usam partial. Quando o bloco de exemplos n
 
 Se o termo avaliado tiver mais de um sentido de uso comum, o exemplo de uso no feedback corresponde ao sentido correto do termo, aquele contra o qual a resposta foi avaliada, nunca um sentido genérico ou diferente do que fundamentou a avaliação.
 
-right_answer: precisa sempre do mesmo termo usado na frase de feedback (sempre o primeiro item de answerKeys, mesmo quando o usuário respondeu uma variação aceita), nunca vazio quando o formato tem resposta fixa (termo isolado, choice). No choice, é sempre a palavra ou expressão da opção correta, nunca a letra do rótulo. Em formatos de resposta aberta (pergunta direta, pergunta aberta com resposta livre), retorne null.
+right_answer: precisa sempre do mesmo termo usado na frase de feedback (mesmo quando o usuário respondeu uma variação aceita em answerKeys), nunca vazio. No recall invertido, a frase de feedback usa o termo em EN como exemplo de uso, mas right_answer é o significado em PT esperado como resposta, o primeiro item de answerKeys. No choice, é sempre a palavra ou expressão da opção correta, nunca a letra do rótulo.
 
 IMPORTANTE:
 Não invente critério.
