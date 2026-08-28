@@ -399,6 +399,16 @@ export function formatDocProcessed(
 export function formatGuideAfterFirstFeedback(): FormattedMessage {
   return {
     text: `As próximas perguntas chegam aos poucos durante o dia. Use ${formatCommand("practice_now")} para iniciar agora com um ritmo mais rápido.`,
+    interactive: {
+      body: `As próximas perguntas chegam aos poucos durante o dia. Toque em Praticar para seguir num ritmo mais rápido agora.`,
+      buttons: [
+        {
+          id: "practice_now",
+          label: "Praticar",
+          type: "reply",
+        },
+      ],
+    },
   };
 }
 
@@ -877,16 +887,6 @@ export function formatInvalidMessageType(): FormattedMessage {
 
 export function formatIntensivePendingQuestion(): FormattedMessage {
   return { text: "Estamos preparando sua próxima pergunta." };
-}
-
-export function formatInternalSupportMessage(
-  channelCode: string,
-  planLabel: string,
-  text: string,
-): FormattedMessage {
-  return {
-    text: `*Suporte*\n\nUsuário: ${channelCode}\nPlano: ${planLabel}\nMensagem: "${text}"`,
-  };
 }
 
 type EvaluationStatus = "right" | "wrong" | "partial";

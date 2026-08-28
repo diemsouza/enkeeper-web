@@ -6,7 +6,7 @@ import {
 import { findOrCreateUserChannel } from "../repo/users.repo";
 import { ChannelType } from "../types/domain";
 import { TRIAL_DAYS } from "../lib/constants";
-import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
+import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
 
 type UserWithChannels = User & { channels: UserChannel[] };
 
@@ -30,10 +30,11 @@ export async function findOrCreateUserByChannel(
   const waSupport = process.env.WA_SUPPORT;
   if (isNew && waSupport && channelUserPhone !== waSupport) {
     try {
-      await sendWhatsAppMessage(
-        waSupport,
-        `👤 *Novo cadastro* \nNome: ${name ?? "Não identificado"}\nTelefone: +${(channelUserPhone ?? channelUserId).replace("+", "")}`,
-      );
+      await sendWhatsAppTemplate(waSupport, "new_user_notification", [
+        user.id,
+        name ?? "Não identificado",
+        `+${(channelUserPhone ?? channelUserId).replace("+", "")}`,
+      ]);
     } catch (error) {
       console.error(
         "[findOrCreateUserByChannel] Failed to notify WA_SUPPORT",

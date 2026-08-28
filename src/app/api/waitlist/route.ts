@@ -4,7 +4,7 @@ import {
   createWaitlistEntry,
   countWaitlistEntriesSince,
 } from "@/src/repo/waitlist.repo";
-import { sendWhatsAppMessage } from "@/src/vendors/whatsapp.vendor";
+import { sendWhatsAppTemplate } from "@/src/vendors/whatsapp.vendor";
 
 const WaitlistPayloadSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -98,10 +98,10 @@ export async function POST(request: Request): Promise<Response> {
       );
       if (recentCount <= NOTIFY_MAX_PER_WINDOW) {
         try {
-          await sendWhatsAppMessage(
-            waSupport,
-            `👤 *Novo contato na lista de espera.* \nNome: ${name}\nTelefone: +${phone.replace("+", "")}`,
-          );
+          await sendWhatsAppTemplate(waSupport, "waitlist_notification", [
+            name,
+            `+${phone.replace("+", "")}`,
+          ]);
         } catch (error) {
           console.error(
             "[post/api/waitlist] Failed to notify WA_SUPPORT",

@@ -180,6 +180,7 @@ export async function sendWhatsAppCtaUrl(
 export async function sendWhatsAppTemplate(
   to: string,
   templateName: string,
+  parameters?: string[],
 ): Promise<string | null> {
   if (process.env.NODE_ENV !== "production") {
     console.warn(
@@ -206,6 +207,19 @@ export async function sendWhatsAppTemplate(
         template: {
           name: templateName,
           language: { code: "pt_BR" },
+          ...(parameters && parameters.length > 0
+            ? {
+                components: [
+                  {
+                    type: "body",
+                    parameters: parameters.map((text) => ({
+                      type: "text",
+                      text,
+                    })),
+                  },
+                ],
+              }
+            : {}),
         },
       }),
     },

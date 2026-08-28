@@ -42,7 +42,6 @@ import {
   formatNoPendingAction,
   formatFeedbackFailed,
   formatPracticeWaiting,
-  formatInternalSupportMessage,
   formatOnboardingMsg5,
   formatDailyPracticeLimitReached,
   formatIntensiveDailyLimitReached,
@@ -105,7 +104,8 @@ import {
   incrementDailyPracticeCount,
 } from "../repo/daily-usage.repo";
 import { publishDocMerge, publishDocProcessing } from "../lib/qstash";
-import { sendWhatsAppMessage } from "../vendors/whatsapp.vendor";
+import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
+import { formatDateTime } from "../lib/datetime-utils";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
 import { getFeedbackExamples } from "../core/format-loader";
 import { calcSm2 } from "../core/sm2";
@@ -275,19 +275,21 @@ export async function handleIncomingMessage(
         parsed.intent !== "cancel" &&
         parsed.intent !== "cancel_no"
       ) {
-        const channelCode =
-          userChannel.channelUsername ??
-          userChannel.channelUserPhone ??
-          userChannel.channelUserId;
         const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
-        const supportMsg = formatInternalSupportMessage(
-          channelCode,
-          planLabel,
-          text,
-        );
         if (process.env.WA_SUPPORT) {
           try {
-            await sendWhatsAppMessage(process.env.WA_SUPPORT, supportMsg.text);
+            await sendWhatsAppTemplate(
+              process.env.WA_SUPPORT,
+              "support_notification",
+              [
+                user.id,
+                user.name ?? "Não identificado",
+                `+${(userChannel.channelUserPhone ?? userChannel.channelUserId).replace("+", "")}`,
+                planLabel,
+                formatDateTime(user.planExpiresAt ?? undefined, "pt-BR"),
+                text,
+              ],
+            );
           } catch {
             // notificação interna, falha silenciosa
           }
@@ -990,20 +992,18 @@ export async function handleIncomingMessage(
       // Aguardando mensagem de suporte
       if (pendingIntent === "support") {
         await updateUserPendingIntent(user.id, null);
-        const channelCode =
-          userChannel.channelUsername ??
-          userChannel.channelUserPhone ??
-          userChannel.channelUserId;
         const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
-        const supportMsg = formatInternalSupportMessage(
-          channelCode,
-          planLabel,
-          text,
-        );
         const supportNumber = process.env.WA_SUPPORT;
         if (supportNumber) {
           try {
-            await sendWhatsAppMessage(supportNumber, supportMsg.text);
+            await sendWhatsAppTemplate(supportNumber, "support_notification", [
+              user.id,
+              user.name ?? "Não identificado",
+              `+${(userChannel.channelUserPhone ?? userChannel.channelUserId).replace("+", "")}`,
+              planLabel,
+              formatDateTime(user.planExpiresAt ?? undefined, "pt-BR"),
+              text,
+            ]);
           } catch {
             // notificação interna, falha silenciosa
           }
