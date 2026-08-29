@@ -84,5 +84,6 @@ export type IncomingMessage = {
   isVoiceNote?: boolean;
   voiceAudioBuffer?: Buffer;
   voiceAudioMimeType?: string;
+  referral?: Record<string, unknown> | null;
   receivedAt: Date;
 };

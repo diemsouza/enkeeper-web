@@ -8,6 +8,7 @@ import {
 } from "../lib/prisma";
 import { parseMessage } from "../core/parser";
 import { canPractice } from "../core/access";
+import { classifyUserSource } from "../core/user-source-classifier";
 import {
   canStartActivity,
   canAddDocItem,
@@ -177,12 +178,15 @@ export async function handleIncomingMessage(
   channel: MessageChannel,
 ): Promise<void> {
   const rawText = (input.text ?? "").trim();
+  const { source, sourceData } = classifyUserSource(input.referral, rawText);
   const { user, userChannel } = await findOrCreateUserByChannel(
     input.channelType,
     input.channelUserId,
     input.channelUserPhone,
     input.channelUsername,
     input.contactName ?? undefined,
+    source,
+    sourceData,
   );
 
   const text = input.text ?? "";

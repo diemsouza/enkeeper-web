@@ -193,7 +193,7 @@ export async function processActivityCron(
           if (!entryStep) {
             await updateActivity(activity.id, activity.userId, {
               nextMessageAt: new Date(
-                referenceTime.getTime() + NUDGE_THRESHOLDS_MS.h4,
+                referenceTime.getTime() + NUDGE_THRESHOLDS_MS.h12,
               ),
             });
             skipped++;
@@ -513,10 +513,7 @@ export async function generateQuestionIfPoolNotFull(
       continue;
     }
 
-    genParams.retryContext = validateGeneratedQuestion(
-      generated,
-      "vocabulary",
-    );
+    genParams.retryContext = validateGeneratedQuestion(generated, "vocabulary");
     if (!genParams.retryContext) {
       validated = generated;
       break;

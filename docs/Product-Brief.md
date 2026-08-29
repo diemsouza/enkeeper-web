@@ -120,7 +120,7 @@ de aula.
 Ao longo do dia, chegam perguntas sobre o que você escolher praticar, aqui
 mesmo.
 
-Você tem 3 dias pra praticar sem custo. Use ajuda pra ver os comandos
+Você tem 7 dias pra praticar sem custo. Use ajuda pra ver os comandos
 disponíveis.
 ```
 
@@ -179,16 +179,16 @@ Todos competem com aula. Nós complementamos aula. Eixo diferente - e o aluno do
 
 Dois planos: **Trial** e **Pro**. Sem tier gratuito permanente.
 
-### Trial - 3 dias, experiência completa
+### Trial - 7 dias, experiência completa
 
-Experiência idêntica ao Pro por 3 dias. Após expirar: conta trancada até converter.
+Experiência idêntica ao Pro por 7 dias. Após expirar: conta trancada até converter.
 
 Não é teaser - é o produto inteiro por tempo limitado. Quem sente o valor no dia 1 paga. Quem não sente, não pagaria em nenhum preço.
 
 **Trial estendido como ferramenta de campanha:**
-- Padrão: 3 dias
-- Indicação de professor parceiro: 7 dias
-- Campanha sazonal: 7 dias
+- Padrão: 7 dias
+- Indicação de professor parceiro: 14 dias
+- Campanha sazonal: 30 dias
 - Beta testers / cortesia permanente: sem expiração (planExpiresAt = 2099-12-31)
 
 ### Pro - R$21,90 a cada 30 dias

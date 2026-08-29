@@ -252,6 +252,8 @@ async function attemptFindOrCreateUserChannel(
   channelUserPhone: string | undefined,
   channelUsername: string | undefined,
   planExpiresAt: Date | undefined,
+  source: string | null | undefined,
+  sourceData: Prisma.InputJsonValue | null | undefined,
 ): Promise<UserChannelResolution | null> {
   try {
     return await prisma.$transaction(async (tx) => {
@@ -283,7 +285,12 @@ async function attemptFindOrCreateUserChannel(
       }
 
       const user = await tx.user.create({
-        data: { planCode: "trial", planStatus: "active", planExpiresAt },
+        data: {
+          planCode: "trial",
+          planStatus: "active",
+          planExpiresAt,
+          ...(source ? { source, sourceData: sourceData ?? undefined } : {}),
+        },
       });
       const userChannel = await tx.userChannel.create({
         data: {
@@ -317,6 +324,8 @@ export async function findOrCreateUserChannel(
   channelUserPhone?: string,
   channelUsername?: string,
   planExpiresAt?: Date,
+  source?: string | null,
+  sourceData?: Prisma.InputJsonValue | null,
 ): Promise<UserChannelResolution> {
   const first = await attemptFindOrCreateUserChannel(
     channelType,
@@ -324,6 +333,8 @@ export async function findOrCreateUserChannel(
     channelUserPhone,
     channelUsername,
     planExpiresAt,
+    source,
+    sourceData,
   );
   if (first) return first;
 
@@ -335,6 +346,8 @@ export async function findOrCreateUserChannel(
     channelUserPhone,
     channelUsername,
     planExpiresAt,
+    source,
+    sourceData,
   );
   if (retry) return retry;
 

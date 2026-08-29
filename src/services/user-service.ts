@@ -1,11 +1,12 @@
 import {
   ChannelType as PrismaChannelType,
+  Prisma,
   User,
   UserChannel,
 } from "../lib/prisma";
 import { findOrCreateUserChannel } from "../repo/users.repo";
 import { ChannelType } from "../types/domain";
-import { TRIAL_DAYS } from "../lib/constants";
+import { TRIAL_DAYS, UserSource } from "../lib/constants";
 import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
 
 type UserWithChannels = User & { channels: UserChannel[] };
@@ -16,6 +17,8 @@ export async function findOrCreateUserByChannel(
   channelUserPhone?: string,
   channelUsername?: string,
   name?: string,
+  source?: UserSource | null,
+  sourceData?: Record<string, unknown> | null,
 ): Promise<{ user: UserWithChannels; userChannel: UserChannel }> {
   const prismaChannelType = channelType as PrismaChannelType;
   const planExpiresAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
@@ -25,6 +28,8 @@ export async function findOrCreateUserByChannel(
     channelUserPhone,
     channelUsername,
     planExpiresAt,
+    source,
+    sourceData as Prisma.InputJsonValue | null | undefined,
   );
 
   const waSupport = process.env.WA_SUPPORT;

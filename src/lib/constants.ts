@@ -11,7 +11,7 @@ export const INTENSIVE_UNTIL_MIN = 15;
 export const DAILY_PRACTICE_LIMIT = 60;
 export const CADENCE_RESERVE = 24;
 export const INTENSIVE_LIMIT = 60 - 24; // 36
-export const TRIAL_DAYS = 3;
+export const TRIAL_DAYS = 7;
 export const AUDIO_CLEANUP_TTL_DAYS = 30;
 export const AUDIO_CLEANUP_BATCH_LIMIT = 50;
 export const AUDIO_CLEANUP_SUBBATCH_SIZE = 10;
@@ -31,7 +31,7 @@ export const ONBOARDING_MESSAGE_INTERVAL_SEC = 2;
 export const DEFAULT_MESSAGE_INTERVAL_SEC = 3;
 export const AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC = 8;
 export const NUDGE_STEPS = [
-  "h4",
+  // "h4",
   "h12",
   "h23",
   "d2",
@@ -42,7 +42,7 @@ export const NUDGE_STEPS = [
 export type NudgeStep = (typeof NUDGE_STEPS)[number];
 
 export const NUDGE_THRESHOLDS_MS: Record<NudgeStep, number> = {
-  h4: 4 * 60 * 60 * 1000, // 4 hours porque após 1h usuário recebe nova pergunta, isso vai dar 3h depois da ultima msg (esperado)
+  // h4: 4 * 60 * 60 * 1000, // 4 hours porque após 1h usuário recebe nova pergunta, isso vai dar 3h depois da ultima msg (esperado)
   h12: 12 * 60 * 60 * 1000,
   h23: 23 * 60 * 60 * 1000,
   d2: 2 * 24 * 60 * 60 * 1000,
@@ -52,7 +52,7 @@ export const NUDGE_THRESHOLDS_MS: Record<NudgeStep, number> = {
 };
 
 export function getNextNudgeStep(current: string | null): NudgeStep | null {
-  if (!current) return "h4";
+  if (!current) return "h12";
   const idx = NUDGE_STEPS.indexOf(current as NudgeStep);
   return idx >= 0 && idx < NUDGE_STEPS.length - 1 ? NUDGE_STEPS[idx + 1] : null;
 }
@@ -291,3 +291,12 @@ export const FOCUS_ENUM = [
   },
 ] as const;
 export type FocusKey = (typeof FOCUS_ENUM)[number]["key"];
+
+export const USER_SOURCE = {
+  META_ADS: "meta_ads",
+  SITE: "site",
+} as const;
+export type UserSource = (typeof USER_SOURCE)[keyof typeof USER_SOURCE];
+
+export const SITE_WHATSAPP_MESSAGE = "Oi, quero começar a praticar.";
+export const SITE_MESSAGE_PATTERNS: string[] = [SITE_WHATSAPP_MESSAGE];

@@ -29,6 +29,7 @@ import {
   verifyWebhookToken,
 } from "@/src/lib/whatsapp-verify";
 import { WhatsAppChannel } from "../../../../lib/channels/whatsapp-channel";
+import { classifyUserSource } from "../../../../core/user-source-classifier";
 
 export async function GET(req: NextRequest): Promise<Response> {
   const { searchParams } = req.nextUrl;
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest): Promise<Response> {
                   button_reply?: { id: string; title: string };
                   list_reply?: { id: string; title: string };
                 };
+                referral?: Record<string, unknown>;
               }>;
               contacts?: Array<{
                 wa_id?: string;
@@ -139,6 +141,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         channelType: "whatsapp",
         externalId: message.id,
         contactName,
+        referral: message.referral,
         receivedAt,
       };
 
@@ -170,11 +173,15 @@ export async function POST(req: NextRequest): Promise<Response> {
       }
 
       if (message.type === "image" && message.image) {
+        const imageSource = classifyUserSource(message.referral, "");
         const { user } = await findOrCreateUserByChannel(
           "whatsapp",
           channelId,
           wa_id,
           username,
+          contactName,
+          imageSource.source,
+          imageSource.sourceData,
         );
         if (!canUseImage(user)) {
           await channel.sendMessage(channelId, formatUpgradePrompt());
@@ -223,11 +230,15 @@ export async function POST(req: NextRequest): Promise<Response> {
       const TEXT_MIME_TYPES = new Set(["application/octet-stream"]);
 
       if (message.type === "document" && message.document) {
+        const documentSource = classifyUserSource(message.referral, "");
         const { user: docUser } = await findOrCreateUserByChannel(
           "whatsapp",
           channelId,
           wa_id,
           username,
+          contactName,
+          documentSource.source,
+          documentSource.sourceData,
         );
         if (!canPractice(docUser)) {
           const checkoutUrl = await getOrCreateCheckoutUrl(docUser.id);
