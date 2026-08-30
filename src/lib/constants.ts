@@ -241,12 +241,13 @@ export const FOCUS_ENUM = [
     category: "verbal",
     aliases: ["condicional", "if", "conditional"],
   },
-  {
-    key: "questions",
-    labelPt: "Perguntas",
-    category: "estrutural",
-    aliases: ["perguntas", "questions", "question form"],
-  },
+  // TODO: delete (nao suportado por gerar perguntas dentro de blocos que ja sao perguntas)
+  // {
+  //   key: "questions",
+  //   labelPt: "Perguntas",
+  //   category: "estrutural",
+  //   aliases: ["perguntas", "questions", "question form"],
+  // },
   {
     key: "negation",
     labelPt: "Negação",

@@ -40,7 +40,10 @@ eval_tip_class: classifique a causa do erro do usuário antes de escrever a dica
   esse contexto. Não é erro de tradução, é escolha errada dentro do inglês.
   (say vs tell, borrow vs lend, hear vs listen)
 - structure: a palavra ou ideia está certa, mas falta um elemento gramatical para a 
-  frase funcionar em inglês.
+  frase funcionar em inglês. Quando esse elemento é obrigatório em inglês mas não 
+  marcado no português (posse, artigo, preposição), a eval_tip nomeia a regra da língua 
+  em linguagem simples, sem termo técnico, dizendo qual elemento o inglês exige e por quê, 
+  para o usuário aplicar em outros casos iguais.
   (hot lugar de warm-up não é structure, porque a palavra em si está errada, não a estrutura)
 - collocation: as palavras individualmente estão certas, mas a combinação não é usada 
   em inglês nativo. Erro de colocação, não de vocabulário.

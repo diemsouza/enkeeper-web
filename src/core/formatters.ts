@@ -309,6 +309,24 @@ export function formatFocusTooMany(): FormattedMessage {
   };
 }
 
+export function formatSelectionOutOfRange(): FormattedMessage {
+  return { text: "Escolha apenas uma das opções disponíveis na lista." };
+}
+
+export function formatSelectionMixedFormat(): FormattedMessage {
+  return {
+    text: "Informe ou o número da lista ou o texto, sem misturar os dois formatos.",
+  };
+}
+
+export function formatSelectionSingleOnly(): FormattedMessage {
+  return { text: "Escolha apenas uma opção da lista." };
+}
+
+export function formatFocusNumericTooMany(): FormattedMessage {
+  return { text: "Você pode escolher até 2 opções da lista." };
+}
+
 type ActivityListItem = {
   status: ActivityStatus;
   title: string;
@@ -385,7 +403,7 @@ export function formatDocProcessed(
         }
       : null;
   const intro = topicContext
-    ? `Pronto. A primeira pergunta chega em instantes.\nObjetivo: ${sanitizeWhatsappContent(topicContext.domain)}\nTema: ${sanitizeWhatsappContent(topicContext.topic)}\nFoco: ${sanitizeWhatsappContent(topicContext.focus)}`
+    ? `Pronto. A primeira pergunta chega em instantes.\n\n*Objetivo:* ${sanitizeWhatsappContent(topicContext.domain)}\n*Assunto:* ${sanitizeWhatsappContent(topicContext.topic)}\n*Foco:* ${sanitizeWhatsappContent(topicContext.focus)}`
     : "Pronto. A primeira pergunta chega em instantes.";
   const lines = [intro];
   if (hasWarning)

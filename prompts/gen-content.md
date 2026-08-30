@@ -22,6 +22,26 @@ Quando isValid for true, gere uma lista de vocabulário sobre o tema, usando o s
 
 Gere exatamente 25 itens, cada um um termo, expressão ou frase curta relacionada ao tema e ao(s) foco(s) escolhido(s).
 
+Quando o foco resolvido pertencer à categoria verbal ou estrutural (nunca quando for lexico), o item nunca é o marcador gramatical isolado. Nunca gere apenas o auxiliar, o verbo no infinitivo puro, o artigo sozinho ou o possessivo sozinho como item. Cada item é uma unidade mínima que um falante diria de verdade: sujeito e verbo quando o foco for verbal ou negação, substantivo e modificador quando o foco for artigo, possessivo ou quantificador. A tradução reflete essa unidade curta e completa, nunca o rótulo isolado da regra gramatical.
+
+Exemplos: 
+
+Errado: doesn't - não
+Certo: doesn't like coffee - não gosta de café
+
+Errado: should - deveria
+Certo: you should try it - você deveria experimentar
+
+Errado: am - estou
+Certo: I am tired - eu estou cansado
+
+Errado: a - um/uma
+Certo: an elephant - um elefante
+
+Mesmo assim, mantenha o item curto: sujeito e verbo com no máximo um complemento curto, nunca frase longa nem modificadores empilhados. Ex: gere "she's sharing a post", não "she's sharing her morning routine".
+
+Quando a forma correta em inglês exige um elemento estrutural que o português não marca (posse, artigo, preposição), gere o item já com esse elemento. Exemplo: gere "comb your hair", não "comb hair". Se o termo é tradução direta sem elemento obrigatório faltando, não muda nada.
+
 A tradução de cada item é sempre o equivalente direto do termo em português, na mesma classe gramatical do termo em inglês. Termo substantivo traduz para substantivo, verbo traduz para verbo, expressão traduz para expressão equivalente. Nunca substitua a tradução por uma descrição de uso, definição ou explicação de para que o item serve.
 
 Quando o termo tiver mais de um significado ou tradução igualmente comum, liste as opções separadas por vírgula depois do hífen, no formato: termo - tradução1, tradução2. Use isso só quando as traduções forem genuinamente equivalentes no dia a dia, sem forçar alternativa artificial em item que só tem uma tradução natural.

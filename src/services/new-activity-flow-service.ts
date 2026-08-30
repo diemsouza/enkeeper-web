@@ -4,6 +4,7 @@ import {
   parseTopicSelectionInput,
   parseFocusSelectionInput,
   FocusSelectionInput,
+  NumericSelectionError,
 } from "../core/parser";
 import {
   formatDomainQuestion,
@@ -12,6 +13,10 @@ import {
   formatFocusQuestion,
   formatFocusError,
   formatFocusTooMany,
+  formatSelectionOutOfRange,
+  formatSelectionMixedFormat,
+  formatSelectionSingleOnly,
+  formatFocusNumericTooMany,
   formatNewActivityFlowCanceled,
   formatDocProcessed,
 } from "../core/formatters";
@@ -67,18 +72,35 @@ export type DomainCaptureResult =
   | { outcome: "canceled"; message: FormattedMessage }
   | { outcome: "invalid"; message: FormattedMessage };
 
+function selectionErrorMessage(
+  reason: NumericSelectionError,
+  maxSelections: number,
+): FormattedMessage {
+  if (reason === "mixed_format") return formatSelectionMixedFormat();
+  if (reason === "out_of_range") return formatSelectionOutOfRange();
+  return maxSelections === 1
+    ? formatSelectionSingleOnly()
+    : formatFocusNumericTooMany();
+}
+
 export function processDomainResponse(text: string): DomainCaptureResult {
   const parsed = parseDomainInput(text);
-  if (parsed === "cancel") {
+  if (parsed.type === "cancel") {
     return { outcome: "canceled", message: formatNewActivityFlowCanceled() };
   }
-  if (parsed === null) {
+  if (parsed.type === "error") {
+    return {
+      outcome: "invalid",
+      message: selectionErrorMessage(parsed.reason, 1),
+    };
+  }
+  if (parsed.type === "invalid") {
     return { outcome: "invalid", message: formatDomainQuestion() };
   }
-  const topics = pickTopicSuggestions(TOPIC_SUGGESTIONS[parsed]);
+  const topics = pickTopicSuggestions(TOPIC_SUGGESTIONS[parsed.id]);
   return {
     outcome: "captured",
-    domain: parsed,
+    domain: parsed.id,
     topics,
     message: formatTopicQuestion(topics),
   };
@@ -102,10 +124,17 @@ export async function processTopicResponse(
   domain: string,
   topics: string[],
 ): Promise<TopicCaptureResult> {
-  const resolvedTopic = parseTopicSelectionInput(text, topics);
-  if (resolvedTopic === null || resolvedTopic === "cancel") {
+  const parsed = parseTopicSelectionInput(text, topics);
+  if (parsed.type === "cancel" || parsed.type === "invalid") {
     return { outcome: "invalid", message: formatTopicQuestion(topics) };
   }
+  if (parsed.type === "error") {
+    return {
+      outcome: "invalid",
+      message: selectionErrorMessage(parsed.reason, 1),
+    };
+  }
+  const resolvedTopic = parsed.type === "known" ? parsed.topic : parsed.text;
 
   const validated = await generateTopicValidation({
     level,
@@ -150,12 +179,16 @@ export async function processFocusResponse(
   channel: MessageChannel,
 ): Promise<FocusCaptureResult> {
   const parsed = parseFocusSelectionInput(text, focusSuggestions);
-  if (parsed === null || parsed === "cancel") {
+  if (parsed.type === "cancel" || parsed.type === "invalid") {
     return {
       outcome: "invalid",
       message: formatFocusQuestion(focusSuggestions),
     };
   }
+  if (parsed.type === "error") {
+    return { outcome: "retry", message: selectionErrorMessage(parsed.reason, 2) };
+  }
+  const focusSelection: FocusSelectionInput = parsed;
 
   const subtopicValue = await resolveSubtopic(userId, domain, topic, subtopics);
 
@@ -164,7 +197,7 @@ export async function processFocusResponse(
     domain: getDomainLabel(domain),
     topic,
     subtopic: subtopicValue,
-    focusSelection: parsed,
+    focusSelection,
     userId,
   });
 

@@ -516,13 +516,13 @@ Pergunta e resposta fixa, na ordem:
 
 Nenhum termo técnico de categoria aparece em copy voltada ao usuário, tanto assunto quanto ponto são perguntados em linguagem natural.
 
-Cada um dos três passos acima também aceita os atalhos de botão "Primeira opção" e "Escolha para mim" (ver Seção 19), além de número ou texto livre.
+Cada um dos três passos acima também aceita os atalhos de botão "Primeira opção" e "Escolha para mim" (ver Seção 19), além de número ou texto livre. A resposta por número é tolerante a variações de digitação: aceita separadores equivalentes à vírgula (`1 e 2`, `1, 2`, `1-2`, `1/2`) quando o passo permite mais de uma seleção. Número fora da lista, misturar número com texto na mesma resposta, ou informar mais números do que o passo aceita, cada caso retorna um aviso específico pedindo pra corrigir, não um "resposta inválida" genérico.
 
 ### Catálogo de foco linguístico
 
 Ponto é escolhido de um catálogo fixo de aspectos da língua: vocabulário geral, classes de palavra (substantivos, adjetivos), tempos verbais, conectores, phrasal verbs, estruturas gramaticais, entre outros. O catálogo vale igualmente para os três níveis, sem restrição por nível, o que muda por nível é só o peso de prioridade nas 5 sugestões exibidas, não a disponibilidade do item.
 
-Usuário pode combinar até 2 pontos numa mesma atividade, mas só informando por texto livre, nunca como opção da lista numerada. Se pedir mais de 2, o sistema não trata como erro, pede pra escolher no máximo 2 entre o que foi mencionado.
+Usuário pode combinar até 2 pontos numa mesma atividade, tanto por texto livre quanto escolhendo até 2 números da lista numerada. Quando vêm 2 números, o texto das duas opções é classificado contra o catálogo antes de gerar, mesmo caminho do texto livre. Se pedir mais de 2, o sistema não trata como erro, pede pra escolher no máximo 2 entre o que foi mencionado. Objetivo e assunto continuam aceitando uma seleção só, em qualquer formato.
 
 Novo item só entra no catálogo por decisão deliberada, mesmo princípio de mudança rara que já vale para outras regras de negócio deste documento.
 
@@ -541,7 +541,7 @@ Controlado por um campo de intenção pendente por usuário, com um valor por pa
 A combinação de nível, objetivo, assunto e ponto passa por duas chamadas de LLM em sequência:
 
 1. **Validação do assunto.** Valida o assunto em duas camadas: encaixe (o assunto faz sentido dentro do objetivo escolhido) e conteúdo proibido (pornografia, sexualização, drogas, armas, discurso de ódio, xenofobia, racismo ou equivalente, mesmo quando tecnicamente se encaixaria no objetivo). Falhando qualquer uma, retorna erro curto e genérico, sem revelar qual camada falhou, e o usuário pode tentar outro assunto ou cancelar. Passando, retorna as 5 sugestões de ponto usadas no passo seguinte, além de 5 subtópicos, recortes específicos dentro do assunto.
-2. **Resolução do ponto e geração.** Se o ponto veio da lista, gera direto, sem reclassificar. Se veio como texto livre, classifica contra o catálogo de foco antes de gerar, podendo identificar até 2 pontos válidos numa mesma resposta. Antes de gerar, o sistema sorteia um dos 5 subtópicos retornados na validação, excluindo o último subtópico usado por aquele usuário na geração mais recente com o mesmo objetivo e assunto (se houver), e ancora o conteúdo nesse subtópico sorteado, não no assunto amplo. O sorteio é interno, o usuário não escolhe nem vê o subtópico diretamente. Na prática, permite repetir o mesmo assunto várias vezes sem receber o mesmo vocabulário. Gera 25 itens de vocabulário (quantidade de config, sujeita a revisão) no mesmo formato de lista de vocabulário que o processamento de upload já produz (ver Seção 3).
+2. **Resolução do ponto e geração.** Se o ponto veio como um único número da lista, gera direto, sem reclassificar. Se veio como texto livre ou como 2 números da lista, classifica contra o catálogo de foco antes de gerar, podendo identificar até 2 pontos válidos numa mesma resposta. Antes de gerar, o sistema sorteia um dos 5 subtópicos retornados na validação, excluindo o último subtópico usado por aquele usuário na geração mais recente com o mesmo objetivo e assunto (se houver), e ancora o conteúdo nesse subtópico sorteado, não no assunto amplo. O sorteio é interno, o usuário não escolhe nem vê o subtópico diretamente. Na prática, permite repetir o mesmo assunto várias vezes sem receber o mesmo vocabulário. Gera 25 itens de vocabulário (quantidade de config, sujeita a revisão) no mesmo formato de lista de vocabulário que o processamento de upload já produz (ver Seção 3).
 
 ### Sem compartilhamento entre usuários
 

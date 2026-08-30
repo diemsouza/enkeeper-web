@@ -17,81 +17,161 @@ export function parseLevelInput(text: string): Level | "cancel" | null {
   return null;
 }
 
-function parseFixedChoiceInput<T extends { id: string; label: string }>(
-  text: string,
-  options: readonly T[],
-): T["id"] | "cancel" | null {
-  const n = normalize(text.trim());
-  if (resolveCommand(text) === "cancel") return "cancel";
-  const num = parseInt(n, 10);
-  if (!isNaN(num) && num >= 1 && num <= options.length) {
-    return options[num - 1].id;
+export type NumericSelectionError = "out_of_range" | "too_many" | "mixed_format";
+
+export type NumericSelectionResult =
+  | { type: "numeric"; indices: number[]; texts: string[] }
+  | { type: "freeText" }
+  | { type: "error"; reason: NumericSelectionError };
+
+const SELECTION_SEPARATOR = /(?:\s+e\s+)|(?:\s*[,/-]\s*)/g;
+
+export function parseNumericSelection(
+  input: string,
+  optionLabels: string[],
+  maxSelections: number,
+): NumericSelectionResult {
+  const tokens = input
+    .trim()
+    .split(SELECTION_SEPARATOR)
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
+
+  if (tokens.length === 0) return { type: "freeText" };
+
+  const numericTokens = tokens.filter((token) => /^\d+$/.test(token));
+  if (numericTokens.length === 0) return { type: "freeText" };
+  if (numericTokens.length !== tokens.length) {
+    return { type: "error", reason: "mixed_format" };
   }
-  const match = options.find(
-    (o) =>
-      normalize(o.label) === n ||
-      normalize(o.label).includes(n) ||
-      n.includes(normalize(o.label)),
-  );
-  return match?.id ?? null;
+
+  const numbers = numericTokens.map((token) => parseInt(token, 10));
+  if (numbers.some((num) => num < 1 || num > optionLabels.length)) {
+    return { type: "error", reason: "out_of_range" };
+  }
+  if (numbers.length > maxSelections) {
+    return { type: "error", reason: "too_many" };
+  }
+
+  const indices = numbers.map((num) => num - 1);
+  return {
+    type: "numeric",
+    indices,
+    texts: indices.map((index) => optionLabels[index]),
+  };
 }
 
-export function parseDomainInput(text: string): DomainId | "cancel" | null {
+export type DomainInputResult =
+  | { type: "known"; id: DomainId }
+  | { type: "cancel" }
+  | { type: "invalid" }
+  | { type: "error"; reason: NumericSelectionError };
+
+export function parseDomainInput(text: string): DomainInputResult {
   const n = normalize(text.trim());
-  if (n === normalize("Primeira opção")) return DOMAINS[0].id;
-  if (n === normalize("Escolha para mim"))
-    return DOMAINS[Math.floor(Math.random() * DOMAINS.length)].id;
-  return parseFixedChoiceInput(text, DOMAINS);
+  if (resolveCommand(text) === "cancel") return { type: "cancel" };
+  if (n === normalize("Primeira opção")) {
+    return { type: "known", id: DOMAINS[0].id };
+  }
+  if (n === normalize("Escolha para mim")) {
+    return {
+      type: "known",
+      id: DOMAINS[Math.floor(Math.random() * DOMAINS.length)].id,
+    };
+  }
+
+  const selection = parseNumericSelection(
+    text,
+    DOMAINS.map((domain) => domain.label),
+    1,
+  );
+  if (selection.type === "error") return selection;
+  if (selection.type === "numeric") {
+    return { type: "known", id: DOMAINS[selection.indices[0]].id };
+  }
+
+  const match = DOMAINS.find(
+    (domain) =>
+      normalize(domain.label) === n ||
+      normalize(domain.label).includes(n) ||
+      n.includes(normalize(domain.label)),
+  );
+  return match ? { type: "known", id: match.id } : { type: "invalid" };
 }
+
+export type TopicInputResult =
+  | { type: "known"; topic: string }
+  | { type: "freeText"; text: string }
+  | { type: "cancel" }
+  | { type: "invalid" }
+  | { type: "error"; reason: NumericSelectionError };
 
 export function parseTopicSelectionInput(
   text: string,
   suggestions: string[],
-): string | "cancel" | null {
+): TopicInputResult {
   const trimmed = text.trim();
-  if (trimmed.length === 0) return null;
+  if (trimmed.length === 0) return { type: "invalid" };
   const n = normalize(trimmed);
-  if (resolveCommand(text) === "cancel") return "cancel";
+  if (resolveCommand(text) === "cancel") return { type: "cancel" };
 
-  if (n === normalize("Primeira opção")) return suggestions[0];
-  if (n === normalize("Escolha para mim"))
-    return suggestions[Math.floor(Math.random() * suggestions.length)];
-
-  if (/^\d+$/.test(n)) {
-    const num = parseInt(n, 10);
-    if (num >= 1 && num <= suggestions.length) {
-      return suggestions[num - 1];
-    }
+  if (n === normalize("Primeira opção")) {
+    return { type: "known", topic: suggestions[0] };
+  }
+  if (n === normalize("Escolha para mim")) {
+    return {
+      type: "known",
+      topic: suggestions[Math.floor(Math.random() * suggestions.length)],
+    };
   }
 
-  return trimmed;
+  const selection = parseNumericSelection(text, suggestions, 1);
+  if (selection.type === "error") return selection;
+  if (selection.type === "numeric") {
+    return { type: "known", topic: suggestions[selection.indices[0]] };
+  }
+
+  return { type: "freeText", text: trimmed };
 }
 
 export type FocusSelectionInput =
   | { type: "known"; keys: [string] }
   | { type: "freeText"; text: string };
 
+export type FocusInputResult =
+  | FocusSelectionInput
+  | { type: "cancel" }
+  | { type: "invalid" }
+  | { type: "error"; reason: NumericSelectionError };
+
 export function parseFocusSelectionInput(
   text: string,
   suggestions: { key: string; label: string }[],
-): FocusSelectionInput | "cancel" | null {
+): FocusInputResult {
   const trimmed = text.trim();
-  if (trimmed.length === 0) return null;
+  if (trimmed.length === 0) return { type: "invalid" };
   const n = normalize(trimmed);
-  if (resolveCommand(text) === "cancel") return "cancel";
+  if (resolveCommand(text) === "cancel") return { type: "cancel" };
 
-  if (n === normalize("Primeira opção"))
+  if (n === normalize("Primeira opção")) {
     return { type: "known", keys: [suggestions[0].key] };
+  }
   if (n === normalize("Escolha para mim")) {
     const picked = suggestions[Math.floor(Math.random() * suggestions.length)];
     return { type: "known", keys: [picked.key] };
   }
 
-  if (/^\d+$/.test(n)) {
-    const num = parseInt(n, 10);
-    if (num >= 1 && num <= suggestions.length) {
-      return { type: "known", keys: [suggestions[num - 1].key] };
+  const selection = parseNumericSelection(
+    text,
+    suggestions.map((suggestion) => suggestion.label),
+    2,
+  );
+  if (selection.type === "error") return selection;
+  if (selection.type === "numeric") {
+    if (selection.indices.length === 1) {
+      return { type: "known", keys: [suggestions[selection.indices[0]].key] };
     }
+    return { type: "freeText", text: selection.texts.join(" e ") };
   }
 
   return { type: "freeText", text: trimmed };
