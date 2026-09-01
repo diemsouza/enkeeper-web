@@ -107,26 +107,11 @@ describe("maybeSendActivitySuggestion", () => {
     vi.clearAllMocks();
   });
 
-  it("nao dispara em sessao intensiva", async () => {
-    await maybeSendActivitySuggestion({
-      activity: buildActivity(),
-      userId: "user_1",
-      userChannelId: "channel_1",
-      isIntensiveMode: true,
-      isLastAnswerCorrect: true,
-      channel: fakeChannel,
-      to: "5511999999999",
-      today: new Date(),
-    });
-    expect(sendAndSaveMessage).not.toHaveBeenCalled();
-  });
-
   it("nao dispara quando a ultima resposta nao foi correta", async () => {
     await maybeSendActivitySuggestion({
       activity: buildActivity(),
       userId: "user_1",
       userChannelId: "channel_1",
-      isIntensiveMode: false,
       isLastAnswerCorrect: false,
       channel: fakeChannel,
       to: "5511999999999",
@@ -140,7 +125,6 @@ describe("maybeSendActivitySuggestion", () => {
       activity: buildActivity({ roundCompleted: false }),
       userId: "user_1",
       userChannelId: "channel_1",
-      isIntensiveMode: false,
       isLastAnswerCorrect: true,
       channel: fakeChannel,
       to: "5511999999999",
@@ -154,7 +138,6 @@ describe("maybeSendActivitySuggestion", () => {
       activity: buildActivity({ activitySuggestedAt: new Date() }),
       userId: "user_1",
       userChannelId: "channel_1",
-      isIntensiveMode: false,
       isLastAnswerCorrect: true,
       channel: fakeChannel,
       to: "5511999999999",
@@ -171,7 +154,6 @@ describe("maybeSendActivitySuggestion", () => {
       activity: buildActivity(),
       userId: "user_1",
       userChannelId: "channel_1",
-      isIntensiveMode: false,
       isLastAnswerCorrect: true,
       channel: fakeChannel,
       to: "5511999999999",
@@ -194,7 +176,6 @@ describe("maybeSendActivitySuggestion", () => {
       activity,
       userId: "user_1",
       userChannelId: "channel_1",
-      isIntensiveMode: false,
       isLastAnswerCorrect: true,
       channel: fakeChannel,
       to: "5511999999999",

@@ -1502,6 +1502,15 @@ export async function handleIncomingMessage(
                   intent: "practice_feedback",
                   today,
                 });
+                await maybeSendActivitySuggestion({
+                  activity: activeActivity,
+                  userId: user.id,
+                  userChannelId: userChannel.id,
+                  isLastAnswerCorrect: evalStatus === "right",
+                  channel,
+                  to: userChannel.channelUserId,
+                  today,
+                });
                 return;
               }
 
@@ -1577,16 +1586,17 @@ export async function handleIncomingMessage(
                 });
               }
 
-              await maybeSendActivitySuggestion({
-                activity: activeActivity,
-                userId: user.id,
-                userChannelId: userChannel.id,
-                isIntensiveMode,
-                isLastAnswerCorrect: evalStatus === "right",
-                channel,
-                to: userChannel.channelUserId,
-                today,
-              });
+              if (!isIntensiveMode) {
+                await maybeSendActivitySuggestion({
+                  activity: activeActivity,
+                  userId: user.id,
+                  userChannelId: userChannel.id,
+                  isLastAnswerCorrect: evalStatus === "right",
+                  channel,
+                  to: userChannel.channelUserId,
+                  today,
+                });
+              }
 
               return;
             }

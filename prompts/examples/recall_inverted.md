@@ -24,7 +24,7 @@ validação:
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o termo em EN, empregado no sentido que a pergunta pediu.
 
-nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
+nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o termo for curto, expanda contexto ao redor, mantendo o termo intacto (ex: "It's early to decide about marriage." em vez de "It's early."). Se o termo já for longo (idiom, expressão maior), não force expansão, mantém o tamanho natural. Em ambos os casos, nunca negar, inverter ou contradizer o sentido do termo.
 
 exemplo (quiet):
 - The library was quiet all afternoon.
@@ -38,6 +38,7 @@ exemplo (neighbor):
 validação:
 - A frase de uso emprega o termo, nunca o define ou o explica.
 - Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- Se o termo for curto, a frase tem contexto real ao redor, não só o termo encaixado. Se for longo, regra não se aplica. Sentido do termo nunca negado ou invertido.
 - Se qualquer critério falhar, gere outro feedback com a correção.
 
 ## INTERMEDIATE
@@ -67,7 +68,7 @@ validação:
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o termo em EN, empregado no sentido que a pergunta pediu.
 
-nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
+nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o termo for curto, expanda contexto ao redor, mantendo o termo intacto (ex: "It's early to decide about marriage." em vez de "It's early."). Se o termo já for longo (idiom, expressão maior), não force expansão, mantém o tamanho natural. Em ambos os casos, nunca negar, inverter ou contradizer o sentido do termo.
 
 exemplo (crowded):
 - The subway was crowded during rush hour.
@@ -81,6 +82,7 @@ exemplo (give up):
 validação:
 - A frase de uso emprega o termo, nunca o define ou o explica.
 - Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- Se o termo for curto, a frase tem contexto real ao redor, não só o termo encaixado. Se for longo, regra não se aplica. Sentido do termo nunca negado ou invertido.
 - Se qualquer critério falhar, gere outro feedback com a correção.
 
 ## ADVANCED
@@ -110,7 +112,7 @@ validação:
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o termo, empregado no sentido que a pergunta pediu.
 
-nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
+nota: A frase nunca nega, inverte ou contradiz o sentido do termo. O feedback permanece inteiramente em EN, e o significado em PT que está em right_answer não entra nele. Este é o único formato sem correspondência de grafia entre right_answer e o texto do feedback. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o termo for curto, expanda contexto ao redor, mantendo o termo intacto (ex: "It's early to decide about marriage." em vez de "It's early."). Se o termo já for longo (idiom, expressão maior), não force expansão, mantém o tamanho natural. Em ambos os casos, nunca negar, inverter ou contradizer o sentido do termo.
 
 exemplo (reluctant):
 - He was reluctant to sign the new contract.
@@ -124,4 +126,5 @@ exemplo (bite the bullet):
 validação:
 - A frase de uso emprega o termo, nunca o define ou o explica.
 - Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- Se o termo for curto, a frase tem contexto real ao redor, não só o termo encaixado. Se for longo, regra não se aplica. Sentido do termo nunca negado ou invertido.
 - Se qualquer critério falhar, gere outro feedback com a correção.

@@ -175,7 +175,6 @@ type MaybeSendActivitySuggestionParams = {
   activity: Activity;
   userId: string;
   userChannelId: string;
-  isIntensiveMode: boolean;
   isLastAnswerCorrect: boolean;
   channel: MessageChannel;
   to: string;
@@ -189,13 +188,11 @@ export async function maybeSendActivitySuggestion(
     activity,
     userId,
     userChannelId,
-    isIntensiveMode,
     isLastAnswerCorrect,
     channel,
     to,
     today,
   } = params;
-  if (isIntensiveMode) return;
   if (!isLastAnswerCorrect) return;
   if (!activity.roundCompleted) return;
   if (activity.activitySuggestedAt !== null) return;

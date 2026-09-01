@@ -1021,17 +1021,17 @@ function insertTermHint(
 }
 
 const scenarioEnClosings = [
-  "What's the term in English?",
-  "What's the word in parentheses in English?",
-  "Write the term in English.",
-  "Type the word in English.",
+  "How do you say that in English?",
+  "How would you say this in English?",
+  "Write that in English.",
+  "Say it in English.",
 ];
 
 const scenarioPtClosings = [
-  "Qual o termo em inglês?",
-  "Qual a palavra entre parênteses em inglês?",
-  "Escreva o termo em inglês.",
-  "Digite a palavra em inglês.",
+  "Como se diz isso em inglês?",
+  "Como você diria essa parte em inglês?",
+  "Escreva isso em inglês.",
+  "Diga isso em inglês.",
 ];
 
 function pickScenarioClosing(level: Level | null): string {

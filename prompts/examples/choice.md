@@ -26,7 +26,7 @@ validação:
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o primeiro termo de answerKeys. Sem explicação, sem tradução, sem exemplo adicional.
 
-nota: Grafia do termo idêntica à de right_answer. Vale mesmo quando a pergunta pede a opção errada ou identifica exceção. Na avaliação, aceita a opção que bate com o primeiro termo de answerKeys, por letra ou por texto. Choice é binário, nunca usar partial. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
+nota: Grafia do termo idêntica à de right_answer. Vale mesmo quando a pergunta pede a opção errada ou identifica exceção. Na avaliação, aceita a opção que bate com o primeiro termo de answerKeys, por letra ou por texto. Choice é binário, nunca usar partial. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o termo for curto, expanda contexto ao redor, mantendo o termo intacto (ex: "It's early to decide about marriage." em vez de "It's early."). Se o termo já for longo, não force expansão, mantém o tamanho natural.
 
 exemplo (early):
 - We arrived early today.
@@ -40,6 +40,7 @@ exemplo (friendly):
 validação:
 - A frase de uso emprega o termo, nunca o define ou o explica.
 - Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- Se o termo for curto, a frase tem contexto real ao redor, não só o termo encaixado. Se for longo, regra não se aplica.
 - Se qualquer critério falhar, gere outro feedback com a correção.
 
 ## INTERMEDIATE
@@ -70,7 +71,7 @@ validação:
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o primeiro termo de answerKeys. Sem explicação, sem tradução, sem exemplo adicional.
 
-nota: Grafia do termo idêntica à de right_answer. Vale mesmo quando a pergunta pede a opção errada ou identifica exceção. Na avaliação, aceita a opção que bate com o primeiro termo de answerKeys, por letra ou por texto. Choice é binário, nunca usar partial. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
+nota: Grafia do termo idêntica à de right_answer. Vale mesmo quando a pergunta pede a opção errada ou identifica exceção. Na avaliação, aceita a opção que bate com o primeiro termo de answerKeys, por letra ou por texto. Choice é binário, nunca usar partial. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o termo for curto, expanda contexto ao redor, mantendo o termo intacto (ex: "It's early to decide about marriage." em vez de "It's early."). Se o termo já for longo, não force expansão, mantém o tamanho natural.
 
 exemplo (nervous):
 - She looked nervous before the interview.
@@ -84,6 +85,7 @@ exemplo (catch up):
 validação:
 - A frase de uso emprega o termo, nunca o define ou o explica.
 - Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- Se o termo for curto, a frase tem contexto real ao redor, não só o termo encaixado. Se for longo, regra não se aplica.
 - Se qualquer critério falhar, gere outro feedback com a correção.
 
 ## ADVANCED
@@ -114,7 +116,7 @@ validação:
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o primeiro termo de answerKeys. Sem explicação, sem tradução, sem exemplo adicional.
 
-nota: Grafia do termo idêntica à de right_answer. Vale mesmo quando a pergunta pede a opção errada ou identifica exceção. Na avaliação, aceita a opção que bate com o primeiro termo de answerKeys, por letra ou por texto. Choice é binário, nunca usar partial. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
+nota: Grafia do termo idêntica à de right_answer. Vale mesmo quando a pergunta pede a opção errada ou identifica exceção. Na avaliação, aceita a opção que bate com o primeiro termo de answerKeys, por letra ou por texto. Choice é binário, nunca usar partial. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o termo for curto, expanda contexto ao redor, mantendo o termo intacto (ex: "It's early to decide about marriage." em vez de "It's early."). Se o termo já for longo, não force expansão, mantém o tamanho natural.
 
 exemplo (persistent):
 - He remained persistent despite the setbacks.
@@ -128,4 +130,5 @@ exemplo (bite the bullet):
 validação:
 - A frase de uso emprega o termo, nunca o define ou o explica.
 - Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
+- Se o termo for curto, a frase tem contexto real ao redor, não só o termo encaixado. Se for longo, regra não se aplica.
 - Se qualquer critério falhar, gere outro feedback com a correção.
