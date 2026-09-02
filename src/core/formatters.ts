@@ -9,6 +9,7 @@ import {
 } from "../lib/constants";
 import {
   capitalizeFirst,
+  formatScore,
   sanitizeText,
   sanitizeWhatsappContent,
 } from "../lib/utils";
@@ -593,7 +594,7 @@ export function formatRoundCompletedSummary(data: {
 
   return {
     text: [
-      `📊 Você concluiu as ${questionCount} perguntas dessa atividade, ${percentual}% de acerto. ${reading} Score: ${score.toFixed(1)}`,
+      `📊 Você concluiu as ${questionCount} perguntas dessa atividade, ${percentual}% de acerto. ${reading} Score: ${formatScore(score)}`,
       "",
       "Continue praticando no seu ritmo.",
     ].join("\n"),
@@ -707,7 +708,7 @@ export function formatPreviousActivitySummary(
       "",
       stats,
       "",
-      `${reading} ${tip} Score: ${score.toFixed(1)}`,
+      `${reading} ${tip} Score: ${formatScore(score)}`,
     ].join("\n"),
   };
 }

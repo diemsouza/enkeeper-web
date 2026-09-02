@@ -1208,10 +1208,47 @@ export async function handleIncomingMessage(
           }
         }
 
+        const leaving = await findCurrentActivityByUser(user.id);
         await switchToActivity(user.id, target);
-        reply = formatResumeSuccess(target.title);
-        messageIntent = "free_text";
-        break;
+        await saveUserMsg(
+          user.id,
+          userChannel.id,
+          text,
+          "resume_activity",
+          input,
+          today,
+        );
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelUserId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          message: formatResumeSuccess(target.title),
+          today,
+        });
+        if (
+          leaving &&
+          leaving.id !== target.id &&
+          leaving.interactionCount > 0
+        ) {
+          const summary = await buildPreviousActivitySummary(user.id, {
+            activityId: leaving.id,
+          });
+          if (summary) {
+            await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+            await sendAndSaveMessage({
+              channel,
+              to: userChannel.channelUserId,
+              userId: user.id,
+              userChannelId: userChannel.id,
+              message: summary,
+              mediaType: summary.imagePath ? "image" : undefined,
+              mediaId: summary.imagePath,
+              today,
+            });
+          }
+        }
+        return;
       }
 
       case "practice_now": {
@@ -1299,6 +1336,7 @@ export async function handleIncomingMessage(
           today,
           channel,
           userChannel.channelUserId,
+          true,
         );
         await saveUserMsg(
           user.id,
@@ -1728,6 +1766,7 @@ async function handleIntensiveNextQuestion(
   today: Date,
   channel: MessageChannel,
   to: string,
+  skipRoundComplete = false,
 ): Promise<boolean> {
   const {
     id: activityId,
@@ -1802,15 +1841,17 @@ async function handleIntensiveNextQuestion(
       return true;
     }
 
-    await completeRoundZero(
-      activityId,
-      userId,
-      today,
-      userChannelId,
-      intervalMinutes,
-      channel,
-      to,
-    );
+    if (!skipRoundComplete) {
+      await completeRoundZero(
+        activityId,
+        userId,
+        today,
+        userChannelId,
+        intervalMinutes,
+        channel,
+        to,
+      );
+    }
     const next = await findNextGeneralQuestion(activityId, lastId);
     if (next) {
       await delay(DEFAULT_MESSAGE_INTERVAL_SEC);

@@ -64,7 +64,7 @@ export function updateScoreMetadata(
 export function computeActivityScore(questionScores: number[]): number {
   if (questionScores.length === 0) return 0;
   const sum = questionScores.reduce((acc, s) => acc + s, 0);
-  return sum / questionScores.length;
+  return Math.trunc((sum / questionScores.length) * 10) / 10;
 }
 
 export function computeQuestionScore(metadata: ScoreMetadata): number {

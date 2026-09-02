@@ -184,7 +184,7 @@ export async function buildPreviousActivitySummary(
     if (!data) return null;
     // Guarda once-only na própria linha carregada, robusta ao fluxo de
     // `retomar` (que arquiva sem gravar summary).
-    if (!opts.ignoreSummaryGuard && data.summary !== null) return null;
+    if (!opts.ignoreSummaryGuard && data.summary?.trim()) return null;
     if (data.questions.length === 0) return null;
 
     const right = data.questions.filter((q) => q.status === "right").length;
@@ -226,7 +226,8 @@ export async function buildPreviousActivitySummary(
 
     const imagePath = await buildActivitySwapChartImage(userId, data, score);
     return imagePath ? { text, imagePath } : { text };
-  } catch {
+  } catch (err) {
+    console.error("[activity-service] previous activity summary failed:", err);
     return null;
   }
 }

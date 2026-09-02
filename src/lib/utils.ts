@@ -16,6 +16,10 @@ export const getFormattedPrice = (price: number, currency: string) => {
   return numberFormat.format(price);
 };
 
+export function formatScore(score: number): string {
+  return score === 0 ? "0" : score.toFixed(1);
+}
+
 export async function delay(seconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }

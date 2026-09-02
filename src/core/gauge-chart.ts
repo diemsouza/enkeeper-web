@@ -10,6 +10,8 @@
  * da regra real caso o teto mude no futuro.
  */
 
+import { formatScore } from "../lib/utils";
+
 const CENTER = { x: 230, y: 200 };
 const RADIUS = 150;
 const STROKE_WIDTH = 22;
@@ -50,7 +52,7 @@ export function generateGaugeChartSvg(input: GaugeChartInput): string {
   const tickOuter = polarPoint(swapAngle, RADIUS);
   const tickInner = polarPoint(swapAngle, RADIUS - 18);
 
-  const scoreLabel = input.score.toFixed(1);
+  const scoreLabel = formatScore(input.score);
   const percentLabel = `${Math.round(fraction * 100)}%`;
   const swapLabel = input.swapThreshold.toFixed(1);
 
@@ -68,12 +70,12 @@ export function generateGaugeChartSvg(input: GaugeChartInput): string {
             transform="rotate(-90)"/>
 
     <text x="0" y="8"   text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="72" fill="#201E1B">${scoreLabel}</text>
-    <text x="0" y="44"  text-anchor="middle" font-family="Inter, sans-serif" font-weight="500" font-size="18" fill="#6B6659">${percentLabel}</text>
+    <text x="0" y="44"  text-anchor="middle" font-family="Inter, sans-serif" font-weight="500" font-size="24" fill="#6B6659">${percentLabel}</text>
   </g>
 
   <g transform="translate(${LABEL_X},${CENTER.y})">
     <text x="0" y="-6" text-anchor="start" font-family="Inter, sans-serif" font-weight="700" font-size="30" fill="#201E1B">Score de prática</text>
-    <text x="0" y="26" text-anchor="start" font-family="Inter, sans-serif" font-weight="500" font-size="16" fill="#6B6659">Mínimo ideal: ${swapLabel}</text>
+    <text x="0" y="26" text-anchor="start" font-family="Inter, sans-serif" font-weight="500" font-size="24" fill="#6B6659">Mínimo ideal: ${swapLabel}</text>
   </g>
 </svg>`;
 }
