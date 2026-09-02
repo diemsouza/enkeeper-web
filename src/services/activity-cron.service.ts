@@ -534,6 +534,32 @@ export async function generateQuestionIfPoolNotFull(
   };
 }
 
+export async function isRoundPoolExhausted(
+  activity: Activity,
+): Promise<boolean> {
+  const sm2 = await findSm2EligibleQuestion(
+    activity.id,
+    activity.lastQuestionId,
+  );
+  if (sm2) return false;
+
+  const unanswered = await findNextUnansweredQuestion(
+    activity.docId,
+    activity.lastQuestionId,
+  );
+  if (unanswered) return false;
+
+  if (
+    activity.questionLimit > 0 &&
+    activity.questionCount >= activity.questionLimit
+  ) {
+    return true;
+  }
+
+  const doc = await findDocById(activity.docId, activity.userId);
+  return !doc?.content;
+}
+
 export async function completeRoundZero(
   activityId: string,
   userId: string,

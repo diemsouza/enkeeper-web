@@ -150,6 +150,7 @@ import {
 import {
   completeRoundZero,
   generateQuestionIfPoolNotFull,
+  isRoundPoolExhausted,
 } from "./activity-cron.service";
 import {
   handleAdminCommand,
@@ -1553,6 +1554,21 @@ export async function handleIncomingMessage(
                     questionId: pendingQuestion.id,
                     today,
                   });
+                }
+                if (
+                  !activeActivity.roundCompleted &&
+                  (await isRoundPoolExhausted(activeActivity))
+                ) {
+                  await completeRoundZero(
+                    activeActivity.id,
+                    user.id,
+                    today,
+                    userChannel.id,
+                    activeActivity.intervalMinutes,
+                    channel,
+                    userChannel.channelUserId,
+                  );
+                  await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
                 }
                 await sendAndSaveMessage({
                   channel,
