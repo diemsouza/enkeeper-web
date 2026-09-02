@@ -108,6 +108,31 @@ export async function findMessageByExternalId(
   return prisma.message.findFirst({ where: { externalId } });
 }
 
+export async function countActivityAudios(
+  activityId: string,
+): Promise<{ sent: number; played: number }> {
+  const base = {
+    activityId,
+    role: "assistant" as MessageRole,
+    mediaType: "audio",
+  };
+  const [sent, played] = await Promise.all([
+    prisma.message.count({ where: base }),
+    prisma.message.count({ where: { ...base, playedAt: { not: null } } }),
+  ]);
+  return { sent, played };
+}
+
+export async function findUserMessageDatesByActivity(
+  activityId: string,
+): Promise<Date[]> {
+  const rows = await prisma.message.findMany({
+    where: { activityId, role: "user" },
+    select: { createdAt: true },
+  });
+  return rows.map((r) => r.createdAt);
+}
+
 export async function markMessagePlayedIfUnset(
   id: string,
   playedAt: Date,

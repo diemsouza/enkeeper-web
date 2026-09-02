@@ -558,7 +558,9 @@ export async function completeRoundZero(
     userId,
     userChannelId,
     activityId,
-    message: { text: msg },
+    message: msg,
+    mediaType: msg.imagePath ? "image" : undefined,
+    mediaId: msg.imagePath,
     intent: "practice_complete",
     today,
   });

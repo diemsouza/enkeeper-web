@@ -8,11 +8,13 @@ export interface Message {
   from: "user" | "bot";
   text?: string;
   time: string;
-  type?: "file" | "audio" | "voice";
+  type?: "file" | "audio" | "voice" | "image";
   fileName?: string;
   fileSize?: string;
   mediaType?: "image" | "pdf" | "text";
   audioUrl?: string;
+  imageUrl?: string;
+  caption?: string;
   textFallback?: string;
   externalId?: string;
   duration?: string;
@@ -245,6 +247,7 @@ export function WhatsAppChat({
                 msg.type === "file" || msg.type === "voice" || msg.interactive
                   ? "max-w-[85%]"
                   : "max-w-[70%]",
+                msg.type === "image" && "w-[85%] max-w-[85%] overflow-hidden",
               )}
             >
               {msg.type === "file" ? (
@@ -253,6 +256,20 @@ export function WhatsAppChat({
                   fileSize={msg.fileSize!}
                   mediaType={msg.mediaType}
                 />
+              ) : msg.type === "image" ? (
+                <div className="flex flex-col">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={msg.imageUrl!}
+                    alt=""
+                    className="block -mx-3 -mt-2 w-[calc(100%_+_1.5rem)] max-w-none"
+                  />
+                  {msg.caption && (
+                    <p className="whitespace-pre-line leading-[1.5] break-words mt-2">
+                      <WhatsAppText text={msg.caption} />
+                    </p>
+                  )}
+                </div>
               ) : msg.type === "audio" ? (
                 <AudioCard
                   audioUrl={msg.audioUrl!}

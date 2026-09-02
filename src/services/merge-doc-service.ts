@@ -216,7 +216,11 @@ export async function mergeDoc(
       const userChannel = await findUserChannelByUserId(userId);
       if (userChannel) {
         const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
-        const summary = await buildPreviousActivitySummary(userId);
+        const summary = currentActivity
+          ? await buildPreviousActivitySummary(userId, {
+              activityId: currentActivity.id,
+            })
+          : null;
         await sendAndSaveMessage({
           channel,
           to: userChannel.channelUserId,
@@ -231,7 +235,9 @@ export async function mergeDoc(
             to: userChannel.channelUserId,
             userId,
             userChannelId: userChannel.id,
-            message: { text: summary },
+            message: summary,
+            mediaType: summary.imagePath ? "image" : undefined,
+            mediaId: summary.imagePath,
           });
         }
       }

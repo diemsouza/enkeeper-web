@@ -75,6 +75,26 @@ Erradas: {erros + parciais}
 
 Sem emoji. Sem elogio. Leitura de resultado.
 
+**Camada de imagem (pentágono de desempenho):** junto do texto do resumo vai uma imagem, um gráfico de radar de 5 eixos gerado por template (sem IA, sem custo de LLM por envio). Os eixos são os componentes que alimentam o cálculo de score (Seção 6.3), não o score em si; o score entra só como número na legenda. Eixos, todos normalizados 0 a 1 contra um teto natural:
+
+| Eixo | Fração | Teto |
+| --- | --- | --- |
+| Respondidas | respondidas / total do pool | `questionLimit` da atividade |
+| Acerto | acertos / respondidas | 100% das respondidas |
+| Revisadas | revisadas / respondidas | 100% das respondidas |
+| Escuta | áudios reproduzidos / áudios enviados | áudios enviados no ciclo |
+| Consistência | dias ativos / dias do período | dias corridos do período (piso 1) |
+
+O gráfico compara a atividade encerrada (linha cheia) com a atividade arquivada imediatamente anterior (linha tracejada), quando ela existir. Se a atividade encerrada é a primeira arquivada do usuário, o gráfico renderiza só a camada dela, com legenda única.
+
+O score da atividade (média das notas das perguntas, escala 0 a 10, Seção 6.3) aparece também no texto do resumo, como número solto, não só na legenda da imagem, então some quando a imagem não é gerada.
+
+Regras de dado insuficiente (imagem suprimida, resumo vai só como texto):
+- Menos de 5 respostas na atividade encerrada (mesmo corte da linha de leitura acima): pouco dado, o gráfico não tem valor de leitura.
+- Nenhum áudio enviado no ciclo (rollout de áudio parcial, Seção 6.1): a métrica de escuta não existe para esse usuário.
+
+A geração da imagem nunca atrasa nem bloqueia o texto: qualquer falha degrada para texto puro (mesmo princípio do áudio de feedback, Seção 6.1).
+
 ### Visibilidade ao usuário
 
 O comando `atividade` exibe apenas activities `active` e `archived`. Os demais status são histórico interno.
@@ -118,6 +138,10 @@ Sem critério de encerramento, loop infinito natural.
 Mensagem enviada ao usuário:
 
 > Você respondeu todas as perguntas dessa rodada. Envie novo material ou continue praticando.
+
+**Camada de imagem (gauge de score):** junto do texto vai uma imagem, um mostrador circular (anel que fecha conforme a nota, sem ponteiro) com o score da atividade nesse momento (escala 0 a 10, Seção 6.3) e uma marca no anel na nota de aprovação (`ACTIVITY_ELIGIBLE_SCORE`). Sem comparação: a revisão contínua não tem marco de encerramento, só a primeira rodada tem esse ponto. Gerado por template, sem IA.
+
+O score aparece também no texto do resumo, como número solto, não só dentro da imagem. A imagem é suprimida (resumo vai só como texto) quando o pool da atividade tem menos de 5 perguntas geradas: pouco dado, o gauge não tem valor de leitura. Falha na geração também degrada para texto puro, nunca atrasa nem bloqueia o texto.
 
 ---
 
@@ -576,17 +600,18 @@ Comportamento pós-cancelamento depende do contexto. Sem Activity ativa (onboard
 
 ## 17. Mídia armazenada
 
-Nem toda mídia é descartada após uso. PDF e texto em arquivo continuam sendo processados em memória e descartados após extração (Seção 14). Três exceções são armazenadas:
+Nem toda mídia é descartada após uso. PDF e texto em arquivo continuam sendo processados em memória e descartados após extração (Seção 14). As exceções armazenadas:
 
 - **Áudio de feedback**, gerado pelo sistema (Seção 6.1).
 - **Áudio de resposta**: quando o usuário responde uma pergunta pendente por nota de voz, o áudio é armazenado e usado no cálculo da nota da pergunta (Seção 6.3), diferente de uma resposta por texto, que não é retida.
 - **Imagem original de OCR**: a imagem enviada como material é armazenada junto com o texto (ou descrição) extraído dela (Seção 14.1), independente do desfecho ser texto, descrição, bloqueio ou imagem ilegível.
+- **Charts de resumo**: as imagens de pentágono (Seção 1) e gauge (Seção 2) geradas junto dos resumos. Pastas `charts/activity-completed/<id>` e `charts/round-completed/<id>`.
 
 Em todos os casos, o conteúdo de origem (texto do feedback falado, transcrição da resposta em áudio, transcrição ou descrição da imagem) é guardado junto ao arquivo, servindo de auditoria do que foi de fato produzido ou extraído, e permitindo reenvio em texto sem necessidade de gerar áudio novo, caso necessário no futuro.
 
 O áudio de feedback armazenado é reaproveitado sempre que a mesma pergunta volta, seja por revisão espaçada (Seção 7) ou por reenvio dentro da sessão intensiva, sem gerar de novo. Regeneração só ocorre se o áudio original não existir mais no armazenamento.
 
-Mídia associada a uma pergunta (áudio de feedback, áudio de resposta) é removida do armazenamento (não o registro em si, que permanece como histórico) quando a atividade correspondente está `archived` ou `cancelled` há mais de 30 dias. Atividade `active` nunca tem mídia removida, independente de quanto tempo estiver parada. Imagem original de OCR segue o mesmo critério de 30 dias, mas contado a partir do próprio registro de mídia, sem depender de status de activity. A remoção roda automaticamente, uma vez por dia, em lotes, sem necessidade de intervenção manual.
+Mídia associada a uma pergunta (áudio de feedback, áudio de resposta) é removida do armazenamento (não o registro em si, que permanece como histórico) quando a atividade correspondente está `archived` ou `cancelled` há mais de 30 dias. Atividade `active` nunca tem mídia removida, independente de quanto tempo estiver parada. Imagem original de OCR e charts de resumo seguem o mesmo critério de 30 dias, mas contado a partir do próprio registro de mídia, sem depender de status de activity (o pentágono referencia duas atividades e o gauge é gerado no meio de uma atividade ainda `active`, então amarrar a status de activity seria ambíguo). A remoção roda automaticamente, uma vez por dia, em lotes, sem necessidade de intervenção manual.
 
 ---
 
@@ -602,12 +627,16 @@ Reprodução de mídia (ex: áudio de feedback) é um evento à parte, diferente
 
 ## 19. Mensagens formatadas e suporte a canal interativo
 
-Toda mensagem enviada pelo sistema é representada por um `FormattedMessage`: um texto (`text`) sempre presente, e três camadas opcionais de apresentação — `audioPath`, `templateName` e `interactive` (corpo com botões). O `text` é a representação canônica: é o que fica salvo no histórico (`Message.content`) e o que qualquer canal sem suporte às camadas opcionais usa para enviar.
+Toda mensagem enviada pelo sistema é representada por um `FormattedMessage`: um texto (`text`) sempre presente, e quatro camadas opcionais de apresentação — `audioPath`, `imagePath`, `templateName` e `interactive` (corpo com botões). O `text` é a representação canônica: é o que fica salvo no histórico (`Message.content`) e o que qualquer canal sem suporte às camadas opcionais usa para enviar.
+
+`imagePath` difere do `audioPath`: a imagem e o texto vão juntos, na mesma mensagem, com o `text` como legenda (caption) da imagem, não como mensagem separada. Se a geração da imagem falhar, cai para o `text` puro sem `imagePath` (mesmo princípio do áudio, Seção 6.1).
 
 Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje:
 
-- **WhatsApp**: usa `audioPath` se presente (envia o áudio); senão `templateName` se presente (envia via template aprovado da Meta, necessário fora da janela de 24h); senão `interactive` se presente (envia com botões); senão `text` puro.
-- **Simulador**: usa `audioPath` se presente; senão `interactive` se presente (renderiza os botões de verdade, clicáveis); senão `text` puro, ignorando `templateName` (que só faz sentido para o template aprovado da Meta). Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais depois, sem quebrar nada que já existe (ver Seção 7 do Product-Brief, arquitetura multicanal).
+- **WhatsApp**: usa `imagePath` se presente (envia a imagem com o `text` como caption); senão `audioPath` se presente (envia o áudio); senão `templateName` se presente (envia via template aprovado da Meta, necessário fora da janela de 24h); senão `interactive` se presente (envia com botões); senão `text` puro.
+- **Simulador**: usa `imagePath` se presente (renderiza a imagem com legenda); senão `audioPath` se presente; senão `interactive` se presente (renderiza os botões de verdade, clicáveis); senão `text` puro, ignorando `templateName` (que só faz sentido para o template aprovado da Meta). Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais depois, sem quebrar nada que já existe (ver Seção 7 do Product-Brief, arquitetura multicanal).
+
+Ferramenta de desenvolvimento (não é comando de produto, não entra na tabela da Seção 9): no simulador, fora de produção, os comandos `/report-round-completed` e `/report-activity-completed` regeneram a mensagem de resumo (imagem + texto) com dado real do usuário sem marcar no banco que aquele ciclo já foi resumido, para testar ajuste visual repetidas vezes.
 
 Dentro de `interactive`, um botão pode ser de dois tipos: ação (resposta rápida nativa do canal, ex: "Nova atividade") ou link (abre uma URL externa, ex: link de pagamento do bloqueio de acesso, Seção 11.1). Mensagem com botão de link sempre inclui a mesma URL também no `text` puro, como fallback para quem recebe só a camada canônica (ex: simulador).
 

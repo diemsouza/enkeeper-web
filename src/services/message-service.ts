@@ -92,9 +92,12 @@ import {
   countAllActivitiesByUser,
 } from "../repo/activities.repo";
 import {
+  buildPreviousActivitySummary,
+  buildRoundCompletedSummary,
   maybeSendActivitySuggestion,
   switchToActivity,
 } from "./activity-service";
+import { SimulatorChannel } from "../lib/channels/simulator-channel";
 import { resolveFeedbackAudioPath } from "./feedback-audio-service";
 import { resolveAnswerAudioPath } from "./answer-audio-service";
 import {
@@ -158,6 +161,17 @@ import { startOfDay } from "date-fns";
 import { validateDocItemInput } from "./doc-item-service";
 import { MessageChannel } from "../types/message-channel";
 import { FormattedMessage } from "../types/out-message";
+
+// DEV ONLY: comandos exclusivos do simulador pra testar o visual dos charts de
+// resumo (Product-Rules Secoes 1 e 2). Nao sao comandos de produto, nao entram
+// em `ajuda` nem na tabela da Secao 9, e por isso nao ficam registrados em
+// src/lib/commands.ts.
+function resolveDevReportCommand(input: string): "round" | "activity" | null {
+  const normalized = input.trim().replace(/^\//, "").toLowerCase();
+  if (normalized === "report-round-completed") return "round";
+  if (normalized === "report-activity-completed") return "activity";
+  return null;
+}
 
 const OVERRIDING_INTENTS: MessageIntent[] = [
   "list_commands",
@@ -227,6 +241,54 @@ export async function handleIncomingMessage(
         message: { text: reply },
         today,
       });
+      return;
+    }
+
+    const devReport = resolveDevReportCommand(firstWord);
+    if (devReport) {
+      // Gera a mesma mensagem (imagem + texto) que producao geraria, com dado
+      // real do usuario, mas sem marcar no banco que o resumo daquele ciclo ja
+      // foi gerado, pra poder rodar repetidas vezes testando ajuste visual.
+      if (process.env.NODE_ENV === "production") return;
+      if (!(channel instanceof SimulatorChannel)) return;
+
+      // Persiste o comando pra ele nao sumir quando o simulador faz o refresh
+      // do `done` (que troca a lista local pela persistida). saveMessage direto,
+      // sem saveUserMsg, pra nao contar como interacao de uso.
+      await saveMessage({
+        userId: user.id,
+        userChannelId: userChannel.id,
+        role: "user",
+        content: rawText,
+        intent: "dev_report",
+        externalId: input.externalId,
+        receivedAt: input.receivedAt,
+      });
+
+      let summary: { text: string; imagePath?: string } | null;
+      if (devReport === "activity") {
+        summary = await buildPreviousActivitySummary(user.id, {
+          ignoreSummaryGuard: true,
+        });
+      } else {
+        const activity = await findCurrentActivityByUser(user.id);
+        summary = activity
+          ? await buildRoundCompletedSummary(activity.id)
+          : null;
+      }
+
+      if (summary) {
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelUserId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          message: summary,
+          mediaType: summary.imagePath ? "image" : undefined,
+          mediaId: summary.imagePath,
+          today,
+        });
+      }
       return;
     }
 

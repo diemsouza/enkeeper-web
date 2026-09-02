@@ -10,7 +10,16 @@ import { emitToSession } from "../simulator-emitter";
 export class SimulatorChannel implements MessageChannel {
   async sendMessage(to: string, message: FormattedMessage): Promise<ChannelSendResult> {
     const externalId = `simulator-${ulid()}`;
-    if (message.audioPath) {
+    if (message.imagePath) {
+      emitToSession(to, {
+        type: "image",
+        imagePath: message.imagePath,
+        caption: message.text,
+        time: new Date().toISOString(),
+        externalId,
+        interactive: message.interactive,
+      });
+    } else if (message.audioPath) {
       emitToSession(to, {
         type: "audio",
         audioPath: message.audioPath,

@@ -104,7 +104,7 @@ Rollout é parcial por configuração, o que permite validar a percepção de va
 
 ### Resumo de atividade
 
-Ao subir novo material ou concluir o fluxo de nova atividade, o usuário recebe um resumo da atividade anterior: quanto tempo durou, quantas perguntas foram respondidas, acertos e erros, e uma leitura direta do resultado. Fecha o ciclo anterior e contextualiza o novo.
+Ao subir novo material ou concluir o fluxo de nova atividade, o usuário recebe um resumo da atividade anterior: quanto tempo durou, quantas perguntas foram respondidas, acertos e erros, e uma leitura direta do resultado. Fecha o ciclo anterior e contextualiza o novo. O resumo vem acompanhado de um gráfico (pentágono de 5 eixos comparando com a atividade anterior); na conclusão da primeira rodada, um mostrador de score. Gráficos são renderizados por template, sem custo de IA por envio.
 
 ### Onboarding
 
@@ -223,7 +223,8 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Geração de perguntas | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Avaliação de respostas + feedback | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Texto-para-voz (áudio de feedback) | OpenAI (`gpt-4o-mini-tts`, principal) e Google Cloud TTS (fallback), alternável por configuração |
-| Armazenamento de mídia | Supabase Storage, bucket separado por ambiente — cobre áudio gerado (feedback), áudio de resposta do usuário e a imagem original enviada para OCR |
+| Charts de resumo (pentágono, gauge) | SVG por template rasterizado com `@resvg/resvg-js` (nativo, sem headless browser), fontes Inter e IBM Plex Mono embutidas no bundle |
+| Armazenamento de mídia | Supabase Storage, bucket separado por ambiente — cobre áudio gerado (feedback), áudio de resposta do usuário, a imagem original enviada para OCR e os charts de resumo |
 | Evolução semanal | Modelo médio em batch |
 | Jobs agendados | Vercel Cron |
 | Pagamento | Stripe Checkout (cartão), cobrança avulsa de 30 dias sem renovação automática; Pix manual via `suporte` como alternativa |
@@ -342,6 +343,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Formatação de gap fill e cenário aplicada em código, independente do modelo reproduzir a formatação certa; cenário com variação de fechamento
 - Classificação de dica de erro (evalTip) expandida para 8 categorias, com contrato de formatação de texto
 - Botões interativos reais no simulador, incluindo seleção de nível
+- Charts visuais nos resumos: pentágono de desempenho na troca de atividade (compara com a atividade anterior) e gauge de score na conclusão da primeira rodada, renderizados por template sem custo de IA
 
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou

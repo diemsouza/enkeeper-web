@@ -16,7 +16,7 @@ const W = { right: 4, partial: 2, wrong: 0 };
 const P = { revision: 1, audioPlayed: 1 };
 const AUDIO_ANSWER_BONUS = 1;
 const PRACTICE_CAP = 2;
-const QUESTION_CAP = 10;
+export const QUESTION_CAP = 10;
 export const ACTIVITY_ELIGIBLE_SCORE = 7;
 
 function omitZero(metadata: ScoreMetadata): ScoreMetadata {
@@ -59,6 +59,12 @@ export function updateScoreMetadata(
       (current.audioPartialCount ?? 0) +
       (status === "partial" && answerType === "audio" ? 1 : 0),
   });
+}
+
+export function computeActivityScore(questionScores: number[]): number {
+  if (questionScores.length === 0) return 0;
+  const sum = questionScores.reduce((acc, s) => acc + s, 0);
+  return sum / questionScores.length;
 }
 
 export function computeQuestionScore(metadata: ScoreMetadata): number {

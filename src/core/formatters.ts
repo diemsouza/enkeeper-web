@@ -585,14 +585,15 @@ export function formatRoundCompletedSummary(data: {
   questionCount: number;
   right: number;
   responses: number;
+  score: number;
 }): FormattedMessage {
-  const { questionCount, right, responses } = data;
+  const { questionCount, right, responses, score } = data;
   const { rate, reading } = getRoundCompletedReadingLine(right, responses);
   const percentual = Math.round(rate * 100);
 
   return {
     text: [
-      `📊 Você concluiu as ${questionCount} perguntas dessa atividade, ${percentual}% de acerto. ${reading}`,
+      `📊 Você concluiu as ${questionCount} perguntas dessa atividade, ${percentual}% de acerto. ${reading} Score: ${score.toFixed(1)}`,
       "",
       "Continue praticando no seu ritmo.",
     ].join("\n"),
@@ -670,6 +671,7 @@ export function formatPreviousActivitySummary(
     responses,
     reviews,
     period,
+    score,
   } = data;
 
   const { rate, reading, tip } = getActivitySummaryReadingLine(
@@ -705,7 +707,7 @@ export function formatPreviousActivitySummary(
       "",
       stats,
       "",
-      `${reading} ${tip}`,
+      `${reading} ${tip} Score: ${score.toFixed(1)}`,
     ].join("\n"),
   };
 }
@@ -769,6 +771,7 @@ type PreviousActivitySummaryData = {
   responses: number;
   reviews: number;
   period: string;
+  score: number;
 };
 
 export function formatUpgradePrompt(): FormattedMessage {
@@ -977,10 +980,22 @@ export function formatFeedback(
   const emoji = ANSWER_EMOJI[evalStatus];
   const opening = getFeedbackOpening(evalStatus, !!userUnknown, level);
 
+  const normalizeRightAnswerAndFeedback = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/["'.,!?]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const feedbackIsRightAnswer =
+    rightAnswer &&
+    normalizeRightAnswerAndFeedback(rightAnswer) ===
+      normalizeRightAnswerAndFeedback(feedback);
+
   const result = [];
   if (emoji) result.push(emoji);
   if (opening) result.push(opening);
-  if (evalStatus !== "right" && rightAnswer && rightAnswer !== feedback)
+  if (evalStatus !== "right" && rightAnswer && !feedbackIsRightAnswer)
     result.push(`"${capitalizeFirst(rightAnswer)}".`);
   if (feedback)
     result.push(feedback.indexOf('"') === -1 ? `"${feedback}"` : feedback);

@@ -171,43 +171,65 @@ export async function findActivitiesForList(
   });
 }
 
-export async function findLatestArchivedActivityForSummary(userId: string) {
-  return prisma.activity.findFirst({
-    where: { userId, status: "archived", summary: null, deletedAt: null },
-    orderBy: { statusUpdatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      questionLimit: true,
-      createdAt: true,
-      lastInteractionAt: true,
-      questions: {
-        where: {
-          deletedAt: null,
-          status: { in: ["right", "partial", "wrong"] },
-        },
-        select: { status: true, attemptCount: true },
-      },
+const SUMMARY_SELECT = {
+  id: true,
+  title: true,
+  summary: true,
+  questionLimit: true,
+  questionCount: true,
+  score: true,
+  statusUpdatedAt: true,
+  createdAt: true,
+  lastInteractionAt: true,
+  questions: {
+    where: {
+      deletedAt: null,
+      status: { in: ["right", "partial", "wrong"] },
     },
+    select: { status: true, attemptCount: true },
+  },
+} satisfies Prisma.ActivitySelect;
+
+export type ActivitySummaryData = Prisma.ActivityGetPayload<{
+  select: typeof SUMMARY_SELECT;
+}>;
+
+export async function findLatestArchivedActivity(
+  userId: string,
+): Promise<ActivitySummaryData | null> {
+  return prisma.activity.findFirst({
+    where: { userId, status: "archived", deletedAt: null },
+    orderBy: { statusUpdatedAt: "desc" },
+    select: SUMMARY_SELECT,
   });
 }
 
-export async function findActivityForSummary(activityId: string) {
-  return prisma.activity.findUnique({
-    where: { id: activityId },
-    select: {
-      id: true,
-      title: true,
-      questionLimit: true,
-      createdAt: true,
-      lastInteractionAt: true,
-      questions: {
-        where: {
-          deletedAt: null,
-          status: { in: ["right", "partial", "wrong"] },
-        },
-        select: { status: true, attemptCount: true },
-      },
+export async function findArchivedActivityBefore(
+  userId: string,
+  statusUpdatedAt: Date,
+  excludeId: string,
+): Promise<ActivitySummaryData | null> {
+  return prisma.activity.findFirst({
+    where: {
+      userId,
+      status: "archived",
+      deletedAt: null,
+      id: { not: excludeId },
+      statusUpdatedAt: { lt: statusUpdatedAt },
     },
+    orderBy: { statusUpdatedAt: "desc" },
+    select: SUMMARY_SELECT,
+  });
+}
+
+export async function findActivityForSummary(
+  activityId: string,
+  userId?: string,
+): Promise<ActivitySummaryData | null> {
+  return prisma.activity.findFirst({
+    where: userId
+      ? { id: activityId, userId, deletedAt: null }
+      : { id: activityId },
+    select: SUMMARY_SELECT,
   });
 }

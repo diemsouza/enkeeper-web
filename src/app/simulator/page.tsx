@@ -65,10 +65,25 @@ function buildAudioUrl(path: string): string {
   return `/api/dev/audio?path=${encodeURIComponent(path)}&secret=${encodeURIComponent(SECRET)}`;
 }
 
+function buildImageUrl(path: string): string {
+  return `/api/dev/image?path=${encodeURIComponent(path)}&secret=${encodeURIComponent(SECRET)}`;
+}
+
 function mapApiMessages(raw: ApiMessage[]): Message[] {
   return raw.map((m) => {
     const from = m.role === "user" ? "user" : "bot";
     const time = formatTime(m.createdAt);
+    if (from === "bot" && m.mediaType === "image" && m.mediaId) {
+      return {
+        from,
+        time,
+        type: "image",
+        imageUrl: buildImageUrl(m.mediaId),
+        caption: m.content,
+        externalId: m.externalId ?? undefined,
+        interactive: m.interactive ?? undefined,
+      };
+    }
     if (
       m.mediaType === "image" ||
       m.mediaType === "pdf" ||
@@ -155,6 +170,8 @@ export default function SimulatorPage() {
         text?: string;
         time?: string;
         audioPath?: string;
+        imagePath?: string;
+        caption?: string;
         textFallback?: string;
         externalId?: string;
         interactive?: ApiInteractive | null;
@@ -166,6 +183,21 @@ export default function SimulatorPage() {
             from: "bot",
             text: data.text!,
             time: formatTime(data.time!),
+            interactive: data.interactive ?? undefined,
+          },
+        ]);
+        scrollToBottom("smooth");
+      }
+      if (data.type === "image" && data.imagePath && data.time) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            from: "bot",
+            type: "image",
+            imageUrl: buildImageUrl(data.imagePath!),
+            caption: data.caption,
+            time: formatTime(data.time!),
+            externalId: data.externalId,
             interactive: data.interactive ?? undefined,
           },
         ]);

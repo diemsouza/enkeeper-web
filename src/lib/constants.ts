@@ -19,6 +19,7 @@ export const AUDIO_CLEANUP_SUBBATCH_SIZE = 10;
 export const MEDIA_PARENT_TYPE = {
   QUESTION: "question",
   MESSAGE: "message",
+  ACTIVITY: "activity",
 } as const;
 export type MediaParentType =
   (typeof MEDIA_PARENT_TYPE)[keyof typeof MEDIA_PARENT_TYPE];

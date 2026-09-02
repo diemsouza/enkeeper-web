@@ -9,6 +9,7 @@ import {
   sendWhatsAppTemplate,
   uploadWhatsAppMedia,
   sendWhatsAppAudio,
+  sendWhatsAppImage,
   sendWhatsAppInteractiveButtons,
   sendWhatsAppCtaUrl,
 } from "../../vendors/whatsapp.vendor";
@@ -29,8 +30,28 @@ async function sendAudioPart(
   }
 }
 
+async function sendImagePart(
+  to: string,
+  imagePath: string,
+  caption: string,
+): Promise<string | null> {
+  try {
+    const buffer = await downloadFile({ filePath: imagePath });
+    const mediaId = await uploadWhatsAppMedia(buffer, "image/png");
+    return await sendWhatsAppImage(to, mediaId, caption);
+  } catch (err) {
+    console.error("[WhatsAppChannel] image delivery failed:", err);
+    return null;
+  }
+}
+
 export class WhatsAppChannel implements MessageChannel {
   async sendMessage(to: string, message: FormattedMessage): Promise<ChannelSendResult> {
+    if (message.imagePath) {
+      return {
+        externalId: await sendImagePart(to, message.imagePath, message.text),
+      };
+    }
     if (message.audioPath) {
       return { externalId: await sendAudioPart(to, message.audioPath) };
     }

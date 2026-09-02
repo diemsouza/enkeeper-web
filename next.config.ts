@@ -34,10 +34,10 @@ const nextConfig = {
     return config;
   },
   outputFileTracingIncludes: {
-    "/api/(.*)": ["./prompts/**/*.md"],
+    "/api/(.*)": ["./prompts/**/*.md", "./assets/fonts/**/*"],
   },
   allowedDevOrigins: ["192.168.15.5"],
-  // serverExternalPackages: ["pdf-parse"],
+  serverExternalPackages: ["@resvg/resvg-js"],
 } as NextConfig;
 
 export default withNextIntl(nextConfig);

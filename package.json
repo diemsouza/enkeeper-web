@@ -1,6 +1,6 @@
 {
   "name": "fluizer-web",
-  "version": "0.26.6",
+  "version": "0.27.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -49,6 +49,7 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.2",
     "@react-input/mask": "^2.0.4",
+    "@resvg/resvg-js": "^2.6.2",
     "@tanstack/react-query": "^5.75.5",
     "@types/react": "19.1.6",
     "@types/react-dom": "19.1.5",

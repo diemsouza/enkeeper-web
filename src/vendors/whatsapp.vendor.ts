@@ -237,6 +237,7 @@ export async function sendWhatsAppTemplate(
 export async function uploadWhatsAppMedia(
   buffer: Buffer,
   mimeType: string,
+  opts?: { filename?: string },
 ): Promise<string> {
   if (process.env.NODE_ENV !== "production") {
     console.warn(
@@ -254,7 +255,7 @@ export async function uploadWhatsAppMedia(
   formData.append(
     "file",
     new Blob([new Uint8Array(buffer)], { type: mimeType }),
-    `audio.${ext}`,
+    opts?.filename ?? `media.${ext}`,
   );
   formData.append("type", mimeType);
 
@@ -310,6 +311,47 @@ export async function sendWhatsAppAudio(
   if (!res.ok) {
     const detail = await res.text();
     throw new Error(`Meta audio send error ${res.status}: ${detail}`);
+  }
+
+  const data = (await res.json()) as { messages?: { id: string }[] };
+  return data.messages?.[0]?.id ?? null;
+}
+
+export async function sendWhatsAppImage(
+  to: string,
+  mediaId: string,
+  caption?: string,
+): Promise<string | null> {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[sendWhatsAppImage] Skipping sending image to ${to} in non-production environment`,
+    );
+    return null; // mediaId vem "" aqui pois uploadWhatsAppMedia tambem faz no-op; os dois guards tem que ficar sincronizados
+  }
+
+  const token = process.env.WABA_TOKEN;
+  const phoneNumberId = process.env.WABA_PHONE_ID;
+
+  const res = await fetch(
+    `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        ...buildRecipientField(to),
+        type: "image",
+        image: caption ? { id: mediaId, caption } : { id: mediaId },
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Meta image send error ${res.status}: ${detail}`);
   }
 
   const data = (await res.json()) as { messages?: { id: string }[] };

@@ -246,6 +246,7 @@ export async function processFocusResponse(
     date,
     channel,
     doc.metadata as GeneratedDocMetadata | null,
+    currentActivity?.id ?? null,
   );
 
   return { outcome: "done" };
@@ -332,6 +333,7 @@ async function sendActivityCreatedConfirmation(
   date: Date,
   channel: MessageChannel,
   metadata: GeneratedDocMetadata | null,
+  previousActivityId: string | null,
 ): Promise<void> {
   const activityCount = await incrementDailyActivityCount(userId, date);
   await incrementDailyDocCount(userId, date);
@@ -344,7 +346,11 @@ async function sendActivityCreatedConfirmation(
     MAX_ACTIVITIES_PER_DAY - activityCount,
     metadata,
   );
-  const summary = await buildPreviousActivitySummary(userId);
+  const summary = previousActivityId
+    ? await buildPreviousActivitySummary(userId, {
+        activityId: previousActivityId,
+      })
+    : null;
   await sendAndSaveMessage({
     channel,
     to: userChannel.channelUserId,
@@ -359,7 +365,9 @@ async function sendActivityCreatedConfirmation(
       to: userChannel.channelUserId,
       userId,
       userChannelId: userChannel.id,
-      message: { text: summary },
+      message: summary,
+      mediaType: summary.imagePath ? "image" : undefined,
+      mediaId: summary.imagePath,
     });
   }
 }
