@@ -34,6 +34,7 @@ import {
 } from "../lib/constants";
 import { sanitizeText, delay } from "../lib/utils";
 import { sendAndSaveMessage } from "./message-sender-service";
+import { sendFirstQuestionNow } from "./activity-cron.service";
 import { calculatePoolSize } from "../core/pool-size";
 import { DocType } from "../lib/prisma";
 
@@ -240,6 +241,7 @@ export async function mergeDoc(
             mediaId: summary.imagePath,
           });
         }
+        await sendFirstQuestionNow(activity, userChannel, date, channel);
       }
     } else {
       await updateDoc(docId, userId, {

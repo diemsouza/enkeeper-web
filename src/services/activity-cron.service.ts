@@ -43,7 +43,9 @@ import {
   RETRY_DELAY_MS,
   DOC_PENDING_TIMEOUT_MS,
   COMMAND_TIMEOUT_MIN,
+  DEFAULT_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
+import { delay } from "../lib/utils";
 import {
   Activity,
   Question,
@@ -364,6 +366,34 @@ async function sendCadenceQuestion(
     waitingUser: true,
     lastQuestionId: question.id,
   });
+}
+
+export async function sendFirstQuestionNow(
+  activity: Activity,
+  userChannel: { channelUserId: string; id: string },
+  today: Date,
+  channel: MessageChannel,
+): Promise<boolean> {
+  try {
+    const outcome = await generateQuestionIfPoolNotFull(activity);
+    if (outcome.poolExhausted || !outcome.question) return false;
+
+    await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+    await sendCadenceQuestion(
+      outcome.question,
+      activity,
+      userChannel,
+      today,
+      channel,
+    );
+    return true;
+  } catch (err) {
+    console.error(
+      `[sendFirstQuestionNow] activity ${activity.id} failed:`,
+      err,
+    );
+    return false;
+  }
 }
 
 export async function processExpiredFlowIntents(

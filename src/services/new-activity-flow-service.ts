@@ -1,4 +1,4 @@
-import { Doc, Level } from "../lib/prisma";
+import { Activity, Doc, Level } from "../lib/prisma";
 import {
   parseDomainInput,
   parseTopicSelectionInput,
@@ -61,6 +61,7 @@ import { MessageChannel } from "../types/message-channel";
 import { FocusSuggestion, GeneratedDocMetadata } from "../types/domain";
 import { FormattedMessage } from "../types/out-message";
 import { sendAndSaveMessage } from "./message-sender-service";
+import { sendFirstQuestionNow } from "./activity-cron.service";
 
 export type DomainCaptureResult =
   | {
@@ -239,15 +240,20 @@ export async function processFocusResponse(
     return { outcome: "retry", message: formatFocusError() };
   }
 
-  const date = await createActivityForDoc(userId, doc.id, level, data);
+  const activity = await createActivityForDoc(userId, doc.id, level, data);
 
   await sendActivityCreatedConfirmation(
     userId,
-    date,
+    activity.date,
     channel,
     doc.metadata as GeneratedDocMetadata | null,
     currentActivity?.id ?? null,
   );
+
+  const userChannel = await findUserChannelByUserId(userId);
+  if (userChannel) {
+    await sendFirstQuestionNow(activity, userChannel, activity.date, channel);
+  }
 
   return { outcome: "done" };
 }
@@ -304,7 +310,7 @@ async function createActivityForDoc(
   docId: string,
   level: Level,
   data: FocusContentResult,
-): Promise<Date> {
+): Promise<Activity> {
   const now = new Date();
   const nextMessageAt = new Date(
     now.getTime() + FIRST_MESSAGE_INTERVAL_MIN * 60 * 1000,
@@ -313,7 +319,7 @@ async function createActivityForDoc(
 
   const questionLimit = calculatePoolSize(sanitizeText(data.content));
 
-  const activity = await createActivity({
+  return createActivity({
     userId,
     docId,
     date,
@@ -324,8 +330,6 @@ async function createActivityForDoc(
     title: data.title ?? "",
     questionLimit,
   });
-
-  return date;
 }
 
 async function sendActivityCreatedConfirmation(

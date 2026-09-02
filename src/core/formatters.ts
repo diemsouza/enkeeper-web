@@ -20,28 +20,18 @@ import type { FormattedMessage } from "../types/out-message";
 import type { GeneratedDocMetadata } from "../types/domain";
 
 export function formatOnboardingMsg1(): FormattedMessage {
-  return { text: "Hi 👋 Bem-vindo a *Fluizer*." };
+  return {
+    text: "Hi 👋 Bem-vindo ao *Fluizer*.\n\nPratique inglês com IA, no seu ritmo, sobre o que você quiser.",
+  };
 }
 
 export function formatOnboardingMsg2(): FormattedMessage {
   return {
-    text: "Pratique inglês com IA, no seu ritmo, sobre o que você quiser.",
+    text: "Conte o que quer praticar, ou envie um arquivo (texto, imagem ou PDF) com conteúdo em inglês, como material de aula.\n\nDurante o dia, chegam perguntas sobre o que você escolher.",
   };
 }
 
 export function formatOnboardingMsg3(): FormattedMessage {
-  return {
-    text: "Conte o que quer praticar, ou envie um arquivo de texto, imagem ou PDF com conteúdo em inglês: página de livro, post nas redes sociais ou material de aula.",
-  };
-}
-
-export function formatOnboardingMsg4(): FormattedMessage {
-  return {
-    text: "Ao longo do dia, chegam perguntas sobre o que você escolher praticar, aqui mesmo.",
-  };
-}
-
-export function formatOnboardingMsg5(): FormattedMessage {
   return {
     text: `Você tem ${TRIAL_DAYS} ${TRIAL_DAYS > 1 ? "dias" : "dia"} pra praticar sem custo. Use ${formatCommand("help")} pra ver os comandos disponíveis.`,
   };

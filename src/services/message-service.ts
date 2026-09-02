@@ -43,13 +43,11 @@ import {
   formatNoPendingAction,
   formatFeedbackFailed,
   formatPracticeWaiting,
-  formatOnboardingMsg5,
   formatDailyPracticeLimitReached,
   formatIntensiveDailyLimitReached,
   formatOnboardingMsg1,
   formatOnboardingMsg2,
   formatOnboardingMsg3,
-  formatOnboardingMsg4,
   formatDomainQuestion,
   formatNewActivityFlowCanceled,
   formatNewActivityFlowCanceledGuidance,
@@ -516,8 +514,6 @@ export async function handleIncomingMessage(
         formatOnboardingMsg1(),
         formatOnboardingMsg2(),
         formatOnboardingMsg3(),
-        formatOnboardingMsg4(),
-        formatOnboardingMsg5(),
       ];
 
       for (let i = 0; i < msgs.length; i++) {
@@ -1452,9 +1448,10 @@ export async function handleIncomingMessage(
                 evaluation?.eval_tip_class === "none" ||
                 evaluation?.eval_tip_class === "spelling";
               // silent já exclui "none" e "spelling"; cast seguro para o enum do banco
-              const tipClass = evalTip && !silent
-                ? (evaluation?.eval_tip_class as EvalTipClass)
-                : null;
+              const tipClass =
+                evalTip && !silent
+                  ? (evaluation?.eval_tip_class as EvalTipClass)
+                  : null;
               const tipMsg = evalTip ? formatEvalTip(evalTip) : null;
               let tipSent = false;
               const answerType = input.isVoiceNote ? "audio" : "text";
