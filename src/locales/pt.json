@@ -23,9 +23,9 @@
   },
   "seo": {
     "home": {
-      "title": "Fluizer | Pratique inglês com IA no WhatsApp, o dia inteiro",
-      "description": "Prática diária de inglês com IA, direto no WhatsApp. Pratique sobre o que você quiser, no seu ritmo, o dia inteiro.",
-      "keywords": "prática de inglês com IA, prática de inglês whatsapp, estudar inglês whatsapp, vocabulário inglês, prática contínua, Fluizer",
+      "title": "Fluizer | Pratique inglês com IA, todo dia, no seu ritmo",
+      "description": "Prática diária de inglês com IA. Pratique sobre o que você quiser, no seu ritmo, todo dia.",
+      "keywords": "prática de inglês com IA, vocabulário inglês, estudar inglês online, repetição espaçada inglês, prática contínua, Fluizer",
       "ogImage": "/images/logo.png"
     }
   },
@@ -40,7 +40,7 @@
       "2": "Você estudou inglês de viagem. <strong>No aeroporto, esqueceu tudo.</strong>",
       "3": "Você fez a aula de terça. <strong>Na de quinta, já esqueceu metade.</strong>"
     },
-    "headline": "Pratique inglês com IA no WhatsApp, no seu ritmo, sobre o que você quiser.",
+    "headline": "Pratique inglês com IA, todo dia, no seu ritmo, sobre o que você quiser.",
     "price_teaser": "Teste grátis por 7 dias. R$21,90/mês para continuar.",
     "cta": "Comece grátis",
     "microcopy": "Abre no WhatsApp · Sem cadastro",
@@ -64,7 +64,7 @@
       "cards": {
         "0": {
           "title": "Tentei manter a disciplina. Não consegui.",
-          "description": "As perguntas chegam no WhatsApp que você já usa. Sem abrir app, sem sessão dedicada, sem lembrar de estudar. A prática acontece sem você precisar organizar."
+          "description": "As perguntas chegam prontas pra você, sem precisar organizar nada. Sem sessão dedicada, sem plano de estudo. É só abrir e praticar."
         },
         "1": {
           "title": "Entendo quando leio. Trava quando preciso usar.",
@@ -89,24 +89,24 @@
           "description": "Diga o que quer praticar, ou envie texto, foto ou PDF: vocabulário, exercício, aula, o que fizer sentido pra você."
         },
         "1": {
-          "title": "O Fluizer gera as perguntas",
+          "title": "As perguntas são geradas a partir do que você escolheu",
           "description": "Extrai o vocabulário e os pontos centrais do que você escolheu e monta as perguntas em cima disso, não de cenários genéricos."
         },
         "2": {
-          "title": "As perguntas chegam no WhatsApp",
-          "description": "Ao longo do dia, no seu ritmo, o Fluizer envia perguntas sobre aquele vocabulário. Você responde de cabeça. O sistema avalia, dá feedback e registra o que travou."
+          "title": "Sua prática está sempre pronta",
+          "description": "A qualquer hora do dia, no seu ritmo, tem prática esperando por você sobre aquele vocabulário. Você responde de cabeça. O sistema avalia, dá feedback e registra o que travou."
         }
       }
     },
     "pricing": {
       "title": "Comece grátis.",
       "subtitle": "Acesso completo por {days} dias, sem cartão e sem cadastro.",
-      "description": "Diga o que quer praticar, ou envie material: texto, imagem ou PDF. Pratique durante o dia. Se fizer sentido, continua por R$21,90/mês.",
+      "description": "Diga o que quer praticar, ou envie material: texto, imagem ou PDF. Pratique no seu ritmo. Se fizer sentido, continua por R$21,90/mês.",
       "cta": "Comece grátis"
     },
     "features_demo": {
       "title": "Na prática.",
-      "subtitle": "Material ou tema, você escolhe. As perguntas chegam durante o dia.",
+      "subtitle": "Material ou tema, você escolhe. A prática fica sempre pronta pra você.",
       "cta_link": "Quero praticar",
       "blocks": {
         "0": {
@@ -152,7 +152,7 @@
         },
         "1": {
           "title": "As perguntas chegam no seu ritmo.",
-          "description": "A vida não para pra você estudar. As perguntas chegam ao longo do dia, no seu tempo, sem hora marcada. Você responde quando puder, e quando erra, entende o porquê na hora, não só que errou.",
+          "description": "A vida não para pra você estudar. A prática fica pronta no seu tempo, sem hora marcada. Você responde quando puder, e quando erra, entende o porquê na hora, não só que errou.",
           "chat": [
             {
               "from": "bot",

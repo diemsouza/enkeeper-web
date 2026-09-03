@@ -27,10 +27,9 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold mt-10 mb-3">O serviço</h2>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
-            O Fluizer é um agente de prática de inglês que opera via WhatsApp. O
-            usuário envia material de estudo - texto, imagem ou PDF e recebe
-            perguntas sobre esse conteúdo ao longo do dia para praticar o
-            vocabulário.
+            O Fluizer é um serviço de prática de inglês. O usuário envia
+            material de estudo - texto, imagem ou PDF - e recebe perguntas sobre
+            esse conteúdo para praticar o vocabulário, no seu ritmo.
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             O serviço utiliza modelos de inteligência artificial dos
@@ -63,9 +62,8 @@ export default function TermsPage() {
           </h2>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             Não é necessário cadastro manual para iniciar o trial. O usuário é
-            identificado automaticamente pelos dados disponíveis via WhatsApp:
-            número de telefone, nome de perfil, foto de perfil e outros dados
-            disponibilizados pela plataforma.
+            identificado automaticamente pelo número de telefone, validado por
+            código de verificação enviado via WhatsApp.
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             Para upgrade ao plano Pro, podem ser solicitadas informações

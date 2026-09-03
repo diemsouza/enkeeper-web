@@ -27,7 +27,7 @@ export function formatOnboardingMsg1(): FormattedMessage {
 
 export function formatOnboardingMsg2(): FormattedMessage {
   return {
-    text: "Conte o que quer praticar, ou envie um arquivo (texto, imagem ou PDF) com conteúdo em inglês, como material de aula.\n\nDurante o dia, chegam perguntas sobre o que você escolher.",
+    text: "Conte o que quer praticar, ou envie um arquivo (texto, imagem ou PDF) com conteúdo em inglês, como material de aula.\n\nSua prática fica pronta pra você praticar no seu ritmo.",
   };
 }
 

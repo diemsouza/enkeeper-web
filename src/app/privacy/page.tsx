@@ -29,9 +29,15 @@ export default function PrivacyPage() {
             Dados que coletamos
           </h2>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
-            <strong>Via WhatsApp:</strong> número de telefone, nome de perfil,
-            foto de perfil e outros dados disponibilizados automaticamente pela
-            plataforma no início da conversa.
+            <strong>Via Web:</strong> número de telefone, para autenticação por
+            código de verificação, e dados técnicos de navegação (tipo de
+            dispositivo, navegador, e token de notificação, quando você ativa
+            push).
+          </p>
+          <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
+            <strong>Via WhatsApp:</strong> número de telefone, usado para envio
+            do código de verificação e, quando aplicável, mensagens de
+            notificação.
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             <strong>Enviados pelo usuário:</strong> materiais de estudo (texto,
@@ -49,7 +55,7 @@ export default function PrivacyPage() {
             Os dados coletados são utilizados para:
           </p>
           <ul className="text-[15px] leading-relaxed text-foreground/80 mb-4 list-disc pl-5 space-y-2">
-            <li>Entrega do serviço de prática de inglês via WhatsApp</li>
+            <li>Entrega do serviço de prática de inglês</li>
             <li>Identificação automática do usuário para início do trial</li>
             <li>
               Personalização da prática com base no histórico de desempenho

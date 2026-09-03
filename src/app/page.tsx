@@ -10,14 +10,14 @@ export default function Home() {
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
             name: "Fluizer",
-            applicationCategory: "EducationApplication",
-            operatingSystem: "Android, iOS, Web",
+            applicationCategory: "EducationalApplication",
+            operatingSystem: "Web",
             description:
-              "Prática diária de inglês direto no WhatsApp. Envie o material da sua aula e pratica o dia inteiro no seu ritmo.",
+              "Pratique inglês com IA, todo dia, no seu ritmo, sobre o que você quiser.",
             url: "https://fluizer.com",
             offers: {
               "@type": "Offer",
-              price: "19.90",
+              price: "21.90",
               priceCurrency: "BRL",
               availability: "https://schema.org/InStock",
               category: "Subscription",

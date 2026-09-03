@@ -19,7 +19,7 @@ const STATUS_CONTENT: Record<
 > = {
   success: {
     title: "Pagamento confirmado",
-    message: "Volte para o WhatsApp para continuar praticando.",
+    message: "Seu acesso está liberado. Continue praticando.",
   },
   canceled: {
     title: "Pagamento cancelado",
