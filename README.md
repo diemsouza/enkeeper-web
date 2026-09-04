@@ -67,3 +67,72 @@ npm run dev
 ngrok http 3000
 
 Example url: https://1bb0-187-56-243-58.ngrok-free.app
+
+## Supabase (Realtime local)
+
+Usado só para Realtime (eventos que refletem em tempo real no client, ex: pagamento confirmado). Schema continua sendo gerenciado 100% pelo Prisma, Supabase CLI não mexe nisso.
+
+### Instalar CLI
+
+```bash
+npm install -D supabase
+npx supabase --version
+```
+
+### Iniciar no projeto (uma vez)
+
+```bash
+npx supabase init
+```
+
+Caso queira, edite `supabase/config.toml`, ajuste `project_id` para `"fluizer"`.
+
+### Subir (só o necessário)
+
+```bash
+npx supabase start -x storage -x imgproxy -x edge-runtime
+```
+
+Copie a `DB URL` impressa no final para `DATABASE_URL` no `.env` (porta `54322`, não `5432`).
+
+### Studio (opcional)
+
+http://localhost:54323
+
+### Habilitar Realtime numa tabela
+
+Nunca via Prisma migration, sempre em `supabase/migrations/`, script separado do schema de aplicação:
+
+```bash
+npx supabase migration new enable_realtime_message
+```
+
+```sql
+-- supabase/migrations/<timestamp>_enable_realtime_message.sql
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (
+       select 1 from pg_publication_tables
+       where pubname = 'supabase_realtime' and tablename = 'messages'
+     )
+  then
+    alter publication supabase_realtime add table "messages";
+  end if;
+end $$;
+```
+
+```bash
+# local, sempre
+npx supabase migration up
+
+# produção, sempre (depois do link feito uma vez)
+npx supabase link --project-ref <ref>
+npx supabase db push
+```
+
+### Parar
+
+```bash
+npx supabase stop
+```

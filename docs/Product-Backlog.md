@@ -119,3 +119,105 @@ Tema aberto pode não fazer sentido no caso de upload da mesma forma que faz no 
 **Objeção**
 
 Nenhuma feature hoje consome essa informação para material de upload, é dado puramente analítico neste momento. Baixa prioridade até que uma decisão de produto concreta dependa dele.
+
+---
+
+## 4) Migração da prática para canal próprio (web) — (Em andamento)
+
+**Contexto**
+
+A partir de outubro/2026 a Meta passa a cobrar por mensagem enviada
+(service e utility) sem faixa gratuita de volume, o que inviabiliza o
+uso do WhatsApp como canal de prática de alta frequência (cadência de
+1h). Decisão tomada em conversa de produto: WhatsApp deixa de ser canal
+de prática e passa a ser canal de aquisição (72h grátis via CTWA),
+transporte de código de autenticação, e fallback pago de notificação.
+A prática em si migra para uma superfície própria (web/PWA).
+
+**Problema**
+
+Todo o desenho atual de produto (Rules Seções 1, 8, 10, 12, 15, 19)
+descreve comportamento assumindo que a prática acontece dentro do chat
+do WhatsApp: cadência por mensagem, nudge por mensagem, onboarding por
+mensagem, fluxo de nova atividade por mensagem. Sem esse canal como
+prática, a arquitetura de entrega inteira, não só a UI, precisa de novo
+desenho: como o usuário autentica, onde a fila de perguntas vive, como
+o lembrete diário funciona sem custo por mensagem.
+
+**Solução**
+
+Prática passa a acontecer numa superfície web própria, construída a
+partir da lógica que o simulador já prova (não do formato dele), com
+autenticação por telefone + código via WhatsApp, notificação diária
+primária por web push (PWA instalado, grátis), e WhatsApp como
+fallback pago só para quem não ativa push.
+
+**Como**
+
+Cada bloco abaixo é uma frente de trabalho independente, na ordem de
+dependência abaixo. Bloco 1 é pré-requisito de todos os outros.
+
+1. **Superfície de prática web (produção).** Não é reaproveitar o
+   simulador como está, é reconstruí-lo como produto real a partir da
+   lógica que ele já prova. O simulador hoje serve só para teste de
+   backend (Rules Seção 19: "usa `imagePath`... senão `text` puro",
+   pensado para reproduzir o comportamento do canal WhatsApp, não para
+   ser usado por usuário final) e segue formato de bolha de chat porque
+   sua função é simular o canal, não ser o canal. Sem WhatsApp como
+   referência de formato, a UI de prática deixa de ter motivo para ser
+   chat: pode virar sessão de cartão único, painel de progresso, fila
+   visível, o que servir melhor à leitura de SM-2 e ao gauge/pentágono
+   já existentes (Rules Seções 1 e 2), sem herança de layout de
+   mensagem.
+
+   Dois eixos dentro deste item, resolvidos juntos porque a tela de
+   entrada depende da UI de destino:
+   - **Auth por telefone.** Código via WhatsApp (bloco 2 abaixo),
+     tela própria, sem login social (quebra em webview do Instagram).
+   - **UI de prática de produção.** Redesenho a partir do zero visual;
+     lógica de backend (avaliação, formatos de pergunta, feedback,
+     áudio) permanece intacta, só muda como é apresentada.
+
+2. **Auth por telefone.** Sem senha, sem email. Código enviado via
+   template WhatsApp authentication (categoria mais barata, funciona
+   mesmo com janela de 24h fechada). Sessão web autentica pelo token
+   retornado.
+
+3. **Gancho de dívida de revisão.** Contagem de perguntas elegíveis
+   (`nextRevisionAt <= hoje`) exposta como número visível no app e como
+   conteúdo do lembrete. Nativo da Seção 7, não é métrica nova.
+   *(depende de task própria já aprovada separadamente para a
+   definição exata do gancho)*
+
+4. **PWA instalável + push.** Ícone de tela inicial, badge com a
+   contagem do item 3, push carregando o mesmo gancho. Grátis, motor de
+   retenção primário.
+
+5. **Fallback pago de notificação.** Só para quem não ativa push.
+   Testar se lembrete ancorado em horário configurado pelo usuário
+   qualifica como utility (categoria barata) em vez de marketing,
+   antes de assumir custo alto na base inteira.
+
+6. **Plano de migração da base atual.** Usuários hoje em trial ou Pro
+   com cadência de 1h ativa precisam de transição definida antes de
+   outubro: aviso, prazo, ou compensação. Não é técnico, é decisão de
+   produto que trava data.
+
+7. **Analytics de coorte no funil novo.** D1/D3/D7 cruzado com
+   "completou primeira rodada" e "ativou push", desde o primeiro
+   usuário do MVP. Sem isso, decisões futuras de trial e gatilho de
+   retenção continuam no chute.
+
+**Objeção**
+
+Item bloqueia parte do Product-Brief e do Product-Rules de ficarem
+desatualizados enquanto não migra: Seções 1, 8, 10, 12, 15 e 19 das
+Rules descrevem hoje um comportamento (cadência por mensagem) que já
+não é mais o plano. Esses documentos precisam de nota temporária de
+"em transição" até esse item concluir e migrar o conteúdo real pra lá,
+senão viram fonte de verdade errada para prompts futuros de Claude Code.
+
+Item 1 é o maior do conjunto e pode crescer o suficiente para merecer
+entrada própria no backlog (contexto, problema e solução dedicados,
+com fluxo de telas detalhado), em vez de viver como bloco dentro deste
+item. Decisão pendente.
