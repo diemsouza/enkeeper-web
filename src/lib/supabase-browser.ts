@@ -1,6 +1,10 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
+let client: SupabaseClient | undefined;
+
 export function createSupabaseBrowserClient(): SupabaseClient {
+  if (client) return client;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) {
@@ -8,5 +12,7 @@ export function createSupabaseBrowserClient(): SupabaseClient {
       "NEXT_PUBLIC_SUPABASE_URL ou NEXT_PUBLIC_SUPABASE_ANON_KEY não configurados",
     );
   }
-  return createClient(url, anonKey);
+
+  client = createClient(url, anonKey);
+  return client;
 }
