@@ -1041,6 +1041,7 @@ const scenarioPtClosings = [
 ];
 
 function pickScenarioClosing(level: Level | null): string {
+  console.log("level", level);
   const pool = level === Level.basic ? scenarioPtClosings : scenarioEnClosings;
   return pool[Math.floor(Math.random() * pool.length)];
 }

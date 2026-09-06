@@ -19,6 +19,41 @@ type SaveMessageData = {
   receivedAt?: Date;
 };
 
+export async function findMessageByMediaId(
+  mediaId: string,
+  userId: string,
+): Promise<Message | null> {
+  return prisma.message.findFirst({ where: { mediaId, userId } });
+}
+
+export async function findMessagesByActivity(
+  activityId: string,
+  userId: string,
+  sinceDate: Date,
+): Promise<Message[]> {
+  return prisma.message.findMany({
+    where: {
+      userId,
+      createdAt: { gte: sinceDate },
+      OR: [{ activityId }, { activityId: null }],
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export async function findMessagesPage(
+  userId: string,
+  before: string | undefined,
+  limit: number,
+): Promise<Message[]> {
+  return prisma.message.findMany({
+    where: { userId },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: limit,
+    ...(before ? { cursor: { id: before }, skip: 1 } : {}),
+  });
+}
+
 export async function saveMessage(data: SaveMessageData): Promise<Message> {
   return prisma.message.create({
     data: {

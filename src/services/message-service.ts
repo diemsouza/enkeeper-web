@@ -490,18 +490,6 @@ export async function handleIncomingMessage(
     // ─── Onboarding ──────────────────────────────────────────────────────────
 
     if (!user.onboardedAt) {
-      await markUserOnboarded(user.id);
-      try {
-        if (userChannel.channelUserPhone) {
-          await markWaitlistActive(userChannel.channelUserPhone);
-        }
-      } catch (e) {
-        console.error(
-          `[handleIncomingMessage] Error to mark user ${user.id} as active in waitlist`,
-          e,
-        );
-      }
-
       await saveUserMsg(
         user.id,
         userChannel.id,
@@ -510,31 +498,11 @@ export async function handleIncomingMessage(
         input,
         today,
       );
-      const msgs = [
-        formatOnboardingMsg1(),
-        formatOnboardingMsg2(),
-        formatOnboardingMsg3(),
-      ];
-
-      for (let i = 0; i < msgs.length; i++) {
-        if (i > 0) await delay(ONBOARDING_MESSAGE_INTERVAL_SEC);
-        await sendAndSaveMessage({
-          channel,
-          to: userChannel.channelUserId,
-          userId: user.id,
-          userChannelId: userChannel.id,
-          message: msgs[i],
-          today,
-        });
-      }
-
-      await delay(ONBOARDING_MESSAGE_INTERVAL_SEC);
-      await startNewActivityFlow(
+      await runOnboardingAndFirstActivityFlow(
         user,
-        userChannel.id,
+        userChannel,
         today,
         channel,
-        userChannel.channelUserId,
       );
       return;
     }
@@ -2024,7 +1992,7 @@ async function sendDomainQuestion(
   });
 }
 
-async function startNewActivityFlow(
+export async function startNewActivityFlow(
   user: { id: string; level: Level | null },
   userChannelId: string,
   today: Date,
@@ -2047,6 +2015,88 @@ async function startNewActivityFlow(
   }
   await sendDomainQuestion(user.id, userChannelId, today, channel, to);
   return { nextIntent: "waiting_set_activity_domain" };
+}
+
+export async function runOnboardingAndFirstActivityFlow(
+  user: { id: string; level: Level | null },
+  userChannel: {
+    id: string;
+    channelUserId: string;
+    channelUserPhone: string | null;
+  },
+  today: Date,
+  channel: MessageChannel,
+): Promise<void> {
+  await markUserOnboarded(user.id);
+  try {
+    if (userChannel.channelUserPhone) {
+      await markWaitlistActive(userChannel.channelUserPhone);
+    }
+  } catch (e) {
+    console.error(
+      `[runOnboardingAndFirstActivityFlow] Error to mark user ${user.id} as active in waitlist`,
+      e,
+    );
+  }
+
+  const msgs = [
+    formatOnboardingMsg1(),
+    formatOnboardingMsg2(),
+    formatOnboardingMsg3(),
+  ];
+
+  for (let i = 0; i < msgs.length; i++) {
+    if (i > 0) await delay(ONBOARDING_MESSAGE_INTERVAL_SEC);
+    await sendAndSaveMessage({
+      channel,
+      to: userChannel.channelUserId,
+      userId: user.id,
+      userChannelId: userChannel.id,
+      message: msgs[i],
+      today,
+    });
+  }
+
+  await delay(ONBOARDING_MESSAGE_INTERVAL_SEC);
+  await startNewActivityFlow(
+    user,
+    userChannel.id,
+    today,
+    channel,
+    userChannel.channelUserId,
+  );
+}
+
+export async function startConversationIfNeeded(
+  user: {
+    id: string;
+    level: Level | null;
+    onboardedAt: Date | null;
+    pendingIntent: string | null;
+  },
+  userChannel: {
+    id: string;
+    channelUserId: string;
+    channelUserPhone: string | null;
+  },
+  channel: MessageChannel,
+): Promise<{ started: boolean }> {
+  if (user.pendingIntent) return { started: false };
+  if (await findCurrentActivityByUser(user.id)) return { started: false };
+
+  const today = startOfDay(new Date());
+  if (!user.onboardedAt) {
+    await runOnboardingAndFirstActivityFlow(user, userChannel, today, channel);
+  } else {
+    await startNewActivityFlow(
+      user,
+      userChannel.id,
+      today,
+      channel,
+      userChannel.channelUserId,
+    );
+  }
+  return { started: true };
 }
 
 async function createPendingBuffer(

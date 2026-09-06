@@ -95,6 +95,14 @@ export default {
           "0%": { width: "0%" },
           "100%": { width: "100%" },
         },
+        "message-in": {
+          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "typing-dot": {
+          "0%, 80%, 100%": { transform: "translateY(0)", opacity: "0.6" },
+          "40%": { transform: "translateY(-4px)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -102,6 +110,8 @@ export default {
         "fade-in": "fade-in 1s ease-out",
         "bounce-subtle": "bounce-subtle 3s infinite ease-in-out",
         typing: "typing 2s steps(40, end)",
+        "message-in": "message-in 180ms ease-out",
+        "typing-dot": "typing-dot 0.9s ease-in-out infinite",
       },
       minHeight: {
         "screen-dvh": "100dvh",

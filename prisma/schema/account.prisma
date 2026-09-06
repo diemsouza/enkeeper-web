@@ -91,6 +91,19 @@ model DailyUsage {
     @@map("daily_usages")
 }
 
+model OtpCode {
+    id           String    @id @default(ulid()) @map("id")
+    phone        String    @map("phone")
+    codeHash     String    @map("code_hash")
+    attemptsUsed Int       @default(0) @map("attempts_used")
+    expiresAt    DateTime  @map("expires_at")
+    consumedAt   DateTime? @map("consumed_at")
+    createdAt    DateTime  @default(now()) @map("created_at")
+
+    @@index([phone, createdAt])
+    @@map("otp_codes")
+}
+
 model UserChannel {
     id               String      @id @default(ulid()) @map("id")
     userId           String      @map("user_id")

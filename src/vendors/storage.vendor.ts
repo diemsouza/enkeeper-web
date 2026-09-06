@@ -1,13 +1,13 @@
 type StorageConfig = { url: string; serviceKey: string; bucket: string };
 
 function getStorageConfig(): StorageConfig {
-  const url = process.env.SUPABASE_URL;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_KEY;
-  const bucket = process.env.AUDIO_STORAGE_BUCKET;
+  const bucket = process.env.MEDIA_STORAGE_BUCKET;
 
   if (!url || !serviceKey || !bucket) {
     throw new Error(
-      "SUPABASE_URL, SUPABASE_SERVICE_KEY ou AUDIO_STORAGE_BUCKET não configurados"
+      "NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_KEY ou MEDIA_STORAGE_BUCKET não configurados",
     );
   }
 
@@ -30,11 +30,13 @@ export async function uploadFile(params: {
         "Content-Type": params.file.type || "application/octet-stream",
       },
       body: params.file,
-    }
+    },
   );
 
   if (!res.ok) {
-    throw new Error(`Erro ao enviar arquivo ao storage (${res.status}): ${await res.text()}`);
+    throw new Error(
+      `Erro ao enviar arquivo ao storage (${res.status}): ${await res.text()}`,
+    );
   }
 
   return { success: true };
@@ -50,13 +52,13 @@ export async function downloadFile(params: {
     {
       method: "GET",
       headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
-    }
+    },
   );
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `Erro ao baixar arquivo do storage (${res.status}): ${text || "unknown"}`
+      `Erro ao baixar arquivo do storage (${res.status}): ${text || "unknown"}`,
     );
   }
 
@@ -84,7 +86,7 @@ export async function deleteFiles(params: {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `Erro ao excluir arquivos do storage (${res.status}): ${text || "unknown"}`
+      `Erro ao excluir arquivos do storage (${res.status}): ${text || "unknown"}`,
     );
   }
 
@@ -115,7 +117,7 @@ export async function renameFile(params: {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `Erro ao mover arquivo no storage (${res.status}): ${text || "unknown"}`
+      `Erro ao mover arquivo no storage (${res.status}): ${text || "unknown"}`,
     );
   }
 

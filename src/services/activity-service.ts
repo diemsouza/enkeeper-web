@@ -1,3 +1,4 @@
+import { startOfDay } from "date-fns";
 import { Activity } from "../lib/prisma";
 import {
   ActivitySummaryData,
@@ -27,10 +28,16 @@ import { buildGaugeChartImage, buildPentagonChartImage } from "./chart-service";
 import {
   formatActivitySuggestion,
   formatPreviousActivitySummary,
+  formatResumeSuccess,
   formatRoundCompletedFallback,
   formatRoundCompletedSummary,
 } from "../core/formatters";
-import { AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC } from "../lib/constants";
+import { findMediaByParent } from "../repo/media.repo";
+import { Media } from "../lib/prisma";
+import {
+  AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
+  MEDIA_PARENT_TYPE,
+} from "../lib/constants";
 import {
   ACTIVITY_ELIGIBLE_SCORE,
   computeActivityScore,
@@ -51,6 +58,34 @@ export async function archiveOrCancelActivity(
     status,
     statusUpdatedAt: new Date(),
     intensiveUntil: null,
+  });
+}
+
+export async function findClosingSummaryMedia(
+  activityId: string,
+): Promise<Media | null> {
+  const media = await findMediaByParent(MEDIA_PARENT_TYPE.ACTIVITY, activityId);
+  return (
+    media.find((m) => m.mediaPath.startsWith("charts/activity-completed/")) ??
+    null
+  );
+}
+
+export async function resumeActivityFromWeb(
+  userId: string,
+  target: Activity,
+  channel: MessageChannel,
+  userChannelId: string,
+  to: string,
+): Promise<void> {
+  await switchToActivity(userId, target);
+  await sendAndSaveMessage({
+    channel,
+    to,
+    userId,
+    userChannelId,
+    message: formatResumeSuccess(target.title),
+    today: startOfDay(new Date()),
   });
 }
 

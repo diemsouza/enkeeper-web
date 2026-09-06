@@ -234,6 +234,65 @@ export async function sendWhatsAppTemplate(
   return data.messages?.[0]?.id ?? null;
 }
 
+export async function sendWhatsAppAuthTemplate(
+  to: string,
+  templateName: string,
+  code: string,
+): Promise<string | null> {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    templateName !== "code_verification"
+  ) {
+    console.warn(
+      `[sendWhatsAppAuthTemplate] Skipping sending template ${templateName} to ${to} in non-production environment`,
+    );
+    return null;
+  }
+
+  const token = process.env.WABA_TOKEN;
+  const phoneNumberId = process.env.WABA_PHONE_ID;
+
+  const res = await fetch(
+    `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        ...buildRecipientField(to),
+        type: "template",
+        template: {
+          name: templateName,
+          language: { code: "pt_BR" },
+          components: [
+            {
+              type: "body",
+              parameters: [{ type: "text", text: code }],
+            },
+            {
+              type: "button",
+              sub_type: "url",
+              index: "0",
+              parameters: [{ type: "text", text: code }],
+            },
+          ],
+        },
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Meta template API error ${res.status}: ${detail}`);
+  }
+
+  const data = (await res.json()) as { messages?: { id: string }[] };
+  return data.messages?.[0]?.id ?? null;
+}
+
 export async function uploadWhatsAppMedia(
   buffer: Buffer,
   mimeType: string,

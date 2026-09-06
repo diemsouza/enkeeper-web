@@ -15,6 +15,7 @@ export const TRIAL_DAYS = 7;
 export const AUDIO_CLEANUP_TTL_DAYS = 30;
 export const AUDIO_CLEANUP_BATCH_LIMIT = 50;
 export const AUDIO_CLEANUP_SUBBATCH_SIZE = 10;
+export const MESSAGES_PAGE_SIZE = 40;
 
 export const MEDIA_PARENT_TYPE = {
   QUESTION: "question",
@@ -294,6 +295,11 @@ export const FOCUS_ENUM = [
 ] as const;
 export type FocusKey = (typeof FOCUS_ENUM)[number]["key"];
 
+// SITE hoje representa "chegou via clique num link da landing para o
+// WhatsApp" (ver core/user-source-classifier.ts). Reaproveitado também para
+// "criou conta direto pelo login web" por ser o valor mais próximo já
+// existente; ajustável depois com um valor próprio se o produto quiser
+// distinguir os dois casos.
 export const USER_SOURCE = {
   META_ADS: "meta_ads",
   SITE: "site",

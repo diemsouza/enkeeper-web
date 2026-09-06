@@ -23,6 +23,22 @@ export function useScrollToBottom() {
     }
   }, [setScrollBehavior, scrollBehavior]);
 
+  useEffect(() => {
+    const containerEl = containerRef.current;
+    const endEl = endRef.current;
+    if (!containerEl || !endEl) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setIsAtBottom(true);
+        else setIsAtBottom(false);
+      },
+      { root: containerEl },
+    );
+    observer.observe(endEl);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const scrollToBottom = useCallback(
     (scrollBehavior: ScrollBehavior = "smooth") => {
       setScrollBehavior(scrollBehavior);
@@ -30,20 +46,10 @@ export function useScrollToBottom() {
     [setScrollBehavior]
   );
 
-  function onViewportEnter() {
-    setIsAtBottom(true);
-  }
-
-  function onViewportLeave() {
-    setIsAtBottom(false);
-  }
-
   return {
     containerRef,
     endRef,
     isAtBottom,
     scrollToBottom,
-    onViewportEnter,
-    onViewportLeave,
   };
 }

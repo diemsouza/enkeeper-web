@@ -123,6 +123,11 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings:
@@ -157,10 +162,13 @@
     font-weight: 600;
   }
 
+  /* !important necessario: input/textarea/select ficam na layer "base",
+     que perde para classes Tailwind (.text-sm etc.) na layer "utilities"
+     mesmo com menor especificidade; sem isso o iOS Safari faz zoom no foco. */
   input,
   textarea,
   select {
-    font-size: 16px;
+    font-size: 16px !important;
   }
 }
 

@@ -14,6 +14,7 @@ export type {
   WeeklyReport,
   Waitlist,
   Media,
+  OtpCode,
 } from "../../prisma/generated/client";
 
 export {

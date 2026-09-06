@@ -170,6 +170,21 @@ export function getWhatsappUrl(whatsappNumber: string): string {
   return `https://wa.me/${whatsappNumber?.replaceAll("/\D/g", "")}`;
 }
 
+export function formatBrPhoneMask(rawValue: string): string {
+  const digits = rawValue.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+export function isBrPhoneComplete(rawValue: string): boolean {
+  const digits = rawValue.replace(/\D/g, "");
+  return digits.length === 10 || digits.length === 11;
+}
+
 export function validateHttpsUrl(url: string) {
   try {
     const parsed = new URL(url);

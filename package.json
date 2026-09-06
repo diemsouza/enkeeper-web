@@ -1,6 +1,6 @@
 {
   "name": "fluizer-web",
-  "version": "0.27.4",
+  "version": "0.28.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -50,6 +50,7 @@
     "@radix-ui/react-tooltip": "^1.1.2",
     "@react-input/mask": "^2.0.4",
     "@resvg/resvg-js": "^2.6.2",
+    "@supabase/supabase-js": "^2.109.0",
     "@tanstack/react-query": "^5.75.5",
     "@types/react": "19.1.6",
     "@types/react-dom": "19.1.5",
@@ -73,6 +74,7 @@
     "handlebars": "^4.7.8",
     "input-otp": "^1.2.4",
     "isomorphic-dompurify": "^2.23.0",
+    "jose": "^6.2.11",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.446.0",
     "nanoid": "^5.1.5",
