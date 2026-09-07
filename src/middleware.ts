@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isProtectedPath, sanitizeRedirectPath } from "./core/auth-routes";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "./core/session-token";
 
 export async function middleware(req: NextRequest) {
@@ -6,8 +7,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }
 
-  const { pathname } = req.nextUrl;
-  const isAppRoute = pathname.startsWith("/app");
+  const { pathname, search } = req.nextUrl;
+  const isAppRoute = isProtectedPath(pathname);
   const isLoginRoute = pathname === "/login";
   if (!isAppRoute && !isLoginRoute) return NextResponse.next();
 
@@ -15,10 +16,13 @@ export async function middleware(req: NextRequest) {
   const session = token ? await verifySessionToken(token) : null;
 
   if (isAppRoute && !session) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    const url = new URL("/login", req.url);
+    url.searchParams.set("redirect_to", pathname + search);
+    return NextResponse.redirect(url);
   }
   if (isLoginRoute && session) {
-    return NextResponse.redirect(new URL("/app", req.url));
+    const dest = sanitizeRedirectPath(req.nextUrl.searchParams.get("redirect_to"));
+    return NextResponse.redirect(new URL(dest, req.url));
   }
   return NextResponse.next();
 }

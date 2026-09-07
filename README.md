@@ -107,20 +107,7 @@ Nunca via Prisma migration, sempre em `supabase/migrations/`, script separado do
 npx supabase migration new enable_realtime_message
 ```
 
-```sql
--- supabase/migrations/<timestamp>_enable_realtime_message.sql
-do $$
-begin
-  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
-     and not exists (
-       select 1 from pg_publication_tables
-       where pubname = 'supabase_realtime' and tablename = 'messages'
-     )
-  then
-    alter publication supabase_realtime add table "messages";
-  end if;
-end $$;
-```
+Edit supabase/migrations/<timestamp>_enable_realtime_message.sql
 
 ```bash
 # local, sempre

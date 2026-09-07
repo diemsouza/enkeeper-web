@@ -41,24 +41,25 @@ export function useRealtimeMessages(
       }
 
       supabase.realtime.setAuth(token);
+      console.log(
+        "[realtime] token obtido, abrindo canal",
+        `messages-${userId}`,
+      );
+
       channel = supabase
-        .channel(`messages-${userId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "messages",
-            filter: `user_id=eq.${userId}`,
-          },
-          () => onEventRef.current(),
-        )
+        .channel(`messages-${userId}`, { config: { private: true } })
+        .on("broadcast", { event: "INSERT" }, (payload) => onEventRef.current())
+        .on("broadcast", { event: "UPDATE" }, (payload) => onEventRef.current())
         .subscribe((status, err) => {
           if (status === "SUBSCRIBED") {
             onReadyRef.current?.();
             return;
           }
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ) {
             console.error("[realtime] subscribe status", status, err);
           }
         });

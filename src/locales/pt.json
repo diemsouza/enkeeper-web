@@ -11,6 +11,12 @@
       "title": "Ops!",
       "message": "Este recurso não existe, foi removido ou não está mais disponível."
     },
+    "error": {
+      "title": "Algo deu errado",
+      "description": "Não foi possível carregar esta página agora. Tente de novo em instantes.",
+      "cta_retry": "Tentar de novo",
+      "cta_login": "Ir para o login"
+    },
     "paging_back": "Voltar",
     "paging_next": "Próximo",
     "paging_current": "Página {page}",

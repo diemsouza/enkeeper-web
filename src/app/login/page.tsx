@@ -8,6 +8,7 @@ import { CodeStep } from "./code-step";
 import { postJson } from "@/src/lib/api-client";
 import { OTP_EXPIRATION_MIN } from "@/src/core/otp";
 import { clearOtpRequest, readOtpRequest, saveOtpRequest } from "./otp-session";
+import { sanitizeRedirectPath } from "@/src/core/auth-routes";
 
 type OtpErrorBody = {
   error?: string;
@@ -109,7 +110,8 @@ export default function LoginPage() {
       return;
     }
     clearOtpRequest();
-    router.replace("/app");
+    const target = new URLSearchParams(window.location.search).get("redirect_to");
+    router.replace(sanitizeRedirectPath(target));
   }
 
   function changeNumber() {

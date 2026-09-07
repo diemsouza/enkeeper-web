@@ -11,6 +11,12 @@
       "title": "Oops!",
       "message": "This resource doesn't exist, was moved, or is no longer available."
     },
+    "error": {
+      "title": "Something went wrong",
+      "description": "We couldn't load this page right now. Try again in a moment.",
+      "cta_retry": "Try again",
+      "cta_login": "Go to login"
+    },
     "paging_back": "Back",
     "paging_next": "Next",
     "paging_current": "Page {page}",
