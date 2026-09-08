@@ -123,3 +123,33 @@ export async function renameFile(params: {
 
   return true;
 }
+
+export async function createSignedUrl(params: {
+  filePath: string;
+  expiresIn: number;
+}): Promise<string> {
+  const { url, serviceKey, bucket } = getStorageConfig();
+
+  const res = await fetch(
+    `${url}/storage/v1/object/sign/${bucket}/${params.filePath}`,
+    {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ expiresIn: params.expiresIn }),
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `Erro ao gerar signed URL (${res.status}): ${text || "unknown"}`,
+    );
+  }
+
+  const { signedURL } = (await res.json()) as { signedURL: string };
+  return `${url}/storage/v1${signedURL}`;
+}

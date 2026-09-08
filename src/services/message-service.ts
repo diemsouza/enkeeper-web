@@ -105,7 +105,11 @@ import {
   incrementAgentMessageCount,
   incrementDailyPracticeCount,
 } from "../repo/daily-usage.repo";
-import { publishDocMerge, publishDocProcessing } from "../lib/qstash";
+import {
+  publishDocMerge,
+  publishDocProcessing,
+  publishResumeSummary,
+} from "../lib/qstash";
 import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
 import { formatDateTime } from "../lib/datetime-utils";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
@@ -1190,27 +1194,19 @@ export async function handleIncomingMessage(
           message: formatResumeSuccess(target.title),
           today,
         });
-        if (
-          leaving &&
-          leaving.id !== target.id &&
-          leaving.interactionCount > 0
-        ) {
-          const summary = await buildPreviousActivitySummary(user.id, {
-            activityId: leaving.id,
+        try {
+          await publishResumeSummary({
+            userId: user.id,
+            leavingActivityId:
+              leaving && leaving.id !== target.id ? leaving.id : null,
+            targetActivityId: target.id,
+            source: "whatsapp",
           });
-          if (summary) {
-            await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
-            await sendAndSaveMessage({
-              channel,
-              to: userChannel.channelUserId,
-              userId: user.id,
-              userChannelId: userChannel.id,
-              message: summary,
-              mediaType: summary.imagePath ? "image" : undefined,
-              mediaId: summary.imagePath,
-              today,
-            });
-          }
+        } catch (err) {
+          console.error(
+            "[message-service] falha ao enfileirar resumo de retomada:",
+            err,
+          );
         }
         return;
       }

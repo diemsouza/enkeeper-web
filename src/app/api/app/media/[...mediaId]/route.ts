@@ -1,7 +1,7 @@
 import { requireAuth } from "@/src/lib/auth/current-user";
 import { UnauthorizedError } from "@/src/lib/custom-errors";
 import { findMessageByMediaId } from "@/src/repo/messages.repo";
-import { downloadFile } from "@/src/vendors/storage.vendor";
+import { createSignedUrl, downloadFile } from "@/src/vendors/storage.vendor";
 import { TTS_MIME_TYPE } from "@/src/vendors/tts.vendor";
 
 export async function GET(
@@ -16,13 +16,12 @@ export async function GET(
     const message = await findMessageByMediaId(mediaId, user.id);
     if (!message) return new Response("Not found", { status: 404 });
 
-    const buffer = await downloadFile({ filePath: mediaId });
-    const contentType =
-      message.mediaType === "audio" ? TTS_MIME_TYPE : "image/png";
-
-    return new Response(new Uint8Array(buffer), {
-      headers: { "Content-Type": contentType, "Cache-Control": "private, no-store" },
+    const signedUrl = await createSignedUrl({
+      filePath: mediaId,
+      expiresIn: 60,
     });
+
+    return Response.redirect(signedUrl, 302);
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return new Response("Unauthorized", { status: 401 });

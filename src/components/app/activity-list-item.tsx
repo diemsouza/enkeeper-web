@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, MessageCircle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { SidebarMenuButton, useSidebar } from "@/src/components/ui/sidebar";
 import {
   Tooltip,
@@ -10,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import type { Activity } from "@/src/lib/prisma";
+import { MarqueeLabel } from "./marquee-label";
 
 export function ActivityListItem({
   activity,
@@ -26,44 +26,22 @@ export function ActivityListItem({
 }) {
   const { open, isMobile } = useSidebar();
   const label = activity.title || "Atividade sem título";
-  const labelRef = useRef<HTMLSpanElement>(null);
-  const [tooltipOpen, setTooltipOpen] = useState(false);
-  const collapsed = !open && !isMobile;
 
   const button = (
     <SidebarMenuButton asChild isActive={isActive}>
       <Link href={href ?? `/app/c/${activity.id}`}>
-        {highlight ? (
+        {highlight && (
           <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
-        ) : (
-          <MessageCircle className="h-5 w-5 shrink-0 text-muted-foreground" />
         )}
-        {showLabel && (
-          <span ref={labelRef} className="truncate">
-            {label}
-          </span>
-        )}
+        {showLabel && <MarqueeLabel label={label} className="flex-1" />}
       </Link>
     </SidebarMenuButton>
   );
 
-  if (isMobile) return button;
-
-  function handleOpenChange(next: boolean): void {
-    if (!next) {
-      setTooltipOpen(false);
-      return;
-    }
-    if (collapsed) {
-      setTooltipOpen(true);
-      return;
-    }
-    const el = labelRef.current;
-    setTooltipOpen(!!el && el.scrollWidth > el.clientWidth);
-  }
+  if (isMobile || open || !highlight) return button;
 
   return (
-    <Tooltip open={tooltipOpen} onOpenChange={handleOpenChange}>
+    <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>

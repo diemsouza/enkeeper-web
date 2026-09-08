@@ -2,6 +2,7 @@ import { startOfDay } from "date-fns";
 import { Activity } from "../lib/prisma";
 import {
   ActivitySummaryData,
+  findActivityById,
   findActivityForSummary,
   findArchivedActivityBefore,
   findCurrentActivityByUser,
@@ -16,8 +17,11 @@ import {
 } from "../repo/questions.repo";
 import {
   countActivityAudios,
+  findLastMessageByIntent,
   findUserMessageDatesByActivity,
 } from "../repo/messages.repo";
+import { findUserChannelByUserId } from "../repo/users.repo";
+import { publishResumeSummary } from "../lib/qstash";
 import {
   computeElapsedDays,
   countActiveDays,
@@ -28,6 +32,7 @@ import { buildGaugeChartImage, buildPentagonChartImage } from "./chart-service";
 import {
   formatActivitySuggestion,
   formatPreviousActivitySummary,
+  formatResumeInvitation,
   formatResumeSuccess,
   formatRoundCompletedFallback,
   formatRoundCompletedSummary,
@@ -36,6 +41,7 @@ import { findMediaByParent } from "../repo/media.repo";
 import { Media } from "../lib/prisma";
 import {
   AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
+  DEFAULT_MESSAGE_INTERVAL_SEC,
   MEDIA_PARENT_TYPE,
 } from "../lib/constants";
 import {
@@ -66,8 +72,9 @@ export async function findClosingSummaryMedia(
 ): Promise<Media | null> {
   const media = await findMediaByParent(MEDIA_PARENT_TYPE.ACTIVITY, activityId);
   return (
-    media.find((m) => m.mediaPath.startsWith("charts/activity-completed/")) ??
-    null
+    media
+      .filter((m) => m.mediaPath.startsWith("charts/activity-completed/"))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] ?? null
   );
 }
 
@@ -78,6 +85,7 @@ export async function resumeActivityFromWeb(
   userChannelId: string,
   to: string,
 ): Promise<void> {
+  const leaving = await findCurrentActivityByUser(userId);
   await switchToActivity(userId, target);
   await sendAndSaveMessage({
     channel,
@@ -87,6 +95,21 @@ export async function resumeActivityFromWeb(
     message: formatResumeSuccess(target.title),
     today: startOfDay(new Date()),
   });
+
+  try {
+    await publishResumeSummary({
+      userId,
+      leavingActivityId:
+        leaving && leaving.id !== target.id ? leaving.id : null,
+      targetActivityId: target.id,
+      source: "web",
+    });
+  } catch (err) {
+    // Enqueue e best-effort: o status ja trocou e a confirmacao ja foi
+    // enviada; o client ja redirecionou. Falha aqui so perde o resumo/convite,
+    // nao quebra a retomada.
+    console.error("[resumeActivityFromWeb] falha ao enfileirar resumo:", err);
+  }
 }
 
 export async function switchToActivity(
@@ -102,6 +125,95 @@ export async function switchToActivity(
     statusUpdatedAt: new Date(),
     pausedAt: null,
     intensiveUntil: null,
+    waitingUser: false,
+    lastNudgeStep: null,
+    lastNudgeAt: null,
+  });
+}
+
+type SendResumeSummaryParams = {
+  userId: string;
+  leavingActivityId: string | null;
+  targetActivityId: string;
+  channel: MessageChannel;
+};
+
+export async function sendResumeSummary(
+  params: SendResumeSummaryParams,
+): Promise<void> {
+  const { userId, leavingActivityId, targetActivityId, channel } = params;
+
+  const target = await findActivityById(targetActivityId, userId);
+  if (!target) return;
+  // Marco desta retomada: switchToActivity acabou de setar statusUpdatedAt. So
+  // conta como "ja enviado" mensagem criada a partir daqui, assim uma retomada
+  // futura da mesma atividade nao e bloqueada por um convite antigo.
+  const resumedAt = target.statusUpdatedAt;
+
+  const invite = await findLastMessageByIntent(
+    targetActivityId,
+    "resume_invitation",
+  );
+  if (invite && invite.createdAt >= resumedAt) return;
+
+  const userChannel = await findUserChannelByUserId(userId);
+  if (!userChannel) {
+    console.error(
+      `[activity-service] sendResumeSummary: sem UserChannel para ${userId}`,
+    );
+    return;
+  }
+  const to = userChannel.channelUserId;
+  const today = startOfDay(new Date());
+
+  const priorSummary = await findLastMessageByIntent(
+    targetActivityId,
+    "previous_activity_summary",
+  );
+  const summaryAlreadySent =
+    priorSummary != null && priorSummary.createdAt >= resumedAt;
+
+  let summarySent = false;
+  if (
+    leavingActivityId &&
+    leavingActivityId !== targetActivityId &&
+    !summaryAlreadySent
+  ) {
+    const leaving = await findActivityById(leavingActivityId, userId);
+    if (leaving && leaving.interactionCount > 0) {
+      const summary = await buildPreviousActivitySummary(userId, {
+        activityId: leavingActivityId,
+        forceRegenerate: true,
+      });
+      if (summary) {
+        await sendAndSaveMessage({
+          channel,
+          to,
+          userId,
+          userChannelId: userChannel.id,
+          message: summary,
+          intent: "previous_activity_summary",
+          activityId: targetActivityId,
+          mediaType: summary.imagePath ? "image" : undefined,
+          mediaId: summary.imagePath,
+          today,
+        });
+        summarySent = true;
+      }
+    }
+  }
+
+  if (summarySent) await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+
+  await sendAndSaveMessage({
+    channel,
+    to,
+    userId,
+    userChannelId: userChannel.id,
+    message: formatResumeInvitation(),
+    intent: "resume_invitation",
+    activityId: targetActivityId,
+    today,
   });
 }
 
@@ -210,7 +322,11 @@ async function buildRoundCompletedChartImage(
 
 export async function buildPreviousActivitySummary(
   userId: string,
-  opts: { activityId?: string; ignoreSummaryGuard?: boolean } = {},
+  opts: {
+    activityId?: string;
+    ignoreSummaryGuard?: boolean;
+    forceRegenerate?: boolean;
+  } = {},
 ): Promise<SummaryMessage | null> {
   try {
     const data = opts.activityId
@@ -218,8 +334,15 @@ export async function buildPreviousActivitySummary(
       : await findLatestArchivedActivity(userId);
     if (!data) return null;
     // Guarda once-only na própria linha carregada, robusta ao fluxo de
-    // `retomar` (que arquiva sem gravar summary).
-    if (!opts.ignoreSummaryGuard && data.summary?.trim()) return null;
+    // `retomar` (que arquiva sem gravar summary). `forceRegenerate` a ignora
+    // quando a atividade volta pro histórico depois de nova interação.
+    if (
+      !opts.ignoreSummaryGuard &&
+      !opts.forceRegenerate &&
+      data.summary?.trim()
+    ) {
+      return null;
+    }
     if (data.questions.length === 0) return null;
 
     const right = data.questions.filter((q) => q.status === "right").length;

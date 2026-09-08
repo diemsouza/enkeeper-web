@@ -353,6 +353,7 @@ async function sendActivityCreatedConfirmation(
   const summary = previousActivityId
     ? await buildPreviousActivitySummary(userId, {
         activityId: previousActivityId,
+        forceRegenerate: true,
       })
     : null;
   await sendAndSaveMessage({

@@ -122,6 +122,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
         const summary = currentActivity
           ? await buildPreviousActivitySummary(userId, {
               activityId: currentActivity.id,
+              forceRegenerate: true,
             })
           : null;
         await sendAndSaveMessage({

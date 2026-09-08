@@ -320,7 +320,7 @@
           "chat": [
             {
               "from": "bot",
-              "text": "📊 Resumo da última atividade: *Advérbios de Conjunção*\n\nEm 3 dias, você respondeu 20 de 25 perguntas, 85% de acerto entre as respondidas (17 certas e 3 erradas), sendo 2 delas revisadas mais de uma vez antes de fixar. Ficaram 5 perguntas sem resposta.\n\nPoucas respostas saíram erradas. Você fixou a maior parte desse conteúdo antes de trocar de material.",
+              "text": "📊 Resumo da atividade: *Advérbios de Conjunção*\n\nEm 3 dias, você respondeu 20 de 25 perguntas, 85% de acerto entre as respondidas (17 certas e 3 erradas), sendo 2 delas revisadas mais de uma vez antes de fixar. Ficaram 5 perguntas sem resposta.\n\nPoucas respostas saíram erradas. Você fixou a maior parte desse conteúdo antes de trocar de material.",
               "time": "17:30"
             },
             {

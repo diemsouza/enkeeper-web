@@ -516,7 +516,17 @@ export function formatNoPausableDocs(): FormattedMessage {
 }
 
 export function formatResumeSuccess(title: string): FormattedMessage {
-  return { text: `Retomando *${title || "Sem título"}*, de onde parou.` };
+  return { text: `Retomando *${title || "Sem título"}*, de onde parou...` };
+}
+
+export function formatResumeInvitation(): FormattedMessage {
+  return {
+    text: `Atividade retomada. Use ${formatCommand("practice_now")} para começar.`,
+    interactive: {
+      body: `Atividade retomada. Toque em Praticar para começar.`,
+      buttons: [{ id: "practice_now", label: "Praticar", type: "reply" }],
+    },
+  };
 }
 
 export function formatNoPausedDocs(): FormattedMessage {
@@ -694,7 +704,7 @@ export function formatPreviousActivitySummary(
 
   return {
     text: [
-      `📊 Resumo da última atividade: *${activityTitle}*`,
+      `📊 Resumo da atividade: *${activityTitle}*`,
       "",
       stats,
       "",

@@ -1,12 +1,19 @@
 import { notFound } from "next/navigation";
-import { mapActivityMessages } from "@/src/components/chat/map-messages";
-import { ActivitySummaryPanel } from "@/src/components/chat/activity-summary-panel";
-import { ArchivedActivityThreadClient } from "@/src/components/app/archived-activity-thread-client";
-import { ResumeActivityButton } from "@/src/components/app/resume-activity-button";
+import { buildMediaUrl } from "@/src/components/chat/map-messages";
+import { ArchivedActivityView } from "@/src/components/app/archived-activity-view";
 import { requireAuth } from "@/src/lib/auth/current-user";
 import { findActivityById } from "@/src/repo/activities.repo";
-import { findMessagesByActivity } from "@/src/repo/messages.repo";
 import { findClosingSummaryMedia } from "@/src/services/activity-service";
+
+const archivedAtFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+const archivedAtTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 export default async function ArchivedActivityPage({
   params,
@@ -19,30 +26,18 @@ export default async function ArchivedActivityPage({
   const activity = await findActivityById(id, user.id);
   if (!activity || activity.status !== "archived") notFound();
 
-  const [messages, chartMedia] = await Promise.all([
-    findMessagesByActivity(id, user.id, activity.createdAt),
-    activity.summary ? findClosingSummaryMedia(id) : Promise.resolve(null),
-  ]);
+  const chartMedia = activity.summary
+    ? await findClosingSummaryMedia(id)
+    : null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-border p-4">
-        <h1 className="truncate text-sm font-medium text-foreground">
-          {activity.title || "Atividade sem título"}
-        </h1>
-        <ResumeActivityButton activityId={activity.id} />
-      </div>
-      {activity.summary && (
-        <ActivitySummaryPanel
-          summary={activity.summary}
-          chartMediaPath={chartMedia?.mediaPath ?? null}
-        />
-      )}
-      <div className="min-h-0 flex-1">
-        <ArchivedActivityThreadClient
-          messages={mapActivityMessages(messages)}
-        />
-      </div>
-    </div>
+    <ArchivedActivityView
+      activityId={activity.id}
+      title={activity.title || "Atividade sem título"}
+      summary={activity.summary ?? null}
+      chartImageUrl={chartMedia ? buildMediaUrl(chartMedia.mediaPath) : null}
+      archivedAtLabel={archivedAtFormatter.format(activity.statusUpdatedAt)}
+      archivedAtTime={archivedAtTimeFormatter.format(activity.statusUpdatedAt)}
+    />
   );
 }

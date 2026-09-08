@@ -108,32 +108,30 @@ export function AppSidebar({
           )}
         </div>
 
-        <div className="flex flex-col gap-1 px-2 pt-4">
-          {showLabel && (
+        {showLabel && (
+          <div className="flex flex-col gap-1 px-2 pt-4">
             <h3 className="px-2 text-xs font-medium text-sidebar-foreground/60">
               Histórico de atividades
             </h3>
-          )}
-          {archived.length === 0 ? (
-            showLabel && (
+            {archived.length === 0 ? (
               <p className="px-2 py-1 text-xs text-sidebar-foreground/50">
                 Nenhuma
               </p>
-            )
-          ) : (
-            <SidebarMenu>
-              {archived.map((activity) => (
-                <SidebarMenuItem key={activity.id} onClick={handleSelect}>
-                  <ActivityListItem
-                    activity={activity}
-                    isActive={pathname === `/app/c/${activity.id}`}
-                    showLabel={showLabel}
-                  />
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          )}
-        </div>
+            ) : (
+              <SidebarMenu>
+                {archived.map((activity) => (
+                  <SidebarMenuItem key={activity.id} onClick={handleSelect}>
+                    <ActivityListItem
+                      activity={activity}
+                      isActive={pathname === `/app/c/${activity.id}`}
+                      showLabel={showLabel}
+                    />
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            )}
+          </div>
+        )}
       </SidebarContent>
       <SidebarFooterMenu user={user} showLabel={showLabel} />
     </Sidebar>

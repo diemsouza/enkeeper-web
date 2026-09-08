@@ -27,3 +27,13 @@ export async function publishDocMerge(
     delay: DOC_BUFFER_DELAY_SEC,
   })
 }
+
+export async function publishResumeSummary(params: {
+  userId: string
+  leavingActivityId: string | null
+  targetActivityId: string
+  source: 'web' | 'whatsapp'
+}): Promise<void> {
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/queue/resume-summary`
+  await getClient().publishJSON({ url, body: params })
+}
