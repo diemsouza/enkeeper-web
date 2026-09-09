@@ -21,6 +21,7 @@ import {
   formatInvalidMessageType,
 } from "../../../../core/formatters";
 import { uploadFile } from "../../../../vendors/storage.vendor";
+import { readImageDimensions } from "../../../../lib/image-dimensions";
 import { IncomingMessage } from "../../../../types/domain";
 import { processWhatsAppStatusEvent } from "../../../../services/message-status-service";
 import { getOrCreateCheckoutUrl } from "../../../../services/stripe-checkout-service";
@@ -206,6 +207,8 @@ export async function POST(req: NextRequest): Promise<Response> {
           mediaPath = null;
         }
 
+        const dimensions = readImageDimensions(buffer);
+
         const visionResult = await extractTextFromImage(buffer, user.id);
 
         const input: IncomingMessage = {
@@ -221,6 +224,8 @@ export async function POST(req: NextRequest): Promise<Response> {
             sizeBytes: fileSize ?? null,
             format,
             mediaPath,
+            width: dimensions?.width ?? null,
+            height: dimensions?.height ?? null,
           },
         };
         await handleIncomingMessage(input, channel);

@@ -10,6 +10,7 @@ import {
   extractTextFromPdf,
 } from "@/src/vendors/llm.vendor";
 import { uploadFile } from "@/src/vendors/storage.vendor";
+import { readImageDimensions } from "@/src/lib/image-dimensions";
 import type { IncomingMessage } from "@/src/types/domain";
 
 export async function POST(request: Request): Promise<Response> {
@@ -57,6 +58,7 @@ export async function POST(request: Request): Promise<Response> {
         mediaPath = null;
       }
 
+      const dimensions = readImageDimensions(buffer);
       const visionResult = await extractTextFromImage(buffer, user.id);
       extractedText = visionResult.content;
       mediaMetadata = {
@@ -69,6 +71,8 @@ export async function POST(request: Request): Promise<Response> {
         mediaPath,
         file_name: file.name,
         size_bytes: file.size,
+        width: dimensions?.width ?? null,
+        height: dimensions?.height ?? null,
       };
     } else if (mediaType === "pdf") {
       extractedText = await extractTextFromPdf(buffer);

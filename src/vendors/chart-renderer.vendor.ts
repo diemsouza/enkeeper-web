@@ -22,14 +22,25 @@ function assertFonts(): void {
   fontsChecked = true;
 }
 
-export function renderSvgToPng(svg: string): Buffer {
+export type RenderedPng = {
+  png: Buffer;
+  width: number;
+  height: number;
+};
+
+export function renderSvgToPng(svg: string): RenderedPng {
   assertFonts();
   const resvg = new Resvg(svg, {
     font: {
       fontFiles: FONT_FILES,
       loadSystemFonts: false,
     },
-    fitTo: { mode: "zoom", value: 2 },
+    fitTo: { mode: "width", value: 1080 },
   });
-  return Buffer.from(resvg.render().asPng());
+  const rendered = resvg.render();
+  return {
+    png: Buffer.from(rendered.asPng()),
+    width: rendered.width,
+    height: rendered.height,
+  };
 }

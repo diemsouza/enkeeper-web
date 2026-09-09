@@ -1,3 +1,4 @@
+import { parseBuffer } from "music-metadata";
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { generateSpeech } from "../vendors/tts.vendor";
 import { uploadFile } from "../vendors/storage.vendor";
@@ -9,6 +10,19 @@ import { formatFeedbackToSpeech } from "../core/formatters";
 const AUDIO_ROLLOUT_FRACTION = parseFloat(
   process.env.AUDIO_ROLLOUT_FRACTION ?? "0",
 );
+
+async function readAudioDuration(
+  audio: Buffer,
+  mimeType: string,
+): Promise<number | null> {
+  try {
+    const { format } = await parseBuffer(audio, { mimeType });
+    return typeof format.duration === "number" ? format.duration : null;
+  } catch (err) {
+    console.error("[readAudioDuration] failed to parse audio duration:", err);
+    return null;
+  }
+}
 
 export async function resolveFeedbackAudioPath(
   feedbackResult: AnswerEvaluationResult,
@@ -38,6 +52,7 @@ export async function resolveFeedbackAudioPath(
       filePath,
       file: new Blob([new Uint8Array(speech.audio)], { type: speech.mimeType }),
     });
+    const duration = await readAudioDuration(speech.audio, speech.mimeType);
     const media = await createMedia({
       parentId: questionId,
       parentType: MEDIA_PARENT_TYPE.QUESTION,
@@ -46,6 +61,7 @@ export async function resolveFeedbackAudioPath(
       mediaPath: filePath,
       mediaSize: speech.audio.length,
       mediaTranscription: speechText,
+      metadata: duration !== null ? { duration } : undefined,
     });
     await updateQuestion(questionId, { feedbackAudioMediaId: media.id });
     return filePath;

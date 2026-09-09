@@ -289,6 +289,7 @@ model Media {
     mediaPath          String    @map("media_path")
     mediaSize          Int       @default(0) @map("media_size")
     mediaTranscription String?   @map("media_transcription") @db.Text
+    metadata           Json?     @map("metadata")
     createdAt          DateTime  @default(now()) @map("created_at")
     updatedAt          DateTime  @updatedAt @map("updated_at")
     deletedAt          DateTime? @map("deleted_at")

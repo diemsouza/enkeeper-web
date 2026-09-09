@@ -1,4 +1,4 @@
-import { Media } from "../lib/prisma";
+import { Media, Prisma } from "../lib/prisma";
 import { MediaParentType } from "../lib/constants";
 import { prisma } from "../lib/prisma";
 
@@ -10,10 +10,20 @@ export type CreateMediaData = {
   mediaPath: string;
   mediaSize?: number;
   mediaTranscription?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export async function createMedia(data: CreateMediaData): Promise<Media> {
-  return prisma.media.create({ data });
+  const { metadata, ...rest } = data;
+  return prisma.media.create({
+    data: {
+      ...rest,
+      metadata:
+        metadata !== undefined
+          ? (metadata as Prisma.InputJsonObject)
+          : undefined,
+    },
+  });
 }
 
 export async function findMediaByParent(

@@ -25,6 +25,7 @@ export function AudioCard({
         <audio
           controls
           src={audioUrl}
+          preload="metadata"
           className="h-8 flex-1"
           onPlay={() => externalId && onPlay?.(externalId)}
         />

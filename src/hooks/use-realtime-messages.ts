@@ -41,10 +41,6 @@ export function useRealtimeMessages(
       }
 
       supabase.realtime.setAuth(token);
-      console.log(
-        "[realtime] token obtido, abrindo canal",
-        `messages-${userId}`,
-      );
 
       channel = supabase
         .channel(`messages-${userId}`, { config: { private: true } })

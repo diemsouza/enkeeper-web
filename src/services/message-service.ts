@@ -1273,6 +1273,23 @@ export async function handleIncomingMessage(
             message: pendingReply,
             today,
           });
+          await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelUserId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            activityId: activeActivity.id,
+            message: formatQuestion({
+              question: alreadyPending.question,
+              questionFormat: alreadyPending.questionFormat,
+              questionOptions: alreadyPending.questionOptions,
+              termHint: alreadyPending.termHint,
+            }),
+            intent: "practice_question",
+            questionId: alreadyPending.id,
+            today,
+          });
           return;
         }
 
@@ -1946,6 +1963,8 @@ async function saveImageMedia(
   if (input.mediaType !== "image" || typeof mediaPath !== "string") return;
   const format = input.mediaMetadata?.format;
   const sizeBytes = input.mediaMetadata?.sizeBytes;
+  const width = input.mediaMetadata?.width;
+  const height = input.mediaMetadata?.height;
   await createMedia({
     parentId: messageId,
     parentType: MEDIA_PARENT_TYPE.MESSAGE,
@@ -1954,6 +1973,10 @@ async function saveImageMedia(
     mediaPath,
     mediaSize: typeof sizeBytes === "number" ? sizeBytes : 0,
     mediaTranscription: transcription,
+    metadata:
+      typeof width === "number" && typeof height === "number"
+        ? { width, height }
+        : undefined,
   });
 }
 

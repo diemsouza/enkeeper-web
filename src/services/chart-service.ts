@@ -15,7 +15,7 @@ async function renderAndStore(
   activityId: string,
   folder: string,
 ): Promise<string> {
-  const png = renderSvgToPng(svg);
+  const { png, width, height } = renderSvgToPng(svg);
   const mediaPath = `${folder}/${ulid()}.png`;
   await uploadFile({
     filePath: mediaPath,
@@ -28,6 +28,7 @@ async function renderAndStore(
     contentType: "image/png",
     mediaPath,
     mediaSize: png.length,
+    metadata: { width, height },
   });
   return mediaPath;
 }
