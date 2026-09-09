@@ -143,6 +143,14 @@ Mensagem enviada ao usuário:
 
 O score aparece também no texto do resumo, como número solto, não só dentro da imagem. A imagem é suprimida (resumo vai só como texto) quando o pool da atividade tem menos de 5 perguntas geradas: pouco dado, o gauge não tem valor de leitura. Falha na geração também degrada para texto puro, nunca atrasa nem bloqueia o texto.
 
+### Reexibição de pergunta pendente
+
+Quando o usuário retoma uma atividade, inicia sessão intensiva, ou cai em qualquer fallback estando com uma pergunta já pendente, o sistema reexibe a própria pergunta, não um aviso genérico de que há pergunta pendente. Reaproveita o mesmo mecanismo de envio já usado pela cadência e pela sessão intensiva, então o formato exibido é idêntico ao do primeiro envio.
+
+Antes de reexibir, o estado da atividade é realinhado (pergunta pendente corrente, marcação de aguardando resposta, agendamento da próxima), para que a resposta seguinte seja avaliada como resposta àquela pergunta e não recaia em fallback.
+
+Vale para qualquer canal, não só WhatsApp. A avaliação da resposta dispara sempre que existe pergunta pendente de fato, mesmo que a marcação interna de aguardando resposta tenha ficado dessincronizada do status da pergunta (straggler de conclusão de rodada, duas perguntas pendentes).
+
 ---
 
 ## 3. Extração de vocabulário do material
@@ -213,7 +221,9 @@ Feedback pode ser acompanhado de uma versão em áudio, enviada como mensagem se
 
 Envio de áudio é parcial, não em toda resposta, controlado por uma fração configurável do total. Falha na geração ou envio do áudio nunca atrasa nem impede o feedback em texto, que segue as regras desta seção normalmente, sem nenhuma indicação de erro visível ao usuário.
 
-O áudio é enviado como nota de voz reconhecida pelo canal, não como anexo de áudio comum. Essa forma de envio é o que habilita o rastreio de reprodução; um áudio enviado como anexo genérico, mesmo com o conteúdo idêntico, não gera esse rastreio. Reprodução do áudio pelo usuário é rastreada quando o canal informa esse evento (ver Seção 18).
+No WhatsApp, o áudio é enviado como nota de voz reconhecida pelo canal, não como anexo de áudio comum: é essa forma de envio que habilita o webhook de status de reprodução, um áudio enviado como anexo genérico não gera esse evento.
+
+Reprodução do áudio pelo usuário é rastreada, mas a origem do evento depende do canal: no WhatsApp vem do webhook de status da mensagem, na superfície web vem de um evento do próprio player no client. Qualquer que seja a origem, o evento converge para o mesmo registro por pergunta, que alimenta o bônus de prática passiva (Seção 6.3), e é idempotente por pergunta: uma segunda notificação de reprodução da mesma pergunta não duplica o efeito (ver Seção 18).
 
 ### 6.2 Dica de erro (evalTip)
 
@@ -356,6 +366,15 @@ Limite do intensivo atingido, cadência ainda disponível:
 Comandos não atualizam o histórico de prática nem contam como interação.
 
 Usuário sem nenhuma atividade criada recebe, junto da resposta ao comando `ajuda`, orientação sobre como começar a praticar (ver Seção 10). É a mesma orientação usada no onboarding e no fallback de usuário sem atividade (ver Seção 10.1), com uma única fonte de conteúdo para as três situações, evitando que a mesma regra fique escrita de formas diferentes em pontos distintos do produto.
+
+### Superfícies de descoberta
+
+A lista de comandos tem duas superfícies de descoberta, ambas alimentadas pela mesma fonte única de comandos e aliases, sem lista duplicada:
+
+- O comando `ajuda`, que devolve a lista formatada.
+- O autocomplete do composer na superfície web: ao digitar `/`, o campo sugere comandos de forma incremental, filtrando por prefixo ou alias conforme o usuário digita, e envia o comando escolhido direto.
+
+O comando `ajuda` não aparece na própria lista que gera nem no autocomplete. Comandos de confirmação dentro de um fluxo (`sim`, `não`, `cancelar` dentro do fluxo de nova atividade) e o comando interno de staff também ficam fora das duas superfícies. Alterar a fonte de comandos atualiza as duas ao mesmo tempo.
 
 ---
 
@@ -619,9 +638,11 @@ Mídia associada a uma pergunta (áudio de feedback, áudio de resposta) é remo
 
 Mensagens enviadas pelo sistema guardam o identificador que o canal de envio atribui a cada mensagem, permitindo cruzar com eventos de status enviados por esse canal depois (entregue, lido, reproduzido).
 
-Cada canal (hoje: WhatsApp) traduz seu próprio formato de evento de status para um conjunto de valores canônico antes de persistir, para que a lógica de negócio nunca dependa do formato específico de um canal. Isso vale igualmente para qualquer canal adicionado no futuro (ver Seção 7 do Product-Brief, arquitetura multicanal).
+Cada canal (hoje: WhatsApp e a superfície web) traduz seu próprio formato de evento de status para um conjunto de valores canônico antes de persistir, para que a lógica de negócio nunca dependa do formato específico de um canal. Isso vale igualmente para qualquer canal adicionado no futuro (ver Seção 7 do Product-Brief, arquitetura multicanal).
 
 Reprodução de mídia (ex: áudio de feedback) é um evento à parte, diferente do status de entrega geral da mensagem. Uma mensagem pode estar entregue ou lida sem nunca ter sido reproduzida, são duas informações independentes.
+
+A origem do evento de reprodução é responsabilidade de cada canal, pelo meio que ele tiver: o WhatsApp reporta pelo webhook de status da mensagem, a superfície web reporta por um evento do player no client enviado a um endpoint próprio autenticado. Todos convergem para o mesmo registro de reproduzido por mensagem e pergunta, que é o que a Seção 6.3 consome. O registro é idempotente: a primeira notificação de reprodução marca o evento e dispara o efeito no bônus de prática passiva, notificações seguintes para a mesma pergunta são ignoradas.
 
 ---
 
@@ -635,6 +656,7 @@ Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje
 
 - **WhatsApp**: usa `imagePath` se presente (envia a imagem com o `text` como caption); senão `audioPath` se presente (envia o áudio); senão `templateName` se presente (envia via template aprovado da Meta, necessário fora da janela de 24h); senão `interactive` se presente (envia com botões); senão `text` puro.
 - **Simulador**: usa `imagePath` se presente (renderiza a imagem com legenda); senão `audioPath` se presente; senão `interactive` se presente (renderiza os botões de verdade, clicáveis); senão `text` puro, ignorando `templateName` (que só faz sentido para o template aprovado da Meta). Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais depois, sem quebrar nada que já existe (ver Seção 7 do Product-Brief, arquitetura multicanal).
+- **Superfície web** (`/app`): usa `imagePath` se presente, renderizando a imagem com o `text` como legenda e permitindo abrir a imagem em tela cheia com zoom ao clicar (pentágono e gauge, Seções 1 e 2); usa `audioPath` decodificando o próprio arquivo Ogg/Opus no client, por decoder próprio, sem depender de suporte nativo do navegador ao codec. O arquivo de áudio é o mesmo canônico servido ao WhatsApp: Ogg/Opus segue como único formato gerado e armazenado (sem mudança no TTS nem no schema, ver Seção 17), sem geração de mídia duplicada por canal, só a decodificação muda por canal.
 
 Ferramenta de desenvolvimento (não é comando de produto, não entra na tabela da Seção 9): no simulador, fora de produção, os comandos `/report-round-completed` e `/report-activity-completed` regeneram a mensagem de resumo (imagem + texto) com dado real do usuário sem marcar no banco que aquele ciclo já foi resumido, para testar ajuste visual repetidas vezes.
 

@@ -178,10 +178,23 @@ dependência abaixo. Bloco 1 é pré-requisito de todos os outros.
      lógica de backend (avaliação, formatos de pergunta, feedback,
      áudio) permanece intacta, só muda como é apresentada.
 
+   **Entregue até setembro/2026 (parcial):** superfície web de prática
+   (`/app`) no ar em produção parcial, com composer com autocomplete
+   incremental de comandos (Rules Seção 9), reexibição da pergunta
+   pendente reaproveitando o mecanismo de envio existente (Rules Seção
+   2), player de áudio próprio que decodifica Ogg/Opus no client sem
+   depender de codec nativo do navegador, e charts de resumo abrindo em
+   tela cheia com zoom (Rules Seção 19). O rastreio de reprodução de
+   áudio foi desacoplado de canal: a web reporta o play pelo próprio
+   player via endpoint autenticado, o WhatsApp pelo webhook de status,
+   ambos no mesmo registro idempotente por pergunta (Rules Seções 6.1
+   e 18). O bloco 2 (auth por telefone) avançou junto.
+
 2. **Auth por telefone.** Sem senha, sem email. Código enviado via
    template WhatsApp authentication (categoria mais barata, funciona
    mesmo com janela de 24h fechada). Sessão web autentica pelo token
-   retornado.
+   retornado. Em produção parcial junto do bloco 1 (ver nota de
+   progresso acima).
 
 3. **Gancho de dívida de revisão.** Contagem de perguntas elegíveis
    (`nextRevisionAt <= hoje`) exposta como número visível no app e como
