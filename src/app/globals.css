@@ -1,6 +1,18 @@
+@import "react-medium-image-zoom/dist/styles.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+[data-rmiz] {
+  display: block;
+}
+[data-rmiz-modal-overlay="hidden"] {
+  background-color: rgba(0, 0, 0, 0);
+}
+[data-rmiz-modal-overlay="visible"] {
+  background-color: rgba(0, 0, 0, 0.95);
+}
 
 @layer utilities {
   .pb-safe {

@@ -9,13 +9,13 @@ import { recordFeedbackAudioPlayed } from "./activity-service";
 
 export async function markMessageAsPlayed(
   externalId: string,
-  timestamp?: Date,
+  opts?: { timestamp?: Date; userId?: string },
 ): Promise<void> {
-  const message = await findMessageByExternalId(externalId);
+  const message = await findMessageByExternalId(externalId, opts?.userId);
   if (!message) return;
   const wasPlayed = await markMessagePlayedIfUnset(
     message.id,
-    timestamp ?? new Date(),
+    opts?.timestamp ?? new Date(),
   );
   if (wasPlayed && message.questionId && message.mediaType === "audio") {
     await recordFeedbackAudioPlayed(message.questionId);
@@ -42,7 +42,7 @@ export async function processWhatsAppStatusEvent(
   timestamp?: Date,
 ): Promise<void> {
   if (rawStatus === "played") {
-    await markMessageAsPlayed(externalId, timestamp);
+    await markMessageAsPlayed(externalId, { timestamp });
     return;
   }
   const mapped = mapWhatsAppStatus(rawStatus);

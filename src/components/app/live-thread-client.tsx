@@ -193,6 +193,10 @@ export function LiveThreadClient({
     }
   }
 
+  function handleAudioPlay(externalId: string) {
+    void postJson("/api/app/messages/played", { externalId }).catch(() => {});
+  }
+
   function handleButtonClick(button: FormattedMessageButton) {
     if (button.type === "link" && button.url) {
       window.open(button.url, "_blank", "noopener,noreferrer");
@@ -207,6 +211,7 @@ export function LiveThreadClient({
       messages={displayedMessages}
       onSend={handleSend}
       onSendFile={handleSendFile}
+      onAudioPlay={handleAudioPlay}
       onButtonClick={handleButtonClick}
       isWaitingForResponse={isWaitingForResponse}
       isTyping={sendStartedAt !== null}

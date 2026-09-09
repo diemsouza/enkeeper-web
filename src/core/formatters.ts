@@ -14,7 +14,7 @@ import {
   sanitizeWhatsappContent,
 } from "../lib/utils";
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
-import { formatCommand } from "../lib/commands";
+import { COMMANDS, formatCommand, isAutoCompletable } from "../lib/commands";
 import { shuffle } from "lodash";
 import type { FormattedMessage } from "../types/out-message";
 import type { GeneratedDocMetadata } from "../types/domain";
@@ -138,22 +138,19 @@ export function formatLevelCanceled(): FormattedMessage {
 }
 
 export function formatCommandList(level: Level | null): FormattedMessage {
-  const nivelLabel = level
-    ? `atualiza o nível do seu inglês. atual: ${LEVEL_LABEL[level]}`
-    : "define o nível do seu inglês";
+  const setLevelDescription = level
+    ? `Atualiza o nível do seu inglês. atual: ${LEVEL_LABEL[level]}`
+    : "Define o nível do seu inglês";
+  const commandLines = COMMANDS.filter(isAutoCompletable).map((command) => {
+    const description =
+      command.id === "set_level" ? setLevelDescription : command.description;
+    return `${formatCommand(command.id)} - ${description?.toLowerCase()}`;
+  });
   return {
     text: [
       "*Comandos disponíveis:*",
       "",
-      `${formatCommand("help")} - ver essa lista de comandos`,
-      //"*cancelar* - sai do fluxo ou ação em andamento",
-      `${formatCommand("practice_now")} - prática intensiva`,
-      `${formatCommand("pause")} - pausar atividade ou prática intensiva em andamento`,
-      `${formatCommand("resume")} - retomar atividade pausada`,
-      `${formatCommand("list_activities")} - sua atividade atual`,
-      `${formatCommand("new_activity")} - cria uma atividade com tema gerado por você`,
-      `${formatCommand("set_level")} - ${nivelLabel}`,
-      `${formatCommand("support")} - fala com a equipe`,
+      ...commandLines,
       "",
       "_Envie um arquivo de texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._",
     ].join("\n"),

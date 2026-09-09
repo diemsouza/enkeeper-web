@@ -139,8 +139,11 @@ export async function findLastUserMessageByActivity(
 
 export async function findMessageByExternalId(
   externalId: string,
+  userId?: string,
 ): Promise<Message | null> {
-  return prisma.message.findFirst({ where: { externalId } });
+  return prisma.message.findFirst({
+    where: { externalId, ...(userId ? { userId } : {}) },
+  });
 }
 
 export async function countActivityAudios(

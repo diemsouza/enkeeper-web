@@ -10,8 +10,8 @@ export function Loading({
   return (
     <div
       className={cn(
-        "flex items-center justify-center",
-        fullScreen ? "h-screen" : "p-4",
+        "flex justify-center",
+        fullScreen ? "h-full items-start pt-16" : "items-center p-4",
         className
       )}
     >

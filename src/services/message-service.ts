@@ -1253,6 +1253,17 @@ export async function handleIncomingMessage(
         await updateActivity(activeActivity.id, user.id, { intensiveUntil });
         const alreadyPending = await findPendingQuestion(activeActivity.id);
         if (alreadyPending) {
+          // Reexibir a pergunta sem alinhar o estado da activity deixava
+          // waitingUser/lastQuestionId dessincronizados: a resposta seguinte
+          // caia no fallback "Aguarde" e o reset de nudge nao rodava. Alinha
+          // antes dos envios pra fechar tambem a janela de concorrencia.
+          await updateActivity(activeActivity.id, user.id, {
+            waitingUser: true,
+            lastQuestionId: alreadyPending.id,
+            nextMessageAt: new Date(
+              Date.now() + activeActivity.intervalMinutes * 60 * 1000,
+            ),
+          });
           await saveUserMsg(
             user.id,
             userChannel.id,
@@ -1377,7 +1388,12 @@ export async function handleIncomingMessage(
           activeActivity.intensiveUntil = null;
         }
 
-        if (activeActivity?.waitingUser) {
+        // Avalia sempre que houver pergunta pendente de fato, mesmo se
+        // waitingUser tiver dessincronizado do status da pergunta (straggler
+        // de conclusao de rodada, duas perguntas pendentes, ou escrita parcial
+        // entre updateQuestion e updateActivity). O bloco de sucesso abaixo
+        // ja auto-cura waitingUser/nudge/lastInteractionAt.
+        if (activeActivity) {
           const practiceDoc = await findDocById(activeActivity.docId, user.id);
           if (practiceDoc) {
             const pendingQuestion = await findPendingQuestion(

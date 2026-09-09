@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/src/lib/utils";
-import { AudioCard } from "./audio-card";
+import { CustomAudioPlayer } from "./custom-audio-player";
 import { FileCard } from "./file-card";
 import { ImageBubble } from "./image-bubble";
 import { InteractiveButtonList } from "./interactive-buttons";
@@ -54,10 +54,11 @@ export function MessageBubble({
         ) : message.type === "image" ? (
           <ImageBubble imageUrl={message.imageUrl!} caption={message.caption} />
         ) : message.type === "audio" ? (
-          <AudioCard
+          <CustomAudioPlayer
             audioUrl={message.audioUrl!}
             externalId={message.externalId}
             onPlay={onAudioPlay}
+            textFallback={message.textFallback}
           />
         ) : message.type === "voice" ? (
           <VoiceNoteCard duration={message.duration ?? ""} />
