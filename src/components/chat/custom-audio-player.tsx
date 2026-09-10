@@ -12,20 +12,28 @@ type DecodedAudio = {
 
 const WAVEFORM_BARS = 40;
 const PROGRESS_TICK_MS = 100;
+const LOAD_TIMEOUT_MS = 20000;
 
 // iOS Safari limita o numero de AudioContext por pagina; um so, compartilhado.
 let sharedContext: AudioContext | null = null;
 let audioUnlocked = false;
 
-function getAudioContext(): AudioContext {
-  if (!sharedContext) {
+// Safari pode lancar sincronamente ao construir o AudioContext (politica de
+// autoplay, contextos demais). Retornar null e deixar o caller degradar em vez
+// de propagar a excecao pra fora do event handler e travar a pagina.
+function getAudioContext(): AudioContext | null {
+  if (sharedContext) return sharedContext;
+  try {
     const Ctor =
       window.AudioContext ||
       (window as typeof window & { webkitAudioContext?: typeof AudioContext })
         .webkitAudioContext;
     sharedContext = new Ctor();
+    return sharedContext;
+  } catch (err) {
+    console.error("[CustomAudioPlayer] audiocontext:", err);
+    return null;
   }
-  return sharedContext;
 }
 
 // iOS exige que a saida de audio seja liberada dentro do gesto do usuario:
@@ -33,10 +41,11 @@ function getAudioContext(): AudioContext {
 // antes de qualquer await. O buffer silencioso de 1 sample e o que efetivamente
 // destrava a saida no iOS quando o start() real vem depois do decode assincrono.
 function unlockAudioContext(): void {
-  const ctx = getAudioContext();
-  if (ctx.state === "suspended") void ctx.resume();
-  if (audioUnlocked) return;
   try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    if (ctx.state === "suspended") void ctx.resume();
+    if (audioUnlocked) return;
     const buffer = ctx.createBuffer(1, 1, 22050);
     const source = ctx.createBufferSource();
     source.buffer = buffer;
@@ -87,6 +96,7 @@ export function CustomAudioPlayer({
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
   const [waveform, setWaveform] = useState<number[]>([]);
+  const [showErrorHint, setShowErrorHint] = useState(false);
 
   const decodedRef = useRef<DecodedAudio | null>(null);
   const bufferRef = useRef<AudioBuffer | null>(null);
@@ -99,10 +109,21 @@ export function CustomAudioPlayer({
   const stateRef = useRef<PlayerState>("loading");
   stateRef.current = state;
 
+  const fail = useCallback((reason: string, err?: unknown): void => {
+    console.error(`[CustomAudioPlayer] ${reason}`, err);
+    setState("error");
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
+    let timedOut = false;
     let decoder: { free: () => void } | null = null;
+
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, LOAD_TIMEOUT_MS);
 
     (async () => {
       try {
@@ -130,18 +151,29 @@ export function CustomAudioPlayer({
         setWaveform(buildWaveform(decoded.channelData[0], WAVEFORM_BARS));
         setState("ready");
       } catch (err) {
-        if (cancelled || controller.signal.aborted) return;
-        console.error("[CustomAudioPlayer] load failed:", err);
-        setState("error");
+        if (cancelled) return;
+        if (timedOut) {
+          fail("load timeout");
+          return;
+        }
+        if (controller.signal.aborted) return;
+        fail("load failed", err);
+      } finally {
+        clearTimeout(timeout);
       }
     })();
 
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
       controller.abort();
-      decoder?.free();
+      try {
+        decoder?.free();
+      } catch (err) {
+        console.error("[CustomAudioPlayer] decoder cleanup:", err);
+      }
     };
-  }, [audioUrl]);
+  }, [audioUrl, fail]);
 
   const stopTicker = useCallback(() => {
     if (intervalRef.current != null) {
@@ -172,23 +204,33 @@ export function CustomAudioPlayer({
     const decoded = decodedRef.current;
     if (!decoded) return null;
     const ctx = getAudioContext();
-    const buffer = ctx.createBuffer(
-      decoded.channelData.length,
-      decoded.samplesDecoded,
-      decoded.sampleRate,
-    );
-    decoded.channelData.forEach((channel, i) =>
-      buffer.getChannelData(i).set(channel),
-    );
-    bufferRef.current = buffer;
-    return buffer;
-  }, []);
+    if (!ctx) {
+      fail("audiocontext");
+      return null;
+    }
+    try {
+      const buffer = ctx.createBuffer(
+        decoded.channelData.length,
+        decoded.samplesDecoded,
+        decoded.sampleRate,
+      );
+      decoded.channelData.forEach((channel, i) =>
+        buffer.getChannelData(i).set(channel),
+      );
+      bufferRef.current = buffer;
+      return buffer;
+    } catch (err) {
+      fail("buffer", err);
+      return null;
+    }
+  }, [fail]);
 
   const currentPosition = useCallback((): number => {
     const buffer = bufferRef.current;
     if (!buffer) return offsetRef.current;
     if (stateRef.current !== "playing") return offsetRef.current;
     const ctx = getAudioContext();
+    if (!ctx) return offsetRef.current;
     const pos =
       offsetRef.current +
       (ctx.currentTime - startedAtRef.current) * rateRef.current;
@@ -200,39 +242,53 @@ export function CustomAudioPlayer({
       const buffer = getBuffer();
       if (!buffer) return;
       const ctx = getAudioContext();
+      if (!ctx) {
+        fail("audiocontext");
+        return;
+      }
       stopSource();
 
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.playbackRate.value = rateRef.current;
-      source.connect(ctx.destination);
-      source.onended = () => {
-        if (sourceRef.current !== source) return;
-        stopSource();
-        offsetRef.current = 0;
-        setProgress(0);
-        setState("ready");
-      };
+      try {
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.playbackRate.value = rateRef.current;
+        source.connect(ctx.destination);
+        source.onended = () => {
+          if (sourceRef.current !== source) return;
+          stopSource();
+          offsetRef.current = 0;
+          setProgress(0);
+          setState("ready");
+        };
 
-      offsetRef.current = fromSeconds;
-      startedAtRef.current = ctx.currentTime;
-      source.start(
-        0,
-        Math.min(fromSeconds, Math.max(buffer.duration - 0.01, 0)),
-      );
-      sourceRef.current = source;
-      setState("playing");
+        offsetRef.current = fromSeconds;
+        startedAtRef.current = ctx.currentTime;
+        source.start(
+          0,
+          Math.min(fromSeconds, Math.max(buffer.duration - 0.01, 0)),
+        );
+        sourceRef.current = source;
+        setState("playing");
+      } catch (err) {
+        stopSource();
+        fail("playback", err);
+        return;
+      }
 
       intervalRef.current = setInterval(() => {
         setProgress(currentPosition());
       }, PROGRESS_TICK_MS);
     },
-    [getBuffer, stopSource, currentPosition],
+    [getBuffer, stopSource, currentPosition, fail],
   );
 
   const handlePlayPause = useCallback(() => {
+    if (stateRef.current === "error") {
+      setShowErrorHint(true);
+      return;
+    }
     unlockAudioContext();
-    if (stateRef.current === "loading" || stateRef.current === "error") return;
+    if (stateRef.current === "loading") return;
 
     if (stateRef.current === "playing") {
       const pos = currentPosition();
@@ -266,21 +322,8 @@ export function CustomAudioPlayer({
     [duration, startPlayback],
   );
 
-  if (state === "error") {
-    return (
-      <div className="flex flex-col gap-1 py-1 min-w-[220px]">
-        {textFallback ? (
-          <p className="whitespace-pre-line leading-[1.5] break-words">
-            {textFallback}
-          </p>
-        ) : (
-          <p className="opacity-70">⚠️ Não foi possível carregar o áudio.</p>
-        )}
-      </div>
-    );
-  }
-
   const isLoading = state === "loading";
+  const isError = state === "error";
   const filledBars =
     duration > 0 ? Math.round((progress / duration) * WAVEFORM_BARS) : 0;
   const showElapsed = state === "playing" || state === "paused";
@@ -289,90 +332,113 @@ export function CustomAudioPlayer({
     duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
 
   return (
-    <div className="flex items-center gap-3 py-1 min-w-[260px]">
-      <button
-        type="button"
-        onClick={handlePlayPause}
-        disabled={isLoading}
-        aria-label={state === "playing" ? "Pausar" : "Tocar"}
-        className="shrink-0 p-1 disabled:opacity-60"
+    <div className="flex flex-col gap-1 py-1 min-w-[260px]">
+      <div
+        className={`flex items-center gap-3${isError ? " text-destructive" : ""}`}
       >
-        {isLoading ? (
-          <span className="block w-5 h-5 animate-spin rounded-full border-b-2 border-current" />
-        ) : state === "playing" ? (
-          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 fill-current">
-            <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 fill-current">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        )}
-      </button>
-
-      <div className="flex-1 relative min-w-0">
-        <div className="relative h-6">
-          <div className="absolute inset-0 flex items-center gap-[2px] pointer-events-none">
-            {(waveform.length > 0
-              ? waveform
-              : new Array(WAVEFORM_BARS).fill(0.15)
-            ).map((height, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-full bg-current"
-                style={{
-                  height: `${Math.max(3, height * 22)}px`,
-                  opacity: i < filledBars ? 0.85 : 0.3,
-                }}
-              />
-            ))}
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={duration || 0}
-            step={0.01}
-            value={progress}
-            disabled={isLoading || duration === 0}
-            onChange={(e) => handleSeek(Number(e.target.value))}
-            aria-label="Posição do áudio"
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
-          />
-          {duration > 0 && (
-            <div
-              className="absolute top-1/2 w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current shadow pointer-events-none"
-              style={{ left: `${thumbLeft}%` }}
-            />
+        <button
+          type="button"
+          onClick={handlePlayPause}
+          disabled={isLoading}
+          aria-label={state === "playing" ? "Pausar" : "Tocar"}
+          className="shrink-0 p-1 disabled:opacity-60"
+        >
+          {isLoading ? (
+            <span className="block w-5 h-5 animate-spin rounded-full border-b-2 border-current" />
+          ) : state === "playing" ? (
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="w-7 h-7 fill-current"
+            >
+              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+            </svg>
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="w-7 h-7 fill-current"
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
           )}
+        </button>
+
+        <div className="flex-1 relative min-w-0">
+          <div className="relative h-6">
+            <div className="absolute inset-0 flex items-center gap-[2px] pointer-events-none">
+              {(waveform.length > 0
+                ? waveform
+                : new Array(WAVEFORM_BARS).fill(0.15)
+              ).map((height, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-full bg-current"
+                  style={{
+                    height: `${Math.max(3, height * 22)}px`,
+                    opacity: i < filledBars ? 0.85 : 0.3,
+                  }}
+                />
+              ))}
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={duration || 0}
+              step={0.01}
+              value={progress}
+              disabled={isLoading || isError || duration === 0}
+              onChange={(e) => handleSeek(Number(e.target.value))}
+              aria-label="Posição do áudio"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
+            />
+            {duration > 0 && (
+              <div
+                className="absolute top-1/2 w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current shadow pointer-events-none"
+                style={{ left: `${thumbLeft}%` }}
+              />
+            )}
+          </div>
+          <span className="absolute left-0 top-full mt-0.5 text-[10px] opacity-60 tabular-nums">
+            {formatTime(displayTime)}
+          </span>
         </div>
-        <span className="absolute left-0 top-full mt-0.5 text-[10px] opacity-60 tabular-nums">
-          {formatTime(displayTime)}
-        </span>
+
+        <div className="relative shrink-0">
+          <div className="w-9 h-9 rounded-full bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center">
+            <svg
+              viewBox="0 0 24 24"
+              className="w-5 h-5 fill-neutral-100 dark:fill-neutral-900"
+            >
+              <rect x="3" y="9" width="2" height="6" rx="1" />
+              <rect x="7" y="6" width="2" height="12" rx="1" />
+              <rect x="11" y="3.5" width="2" height="17" rx="1" />
+              <rect x="15" y="6" width="2" height="12" rx="1" />
+              <rect x="19" y="9" width="2" height="6" rx="1" />
+            </svg>
+          </div>
+          <div className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-neutral-700 dark:bg-neutral-300 flex items-center justify-center ring-2 ring-white dark:ring-[#1C1C1E]">
+            <svg
+              viewBox="0 0 24 24"
+              className="w-3 h-3 fill-neutral-100 dark:fill-neutral-900"
+            >
+              <path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3z" />
+              <path d="M17 11a1 1 0 10-2 0 3 3 0 01-6 0 1 1 0 10-2 0 5 5 0 004 4.9V18H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.1a5 5 0 004-4.9z" />
+            </svg>
+          </div>
+        </div>
       </div>
 
-      <div className="relative shrink-0">
-        <div className="w-9 h-9 rounded-full bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center">
-          <svg
-            viewBox="0 0 24 24"
-            className="w-5 h-5 fill-neutral-100 dark:fill-neutral-900"
-          >
-            <rect x="3" y="9" width="2" height="6" rx="1" />
-            <rect x="7" y="6" width="2" height="12" rx="1" />
-            <rect x="11" y="3.5" width="2" height="17" rx="1" />
-            <rect x="15" y="6" width="2" height="12" rx="1" />
-            <rect x="19" y="9" width="2" height="6" rx="1" />
-          </svg>
-        </div>
-        <div className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-neutral-700 dark:bg-neutral-300 flex items-center justify-center ring-2 ring-white dark:ring-[#1C1C1E]">
-          <svg
-            viewBox="0 0 24 24"
-            className="w-3 h-3 fill-neutral-100 dark:fill-neutral-900"
-          >
-            <path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3z" />
-            <path d="M17 11a1 1 0 10-2 0 3 3 0 01-6 0 1 1 0 10-2 0 5 5 0 004 4.9V18H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.1a5 5 0 004-4.9z" />
-          </svg>
-        </div>
-      </div>
+      {isError && textFallback && (
+        <p className="mt-1 whitespace-pre-line leading-[1.5] break-words opacity-80">
+          {textFallback}
+        </p>
+      )}
+      {isError && showErrorHint && (
+        <p className="mt-0.5 text-[11px] text-destructive">
+          Não foi possível carregar este áudio.
+        </p>
+      )}
     </div>
   );
 }

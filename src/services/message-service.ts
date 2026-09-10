@@ -27,6 +27,7 @@ import {
   formatPlanExpired,
   formatSupportRequest,
   formatSupportReceived,
+  formatSupportCanceledGuidance,
   formatDailyActivityLimitReached,
   formatDocItemReceived,
   formatDocItemLimitReached,
@@ -49,6 +50,8 @@ import {
   formatOnboardingMsg2,
   formatOnboardingMsg3,
   formatDomainQuestion,
+  formatTopicQuestion,
+  formatFocusQuestion,
   formatNewActivityFlowCanceled,
   formatNewActivityFlowCanceledGuidance,
   formatSetFirstLevelCanceled,
@@ -176,7 +179,11 @@ function resolveDevReportCommand(input: string): "round" | "activity" | null {
   return null;
 }
 
-const OVERRIDING_INTENTS: MessageIntent[] = [
+// Comandos reais que, quando a activity está com waitingUser, NÃO são coagidos
+// para "free_text" (resposta de prática) e seguem para o switch como o comando
+// que são. Não tem relação com estado pendente (pendingIntent): esse é sempre
+// resolvido primeiro, seja qual for o intent.
+const PRACTICE_ANSWER_PASSTHROUGH_INTENTS: MessageIntent[] = [
   "list_commands",
   "list_activities",
   "support",
@@ -339,11 +346,35 @@ export async function handleIncomingMessage(
     // ─── Verificação de plano expirado ───────────────────────────────────────
 
     if (!canPractice(user)) {
-      if (
-        pendingIntent === "support" &&
-        parsed.intent !== "cancel" &&
-        parsed.intent !== "cancel_no"
-      ) {
+      if (pendingIntent === "support") {
+        if (parsed.intent === "cancel" || parsed.intent === "cancel_no") {
+          await updateUserPendingIntent(user.id, null);
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "cancel",
+            input,
+            today,
+          );
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelUserId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            message: formatCanceled(),
+            today,
+          });
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelUserId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            message: formatSupportCanceledGuidance(),
+            today,
+          });
+          return;
+        }
         const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
         if (process.env.WA_SUPPORT) {
           try {
@@ -363,6 +394,7 @@ export async function handleIncomingMessage(
             // notificação interna, falha silenciosa
           }
         }
+        await updateUserPendingIntent(user.id, null);
         await saveUserMsg(
           user.id,
           userChannel.id,
@@ -579,7 +611,7 @@ export async function handleIncomingMessage(
       (pendingIntent === "waiting_set_activity_domain" ||
         pendingIntent === "waiting_set_activity_topic" ||
         pendingIntent === "waiting_set_activity_focus") &&
-      parsed.intent === "cancel"
+      (parsed.intent === "cancel" || parsed.intent === "cancel_no")
     ) {
       await updateUserPendingIntent(user.id, null);
       await saveUserMsg(user.id, userChannel.id, text, "cancel", input, today);
@@ -616,7 +648,10 @@ export async function handleIncomingMessage(
       return;
     }
 
-    if (pendingIntent === "waiting_set_level" && parsed.intent === "cancel") {
+    if (
+      pendingIntent === "waiting_set_level" &&
+      (parsed.intent === "cancel" || parsed.intent === "cancel_no")
+    ) {
       await updateUserPendingIntent(user.id, null);
       await saveUserMsg(user.id, userChannel.id, text, "cancel", input, today);
       const pendingDocForLevel = await findPendingDocByUser(user.id);
@@ -647,9 +682,10 @@ export async function handleIncomingMessage(
       return;
     }
 
-    const isOverriding = OVERRIDING_INTENTS.includes(parsed.intent);
-
-    if (pendingIntent && !isOverriding) {
+    // Enquanto há um fluxo de captura pendente, a mensagem é dele: nenhum comando
+    // fura o fluxo. Só `cancelar` sai (tratado nos pré-gates acima e em cada
+    // branch abaixo).
+    if (pendingIntent) {
       // Aguardando captura de nível
       if (pendingIntent === "waiting_set_level") {
         if (parsed.intent === "set_level") {
@@ -821,6 +857,27 @@ export async function handleIncomingMessage(
           return;
         }
 
+        if (parsed.intent !== "free_text") {
+          // comando no meio da captura de tema: repete a pergunta sem validar
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "waiting_set_activity_topic",
+            input,
+            today,
+          );
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelUserId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            message: formatTopicQuestion(topics),
+            today,
+          });
+          return;
+        }
+
         const result = await processTopicResponse(
           text,
           user.id,
@@ -906,6 +963,27 @@ export async function handleIncomingMessage(
             userId: user.id,
             userChannelId: userChannel.id,
             message: errReply,
+            today,
+          });
+          return;
+        }
+
+        if (parsed.intent !== "free_text") {
+          // comando no meio da captura de foco: repete a pergunta sem gerar conteúdo
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "waiting_set_activity_focus",
+            input,
+            today,
+          );
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelUserId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            message: formatFocusQuestion(focusSuggestions),
             today,
           });
           return;
@@ -1026,6 +1104,34 @@ export async function handleIncomingMessage(
 
       // Aguardando mensagem de suporte
       if (pendingIntent === "support") {
+        if (parsed.intent === "cancel" || parsed.intent === "cancel_no") {
+          await updateUserPendingIntent(user.id, null);
+          await saveUserMsg(
+            user.id,
+            userChannel.id,
+            text,
+            "cancel",
+            input,
+            today,
+          );
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelUserId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            message: formatCanceled(),
+            today,
+          });
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelUserId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            message: formatSupportCanceledGuidance(),
+            today,
+          });
+          return;
+        }
         await updateUserPendingIntent(user.id, null);
         const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
         const supportNumber = process.env.WA_SUPPORT;
@@ -1063,6 +1169,15 @@ export async function handleIncomingMessage(
         });
         return;
       }
+
+      // pendingIntent com valor sem handler de captura (ex: waiting_admin_send_message
+      // órfão após rotação de WA_SUPPORT). Limpa e segue pro fluxo normal em vez de
+      // vazar o estado pendente pro switch.
+      console.warn("[message-service] pendingIntent sem handler", {
+        pendingIntent,
+        userId: user.id,
+      });
+      await updateUserPendingIntent(user.id, null);
     }
 
     // ─── Fluxo normal ────────────────────────────────────────────────────────
@@ -1071,7 +1186,7 @@ export async function handleIncomingMessage(
     const effectiveIntent: MessageIntent =
       activeActivity?.waitingUser &&
       parsed.intent !== "free_text" &&
-      !OVERRIDING_INTENTS.includes(parsed.intent)
+      !PRACTICE_ANSWER_PASSTHROUGH_INTENTS.includes(parsed.intent)
         ? "free_text"
         : parsed.intent;
 

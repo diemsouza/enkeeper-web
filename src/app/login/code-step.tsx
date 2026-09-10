@@ -33,7 +33,9 @@ export function CodeStep({
   onChangeNumber,
 }: CodeStepProps) {
   const [code, setCode] = useState("");
-  const [remaining, setRemaining] = useState(() => remainingCooldown(requestedAt));
+  const [remaining, setRemaining] = useState(() =>
+    remainingCooldown(requestedAt),
+  );
   const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
@@ -58,7 +60,7 @@ export function CodeStep({
     <div className="flex w-full max-w-sm flex-col items-center gap-4">
       <p className="text-center text-sm text-muted-foreground">
         Digite o código de 6 dígitos enviado por WhatsApp para{" "}
-        <span className="font-medium text-foreground">
+        <span className="font-medium text-foreground sm:block">
           {formatBrPhoneMask(phoneDigits)}
         </span>
       </p>

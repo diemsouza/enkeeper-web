@@ -7,6 +7,7 @@ export interface Message {
   from: "user" | "bot";
   text?: string;
   time: string;
+  date?: string;
   type?: "file" | "audio" | "voice" | "image";
   fileName?: string;
   fileSize?: string;

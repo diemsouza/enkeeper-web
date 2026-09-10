@@ -542,6 +542,12 @@ export function formatSupportReceived(): FormattedMessage {
   };
 }
 
+export function formatSupportCanceledGuidance(): FormattedMessage {
+  return {
+    text: `Se precisar de ajuda da equipe, chame ${formatCommand("support")} de novo.`,
+  };
+}
+
 export function formatShortTextWithDocs(): FormattedMessage {
   return {
     text: `Material recebido. Aguarde ou use ${formatCommand("help")} para ver os comandos disponíveis.`,

@@ -2,15 +2,18 @@
 
 import { ArrowDown } from "lucide-react";
 import {
+  Fragment,
   forwardRef,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from "react";
+import { shouldShowDateSeparator } from "@/src/lib/datetime-utils";
 import { useScrollToBottom } from "@/src/hooks/use-scroll-to-bottom";
 import { useVisualViewportOffset } from "@/src/hooks/use-visual-viewport-offset";
 import { Composer, type ComposerHandle } from "./composer";
+import { DateSeparator } from "./date-separator";
 import { MessageBubble } from "./message-bubble";
 import { TypingIndicatorBubble } from "./typing-indicator";
 import type { FormattedMessageButton, Message } from "./types";
@@ -60,6 +63,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     const [hasNewMessage, setHasNewMessage] = useState(false);
     const [isFarFromBottom, setIsFarFromBottom] = useState(false);
     const [composerHeight, setComposerHeight] = useState(0);
+    const [mounted, setMounted] = useState(false);
     const composerWrapperRef = useRef<HTMLDivElement>(null);
     const topRef = useRef<HTMLDivElement>(null);
     const hasMountedRef = useRef(false);
@@ -82,6 +86,8 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     ) {
       messages.forEach((message) => seenIdsRef.current.add(message.id));
     }
+
+    useEffect(() => setMounted(true), []);
 
     useLayoutEffect(() => {
       const el = composerWrapperRef.current;
@@ -223,17 +229,30 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
           >
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
               <div ref={topRef} />
-              {messages.map((message) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  isNew={
-                    hasMountedRef.current && !seenIdsRef.current.has(message.id)
-                  }
-                  onAudioPlay={onAudioPlay}
-                  onButtonClick={onButtonClick}
-                />
-              ))}
+              {messages.map((message, index) => {
+                const showDateSeparator =
+                  mounted &&
+                  shouldShowDateSeparator(
+                    message.date,
+                    messages[index - 1]?.date,
+                  );
+                return (
+                  <Fragment key={message.id}>
+                    {showDateSeparator && message.date && (
+                      <DateSeparator date={message.date} />
+                    )}
+                    <MessageBubble
+                      message={message}
+                      isNew={
+                        hasMountedRef.current &&
+                        !seenIdsRef.current.has(message.id)
+                      }
+                      onAudioPlay={onAudioPlay}
+                      onButtonClick={onButtonClick}
+                    />
+                  </Fragment>
+                );
+              })}
               {isTyping && <TypingIndicatorBubble />}
             </div>
             <div ref={endRef} />

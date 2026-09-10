@@ -33,6 +33,7 @@ export function mapActivityMessages(raw: PrismaMessage[]): Message[] {
   return raw.map((m) => {
     const from: Message["from"] = m.role === "user" ? "user" : "bot";
     const time = formatTime(m.createdAt);
+    const date = m.createdAt.toISOString();
     const interactive = (m.interactive as StoredInteractive) ?? undefined;
 
     if (from === "bot" && m.mediaType === "image" && m.mediaId) {
@@ -40,6 +41,7 @@ export function mapActivityMessages(raw: PrismaMessage[]): Message[] {
         id: m.id,
         from,
         time,
+        date,
         type: "image",
         imageUrl: buildMediaUrl(m.mediaId),
         caption: m.content,
@@ -63,6 +65,7 @@ export function mapActivityMessages(raw: PrismaMessage[]): Message[] {
         id: m.id,
         from,
         time,
+        date,
         type: "file",
         fileName,
         fileSize: `${mediaTypeLabel(m.mediaType)} · ${formatFileSize(sizeBytes)}`,
@@ -75,6 +78,7 @@ export function mapActivityMessages(raw: PrismaMessage[]): Message[] {
         id: m.id,
         from,
         time,
+        date,
         type: "audio",
         audioUrl: buildMediaUrl(m.mediaId),
         textFallback: m.content,
@@ -87,6 +91,7 @@ export function mapActivityMessages(raw: PrismaMessage[]): Message[] {
       from,
       text: m.content,
       time,
+      date,
       interactive,
     };
   });

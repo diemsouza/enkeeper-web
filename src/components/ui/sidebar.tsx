@@ -76,14 +76,21 @@ export function SidebarProvider({
 }
 
 export function Sidebar({ children }: { children: React.ReactNode }) {
-  const { isMobile, open, openMobile, setOpenMobile } = useSidebar();
+  const { open, openMobile, setOpenMobile } = useSidebar();
 
-  if (isMobile) {
-    return (
+  return (
+    <>
+      <aside
+        style={{ width: open ? SIDEBAR_WIDTH : SIDEBAR_WIDTH_ICON }}
+        className="hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex"
+        data-collapsed={!open}
+      >
+        {children}
+      </aside>
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent
           side="left"
-          className="w-72 max-w-[85vw] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="w-72 max-w-[85vw] bg-sidebar p-0 text-sidebar-foreground md:hidden [&>button]:hidden"
         >
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <SheetDescription className="sr-only">
@@ -92,17 +99,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
           <div className="flex h-full flex-col">{children}</div>
         </SheetContent>
       </Sheet>
-    );
-  }
-
-  return (
-    <aside
-      style={{ width: open ? SIDEBAR_WIDTH : SIDEBAR_WIDTH_ICON }}
-      className="flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200"
-      data-collapsed={!open}
-    >
-      {children}
-    </aside>
+    </>
   );
 }
 

@@ -4,9 +4,13 @@ import { nanoid } from "nanoid";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatThread } from "@/src/components/chat/thread";
 import type { ComposerHandle } from "@/src/components/chat/composer";
-import type { FormattedMessageButton, Message } from "@/src/components/chat/types";
+import type {
+  FormattedMessageButton,
+  Message,
+} from "@/src/components/chat/types";
 import { getJson, postForm, postJson } from "@/src/lib/api-client";
 import { useRealtimeMessages } from "@/src/hooks/use-realtime-messages";
+import { setupAudioUnlock } from "@/src/lib/audio-unlock";
 
 type MessagesResponse = { messages: Message[]; hasMore: boolean };
 
@@ -86,7 +90,8 @@ export function LiveThreadClient({
       setStarting(false);
     };
 
-    const elapsed = sendStartedAt !== null ? Date.now() - sendStartedAt : MIN_TYPING_MS;
+    const elapsed =
+      sendStartedAt !== null ? Date.now() - sendStartedAt : MIN_TYPING_MS;
     const wait = Math.max(MIN_TYPING_MS - elapsed, 0);
     if (wait > 0) {
       setTimeout(revealBotMessages, wait);
@@ -141,8 +146,18 @@ export function LiveThreadClient({
     return () => clearTimeout(timer);
   }, [isLastFromUser, lastMessage?.id]);
 
+  useEffect(() => {
+    setupAudioUnlock();
+  }, []);
+
   async function handleSend(text: string) {
-    setOptimistic({ id: `temp-${nanoid()}`, from: "user", text, time: nowTime() });
+    setOptimistic({
+      id: `temp-${nanoid()}`,
+      from: "user",
+      text,
+      time: nowTime(),
+      date: new Date().toISOString(),
+    });
     setSendStartedAt(Date.now());
     const { ok } = await postJson("/api/app/messages", { text });
     composerRef.current?.focus();
@@ -156,6 +171,7 @@ export function LiveThreadClient({
           from: "bot",
           text: "⚠️ Não foi possível enviar sua mensagem. Tente novamente.",
           time: nowTime(),
+          date: new Date().toISOString(),
         },
       ]);
     }
@@ -167,6 +183,7 @@ export function LiveThreadClient({
       id: `temp-${nanoid()}`,
       from: "user",
       time: nowTime(),
+      date: new Date().toISOString(),
       type: "file",
       fileName: file.name,
       fileSize: formatFileSize(file.size),
@@ -188,6 +205,7 @@ export function LiveThreadClient({
           from: "bot",
           text: "⚠️ Não foi possível enviar o arquivo. Tente novamente.",
           time: nowTime(),
+          date: new Date().toISOString(),
         },
       ]);
     }
@@ -216,7 +234,9 @@ export function LiveThreadClient({
       isWaitingForResponse={isWaitingForResponse}
       isTyping={sendStartedAt !== null}
       composerDisabled={starting}
-      composerDisabledReason={starting ? "Preparando sua prática..." : undefined}
+      composerDisabledReason={
+        starting ? "Preparando sua prática..." : undefined
+      }
       onLoadOlder={loadOlderMessages}
       hasMoreOlder={hasMoreOlder}
       isLoadingOlder={isLoadingOlder}
