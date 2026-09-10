@@ -10,12 +10,12 @@ type DecodedAudio = {
   sampleRate: number;
 };
 
-const SPEEDS = [0.75, 1, 1.25] as const;
 const WAVEFORM_BARS = 40;
 const PROGRESS_TICK_MS = 100;
 
 // iOS Safari limita o numero de AudioContext por pagina; um so, compartilhado.
 let sharedContext: AudioContext | null = null;
+let audioUnlocked = false;
 
 function getAudioContext(): AudioContext {
   if (!sharedContext) {
@@ -26,6 +26,26 @@ function getAudioContext(): AudioContext {
     sharedContext = new Ctor();
   }
   return sharedContext;
+}
+
+// iOS exige que a saida de audio seja liberada dentro do gesto do usuario:
+// um resume() apos await ja perde o gesto. Chamar isto sincronamente no clique,
+// antes de qualquer await. O buffer silencioso de 1 sample e o que efetivamente
+// destrava a saida no iOS quando o start() real vem depois do decode assincrono.
+function unlockAudioContext(): void {
+  const ctx = getAudioContext();
+  if (ctx.state === "suspended") void ctx.resume();
+  if (audioUnlocked) return;
+  try {
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+    audioUnlocked = true;
+  } catch {
+    audioUnlocked = false;
+  }
 }
 
 function formatTime(seconds: number): string {
@@ -66,7 +86,6 @@ export function CustomAudioPlayer({
   const [state, setState] = useState<PlayerState>("loading");
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [rate, setRate] = useState<(typeof SPEEDS)[number]>(1);
   const [waveform, setWaveform] = useState<number[]>([]);
 
   const decodedRef = useRef<DecodedAudio | null>(null);
@@ -211,10 +230,9 @@ export function CustomAudioPlayer({
     [getBuffer, stopSource, currentPosition],
   );
 
-  const handlePlayPause = useCallback(async () => {
+  const handlePlayPause = useCallback(() => {
+    unlockAudioContext();
     if (stateRef.current === "loading" || stateRef.current === "error") return;
-    const ctx = getAudioContext();
-    if (ctx.state === "suspended") await ctx.resume();
 
     if (stateRef.current === "playing") {
       const pos = currentPosition();
@@ -248,22 +266,6 @@ export function CustomAudioPlayer({
     [duration, startPlayback],
   );
 
-  const cycleRate = useCallback(() => {
-    setRate((prev) => {
-      const next = SPEEDS[(SPEEDS.indexOf(prev) + 1) % SPEEDS.length];
-      if (sourceRef.current) {
-        const ctx = getAudioContext();
-        offsetRef.current =
-          offsetRef.current +
-          (ctx.currentTime - startedAtRef.current) * rateRef.current;
-        startedAtRef.current = ctx.currentTime;
-        sourceRef.current.playbackRate.value = next;
-      }
-      rateRef.current = next;
-      return next;
-    });
-  }, []);
-
   if (state === "error") {
     return (
       <div className="flex flex-col gap-1 py-1 min-w-[220px]">
@@ -281,47 +283,43 @@ export function CustomAudioPlayer({
   const isLoading = state === "loading";
   const filledBars =
     duration > 0 ? Math.round((progress / duration) * WAVEFORM_BARS) : 0;
+  const showElapsed = state === "playing" || state === "paused";
+  const displayTime = showElapsed ? progress : duration;
+  const thumbLeft =
+    duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
 
   return (
-    <div className="flex items-center gap-2.5 py-1 min-w-[240px]">
+    <div className="flex items-center gap-3 py-1 min-w-[260px]">
       <button
         type="button"
         onClick={handlePlayPause}
         disabled={isLoading}
         aria-label={state === "playing" ? "Pausar" : "Tocar"}
-        className="w-8 h-8 rounded-full bg-black/90 dark:bg-white/90 flex items-center justify-center shrink-0 disabled:opacity-60"
+        className="shrink-0 p-1 disabled:opacity-60"
       >
         {isLoading ? (
-          <span className="w-4 h-4 animate-spin rounded-full border-b-2 border-neutral-100 dark:border-neutral-900" />
+          <span className="block w-5 h-5 animate-spin rounded-full border-b-2 border-current" />
         ) : state === "playing" ? (
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="w-4 h-4 fill-neutral-100 dark:fill-neutral-900"
-          >
+          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 fill-current">
             <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
           </svg>
         ) : (
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="w-4 h-4 fill-neutral-100 dark:fill-neutral-900"
-          >
+          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 fill-current">
             <path d="M8 5v14l11-7z" />
           </svg>
         )}
       </button>
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 relative min-w-0">
         <div className="relative h-6">
-          <div className="absolute inset-0 flex items-center gap-[2px] overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 flex items-center gap-[2px] pointer-events-none">
             {(waveform.length > 0
               ? waveform
               : new Array(WAVEFORM_BARS).fill(0.15)
             ).map((height, i) => (
               <div
                 key={i}
-                className="w-[3px] rounded-full bg-current shrink-0"
+                className="flex-1 rounded-full bg-current"
                 style={{
                   height: `${Math.max(3, height * 22)}px`,
                   opacity: i < filledBars ? 0.85 : 0.3,
@@ -340,20 +338,39 @@ export function CustomAudioPlayer({
             aria-label="Posição do áudio"
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
           />
+          {duration > 0 && (
+            <div
+              className="absolute top-1/2 w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current shadow pointer-events-none"
+              style={{ left: `${thumbLeft}%` }}
+            />
+          )}
         </div>
-        <div className="flex items-center justify-between mt-0.5">
-          <span className="text-[10px] opacity-60 tabular-nums">
-            {formatTime(progress)} / {formatTime(duration)}
-          </span>
-          {/* Por enquanto nao adianta ter controle de velocidade, fica muito distorcido e altera muito a voz, talvez seja reajustado com instrucao no TTS via prompt por nivel */}
-          {/* <button
-            type="button"
-            onClick={cycleRate}
-            disabled={isLoading}
-            className="text-[10px] opacity-60 font-medium tabular-nums disabled:opacity-40"
+        <span className="absolute left-0 top-full mt-0.5 text-[10px] opacity-60 tabular-nums">
+          {formatTime(displayTime)}
+        </span>
+      </div>
+
+      <div className="relative shrink-0">
+        <div className="w-9 h-9 rounded-full bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center">
+          <svg
+            viewBox="0 0 24 24"
+            className="w-5 h-5 fill-neutral-100 dark:fill-neutral-900"
           >
-            {rate}×
-          </button> */}
+            <rect x="3" y="9" width="2" height="6" rx="1" />
+            <rect x="7" y="6" width="2" height="12" rx="1" />
+            <rect x="11" y="3.5" width="2" height="17" rx="1" />
+            <rect x="15" y="6" width="2" height="12" rx="1" />
+            <rect x="19" y="9" width="2" height="6" rx="1" />
+          </svg>
+        </div>
+        <div className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-neutral-700 dark:bg-neutral-300 flex items-center justify-center ring-2 ring-white dark:ring-[#1C1C1E]">
+          <svg
+            viewBox="0 0 24 24"
+            className="w-3 h-3 fill-neutral-100 dark:fill-neutral-900"
+          >
+            <path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3z" />
+            <path d="M17 11a1 1 0 10-2 0 3 3 0 01-6 0 1 1 0 10-2 0 5 5 0 004 4.9V18H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.1a5 5 0 004-4.9z" />
+          </svg>
         </div>
       </div>
     </div>

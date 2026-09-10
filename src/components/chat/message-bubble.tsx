@@ -36,11 +36,7 @@ export function MessageBubble({
             ? "bg-primary text-primary-foreground rounded-[10px_10px_2px_10px]"
             : "bg-white text-foreground dark:bg-[#1C1C1E] rounded-[10px_10px_10px_2px]",
           "px-3 pt-2 pb-1.5 text-[15px] md:text-[14px]",
-          message.type === "file" ||
-            message.type === "voice" ||
-            message.interactive
-            ? "max-w-[85%] md:max-w-[70%]"
-            : "max-w-[70%]",
+          "max-w-[85%] md:max-w-[70%]",
           message.type === "image" &&
             "w-[85%] md:w-[70%] max-w-[85%] md:max-w-[70%] overflow-hidden",
         )}

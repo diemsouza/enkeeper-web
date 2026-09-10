@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isProtectedPath, sanitizeRedirectPath } from "./core/auth-routes";
-import { SESSION_COOKIE_NAME, verifySessionToken } from "./core/session-token";
+import {
+  buildSessionCookieOptions,
+  SESSION_COOKIE_NAME,
+  shouldRefreshSession,
+  signSessionToken,
+  verifySessionToken,
+} from "./core/session-token";
 
 export async function middleware(req: NextRequest) {
   if (process.env.DISABLE_LANDING_PAGE === "true") {
@@ -20,11 +26,23 @@ export async function middleware(req: NextRequest) {
     url.searchParams.set("redirect_to", pathname + search);
     return NextResponse.redirect(url);
   }
-  if (isLoginRoute && session) {
-    const dest = sanitizeRedirectPath(req.nextUrl.searchParams.get("redirect_to"));
-    return NextResponse.redirect(new URL(dest, req.url));
+
+  const res =
+    isLoginRoute && session
+      ? NextResponse.redirect(
+          new URL(
+            sanitizeRedirectPath(req.nextUrl.searchParams.get("redirect_to")),
+            req.url,
+          ),
+        )
+      : NextResponse.next();
+
+  if (session && shouldRefreshSession(session.issuedAt)) {
+    const fresh = await signSessionToken({ userId: session.userId });
+    res.cookies.set(SESSION_COOKIE_NAME, fresh, buildSessionCookieOptions());
   }
-  return NextResponse.next();
+
+  return res;
 }
 
 export const config = {

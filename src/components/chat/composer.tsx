@@ -39,6 +39,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
     const [menuDismissed, setMenuDismissed] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useImperativeHandle(ref, () => ({
       focus: () => textareaRef.current?.focus(),
@@ -57,7 +58,20 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
 
     useEffect(() => {
       setActiveIndex(0);
+      if (commandQuery === null) setMenuDismissed(false);
     }, [commandQuery]);
+
+    useEffect(() => {
+      if (!showCommandMenu) return;
+      function handlePointerDown(e: PointerEvent) {
+        if (!containerRef.current?.contains(e.target as Node)) {
+          setMenuDismissed(true);
+        }
+      }
+      document.addEventListener("pointerdown", handlePointerDown);
+      return () =>
+        document.removeEventListener("pointerdown", handlePointerDown);
+    }, [showCommandMenu]);
 
     async function handleSend() {
       const trimmed = text.trim();
@@ -71,7 +85,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
       setMenuDismissed(true);
       setActiveIndex(0);
       textareaRef.current?.focus();
-      void onSend(`/${command.display}`);
+      void onSend(`/${command.display.toLocaleLowerCase()}`);
     }
 
     function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -121,7 +135,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
             {disabledReason}
           </p>
         )}
-        <div className="relative mx-auto w-full max-w-3xl">
+        <div ref={containerRef} className="relative mx-auto w-full max-w-3xl">
           {showCommandMenu && (
             <div className="pointer-events-auto absolute inset-x-0 bottom-full z-30 mb-2 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-md">
               <ul
@@ -143,10 +157,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                           : ""
                       }`}
                     >
-                      <span className="font-medium">
+                      <span className="font-medium whitespace-nowrap shrink-0">
                         {capitalizeFirst(command.display)}
                       </span>
-                      <span className="ml-1.5 truncate text-muted-foreground">
+                      <span className="ml-1.5 min-w-0 truncate text-muted-foreground">
                         - {command.description}
                       </span>
                     </button>
@@ -178,10 +192,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
               ref={textareaRef}
               rows={1}
               value={text}
-              onChange={(e) => {
-                setText(e.target.value);
-                setMenuDismissed(false);
-              }}
+              onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={disabled}
               placeholder={
