@@ -2,13 +2,22 @@ import { useEffect, useRef } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/src/lib/supabase-browser";
 
+type BroadcastRow = Record<string, unknown>;
+
+type BroadcastPayload = {
+  payload?: { record?: BroadcastRow; old_record?: BroadcastRow };
+};
+
 export function useRealtimeMessages(
   userId: string,
-  onEvent: () => void,
+  onEvent: (record: BroadcastRow | undefined) => void,
+  onReconnect: () => void,
   onReady?: () => void,
 ): void {
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
+  const onReconnectRef = useRef(onReconnect);
+  onReconnectRef.current = onReconnect;
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
 
@@ -42,10 +51,14 @@ export function useRealtimeMessages(
 
       supabase.realtime.setAuth(token);
 
+      const handleBroadcast = (payload: BroadcastPayload): void => {
+        onEventRef.current(payload?.payload?.record);
+      };
+
       channel = supabase
         .channel(`messages-${userId}`, { config: { private: true } })
-        .on("broadcast", { event: "INSERT" }, (payload) => onEventRef.current())
-        .on("broadcast", { event: "UPDATE" }, (payload) => onEventRef.current())
+        .on("broadcast", { event: "INSERT" }, handleBroadcast)
+        .on("broadcast", { event: "UPDATE" }, handleBroadcast)
         .subscribe((status, err) => {
           if (status === "SUBSCRIBED") {
             onReadyRef.current?.();
@@ -65,7 +78,7 @@ export function useRealtimeMessages(
 
     function handleReconnect(): void {
       if (cancelled) return;
-      onEventRef.current();
+      onReconnectRef.current();
       void connect();
     }
 

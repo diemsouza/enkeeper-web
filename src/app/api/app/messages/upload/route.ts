@@ -36,6 +36,12 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json({ error: "invalid form data fields" }, { status: 400 });
     }
 
+    const externalIdField = formData.get("externalId");
+    const resolvedExternalId =
+      typeof externalIdField === "string" && externalIdField.trim().length > 0
+        ? externalIdField.trim()
+        : ulid();
+
     let extractedText: string;
     let mediaMetadata: Record<string, string | number | null>;
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -99,7 +105,7 @@ export async function POST(request: Request): Promise<Response> {
       channelType: "whatsapp",
       contactName: user.name ?? undefined,
       text: extractedText,
-      externalId: ulid(),
+      externalId: resolvedExternalId,
       mediaType,
       mediaMetadata,
       receivedAt,
@@ -107,7 +113,7 @@ export async function POST(request: Request): Promise<Response> {
 
     after(() => handleIncomingMessage(input, new WebChannel()));
 
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, externalId: resolvedExternalId });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "unauthorized" }, { status: 401 });

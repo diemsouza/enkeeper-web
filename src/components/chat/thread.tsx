@@ -20,10 +20,15 @@ import type { FormattedMessageButton, Message } from "./types";
 
 const FAR_FROM_BOTTOM_PX = 400;
 
+function msgKey(m: Message): string {
+  return m.externalId ?? m.id;
+}
+
 type ChatThreadProps = {
   messages: Message[];
   onSend?: (text: string) => void | Promise<void>;
   onSendFile?: (file: File) => void | Promise<void>;
+  onRetry?: (externalId: string) => void;
   onAudioPlay?: (externalId: string) => void;
   onButtonClick?: (button: FormattedMessageButton) => void;
   composerDisabled?: boolean;
@@ -42,6 +47,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       messages,
       onSend,
       onSendFile,
+      onRetry,
       onAudioPlay,
       onButtonClick,
       composerDisabled,
@@ -67,8 +73,9 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     const composerWrapperRef = useRef<HTMLDivElement>(null);
     const topRef = useRef<HTMLDivElement>(null);
     const hasMountedRef = useRef(false);
+    const lastMessage = messages[messages.length - 1];
     const prevLastIdRef = useRef<string | undefined>(
-      messages[messages.length - 1]?.id,
+      lastMessage ? msgKey(lastMessage) : undefined,
     );
     const seenIdsRef = useRef<Set<string>>(new Set());
     const scrollPreserveRef = useRef<{
@@ -76,15 +83,17 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       scrollTop: number;
     } | null>(null);
     const pendingOlderLoadRef = useRef(false);
-    const prevFirstIdRef = useRef<string | undefined>(messages[0]?.id);
+    const prevFirstIdRef = useRef<string | undefined>(
+      messages[0] ? msgKey(messages[0]) : undefined,
+    );
 
-    const firstId = messages[0]?.id;
+    const firstId = messages[0] ? msgKey(messages[0]) : undefined;
     if (
       pendingOlderLoadRef.current &&
       firstId !== undefined &&
       firstId !== prevFirstIdRef.current
     ) {
-      messages.forEach((message) => seenIdsRef.current.add(message.id));
+      messages.forEach((message) => seenIdsRef.current.add(msgKey(message)));
     }
 
     useEffect(() => setMounted(true), []);
@@ -141,8 +150,8 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     }, [containerRef]);
 
     useEffect(() => {
-      const lastMessage = messages[messages.length - 1];
-      const lastId = lastMessage?.id;
+      const tail = messages[messages.length - 1];
+      const lastId = tail ? msgKey(tail) : undefined;
       if (!hasMountedRef.current) {
         hasMountedRef.current = true;
         prevLastIdRef.current = lastId;
@@ -152,7 +161,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       const arrived = lastId !== undefined && lastId !== prevLastIdRef.current;
       prevLastIdRef.current = lastId;
       if (!arrived) return;
-      if (lastMessage?.from === "user") {
+      if (tail?.from === "user") {
         scrollToBottom("smooth");
         setHasNewMessage(false);
         return;
@@ -169,7 +178,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     }, [isAtBottom]);
 
     useEffect(() => {
-      messages.forEach((message) => seenIdsRef.current.add(message.id));
+      messages.forEach((message) => seenIdsRef.current.add(msgKey(message)));
     });
 
     useEffect(() => {
@@ -194,7 +203,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     }, [onLoadOlder, hasMoreOlder, isLoadingOlder, containerRef]);
 
     useLayoutEffect(() => {
-      const firstId = messages[0]?.id;
+      const firstId = messages[0] ? msgKey(messages[0]) : undefined;
       const isPrependEvent =
         pendingOlderLoadRef.current &&
         firstId !== undefined &&
@@ -237,7 +246,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
                     messages[index - 1]?.date,
                   );
                 return (
-                  <Fragment key={message.id}>
+                  <Fragment key={msgKey(message)}>
                     {showDateSeparator && message.date && (
                       <DateSeparator date={message.date} />
                     )}
@@ -245,8 +254,9 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
                       message={message}
                       isNew={
                         hasMountedRef.current &&
-                        !seenIdsRef.current.has(message.id)
+                        !seenIdsRef.current.has(msgKey(message))
                       }
+                      onRetry={onRetry}
                       onAudioPlay={onAudioPlay}
                       onButtonClick={onButtonClick}
                     />

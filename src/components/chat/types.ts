@@ -2,12 +2,15 @@ import type { FormattedMessageButton } from "@/src/types/out-message";
 
 export type { FormattedMessageButton };
 
+export type MessageStatus = "sending" | "sent" | "failed";
+
 export interface Message {
   id: string;
   from: "user" | "bot";
   text?: string;
   time: string;
   date?: string;
+  status?: MessageStatus;
   type?: "file" | "audio" | "voice" | "image";
   fileName?: string;
   fileSize?: string;

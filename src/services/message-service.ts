@@ -4,6 +4,7 @@ import {
   EvalTipClass,
   Level,
   Message,
+  Prisma,
   QuestionFormat,
 } from "../lib/prisma";
 import { parseMessage } from "../core/parser";
@@ -60,7 +61,11 @@ import {
   formatImageBlocked,
   formatImageUnreadable,
 } from "../core/formatters";
-import { saveMessage, findLastUserMessage } from "../repo/messages.repo";
+import {
+  saveMessage,
+  findLastUserMessage,
+  findMessageByExternalId,
+} from "../repo/messages.repo";
 import { createMedia } from "../repo/media.repo";
 import {
   markUserOnboarded,
@@ -2068,18 +2073,31 @@ async function saveUserMsg(
   today: Date,
   metadataOverride?: Record<string, string | number | null>,
 ): Promise<Message> {
-  const message = await saveMessage({
-    userId,
-    userChannelId,
-    role: "user",
-    content,
-    intent,
-    externalId: input.externalId,
-    mediaType: input.mediaType,
-    mediaId: input.mediaId,
-    metadata: metadataOverride ?? input.mediaMetadata,
-    receivedAt: input.receivedAt,
-  });
+  let message: Message;
+  try {
+    message = await saveMessage({
+      userId,
+      userChannelId,
+      role: "user",
+      content,
+      intent,
+      externalId: input.externalId,
+      mediaType: input.mediaType,
+      mediaId: input.mediaId,
+      metadata: metadataOverride ?? input.mediaMetadata,
+      receivedAt: input.receivedAt,
+    });
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002" &&
+      input.externalId
+    ) {
+      const existing = await findMessageByExternalId(input.externalId, userId);
+      if (existing) return existing;
+    }
+    throw err;
+  }
   await incrementUserMessageCount(userId, today);
   await saveImageMedia(message.id, input, content);
   return message;

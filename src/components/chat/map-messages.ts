@@ -6,6 +6,18 @@ type StoredInteractive = {
   buttons: FormattedMessageButton[];
 } | null;
 
+type NormalizedRow = {
+  id: string;
+  role: string;
+  content: string;
+  createdAt: Date;
+  externalId: string | null;
+  mediaType: string | null;
+  mediaId: string | null;
+  metadata: unknown;
+  interactive: unknown;
+};
+
 function formatTime(date: Date): string {
   return date.toLocaleTimeString("pt-BR", {
     hour: "2-digit",
@@ -29,70 +41,109 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function mapActivityMessages(raw: PrismaMessage[]): Message[] {
-  return raw.map((m) => {
-    const from: Message["from"] = m.role === "user" ? "user" : "bot";
-    const time = formatTime(m.createdAt);
-    const date = m.createdAt.toISOString();
-    const interactive = (m.interactive as StoredInteractive) ?? undefined;
+function parseJsonMaybe(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
 
-    if (from === "bot" && m.mediaType === "image" && m.mediaId) {
-      return {
-        id: m.id,
-        from,
-        time,
-        date,
-        type: "image",
-        imageUrl: buildMediaUrl(m.mediaId),
-        caption: m.content,
-        externalId: m.externalId ?? undefined,
-        interactive,
-      };
-    }
+function toMessage(row: NormalizedRow): Message {
+  const from: Message["from"] = row.role === "user" ? "user" : "bot";
+  const time = formatTime(row.createdAt);
+  const date = row.createdAt.toISOString();
+  const interactive = (row.interactive as StoredInteractive) ?? undefined;
 
-    if (
-      m.mediaType === "image" ||
-      m.mediaType === "pdf" ||
-      m.mediaType === "text"
-    ) {
-      const metadata =
-        (m.metadata as Record<string, string | number | null>) ?? {};
-      const fileName =
-        typeof metadata.file_name === "string" ? metadata.file_name : "Arquivo";
-      const sizeBytes =
-        typeof metadata.size_bytes === "number" ? metadata.size_bytes : 0;
-      return {
-        id: m.id,
-        from,
-        time,
-        date,
-        type: "file",
-        fileName,
-        fileSize: `${mediaTypeLabel(m.mediaType)} · ${formatFileSize(sizeBytes)}`,
-        mediaType: m.mediaType,
-      };
-    }
-
-    if (m.mediaType === "audio" && m.mediaId) {
-      return {
-        id: m.id,
-        from,
-        time,
-        date,
-        type: "audio",
-        audioUrl: buildMediaUrl(m.mediaId),
-        textFallback: m.content,
-        externalId: m.externalId ?? undefined,
-      };
-    }
-
+  if (from === "bot" && row.mediaType === "image" && row.mediaId) {
     return {
-      id: m.id,
+      id: row.id,
       from,
-      text: m.content,
       time,
       date,
+      type: "image",
+      imageUrl: buildMediaUrl(row.mediaId),
+      caption: row.content,
+      externalId: row.externalId ?? undefined,
       interactive,
     };
+  }
+
+  if (
+    row.mediaType === "image" ||
+    row.mediaType === "pdf" ||
+    row.mediaType === "text"
+  ) {
+    const metadata =
+      (row.metadata as Record<string, string | number | null>) ?? {};
+    const fileName =
+      typeof metadata.file_name === "string" ? metadata.file_name : "Arquivo";
+    const sizeBytes =
+      typeof metadata.size_bytes === "number" ? metadata.size_bytes : 0;
+    return {
+      id: row.id,
+      from,
+      time,
+      date,
+      type: "file",
+      fileName,
+      fileSize: `${mediaTypeLabel(row.mediaType)} · ${formatFileSize(sizeBytes)}`,
+      mediaType: row.mediaType,
+    };
+  }
+
+  if (row.mediaType === "audio" && row.mediaId) {
+    return {
+      id: row.id,
+      from,
+      time,
+      date,
+      type: "audio",
+      audioUrl: buildMediaUrl(row.mediaId),
+      textFallback: row.content,
+      externalId: row.externalId ?? undefined,
+    };
+  }
+
+  return {
+    id: row.id,
+    from,
+    text: row.content,
+    time,
+    date,
+    externalId: row.externalId ?? undefined,
+    interactive,
+  };
+}
+
+export function mapActivityMessages(raw: PrismaMessage[]): Message[] {
+  return raw.map((m) =>
+    toMessage({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      createdAt: m.createdAt,
+      externalId: m.externalId,
+      mediaType: m.mediaType,
+      mediaId: m.mediaId,
+      metadata: m.metadata,
+      interactive: m.interactive,
+    }),
+  );
+}
+
+export function mapBroadcastRecord(record: Record<string, unknown>): Message {
+  return toMessage({
+    id: String(record.id),
+    role: String(record.role),
+    content: typeof record.content === "string" ? record.content : "",
+    createdAt: new Date(String(record.created_at)),
+    externalId:
+      typeof record.external_id === "string" ? record.external_id : null,
+    mediaType: typeof record.media_type === "string" ? record.media_type : null,
+    mediaId: typeof record.media_id === "string" ? record.media_id : null,
+    metadata: parseJsonMaybe(record.metadata),
+    interactive: parseJsonMaybe(record.interactive),
   });
 }

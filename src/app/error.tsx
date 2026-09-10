@@ -14,6 +14,11 @@ export default function AppError({
   const t = useTranslations("app.error");
   const router = useRouter();
 
+  function retry() {
+    router.refresh();
+    reset();
+  }
+
   async function goToLogin() {
     await postJson("/api/auth/logout", {});
     router.replace("/login");
@@ -32,7 +37,7 @@ export default function AppError({
           <Button
             size="lg"
             className="rounded-full px-5"
-            onClick={() => reset()}
+            onClick={retry}
           >
             {t("cta_retry")}
           </Button>
