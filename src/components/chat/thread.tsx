@@ -18,8 +18,6 @@ import { MessageBubble } from "./message-bubble";
 import { TypingIndicatorBubble } from "./typing-indicator";
 import type { FormattedMessageButton, Message } from "./types";
 
-const FAR_FROM_BOTTOM_PX = 400;
-
 function msgKey(m: Message): string {
   return m.externalId ?? m.id;
 }
@@ -61,13 +59,18 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     },
     ref,
   ) {
-    const { containerRef, endRef, isAtBottom, scrollToBottom } =
-      useScrollToBottom();
+    const {
+      containerRef,
+      contentRef,
+      endRef,
+      isAtBottom,
+      isFarFromBottom,
+      scrollToBottom,
+    } = useScrollToBottom();
     const vvOffset = useVisualViewportOffset((offset) => {
       if (offset > 0) scrollToBottom("instant");
     });
     const [hasNewMessage, setHasNewMessage] = useState(false);
-    const [isFarFromBottom, setIsFarFromBottom] = useState(false);
     const [composerHeight, setComposerHeight] = useState(0);
     const [mounted, setMounted] = useState(false);
     const composerWrapperRef = useRef<HTMLDivElement>(null);
@@ -115,7 +118,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     }, [composerHeight]);
 
     useEffect(() => {
-      if (isTyping && isAtBottom) scrollToBottom("smooth");
+      if (isTyping) scrollToBottom("smooth");
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isTyping]);
 
@@ -134,19 +137,6 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       containerEl.addEventListener("load", handleImageLoad, true);
       return () =>
         containerEl.removeEventListener("load", handleImageLoad, true);
-    }, [containerRef]);
-
-    useEffect(() => {
-      const containerEl = containerRef.current;
-      if (!containerEl) return;
-      function handleScroll(el: HTMLDivElement) {
-        const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
-        setIsFarFromBottom(distance > FAR_FROM_BOTTOM_PX);
-      }
-      const onScroll = () => handleScroll(containerEl);
-      onScroll();
-      containerEl.addEventListener("scroll", onScroll, { passive: true });
-      return () => containerEl.removeEventListener("scroll", onScroll);
     }, [containerRef]);
 
     useEffect(() => {
@@ -236,7 +226,10 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
               ...(showComposer ? { paddingBottom: composerHeight + 16 } : {}),
             }}
           >
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
+            <div
+              ref={contentRef}
+              className="mx-auto flex w-full max-w-3xl flex-col gap-3"
+            >
               <div ref={topRef} />
               {messages.map((message, index) => {
                 const showDateSeparator =
@@ -277,7 +270,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
             <button
               type="button"
               onClick={handleJumpToBottom}
-              style={{ bottom: composerHeight + vvOffset + 16 }}
+              style={{ bottom: composerHeight + vvOffset + 8 }}
               aria-label="Ir para o final"
               className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full bg-black text-white shadow-lg dark:bg-white dark:text-black"
             >

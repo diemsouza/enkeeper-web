@@ -18,6 +18,18 @@ const LOAD_TIMEOUT_MS = 20000;
 let sharedContext: AudioContext | null = null;
 let audioUnlocked = false;
 
+// Registro global de qual player está tocando agora, pra parar os outros
+// quando um novo começa. Guarda a função de interrupção do player ativo
+// (não o stopSource cru — precisa também sincronizar o state do React
+// daquele player, senão ele fica preso em "playing" pra sempre).
+let activeStopper: (() => void) | null = null;
+
+function stopActiveAudio(exceptStopper?: () => void): void {
+  if (activeStopper && activeStopper !== exceptStopper) {
+    activeStopper();
+  }
+}
+
 // Safari pode lancar sincronamente ao construir o AudioContext (politica de
 // autoplay, contextos demais). Retornar null e deixar o caller degradar em vez
 // de propagar a excecao pra fora do event handler e travar a pagina.
@@ -197,7 +209,44 @@ export function CustomAudioPlayer({
     stopTicker();
   }, [stopTicker]);
 
-  useEffect(() => stopSource, [stopSource]);
+  const currentPosition = useCallback((): number => {
+    const buffer = bufferRef.current;
+    if (!buffer) return offsetRef.current;
+    if (stateRef.current !== "playing") return offsetRef.current;
+    const ctx = getAudioContext();
+    if (!ctx) return offsetRef.current;
+    const pos =
+      offsetRef.current +
+      (ctx.currentTime - startedAtRef.current) * rateRef.current;
+    return Math.min(pos, buffer.duration);
+  }, []);
+
+  // Chamado quando ESTE player é interrompido por outro começando a tocar.
+  // Diferente de stopSource (que só mexe no audio), isto também sincroniza
+  // o state do React pra "paused" com a posição real de quando parou —
+  // sem isso o botão fica preso mostrando pause e a posição salva fica
+  // errada (o bug que você reportou).
+  const interruptPlayback = useCallback(() => {
+    if (stateRef.current === "playing") {
+      const pos = currentPosition();
+      offsetRef.current = pos;
+      setProgress(pos);
+      setState("paused");
+    }
+    stopSource();
+    if (activeStopper === interruptPlayback) {
+      activeStopper = null;
+    }
+  }, [stopSource, currentPosition]);
+
+  useEffect(() => {
+    return () => {
+      stopSource();
+      if (activeStopper === interruptPlayback) {
+        activeStopper = null;
+      }
+    };
+  }, [stopSource, interruptPlayback]);
 
   const getBuffer = useCallback((): AudioBuffer | null => {
     if (bufferRef.current) return bufferRef.current;
@@ -225,18 +274,6 @@ export function CustomAudioPlayer({
     }
   }, [fail]);
 
-  const currentPosition = useCallback((): number => {
-    const buffer = bufferRef.current;
-    if (!buffer) return offsetRef.current;
-    if (stateRef.current !== "playing") return offsetRef.current;
-    const ctx = getAudioContext();
-    if (!ctx) return offsetRef.current;
-    const pos =
-      offsetRef.current +
-      (ctx.currentTime - startedAtRef.current) * rateRef.current;
-    return Math.min(pos, buffer.duration);
-  }, []);
-
   const startPlayback = useCallback(
     (fromSeconds: number) => {
       const buffer = getBuffer();
@@ -246,40 +283,68 @@ export function CustomAudioPlayer({
         fail("audiocontext");
         return;
       }
+
+      stopActiveAudio(interruptPlayback);
       stopSource();
 
-      try {
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        source.playbackRate.value = rateRef.current;
-        source.connect(ctx.destination);
-        source.onended = () => {
-          if (sourceRef.current !== source) return;
+      (async () => {
+        if (ctx.state === "suspended") {
+          try {
+            await ctx.resume();
+          } catch (err) {
+            console.error("[CustomAudioPlayer] resume failed:", err);
+          }
+        }
+
+        if (ctx.state !== "running") {
+          // Contexto ainda suspenso (comum depois de voltar do background no
+          // Safari). Não é erro de carregamento, não mostra estado de erro
+          // pro usuário — só aborta essa tentativa. Próximo clique já tenta
+          // de novo naturalmente (handlePlayPause chama unlockAudioContext a
+          // cada clique).
+          console.warn(
+            "[CustomAudioPlayer] audiocontext still suspended, retry on next click",
+          );
+          return;
+        }
+
+        try {
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.playbackRate.value = rateRef.current;
+          source.connect(ctx.destination);
+          source.onended = () => {
+            if (sourceRef.current !== source) return;
+            stopSource();
+            if (activeStopper === interruptPlayback) {
+              activeStopper = null;
+            }
+            offsetRef.current = 0;
+            setProgress(0);
+            setState("ready");
+          };
+
+          offsetRef.current = fromSeconds;
+          startedAtRef.current = ctx.currentTime;
+          source.start(
+            0,
+            Math.min(fromSeconds, Math.max(buffer.duration - 0.01, 0)),
+          );
+          sourceRef.current = source;
+          activeStopper = interruptPlayback;
+          setState("playing");
+        } catch (err) {
           stopSource();
-          offsetRef.current = 0;
-          setProgress(0);
-          setState("ready");
-        };
+          fail("playback", err);
+          return;
+        }
 
-        offsetRef.current = fromSeconds;
-        startedAtRef.current = ctx.currentTime;
-        source.start(
-          0,
-          Math.min(fromSeconds, Math.max(buffer.duration - 0.01, 0)),
-        );
-        sourceRef.current = source;
-        setState("playing");
-      } catch (err) {
-        stopSource();
-        fail("playback", err);
-        return;
-      }
-
-      intervalRef.current = setInterval(() => {
-        setProgress(currentPosition());
-      }, PROGRESS_TICK_MS);
+        intervalRef.current = setInterval(() => {
+          setProgress(currentPosition());
+        }, PROGRESS_TICK_MS);
+      })();
     },
-    [getBuffer, stopSource, currentPosition, fail],
+    [getBuffer, stopSource, interruptPlayback, currentPosition, fail],
   );
 
   const handlePlayPause = useCallback(() => {
@@ -293,6 +358,9 @@ export function CustomAudioPlayer({
     if (stateRef.current === "playing") {
       const pos = currentPosition();
       stopSource();
+      if (activeStopper === interruptPlayback) {
+        activeStopper = null;
+      }
       offsetRef.current = pos;
       setProgress(pos);
       setState("paused");
@@ -309,7 +377,14 @@ export function CustomAudioPlayer({
       : 0;
     const from = offsetRef.current >= total - 0.05 ? 0 : offsetRef.current;
     startPlayback(from);
-  }, [currentPosition, stopSource, externalId, onPlay, startPlayback]);
+  }, [
+    currentPosition,
+    stopSource,
+    interruptPlayback,
+    externalId,
+    onPlay,
+    startPlayback,
+  ]);
 
   const handleSeek = useCallback(
     (seconds: number) => {
@@ -338,6 +413,7 @@ export function CustomAudioPlayer({
       >
         <button
           type="button"
+          onPointerDown={(e) => e.preventDefault()}
           onClick={handlePlayPause}
           disabled={isLoading}
           aria-label={state === "playing" ? "Pausar" : "Tocar"}

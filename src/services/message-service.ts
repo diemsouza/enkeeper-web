@@ -1411,12 +1411,15 @@ export async function handleIncomingMessage(
             userId: user.id,
             userChannelId: userChannel.id,
             activityId: activeActivity.id,
-            message: formatQuestion({
-              question: alreadyPending.question,
-              questionFormat: alreadyPending.questionFormat,
-              questionOptions: alreadyPending.questionOptions,
-              termHint: alreadyPending.termHint,
-            }),
+            message: formatQuestion(
+              {
+                question: alreadyPending.question,
+                questionFormat: alreadyPending.questionFormat,
+                questionOptions: alreadyPending.questionOptions,
+                termHint: alreadyPending.termHint,
+              },
+              { level: activeActivity.userLevel },
+            ),
             intent: "practice_question",
             questionId: alreadyPending.id,
             today,
@@ -1528,12 +1531,15 @@ export async function handleIncomingMessage(
                 ? getFeedbackExamples(questionFormats, activeActivity.userLevel)
                 : "";
 
-              const questionForEvaluation = formatQuestion({
-                question: pendingQuestion.question,
-                questionFormat: pendingQuestion.questionFormat,
-                questionOptions: pendingQuestion.questionOptions,
-                termHint: pendingQuestion.termHint,
-              }).text;
+              const questionForEvaluation = formatQuestion(
+                {
+                  question: pendingQuestion.question,
+                  questionFormat: pendingQuestion.questionFormat,
+                  questionOptions: pendingQuestion.questionOptions,
+                  termHint: pendingQuestion.termHint,
+                },
+                { level: activeActivity.userLevel },
+              ).text;
 
               const evaluation = await generateAnswerEvaluation({
                 question: questionForEvaluation,
@@ -2034,7 +2040,7 @@ async function sendIntensiveQuestion(
     await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
   }
 
-  const questionText = formatQuestion(question);
+  const questionText = formatQuestion(question, { level: activity.userLevel });
 
   await sendAndSaveMessage({
     channel,

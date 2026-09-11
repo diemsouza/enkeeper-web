@@ -1053,19 +1053,20 @@ const scenarioPtClosings = [
   "Diga isso em inglês.",
 ];
 
-function pickScenarioClosing(level: Level | null): string {
-  console.log("level", level);
+function pickScenarioClosing(level: Level): string {
   const pool = level === Level.basic ? scenarioPtClosings : scenarioEnClosings;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-export function formatQuestion(question: {
-  question: string;
-  questionFormat: QuestionFormat | null;
-  questionOptions: string[];
-  termHint?: string | null;
-  level?: Level | null;
-}): FormattedMessage {
+export function formatQuestion(
+  question: {
+    question: string;
+    questionFormat: QuestionFormat | null;
+    questionOptions: string[];
+    termHint?: string | null;
+  },
+  options: { level: Level },
+): FormattedMessage {
   const withHint = insertTermHint(
     question.question,
     question.termHint,
@@ -1085,7 +1086,7 @@ export function formatQuestion(question: {
 
   if (question.questionFormat === QuestionFormat.scenario) {
     return {
-      text: `${withHint} ${pickScenarioClosing(question.level ?? null)}`,
+      text: `${withHint} ${pickScenarioClosing(options.level)}`,
     };
   }
 

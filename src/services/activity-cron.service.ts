@@ -343,7 +343,7 @@ async function sendCadenceQuestion(
     });
   }
 
-  const questionText = formatQuestion(question);
+  const questionText = formatQuestion(question, { level: activity.userLevel });
 
   await sendAndSaveMessage({
     channel,
