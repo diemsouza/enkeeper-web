@@ -16,6 +16,8 @@ export const AUDIO_CLEANUP_TTL_DAYS = 30;
 export const AUDIO_CLEANUP_BATCH_LIMIT = 50;
 export const AUDIO_CLEANUP_SUBBATCH_SIZE = 10;
 export const MESSAGES_PAGE_SIZE = 30;
+export const MEDIA_EXPIRES_IN_SEC = 60 * 60 * 4; // 4h de validade do link
+export const MEDIA_CACHE_SAFETY_MARGIN_SEC = 60 * 15; // 15min de folga
 
 export const MEDIA_PARENT_TYPE = {
   QUESTION: "question",
