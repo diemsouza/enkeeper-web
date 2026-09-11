@@ -58,7 +58,7 @@ export function SidebarFooterMenu({
   }
 
   return (
-    <SidebarFooter>
+    <SidebarFooter className="pb-[max(0.75rem,calc(env(safe-area-inset-bottom)-0.75rem))]">
       <DropdownMenu>
         <DropdownMenuTrigger className="flex h-11 w-full items-center gap-2 rounded-md px-1.5 text-left hover:bg-sidebar-accent">
           <Avatar className="h-8 w-8 shrink-0">

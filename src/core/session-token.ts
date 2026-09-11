@@ -42,9 +42,13 @@ export async function verifySessionToken(
     if (typeof payload.userId !== "string") return null;
     const issuedAt = typeof payload.iat === "number" ? payload.iat : 0;
     return { userId: payload.userId, issuedAt };
-  } catch {
+  } catch (err) {
     // jwtVerify lança pra assinatura inválida, token expirado ou malformado —
     // todos tratados igualmente como "sem sessão válida", nunca propagados.
+    console.error(
+      "[verifySessionToken] verify failed:",
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }
@@ -65,7 +69,10 @@ export function buildSessionCookieOptions(): SessionCookieOptions {
   };
 }
 
-export function shouldRefreshSession(issuedAt: number, now: Date = new Date()): boolean {
+export function shouldRefreshSession(
+  issuedAt: number,
+  now: Date = new Date(),
+): boolean {
   const nowSec = Math.floor(now.getTime() / 1000);
   return nowSec - issuedAt > SESSION_REFRESH_THRESHOLD_SEC;
 }

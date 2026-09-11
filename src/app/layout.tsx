@@ -7,6 +7,7 @@ import QueryProvider from "@/src/components/QueryProvider";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import ClientToaster from "../components/shared/client-toaster";
+import { ThemeColorSync } from "../components/shared/ThemeColorSync";
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -35,6 +36,10 @@ export async function generateMetadata(): Promise<Metadata> {
         "x-default": "https://fluizer.com",
         "pt-BR": "https://fluizer.com/?lang=pt",
       },
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
     },
   };
 }
@@ -83,6 +88,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe>`,
         )}
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+            <ThemeColorSync />
             <QueryProvider>
               <ClientToaster />
               {children}

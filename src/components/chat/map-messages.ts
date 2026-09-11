@@ -22,7 +22,13 @@ function formatTime(date: Date): string {
   return date.toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
   });
+}
+
+function parsePgTimestamp(value: string): Date {
+  const hasTimezone = /[Zz]|[+-]\d\d:?\d\d$/.test(value);
+  return new Date(hasTimezone ? value : `${value}Z`);
 }
 
 export function buildMediaUrl(mediaId: string): string {
@@ -138,7 +144,7 @@ export function mapBroadcastRecord(record: Record<string, unknown>): Message {
     id: String(record.id),
     role: String(record.role),
     content: typeof record.content === "string" ? record.content : "",
-    createdAt: new Date(String(record.created_at)),
+    createdAt: parsePgTimestamp(String(record.created_at)),
     externalId:
       typeof record.external_id === "string" ? record.external_id : null,
     mediaType: typeof record.media_type === "string" ? record.media_type : null,

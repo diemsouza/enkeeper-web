@@ -11,6 +11,12 @@ import {
 } from "@/src/repo/activities.repo";
 import { getTodayActivityCount } from "@/src/repo/daily-usage.repo";
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default async function AppLayout({
   children,
 }: {

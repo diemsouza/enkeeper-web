@@ -24,6 +24,7 @@ function nowTime(): string {
   return new Date().toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
   });
 }
 
@@ -176,10 +177,19 @@ export function LiveThreadClient({
     void postJson("/api/app/conversation/start", {});
   }, [needsAutoStart]);
 
+  const handleReconnect = useCallback(() => {
+    void refreshMessages();
+    const pending = messagesRef.current.find(
+      (m) => m.from === "user" && m.status === "failed",
+    );
+    if (pending) void handleRetrySend(pending.externalId ?? pending.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshMessages]);
+
   useRealtimeMessages(
     userId,
     handleRealtimeEvent,
-    () => void refreshMessages(),
+    handleReconnect,
     triggerAutoStart,
   );
 
@@ -194,6 +204,7 @@ export function LiveThreadClient({
   const lastMessage = messages[messages.length - 1];
   const lastKey = lastMessage?.externalId ?? lastMessage?.id;
   const isLastFromUser = lastMessage?.from === "user";
+  const isSendPending = isLastFromUser && lastMessage?.status === "sending";
   const isWaitingForResponse =
     isLastFromUser && lastMessage?.status !== "failed" && !waitTimedOut;
   const isTyping =
@@ -312,7 +323,7 @@ export function LiveThreadClient({
       onRetry={handleRetrySend}
       onAudioPlay={handleAudioPlay}
       onButtonClick={handleButtonClick}
-      isWaitingForResponse={isWaitingForResponse}
+      isWaitingForResponse={isWaitingForResponse || isSendPending}
       isTyping={isTyping}
       composerDisabled={starting}
       composerDisabledReason={

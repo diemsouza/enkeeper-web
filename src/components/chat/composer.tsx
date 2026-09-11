@@ -11,10 +11,7 @@ import {
 } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
-import {
-  type Command,
-  searchAutoCompleteCommands,
-} from "@/src/lib/commands";
+import { type Command, searchAutoCompleteCommands } from "@/src/lib/commands";
 import { capitalizeFirst } from "@/src/lib/utils";
 
 export type ComposerHandle = {
@@ -45,8 +42,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
       focus: () => textareaRef.current?.focus(),
     }));
 
-    const commandQuery =
-      text.startsWith("/") && !/\s/.test(text) ? text : null;
+    const commandQuery = text.startsWith("/") && !/\s/.test(text) ? text : null;
     const commandMatches =
       commandQuery !== null ? searchAutoCompleteCommands(commandQuery) : [];
     const showCommandMenu =
@@ -92,9 +88,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
       if (showCommandMenu) {
         if (e.key === "ArrowDown") {
           e.preventDefault();
-          setActiveIndex((i) =>
-            Math.min(i + 1, commandMatches.length - 1),
-          );
+          setActiveIndex((i) => Math.min(i + 1, commandMatches.length - 1));
           return;
         }
         if (e.key === "ArrowUp") {
@@ -128,7 +122,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
     return (
       <div
         className="flex flex-col gap-1 px-3 pt-2"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
+        style={{
+          paddingBottom:
+            "max(0.75rem, calc(env(safe-area-inset-bottom) - 0.75rem))",
+        }}
       >
         {disabled && disabledReason && (
           <p className="text-center text-xs text-muted-foreground">

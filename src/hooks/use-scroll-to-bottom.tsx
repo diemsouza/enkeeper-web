@@ -32,7 +32,7 @@ export function useScrollToBottom() {
         if (entry.isIntersecting) setIsAtBottom(true);
         else setIsAtBottom(false);
       },
-      { root: containerEl },
+      { root: containerEl, rootMargin: "0px 0px 150px 0px" },
     );
     observer.observe(endEl);
     return () => observer.disconnect();
