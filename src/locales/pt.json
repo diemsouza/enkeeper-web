@@ -252,7 +252,7 @@
             },
             {
               "from": "bot",
-              "text": "Modo prática intensiva ativado. Perguntas chegam uma após a outra, no seu ritmo. \n\n_Pare usando *pausar* ou após 15 minutos sem resposta._",
+              "text": "Perguntas chegam uma após a outra, no seu ritmo. \n\n_Pare usando *pausar* ou após 15 minutos sem resposta._",
               "time": "20:00"
             },
             {

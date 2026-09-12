@@ -404,9 +404,9 @@ export function formatDocProcessed(
 
 export function formatGuideAfterFirstFeedback(): FormattedMessage {
   return {
-    text: `As próximas perguntas chegam aos poucos durante o dia. Use ${formatCommand("practice_now")} para iniciar agora com um ritmo mais rápido.`,
+    text: `Você respondeu sua primeira pergunta dessa atividade. Use ${formatCommand("practice_now")} para receber as próximas agora, sem esperar.`,
     interactive: {
-      body: `As próximas perguntas chegam aos poucos durante o dia. Toque em Praticar para seguir num ritmo mais rápido agora.`,
+      body: `Você respondeu sua primeira pergunta dessa atividade. Toque em Praticar para receber as próximas agora, sem esperar.`,
       buttons: [
         {
           id: "practice_now",
@@ -431,7 +431,7 @@ export function formatDocNoQuestions(): FormattedMessage {
 export function formatIntensiveModeStopped(
   pendingQuestion: boolean,
 ): FormattedMessage {
-  let message = "Modo prática intensiva pausado. Voltando para o ritmo normal.";
+  let message = "Prática pausada.";
   if (pendingQuestion) {
     message += "\n\n⚠️ Encerre respondendo a última pergunta em aberto.";
   }
@@ -734,8 +734,8 @@ export function formatIntensiveModeActivated({
   hasPendingQuestion?: boolean;
 }): FormattedMessage {
   let msg = isIntensiveMode
-    ? "O modo prática intensiva já está ativado. "
-    : "Modo prática intensiva ativado. Perguntas chegam uma após a outra, no seu ritmo. ";
+    ? "As perguntas já estão chegando uma após a outra, no seu ritmo. "
+    : "Perguntas chegam uma após a outra, no seu ritmo. ";
   if (hasPendingQuestion) {
     msg += "\n\n⚠️ Você tem uma pergunta pendente para responder! ";
   }
