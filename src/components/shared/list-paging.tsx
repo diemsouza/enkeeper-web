@@ -18,7 +18,7 @@ export function ListPaging({
   hasMore,
   onChange,
 }: ListPagingProps) {
-  const t = useTranslations("app");
+  const t = useTranslations("common");
 
   const handlePrevPage = () => {
     if (onChange) onChange(Math.max(0, current - 1));

@@ -29,7 +29,7 @@ export function Header({
   // const supabase = createClientComponentClient();
   // const pathname = usePathname();
   const t = useTranslations("home.header");
-  const tApp = useTranslations("app");
+  const tApp = useTranslations("common");
 
   useEffect(() => {
     const handleScroll = () => {

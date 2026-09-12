@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { SidebarMenuButton, useSidebar } from "@/src/components/ui/sidebar";
 import {
   Tooltip,
@@ -25,7 +26,8 @@ export function ActivityListItem({
   showLabel: boolean;
 }) {
   const { open, isMobile } = useSidebar();
-  const label = activity.title || "Atividade sem título";
+  const t = useTranslations("app.common");
+  const label = activity.title || t("activity_untitled");
 
   const button = (
     <SidebarMenuButton asChild isActive={isActive}>

@@ -1,6 +1,7 @@
 "use client";
 
 import Zoom from "react-medium-image-zoom";
+import { useTranslations } from "next-intl";
 import { WhatsAppText } from "@/src/components/shared/whatsapp-text";
 
 export function ImageBubble({
@@ -10,9 +11,10 @@ export function ImageBubble({
   imageUrl: string;
   caption?: string;
 }) {
+  const t = useTranslations("app.chat");
   return (
     <div className="flex flex-col">
-      <Zoom a11yNameButtonZoom="Ampliar gráfico">
+      <Zoom a11yNameButtonZoom={t("zoom_image_aria")}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}

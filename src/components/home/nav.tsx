@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function Nav() {
-  const t = useTranslations("app");
+  const t = useTranslations("common");
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {

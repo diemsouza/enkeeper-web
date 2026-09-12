@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 export function FileCard({
   fileName,
   fileSize,
@@ -7,8 +9,13 @@ export function FileCard({
   fileSize: string;
   mediaType?: "image" | "pdf" | "text";
 }) {
+  const t = useTranslations("app.chat");
   const badge =
-    mediaType === "image" ? "IMG" : mediaType === "text" ? "TXT" : "PDF";
+    mediaType === "image"
+      ? t("file_badge_img")
+      : mediaType === "text"
+        ? t("file_badge_txt")
+        : t("file_badge_pdf");
   const badgeColor =
     mediaType === "image"
       ? "bg-blue-500"

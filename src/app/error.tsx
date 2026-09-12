@@ -11,7 +11,7 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const t = useTranslations("app.error");
+  const t = useTranslations("common.error");
   const router = useRouter();
 
   function retry() {

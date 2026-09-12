@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function Footer() {
   const t = useTranslations("home.footer");
-  const tApp = useTranslations("app");
+  const tApp = useTranslations("common");
 
   return (
     <footer className="bg-[#F5F5F7] dark:bg-[#111111] border-t border-border">

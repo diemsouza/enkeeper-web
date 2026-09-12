@@ -1,6 +1,7 @@
 "use client";
 
 import { ulid } from "ulid";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatThread } from "@/src/components/chat/thread";
 import type { ComposerHandle } from "@/src/components/chat/composer";
@@ -55,6 +56,14 @@ export function LiveThreadClient({
   initialHasMoreOlder: boolean;
   needsAutoStart: boolean;
 }) {
+  const t = useTranslations("app.onboarding");
+  const tChat = useTranslations("app.chat");
+  const fileLabels = {
+    image: tChat("file_type_image"),
+    pdf: tChat("file_type_pdf"),
+    text: tChat("file_type_text"),
+    generic: tChat("file_type_generic"),
+  };
   const [messages, setMessages] = useState(initialMessages);
   const [starting, setStarting] = useState(needsAutoStart);
   const [waitTimedOut, setWaitTimedOut] = useState(false);
@@ -120,7 +129,7 @@ export function LiveThreadClient({
       void refreshMessages();
       return;
     }
-    const mapped = mapBroadcastRecord(record);
+    const mapped = mapBroadcastRecord(record, fileLabels);
     const key = mapped.externalId ?? mapped.id;
 
     if (mapped.from === "user") {
@@ -326,9 +335,7 @@ export function LiveThreadClient({
       isWaitingForResponse={isWaitingForResponse || isSendPending}
       isTyping={isTyping}
       composerDisabled={starting}
-      composerDisabledReason={
-        starting ? "Preparando sua prática..." : undefined
-      }
+      composerDisabledReason={starting ? t("preparing") : undefined}
       onLoadOlder={loadOlderMessages}
       hasMoreOlder={hasMoreOlder}
       isLoadingOlder={isLoadingOlder}

@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
 import { startOfDay } from "date-fns";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { AppHeader } from "@/src/components/app/app-header";
 import { AppSidebar } from "@/src/components/app/app-sidebar";
 import { SidebarProvider } from "@/src/components/ui/sidebar";
@@ -23,29 +25,38 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAuth();
-  const [activities, current, activityCount, cookieStore] = await Promise.all([
-    findActivitiesForList(user.id),
-    findCurrentActivityByUser(user.id),
-    getTodayActivityCount(user.id, startOfDay(new Date())),
-    cookies(),
-  ]);
+  const [activities, current, activityCount, cookieStore, locale, messages] =
+    await Promise.all([
+      findActivitiesForList(user.id),
+      findCurrentActivityByUser(user.id),
+      getTodayActivityCount(user.id, startOfDay(new Date())),
+      cookies(),
+      getLocale(),
+      getMessages(),
+    ]);
 
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+  const scopedMessages = {
+    common: messages.common,
+    app: messages.app,
+  };
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
-      <div className="flex h-[100dvh] w-full overflow-hidden">
-        <AppSidebar
-          user={user}
-          activities={activities}
-          currentActivityId={current?.id ?? null}
-          canStartActivity={canStartActivity(activityCount)}
-        />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <AppHeader />
-          <main className="min-h-0 flex-1">{children}</main>
+    <NextIntlClientProvider locale={locale} messages={scopedMessages}>
+      <SidebarProvider defaultOpen={defaultOpen}>
+        <div className="flex h-[100dvh] w-full overflow-hidden">
+          <AppSidebar
+            user={user}
+            activities={activities}
+            currentActivityId={current?.id ?? null}
+            canStartActivity={canStartActivity(activityCount)}
+          />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <AppHeader />
+            <main className="min-h-0 flex-1">{children}</main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </NextIntlClientProvider>
   );
 }

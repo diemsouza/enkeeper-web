@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { LogOut, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import type { TAnyEnv } from "@/src/i18n/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,16 +30,18 @@ import { postJson } from "@/src/lib/api-client";
 import type { User } from "@/src/lib/prisma";
 import { ThemeMenuItems } from "./theme-menu";
 
-function planLabel(user: User): string {
+function planLabel(user: User, t: TAnyEnv): string {
   if (user.planCode === "pro") {
-    return canPractice(user) ? "Pro" : "Assinatura expirada";
+    return canPractice(user) ? t("plan_pro") : t("plan_subscription_expired");
   }
   const daysLeft = user.planExpiresAt
     ? Math.ceil(
         (user.planExpiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000),
       )
     : 0;
-  return daysLeft > 0 ? `Trial · ${daysLeft} dias restantes` : "Trial expirado";
+  return daysLeft > 0
+    ? t("plan_trial_days_left", { days: daysLeft })
+    : t("plan_trial_expired");
 }
 
 export function SidebarFooterMenu({
@@ -48,6 +52,8 @@ export function SidebarFooterMenu({
   showLabel: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations("app.account");
+  const tCommon = useTranslations("app.common");
   const initial = user.name?.trim()?.[0]?.toUpperCase();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -69,16 +75,16 @@ export function SidebarFooterMenu({
           {showLabel && (
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-sidebar-foreground">
-                {user.name || "Você"}
+                {user.name || t("you_fallback")}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                {planLabel(user)}
+                {planLabel(user, t)}
               </p>
             </div>
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="start" className="w-56">
-          <DropdownMenuLabel>Tema</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("theme_label")}</DropdownMenuLabel>
           <ThemeMenuItems />
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -89,21 +95,23 @@ export function SidebarFooterMenu({
             className="gap-2"
           >
             <LogOut className="h-4 w-4" />
-            Sair
+            {t("logout")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Sair</AlertDialogTitle>
+            <AlertDialogTitle>{t("logout")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Deseja realmente sair da sua conta?
+              {t("logout_confirm_message")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout}>Sair</AlertDialogAction>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>
+              {t("logout")}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

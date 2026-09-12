@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Spinner } from "@/src/components/ui/spinner";
 
 type PlayerState = "loading" | "ready" | "playing" | "paused" | "error";
@@ -105,6 +106,8 @@ export function CustomAudioPlayer({
   onPlay?: (externalId: string) => void;
   textFallback?: string;
 }) {
+  const t = useTranslations("app.chat");
+  const tErrors = useTranslations("app.errors");
   const [state, setState] = useState<PlayerState>("loading");
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -417,7 +420,7 @@ export function CustomAudioPlayer({
           onPointerDown={(e) => e.preventDefault()}
           onClick={handlePlayPause}
           disabled={isLoading}
-          aria-label={state === "playing" ? "Pausar" : "Tocar"}
+          aria-label={state === "playing" ? t("pause") : t("play")}
           className="shrink-0 p-1 disabled:opacity-60"
         >
           {isLoading ? (
@@ -466,7 +469,7 @@ export function CustomAudioPlayer({
               value={progress}
               disabled={isLoading || isError || duration === 0}
               onChange={(e) => handleSeek(Number(e.target.value))}
-              aria-label="Posição do áudio"
+              aria-label={t("audio_position_aria")}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
             />
             {duration > 0 && (
@@ -513,7 +516,7 @@ export function CustomAudioPlayer({
       )}
       {isError && showErrorHint && (
         <p className="mt-0.5 text-[11px] text-destructive">
-          Não foi possível carregar este áudio.
+          {tErrors("audio_load_failed")}
         </p>
       )}
     </div>

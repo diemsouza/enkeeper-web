@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   Fragment,
   forwardRef,
@@ -61,6 +62,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     },
     ref,
   ) {
+    const t = useTranslations("app.chat");
     const {
       containerRef,
       contentRef,
@@ -276,7 +278,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
           {isLoadingOlder && (
             <div className="absolute top-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-lg">
               <Spinner size="xs" className="border-primary-foreground" />
-              Carregando...
+              {t("loading")}
             </div>
           )}
           {(isFarFromBottom || hasNewMessage) && (
@@ -284,7 +286,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
               type="button"
               onClick={handleJumpToBottom}
               style={{ bottom: composerHeight + vvOffset + 8 }}
-              aria-label="Ir para o final"
+              aria-label={t("scroll_to_bottom_aria")}
               className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full bg-black text-white shadow-lg dark:bg-white dark:text-black"
             >
               <ArrowDown className="h-4 w-4" />

@@ -1,5 +1,5 @@
 {
-  "app": {
+  "common": {
     "brand": "Fluizer",
     "not_found": {
       "code_404": "404",
@@ -17,6 +17,12 @@
       "cta_retry": "Tentar de novo",
       "cta_login": "Ir para o login"
     },
+    "seo": {
+      "title": "Fluizer | Pratique inglês com IA, todo dia, no seu ritmo",
+      "description": "Prática diária de inglês com IA. Pratique sobre o que você quiser, no seu ritmo, todo dia.",
+      "keywords": "prática de inglês com IA, vocabulário inglês, estudar inglês online, repetição espaçada inglês, prática contínua, Fluizer",
+      "ogImage": "/images/logo.png"
+    },
     "paging_back": "Voltar",
     "paging_next": "Próximo",
     "paging_current": "Página {page}",
@@ -27,17 +33,70 @@
     "locale": "pt-BR",
     "datetime_format": "dd/MM/yyyy HH:mm"
   },
-  "seo": {
-    "home": {
-      "title": "Fluizer | Pratique inglês com IA, todo dia, no seu ritmo",
-      "description": "Prática diária de inglês com IA. Pratique sobre o que você quiser, no seu ritmo, todo dia.",
-      "keywords": "prática de inglês com IA, vocabulário inglês, estudar inglês online, repetição espaçada inglês, prática contínua, Fluizer",
-      "ogImage": "/images/logo.png"
+  "app": {
+    "common": {
+      "activity_untitled": "Atividade sem título",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar"
+    },
+    "onboarding": {
+      "preparing": "Preparando sua prática..."
+    },
+    "sidebar": {
+      "daily_limit_title": "Limite diário de atividades atingido",
+      "daily_limit_hint": "Envie um material pelo WhatsApp para começar",
+      "active_section": "Atividade ativa",
+      "history_section": "Histórico de atividades",
+      "empty": "Nenhuma",
+      "new_activity": "Nova atividade"
+    },
+    "account": {
+      "plan_pro": "Pro",
+      "plan_subscription_expired": "Assinatura expirada",
+      "plan_trial_days_left": "Trial · {days} dias restantes",
+      "plan_trial_expired": "Trial expirado",
+      "you_fallback": "Você",
+      "theme_label": "Tema",
+      "logout": "Sair",
+      "logout_confirm_message": "Deseja realmente sair da sua conta?",
+      "theme_light": "Claro",
+      "theme_dark": "Escuro",
+      "theme_system": "Sistema"
+    },
+    "chat": {
+      "attach_file_aria": "Anexar arquivo",
+      "attach_file_title": "Enviar imagem, PDF ou texto",
+      "placeholder_archived": "Atividade arquivada",
+      "placeholder_default": "Digite sua mensagem...",
+      "send_aria": "Enviar",
+      "loading": "Carregando...",
+      "scroll_to_bottom_aria": "Ir para o final",
+      "sending_aria": "Enviando",
+      "zoom_image_aria": "Ampliar gráfico",
+      "file_badge_img": "IMG",
+      "file_badge_txt": "TXT",
+      "file_badge_pdf": "PDF",
+      "file_type_image": "Imagem",
+      "file_type_pdf": "PDF",
+      "file_type_text": "Texto",
+      "file_type_generic": "Arquivo",
+      "play": "Tocar",
+      "pause": "Pausar",
+      "audio_position_aria": "Posição do áudio"
+    },
+    "errors": {
+      "message_failed": "Mensagem não enviada.",
+      "resend": "Reenviar",
+      "resend_aria": "Reenviar mensagem",
+      "audio_load_failed": "Não foi possível carregar este áudio."
+    },
+    "summary": {
+      "archived_message": "Esta atividade foi arquivada em {date}.",
+      "resume_activity": "Retomar atividade",
+      "resume_confirm_message": "Ao retomar esta atividade, a atividade atual será arquivada. Deseja continuar?",
+      "resuming": "Retomando...",
+      "resume": "Retomar"
     }
-  },
-  "locales": {
-    "pt": "Português",
-    "en": "Inglês"
   },
   "home": {
     "phrases": {

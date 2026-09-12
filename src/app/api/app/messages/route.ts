@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { ulid } from "ulid";
 import { z, ZodError } from "zod";
+import { getTranslations } from "next-intl/server";
 import { requireAuth } from "@/src/lib/auth/current-user";
 import { UnauthorizedError } from "@/src/lib/custom-errors";
 import { mapActivityMessages } from "@/src/components/chat/map-messages";
@@ -23,7 +24,14 @@ export async function GET(request: Request): Promise<Response> {
       user.id,
       before,
     );
-    return Response.json({ messages: mapActivityMessages(messages), hasMore });
+    const t = await getTranslations("app.chat");
+    const mapped = mapActivityMessages(messages, {
+      image: t("file_type_image"),
+      pdf: t("file_type_pdf"),
+      text: t("file_type_text"),
+      generic: t("file_type_generic"),
+    });
+    return Response.json({ messages: mapped, hasMore });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "unauthorized" }, { status: 401 });

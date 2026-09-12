@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +36,8 @@ export function ArchivedActivityView({
   archivedAtTime: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("app.summary");
+  const tCommon = useTranslations("app.common");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [resuming, setResuming] = useState(false);
 
@@ -58,9 +61,9 @@ export function ArchivedActivityView({
     from: "bot",
     time: archivedAtTime,
     interactive: {
-      body: `Esta atividade foi arquivada em ${archivedAtLabel}.`,
+      body: t("archived_message", { date: archivedAtLabel }),
       buttons: [
-        { id: RESUME_BUTTON_ID, label: "Retomar atividade", type: "reply" },
+        { id: RESUME_BUTTON_ID, label: t("resume_activity"), type: "reply" },
       ],
     },
   });
@@ -100,14 +103,15 @@ export function ArchivedActivityView({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar</AlertDialogTitle>
+            <AlertDialogTitle>{tCommon("confirm")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Ao retomar esta atividade, a atividade atual será arquivada. Deseja
-              continuar?
+              {t("resume_confirm_message")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={resuming}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={resuming}>
+              {tCommon("cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               disabled={resuming}
               onClick={(e) => {
@@ -118,10 +122,10 @@ export function ArchivedActivityView({
               {resuming ? (
                 <span className="flex items-center gap-2">
                   <Spinner size="xs" className="border-primary-foreground" />
-                  Retomando...
+                  {t("resuming")}
                 </span>
               ) : (
-                "Retomar"
+                t("resume")
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

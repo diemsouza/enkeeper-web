@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUp, Paperclip } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   forwardRef,
   KeyboardEvent,
@@ -31,6 +32,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
     { onSend, onSendFile, disabled, disabledReason, isWaitingForResponse },
     ref,
   ) {
+    const t = useTranslations("app.chat");
     const [text, setText] = useState("");
     const [activeIndex, setActiveIndex] = useState(0);
     const [menuDismissed, setMenuDismissed] = useState(false);
@@ -193,8 +195,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                 type="button"
                 disabled={disabled || isWaitingForResponse || !onSendFile}
                 onClick={() => fileInputRef.current?.click()}
-                aria-label="Anexar arquivo"
-                title="Enviar imagem, PDF ou texto"
+                aria-label={t("attach_file_aria")}
+                title={t("attach_file_title")}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
               >
                 <Paperclip className="h-4 w-4" />
@@ -208,7 +210,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                 onKeyDown={handleKeyDown}
                 disabled={disabled}
                 placeholder={
-                  disabled ? "Atividade arquivada" : "Digite sua mensagem..."
+                  disabled
+                    ? t("placeholder_archived")
+                    : t("placeholder_default")
                 }
                 className="max-h-40 min-h-9 flex-1 resize-none rounded-2xl border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
@@ -218,7 +222,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                 onClick={() => void handleSend()}
                 disabled={!text.trim() || disabled || isWaitingForResponse}
                 className="h-9 w-9 shrink-0 rounded-full"
-                aria-label="Enviar"
+                aria-label={t("send_aria")}
               >
                 <ArrowUp className="h-4 w-4" />
               </Button>

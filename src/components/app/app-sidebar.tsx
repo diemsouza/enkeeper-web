@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
   Sidebar,
@@ -32,6 +33,7 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations("app.sidebar");
   const { open, isMobile, setOpenMobile } = useSidebar();
   const showLabel = open || isMobile;
   const [starting, setStarting] = useState(false);
@@ -46,9 +48,9 @@ export function AppSidebar({
   const canClickNewActivity =
     canStartActivity && !!currentActivityId && !starting;
   const disabledReason = !canStartActivity
-    ? "Limite diário de atividades atingido"
+    ? t("daily_limit_title")
     : !currentActivityId
-      ? "Envie um material pelo WhatsApp para começar"
+      ? t("daily_limit_hint")
       : undefined;
 
   async function handleNewActivity() {
@@ -82,13 +84,13 @@ export function AppSidebar({
         <div className="flex flex-col gap-1 px-2 pt-2">
           {showLabel && (
             <h3 className="px-2 text-xs font-medium text-sidebar-foreground/60">
-              Atividade ativa
+              {t("active_section")}
             </h3>
           )}
           {active.length === 0 ? (
             showLabel && (
               <p className="px-2 py-1 text-xs text-sidebar-foreground/50">
-                Nenhuma
+                {t("empty")}
               </p>
             )
           ) : (
@@ -111,11 +113,11 @@ export function AppSidebar({
         {showLabel && (
           <div className="flex flex-col gap-1 px-2 pt-4">
             <h3 className="px-2 text-xs font-medium text-sidebar-foreground/60">
-              Histórico de atividades
+              {t("history_section")}
             </h3>
             {archived.length === 0 ? (
               <p className="px-2 py-1 text-xs text-sidebar-foreground/50">
-                Nenhuma
+                {t("empty")}
               </p>
             ) : (
               <SidebarMenu>

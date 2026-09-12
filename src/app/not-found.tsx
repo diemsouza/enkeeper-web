@@ -2,7 +2,7 @@ import { Button } from "@/src/components/ui/button";
 import { getTranslations } from "next-intl/server";
 
 export default async function NotFound() {
-  const t = await getTranslations("app.not_found");
+  const t = await getTranslations("common.not_found");
   return (
     <section className="grid min-h-screen place-items-center bg-white px-6 py-24 sm:py-32 lg:px-8">
       <div className="text-center">

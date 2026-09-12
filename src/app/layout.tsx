@@ -23,7 +23,7 @@ export const viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("seo.home"); // usa o locale do request.ts
+  const t = await getTranslations("common.seo"); // usa o locale do request.ts
 
   return {
     title: t("title"),
@@ -32,10 +32,6 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: "index, follow",
     alternates: {
       canonical: "https://fluizer.com",
-      languages: {
-        "x-default": "https://fluizer.com",
-        "pt-BR": "https://fluizer.com/?lang=pt",
-      },
     },
     appleWebApp: {
       capable: true,

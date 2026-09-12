@@ -5,7 +5,7 @@ interface NotFoundContentProps {
 }
 
 export function NotFoundContent({ className }: NotFoundContentProps) {
-  const t = useTranslations("app");
+  const t = useTranslations("common");
 
   return (
     <div className={className}>

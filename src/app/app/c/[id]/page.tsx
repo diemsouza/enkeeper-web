@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { buildMediaUrl } from "@/src/components/chat/map-messages";
 import { ArchivedActivityView } from "@/src/components/app/archived-activity-view";
 import { requireAuth } from "@/src/lib/auth/current-user";
@@ -29,11 +30,12 @@ export default async function ArchivedActivityPage({
   const chartMedia = activity.summary
     ? await findClosingSummaryMedia(id)
     : null;
+  const t = await getTranslations("app.common");
 
   return (
     <ArchivedActivityView
       activityId={activity.id}
-      title={activity.title || "Atividade sem título"}
+      title={activity.title || t("activity_untitled")}
       summary={activity.summary ?? null}
       chartImageUrl={chartMedia ? buildMediaUrl(chartMedia.mediaPath) : null}
       archivedAtLabel={archivedAtFormatter.format(activity.statusUpdatedAt)}
