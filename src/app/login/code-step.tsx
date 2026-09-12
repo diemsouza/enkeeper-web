@@ -8,6 +8,7 @@ import {
 } from "@/src/components/ui/input-otp";
 import { otpResendCooldownRemainingSec } from "@/src/core/otp";
 import { cn, formatBrPhoneMask } from "@/src/lib/utils";
+import { Spinner } from "@/src/components/ui/spinner";
 
 type CodeStepProps = {
   phoneDigits: string;
@@ -85,7 +86,7 @@ export function CodeStep({
       </InputOTP>
       {loading && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary" />
+          <Spinner size="sm" className="border-primary" />
           Verificando código...
         </div>
       )}

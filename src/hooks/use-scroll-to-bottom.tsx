@@ -9,6 +9,7 @@ export function useScrollToBottom() {
   const endRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [isFarFromBottom, setIsFarFromBottom] = useState(false);
+  const isAtBottomRef = useRef(false);
 
   useEffect(() => {
     const containerEl = containerRef.current;
@@ -19,13 +20,21 @@ export function useScrollToBottom() {
       if (!containerEl) return;
       const distance =
         containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight;
-      setIsAtBottom(distance <= NEAR_BOTTOM_PX);
+      const atBottom = distance <= NEAR_BOTTOM_PX;
+      isAtBottomRef.current = atBottom;
+      setIsAtBottom(atBottom);
       setIsFarFromBottom(distance > FAR_FROM_BOTTOM_PX);
+    }
+
+    function handleContentResize() {
+      const wasAtBottom = isAtBottomRef.current;
+      measure();
+      if (wasAtBottom) endRef.current?.scrollIntoView({ behavior: "instant" });
     }
 
     measure();
     containerEl.addEventListener("scroll", measure, { passive: true });
-    const resizeObserver = new ResizeObserver(measure);
+    const resizeObserver = new ResizeObserver(handleContentResize);
     resizeObserver.observe(contentEl);
 
     return () => {

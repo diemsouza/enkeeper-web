@@ -12,6 +12,8 @@ import {
 import { shouldShowDateSeparator } from "@/src/lib/datetime-utils";
 import { useScrollToBottom } from "@/src/hooks/use-scroll-to-bottom";
 import { useVisualViewportOffset } from "@/src/hooks/use-visual-viewport-offset";
+import { cn } from "@/src/lib/utils";
+import { Spinner } from "@/src/components/ui/spinner";
 import { Composer, type ComposerHandle } from "./composer";
 import { DateSeparator } from "./date-separator";
 import { MessageBubble } from "./message-bubble";
@@ -73,6 +75,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     const [hasNewMessage, setHasNewMessage] = useState(false);
     const [composerHeight, setComposerHeight] = useState(0);
     const [mounted, setMounted] = useState(false);
+    const [isThreadReady, setIsThreadReady] = useState(false);
     const composerWrapperRef = useRef<HTMLDivElement>(null);
     const topRef = useRef<HTMLDivElement>(null);
     const hasMountedRef = useRef(false);
@@ -146,6 +149,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
         hasMountedRef.current = true;
         prevLastIdRef.current = lastId;
         scrollToBottom("instant");
+        setIsThreadReady(true);
         return;
       }
       const arrived = lastId !== undefined && lastId !== prevLastIdRef.current;
@@ -228,7 +232,10 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
           >
             <div
               ref={contentRef}
-              className="mx-auto flex w-full max-w-3xl flex-col gap-3"
+              className={cn(
+                "mx-auto flex w-full max-w-3xl flex-col gap-3 transition-opacity duration-150",
+                isThreadReady ? "opacity-100" : "opacity-0",
+              )}
             >
               <div ref={topRef} />
               {messages.map((message, index) => {
@@ -260,9 +267,15 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
             </div>
             <div ref={endRef} />
           </div>
+          {!isThreadReady && (
+            <Spinner
+              centerHorizontal
+              className="absolute inset-x-0 top-3 z-20"
+            />
+          )}
           {isLoadingOlder && (
             <div className="absolute top-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-lg">
-              <div className="h-3 w-3 animate-spin rounded-full border-b-2 border-primary-foreground" />
+              <Spinner size="xs" className="border-primary-foreground" />
               Carregando...
             </div>
           )}

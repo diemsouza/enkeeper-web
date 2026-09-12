@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Spinner } from "@/src/components/ui/spinner";
 
 type PlayerState = "loading" | "ready" | "playing" | "paused" | "error";
 
@@ -420,7 +421,7 @@ export function CustomAudioPlayer({
           className="shrink-0 p-1 disabled:opacity-60"
         >
           {isLoading ? (
-            <span className="block w-5 h-5 animate-spin rounded-full border-b-2 border-current" />
+            <Spinner className="border-current" />
           ) : state === "playing" ? (
             <svg
               viewBox="0 0 24 24"

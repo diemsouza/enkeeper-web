@@ -1,4 +1,5 @@
 import { cn } from "@/src/lib/utils";
+import { Spinner } from "@/src/components/ui/spinner";
 
 export function Loading({
   fullScreen = false,
@@ -12,10 +13,10 @@ export function Loading({
       className={cn(
         "flex justify-center",
         fullScreen ? "h-full items-start pt-16" : "items-center p-4",
-        className
+        className,
       )}
     >
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <Spinner />
     </div>
   );
 }

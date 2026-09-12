@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { ChatThread } from "@/src/components/chat/thread";
+import { Spinner } from "@/src/components/ui/spinner";
 import type { FormattedMessageButton, Message } from "@/src/components/chat/types";
 import { postJson } from "@/src/lib/api-client";
 
@@ -116,7 +117,7 @@ export function ArchivedActivityView({
             >
               {resuming ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-3 w-3 animate-spin rounded-full border-b-2 border-primary-foreground" />
+                  <Spinner size="xs" className="border-primary-foreground" />
                   Retomando...
                 </span>
               ) : (
