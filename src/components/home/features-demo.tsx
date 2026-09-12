@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { ArrowDown } from "lucide-react";
-import { WhatsAppChat } from "@/src/components/whatsapp-chat";
+import { ChatPreview } from "@/src/components/home/chat-preview";
 import { useInView } from "@/src/hooks/use-in-view";
 import { cn } from "@/src/lib/utils";
 
@@ -70,7 +70,7 @@ export default function FeaturesDemo() {
               </a>
             </div>
             <div className="shrink-0">
-              <WhatsAppChat
+              <ChatPreview
                 messages={block.messages}
                 widthClassName="w-full max-w-[400px] sm:max-w-[420px] mx-auto"
                 maxHeightClassName="max-h-[400px]"
