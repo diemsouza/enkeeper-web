@@ -1688,6 +1688,7 @@ export async function handleIncomingMessage(
               });
 
               if (feedbackAudioPath) {
+                await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
                 await sendAndSaveMessage({
                   channel,
                   to: userChannel.channelUserId,

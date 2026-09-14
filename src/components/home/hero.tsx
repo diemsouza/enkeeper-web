@@ -39,11 +39,13 @@ function renderTyped(phrase: Segment[], charIndex: number) {
     remaining -= visible.length;
     if (!visible) return null;
     return seg.bold ? (
-      <strong key={i} className="font-[500]">
+      <strong key={i} className="font-[600]">
         {visible}
       </strong>
     ) : (
-      <span key={i}>{visible}</span>
+      <span key={i} className="text-foreground/90 font-thin">
+        {visible}
+      </span>
     );
   });
 }

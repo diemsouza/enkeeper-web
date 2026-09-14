@@ -36,7 +36,15 @@ function stopActiveAudio(exceptStopper?: () => void): void {
 // autoplay, contextos demais). Retornar null e deixar o caller degradar em vez
 // de propagar a excecao pra fora do event handler e travar a pagina.
 function getAudioContext(): AudioContext | null {
-  if (sharedContext) return sharedContext;
+  if (sharedContext) {
+    if (sharedContext.state !== "closed") return sharedContext;
+    // iOS as vezes fecha o AudioContext sozinho depois de um tempo em
+    // segundo plano (nao so suspende). Um contexto "closed" nunca mais
+    // resume - descartando e criando um novo dentro do proprio clique
+    // (via unlockAudioContext) resolve sem precisar de reload.
+    sharedContext = null;
+    audioUnlocked = false;
+  }
   try {
     const Ctor =
       window.AudioContext ||
@@ -50,6 +58,13 @@ function getAudioContext(): AudioContext | null {
   }
 }
 
+// Safari usa um estado "interrupted" (chamada, Siri, ou fundo prolongado)
+// que resume() normalmente traz de volta a "running" sem precisar recriar
+// o contexto - so "closed" e irrecuperavel.
+function canResume(state: AudioContextState): boolean {
+  return state === "suspended" || state === "interrupted";
+}
+
 // iOS exige que a saida de audio seja liberada dentro do gesto do usuario:
 // um resume() apos await ja perde o gesto. Chamar isto sincronamente no clique,
 // antes de qualquer await. O buffer silencioso de 1 sample e o que efetivamente
@@ -58,7 +73,7 @@ function unlockAudioContext(): void {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
-    if (ctx.state === "suspended") void ctx.resume();
+    if (canResume(ctx.state)) void ctx.resume();
     if (audioUnlocked) return;
     const buffer = ctx.createBuffer(1, 1, 22050);
     const source = ctx.createBufferSource();
@@ -117,6 +132,7 @@ export function CustomAudioPlayer({
   const decodedRef = useRef<DecodedAudio | null>(null);
   const bufferRef = useRef<AudioBuffer | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const startedAtRef = useRef(0);
   const offsetRef = useRef(0);
   const rateRef = useRef(1);
@@ -217,7 +233,11 @@ export function CustomAudioPlayer({
     const buffer = bufferRef.current;
     if (!buffer) return offsetRef.current;
     if (stateRef.current !== "playing") return offsetRef.current;
-    const ctx = getAudioContext();
+    // Usa o contexto que efetivamente iniciou esta reproducao, nao o
+    // sharedContext atual - ele pode ter sido substituido nesse meio tempo
+    // (voltou do background), e misturar relogios de contextos diferentes
+    // produz uma posicao errada.
+    const ctx = audioCtxRef.current;
     if (!ctx) return offsetRef.current;
     const pos =
       offsetRef.current +
@@ -292,11 +312,18 @@ export function CustomAudioPlayer({
       stopSource();
 
       (async () => {
-        if (ctx.state === "suspended") {
+        if (canResume(ctx.state)) {
           try {
             await ctx.resume();
           } catch (err) {
             console.error("[CustomAudioPlayer] resume failed:", err);
+            // resume() so rejeita quando o contexto ja esta "closed" (spec) -
+            // sinal inequivoco de que morreu. Descarta pro proximo clique
+            // criar um novo, dentro do gesto dele.
+            if (sharedContext === ctx) {
+              sharedContext = null;
+              audioUnlocked = false;
+            }
           }
         }
 
@@ -330,6 +357,7 @@ export function CustomAudioPlayer({
 
           offsetRef.current = fromSeconds;
           startedAtRef.current = ctx.currentTime;
+          audioCtxRef.current = ctx;
           source.start(
             0,
             Math.min(fromSeconds, Math.max(buffer.duration - 0.01, 0)),
@@ -479,7 +507,7 @@ export function CustomAudioPlayer({
               />
             )}
           </div>
-          <span className="absolute left-0 top-full mt-0.5 text-[10px] opacity-60 tabular-nums">
+          <span className="block mt-0.5 text-[10px] opacity-60 tabular-nums">
             {formatTime(displayTime)}
           </span>
         </div>
