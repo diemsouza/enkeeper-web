@@ -177,7 +177,7 @@ export function SidebarMenuButton({
     <Comp
       data-active={isActive}
       className={cn(
-        "flex h-11 w-full items-center gap-2 overflow-hidden rounded-md px-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        "flex h-11 w-full items-center gap-2 overflow-hidden rounded-md px-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none",
         isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
         !open && !isMobile && "justify-center px-0",
         className,

@@ -70,6 +70,8 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       isAtBottom,
       isFarFromBottom,
       scrollToBottom,
+      scrollToBottomWhenSettled,
+      notifySettleActivity,
     } = useScrollToBottom();
     const vvOffset = useVisualViewportOffset((offset) => {
       if (offset > 0) scrollToBottom("instant");
@@ -112,10 +114,11 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       setComposerHeight(el.getBoundingClientRect().height);
       const observer = new ResizeObserver((entries) => {
         setComposerHeight(entries[0]?.contentRect.height ?? 0);
+        notifySettleActivity();
       });
       observer.observe(el);
       return () => observer.disconnect();
-    }, [showComposer]);
+    }, [showComposer, notifySettleActivity]);
 
     useEffect(() => {
       if (isAtBottom) scrollToBottom("instant");
@@ -150,8 +153,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       if (!hasMountedRef.current) {
         hasMountedRef.current = true;
         prevLastIdRef.current = lastId;
-        scrollToBottom("instant");
-        setIsThreadReady(true);
+        scrollToBottomWhenSettled(() => setIsThreadReady(true));
         return;
       }
       const arrived = lastId !== undefined && lastId !== prevLastIdRef.current;
@@ -167,7 +169,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       } else {
         setHasNewMessage(true);
       }
-    }, [messages, isAtBottom, scrollToBottom]);
+    }, [messages, isAtBottom, scrollToBottom, scrollToBottomWhenSettled]);
 
     useEffect(() => {
       if (isAtBottom) setHasNewMessage(false);

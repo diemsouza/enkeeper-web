@@ -1,11 +1,13 @@
 import "@/src/app/globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
+import { cookies } from "next/headers";
 import { ThemeProvider } from "@/src/components/providers/theme-provider";
 import Script from "next/script";
 import QueryProvider from "@/src/components/QueryProvider";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { THEME_COLOR_DARK, THEME_COLOR_LIGHT } from "@/src/lib/constants";
 import ClientToaster from "../components/shared/client-toaster";
 import { ThemeColorSync } from "../components/shared/ThemeColorSync";
 
@@ -16,11 +18,16 @@ const figtree = Figtree({
 
 export const dynamic = "force-dynamic";
 
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-  //viewportFit: "cover",
-};
+export async function generateViewport(): Promise<Viewport> {
+  const cookieStore = await cookies();
+  const isDark = cookieStore.get("theme")?.value === "dark";
+  return {
+    width: "device-width",
+    initialScale: 1,
+    //viewportFit: "cover",
+    themeColor: isDark ? THEME_COLOR_DARK : THEME_COLOR_LIGHT,
+  };
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("common.seo"); // usa o locale do request.ts
@@ -47,9 +54,16 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const cookieStore = await cookies();
+  const isDark = cookieStore.get("theme")?.value === "dark";
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={isDark ? "dark" : undefined}
+      style={{ colorScheme: isDark ? "dark" : "light" }}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="shortcut icon" href="/favicon.ico" />
         <link
@@ -83,7 +97,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe>`,
           ></noscript>
         )}
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            storageKey="theme"
+          >
             <ThemeColorSync />
             <QueryProvider>
               <ClientToaster />

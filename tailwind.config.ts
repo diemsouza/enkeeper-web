@@ -96,7 +96,7 @@ export default {
           "100%": { width: "100%" },
         },
         "message-in": {
-          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "0%": { opacity: "0", transform: "translateY(10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "typing-dot": {
@@ -110,7 +110,7 @@ export default {
         "fade-in": "fade-in 1s ease-out",
         "bounce-subtle": "bounce-subtle 3s infinite ease-in-out",
         typing: "typing 2s steps(40, end)",
-        "message-in": "message-in 180ms ease-out",
+        "message-in": "message-in 260ms ease-out",
         "typing-dot": "typing-dot 0.9s ease-in-out infinite",
       },
       minHeight: {

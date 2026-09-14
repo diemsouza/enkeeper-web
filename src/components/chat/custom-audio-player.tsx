@@ -65,6 +65,41 @@ function canResume(state: AudioContextState): boolean {
   return state === "suspended" || state === "interrupted";
 }
 
+let lastForcedDiscardAt = 0;
+const FORCED_DISCARD_COOLDOWN_MS = 800;
+
+// Chrome/Android as vezes mantem ctx.state === "running" (e resume() continua
+// resolvendo normalmente) mesmo depois do SO cortar a saida de audio real ao
+// perder o foco da aba - nao ha sinal confiavel via JS pra essa falha. Por
+// isso descarta o contexto sem checar o estado, tanto ao voltar de outra aba
+// (visibilitychange) quanto quando uma tentativa de playback falha mesmo
+// apos resume(). O cooldown evita reconstrucoes em sequencia (troca rapida
+// de aba, ou cliques repetidos com audio genuinamente quebrado) que
+// esgotariam o limite de AudioContext por pagina do iOS Safari.
+function discardSharedContext(): void {
+  if (!sharedContext) return;
+  const now = Date.now();
+  if (now - lastForcedDiscardAt < FORCED_DISCARD_COOLDOWN_MS) return;
+  lastForcedDiscardAt = now;
+  stopActiveAudio();
+  sharedContext.close().catch(() => {
+    // ja fechando/fechado
+  });
+  sharedContext = null;
+  audioUnlocked = false;
+}
+
+let visibilityListenerAttached = false;
+
+function attachVisibilityRecovery(): void {
+  if (visibilityListenerAttached) return;
+  if (typeof document === "undefined") return;
+  visibilityListenerAttached = true;
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") discardSharedContext();
+  });
+}
+
 // iOS exige que a saida de audio seja liberada dentro do gesto do usuario:
 // um resume() apos await ja perde o gesto. Chamar isto sincronamente no clique,
 // antes de qualquer await. O buffer silencioso de 1 sample e o que efetivamente
@@ -140,6 +175,10 @@ export function CustomAudioPlayer({
   const playFiredRef = useRef(false);
   const stateRef = useRef<PlayerState>("loading");
   stateRef.current = state;
+
+  useEffect(() => {
+    attachVisibilityRecovery();
+  }, []);
 
   const fail = useCallback((reason: string, err?: unknown): void => {
     console.error(`[CustomAudioPlayer] ${reason}`, err);
@@ -317,25 +356,17 @@ export function CustomAudioPlayer({
             await ctx.resume();
           } catch (err) {
             console.error("[CustomAudioPlayer] resume failed:", err);
-            // resume() so rejeita quando o contexto ja esta "closed" (spec) -
-            // sinal inequivoco de que morreu. Descarta pro proximo clique
-            // criar um novo, dentro do gesto dele.
-            if (sharedContext === ctx) {
-              sharedContext = null;
-              audioUnlocked = false;
-            }
           }
         }
 
         if (ctx.state !== "running") {
-          // Contexto ainda suspenso (comum depois de voltar do background no
-          // Safari). Não é erro de carregamento, não mostra estado de erro
-          // pro usuário — só aborta essa tentativa. Próximo clique já tenta
-          // de novo naturalmente (handlePlayPause chama unlockAudioContext a
-          // cada clique).
+          // Estado nao confiavel apos tentar resume() (comum depois de voltar
+          // do background) - descarta pro proximo clique criar um contexto
+          // novo, dentro do gesto dele, em vez de repetir a mesma falha.
           console.warn(
-            "[CustomAudioPlayer] audiocontext still suspended, retry on next click",
+            "[CustomAudioPlayer] audiocontext unusable after resume attempt, discarding for next click",
           );
+          if (sharedContext === ctx) discardSharedContext();
           return;
         }
 
@@ -449,7 +480,7 @@ export function CustomAudioPlayer({
           onClick={handlePlayPause}
           disabled={isLoading}
           aria-label={state === "playing" ? t("pause") : t("play")}
-          className="shrink-0 p-1 disabled:opacity-60"
+          className="shrink-0 rounded-full p-1 transition-colors active:bg-foreground/10 disabled:opacity-60"
         >
           {isLoading ? (
             <Spinner className="border-current" />
@@ -507,7 +538,7 @@ export function CustomAudioPlayer({
               />
             )}
           </div>
-          <span className="block mt-0.5 text-[10px] opacity-60 tabular-nums">
+          <span className="absolute left-0 top-full mt-0.5 text-[10px] opacity-60 tabular-nums">
             {formatTime(displayTime)}
           </span>
         </div>

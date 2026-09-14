@@ -1,3 +1,6 @@
+export const THEME_COLOR_LIGHT = "#ffffff";
+export const THEME_COLOR_DARK = "#0a0a0a";
+
 export const MIN_WORDS = 50;
 export const MIN_UNIQUE_WORDS = 30;
 export const MIN_UNIQUE_RATIO = 0.3;
