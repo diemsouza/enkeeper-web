@@ -23,7 +23,15 @@ export async function middleware(req: NextRequest) {
 
   if (isAppRoute && !session) {
     const url = new URL("/login", req.url);
-    url.searchParams.set("redirect_to", pathname + search);
+    const waToken = req.nextUrl.searchParams.get("wa_token");
+    const cleanParams = new URLSearchParams(search);
+    cleanParams.delete("wa_token");
+    const cleanSearch = cleanParams.toString();
+    url.searchParams.set(
+      "redirect_to",
+      pathname + (cleanSearch ? `?${cleanSearch}` : ""),
+    );
+    if (waToken) url.searchParams.set("wa_token", waToken);
     return NextResponse.redirect(url);
   }
 

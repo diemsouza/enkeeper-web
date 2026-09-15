@@ -60,7 +60,7 @@ A interseção "prática contextual contínua, ancorada no material do aluno, de
 
 1. Usuário conta o que quer praticar, ou envia o material da aula - texto, imagem ou PDF.
 2. Sistema extrai o vocabulário do material (ou gera o conteúdo a partir do tema informado), detecta o nível e gera perguntas de prática.
-3. Durante o dia, perguntas chegam no WhatsApp. Usuário responde de cabeça.
+3. Durante o dia, perguntas chegam para responder no app. WhatsApp segue avisando quando há pergunta pendente.
 4. Sistema avalia a resposta, dá feedback natural e registra acerto/erro.
 5. Perguntas que travaram voltam com prioridade, calculadas por repetição espaçada.
 6. Ao trocar de atividade, o usuário recebe um resumo da atividade anterior: tempo, perguntas respondidas, acertos e erros.
@@ -230,7 +230,7 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Pagamento | Stripe Checkout (cartão), cobrança avulsa de 30 dias sem renovação automática; Pix manual via `suporte` como alternativa |
 | Número virtual | BRDID - (11) 5306-9000 |
 
-Arquitetura multicanal: cada canal de envio (hoje WhatsApp e o simulador de desenvolvimento) implementa sua própria interface de envio e decide sozinho se suporta camadas extras de apresentação (botão interativo, template, áudio) além do texto puro, que é sempre a representação canônica salva no histórico. Um canal novo pode nascer só com suporte a texto. Detalhe do contrato em `docs/Product-Rules.md`, Seção 19.
+Arquitetura multicanal: cada canal de envio (hoje WhatsApp, a superfície web `/app` e o simulador de desenvolvimento) implementa sua própria interface de envio e decide sozinho se suporta camadas extras de apresentação (botão interativo, template, áudio) além do texto puro, que é sempre a representação canônica salva no histórico. Um canal novo pode nascer só com suporte a texto. Detalhe do contrato em `docs/Product-Rules.md`, Seção 19.
 
 ---
 

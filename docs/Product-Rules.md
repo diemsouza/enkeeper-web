@@ -438,11 +438,20 @@ Cobrança é avulsa: R$21,90 liberam 30 dias de acesso, sem assinatura nem renov
 
 Pagamento confirmado libera o acesso automaticamente, sem intervenção manual: o plano passa a Pro, ativo, por mais 30 dias a partir da confirmação, e o usuário recebe uma mensagem de confirmação pelo WhatsApp. Pix continua disponível como alternativa, por atendimento manual via `suporte`.
 
+### 11.2 Login automático via link do WhatsApp
+
+Link enviado pelo WhatsApp que aponta pro app pode carregar um token assinado que
+autentica automaticamente quem abre o link no navegador, sem passar pelo formulário
+de telefone e código. Sessão já ativa no navegador é sempre respeitada, o token nunca
+sobrescreve um login existente. Token expira em 48 horas; expirado, ausente ou sem
+conta correspondente, cai no fluxo normal de login por telefone e código, sem nenhum
+aviso de erro.
+
 ---
 
 ## 12. Nudge de reengajamento
 
-Fluxo automático de mensagens quando o usuário para de responder. O objetivo não é recuperar o usuário para o app, é lembrar que a prática de inglês não deve parar. O Fluizer é o meio, não o fim.
+Fluxo automático de mensagens quando o usuário para de responder. Como a prática acontece na superfície web (`/app`), o objetivo do nudge é levar o usuário de volta a ela para responder a pergunta pendente — sem soar como notificação genérica de app pedindo atenção, cada mensagem tem uma razão ligada ao aprendizado.
 
 Este fluxo se aplica a usuário com ao menos uma Activity ativa, é reengajamento em torno de pergunta pendente. Usuário que nunca teve atividade criada não entra neste fluxo, esse caso é tratado pela Seção 10.1. O fluxo também é suprimido enquanto o usuário está dentro do fluxo de nova atividade (Seção 15, ver também Seção 8.1).
 

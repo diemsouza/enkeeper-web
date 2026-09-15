@@ -157,44 +157,46 @@ fallback pago só para quem não ativa push.
 Cada bloco abaixo é uma frente de trabalho independente, na ordem de
 dependência abaixo. Bloco 1 é pré-requisito de todos os outros.
 
-1. **Superfície de prática web (produção).** Não é reaproveitar o
-   simulador como está, é reconstruí-lo como produto real a partir da
-   lógica que ele já prova. O simulador hoje serve só para teste de
-   backend (Rules Seção 19: "usa `imagePath`... senão `text` puro",
-   pensado para reproduzir o comportamento do canal WhatsApp, não para
-   ser usado por usuário final) e segue formato de bolha de chat porque
-   sua função é simular o canal, não ser o canal. Sem WhatsApp como
-   referência de formato, a UI de prática deixa de ter motivo para ser
-   chat: pode virar sessão de cartão único, painel de progresso, fila
-   visível, o que servir melhor à leitura de SM-2 e ao gauge/pentágono
-   já existentes (Rules Seções 1 e 2), sem herança de layout de
-   mensagem.
+1. **Superfície de prática web (produção). (Concluído)** Não é
+   reaproveitar o simulador como está, é reconstruí-lo como produto
+   real a partir da lógica que ele já prova. O simulador hoje serve só
+   para teste de backend (Rules Seção 19: "usa `imagePath`... senão
+   `text` puro", pensado para reproduzir o comportamento do canal
+   WhatsApp, não para ser usado por usuário final) e segue formato de
+   bolha de chat porque sua função é simular o canal, não ser o canal.
+   Sem WhatsApp como referência de formato, a UI de prática deixa de
+   ter motivo para ser chat: pode virar sessão de cartão único, painel
+   de progresso, fila visível, o que servir melhor à leitura de SM-2 e
+   ao gauge/pentágono já existentes (Rules Seções 1 e 2), sem herança
+   de layout de mensagem.
 
    Dois eixos dentro deste item, resolvidos juntos porque a tela de
-   entrada depende da UI de destino:
-   - **Auth por telefone.** Código via WhatsApp (bloco 2 abaixo),
-     tela própria, sem login social (quebra em webview do Instagram).
-   - **UI de prática de produção.** Redesenho a partir do zero visual;
-     lógica de backend (avaliação, formatos de pergunta, feedback,
-     áudio) permanece intacta, só muda como é apresentada.
+   entrada depende da UI de destino: auth por telefone (bloco 2,
+   também concluído) e UI de prática de produção, redesenho a partir
+   do zero visual, com lógica de backend (avaliação, formatos de
+   pergunta, feedback, áudio) intacta, só mudando como é apresentada.
 
-   **Entregue até setembro/2026 (parcial):** superfície web de prática
-   (`/app`) no ar em produção parcial, com composer com autocomplete
-   incremental de comandos (Rules Seção 9), reexibição da pergunta
-   pendente reaproveitando o mecanismo de envio existente (Rules Seção
-   2), player de áudio próprio que decodifica Ogg/Opus no client sem
-   depender de codec nativo do navegador, e charts de resumo abrindo em
-   tela cheia com zoom (Rules Seção 19). O rastreio de reprodução de
-   áudio foi desacoplado de canal: a web reporta o play pelo próprio
-   player via endpoint autenticado, o WhatsApp pelo webhook de status,
-   ambos no mesmo registro idempotente por pergunta (Rules Seções 6.1
-   e 18). O bloco 2 (auth por telefone) avançou junto.
+   **Entregue:** superfície web de prática (`/app`) em produção, com
+   composer com autocomplete incremental de comandos (Rules Seção 9),
+   reexibição da pergunta pendente reaproveitando o mecanismo de envio
+   existente (Rules Seção 2), player de áudio próprio que decodifica
+   Ogg/Opus no client sem depender de codec nativo do navegador, e
+   charts de resumo abrindo em tela cheia com zoom (Rules Seção 19). O
+   rastreio de reprodução de áudio foi desacoplado de canal: a web
+   reporta o play pelo próprio player via endpoint autenticado, o
+   WhatsApp pelo webhook de status, ambos no mesmo registro idempotente
+   por pergunta (Rules Seções 6.1 e 18). Login automático via link
+   assinado do WhatsApp (`wa_token`) também está pronto como
+   infraestrutura, disponível para qualquer link de notificação.
 
-2. **Auth por telefone.** Sem senha, sem email. Código enviado via
-   template WhatsApp authentication (categoria mais barata, funciona
-   mesmo com janela de 24h fechada). Sessão web autentica pelo token
-   retornado. Em produção parcial junto do bloco 1 (ver nota de
-   progresso acima).
+2. **Auth por telefone. (Concluído)** Sem senha, sem email. Código
+   enviado via template WhatsApp authentication (categoria mais
+   barata, funciona mesmo com janela de 24h fechada). Sessão web
+   autentica pelo token retornado. Login automático via link assinado
+   (`wa_token`) elimina a fricção do formulário pra quem chega por
+   link do WhatsApp, reaproveitando a mesma sessão — infraestrutura
+   pronta, wiring nos pontos de envio (onboarding, nudge, confirmação
+   de pagamento) é trabalho futuro.
 
 3. **Gancho de dívida de revisão.** Contagem de perguntas elegíveis
    (`nextRevisionAt <= hoje`) exposta como número visível no app e como
@@ -202,21 +204,20 @@ dependência abaixo. Bloco 1 é pré-requisito de todos os outros.
    *(depende de task própria já aprovada separadamente para a
    definição exata do gancho)*
 
-4. **PWA instalável + push.** Ícone de tela inicial, badge com a
-   contagem do item 3, push carregando o mesmo gancho. Grátis, motor de
-   retenção primário.
+4. **Notificação via WhatsApp (canal principal).** WhatsApp passa a
+   ser o canal principal de reengajamento e notificação (onboarding,
+   nudge, confirmação de pagamento), não mais fallback de quem não
+   ativa push — item de PWA/push saiu do backlog. Testar se lembrete
+   ancorado em horário configurado pelo usuário qualifica como utility
+   (categoria barata) em vez de marketing, antes de assumir custo alto
+   na base inteira.
 
-5. **Fallback pago de notificação.** Só para quem não ativa push.
-   Testar se lembrete ancorado em horário configurado pelo usuário
-   qualifica como utility (categoria barata) em vez de marketing,
-   antes de assumir custo alto na base inteira.
-
-6. **Plano de migração da base atual.** Usuários hoje em trial ou Pro
+5. **Plano de migração da base atual.** Usuários hoje em trial ou Pro
    com cadência de 1h ativa precisam de transição definida antes de
    outubro: aviso, prazo, ou compensação. Não é técnico, é decisão de
    produto que trava data.
 
-7. **Analytics de coorte no funil novo.** D1/D3/D7 cruzado com
+6. **Analytics de coorte no funil novo.** D1/D3/D7 cruzado com
    "completou primeira rodada" e "ativou push", desde o primeiro
    usuário do MVP. Sem isso, decisões futuras de trial e gatilho de
    retenção continuam no chute.
@@ -224,13 +225,8 @@ dependência abaixo. Bloco 1 é pré-requisito de todos os outros.
 **Objeção**
 
 Item bloqueia parte do Product-Brief e do Product-Rules de ficarem
-desatualizados enquanto não migra: Seções 1, 8, 10, 12, 15 e 19 das
+desatualizados enquanto não migra: Seções 1, 8, 10, 15 e 19 das
 Rules descrevem hoje um comportamento (cadência por mensagem) que já
 não é mais o plano. Esses documentos precisam de nota temporária de
 "em transição" até esse item concluir e migrar o conteúdo real pra lá,
 senão viram fonte de verdade errada para prompts futuros de Claude Code.
-
-Item 1 é o maior do conjunto e pode crescer o suficiente para merecer
-entrada própria no backlog (contexto, problema e solução dedicados,
-com fluxo de telas detalhado), em vez de viver como bloco dentro deste
-item. Decisão pendente.

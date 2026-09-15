@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Nav from "@/src/components/home/nav";
+import { Spinner } from "@/src/components/ui/spinner";
 import { PhoneStep } from "./phone-step";
 import { CodeStep } from "./code-step";
 import { postJson } from "@/src/lib/api-client";
@@ -45,6 +46,29 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [checkingWaToken, setCheckingWaToken] = useState(false);
+
+  useEffect(() => {
+    const waToken = new URLSearchParams(window.location.search).get(
+      "wa_token",
+    );
+    if (!waToken) return;
+    setCheckingWaToken(true);
+    (async () => {
+      const { ok, body } = await postJson<{ ok: boolean }>(
+        "/api/auth/wa-login",
+        { waToken },
+      );
+      if (ok && body.ok) {
+        const target = new URLSearchParams(window.location.search).get(
+          "redirect_to",
+        );
+        router.replace(sanitizeRedirectPath(target));
+        return;
+      }
+      setCheckingWaToken(false);
+    })();
+  }, [router]);
 
   useEffect(() => {
     const pending = readOtpRequest();
@@ -134,7 +158,9 @@ export default function LoginPage() {
         <h1 className="text-xl font-semibold text-foreground">
           Entrar no Fluizer
         </h1>
-        {step === "phone" ? (
+        {checkingWaToken ? (
+          <Spinner size="lg" />
+        ) : step === "phone" ? (
           <PhoneStep
             onSubmit={requestCode}
             loading={loading}
