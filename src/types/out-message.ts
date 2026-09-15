@@ -15,5 +15,7 @@ export type FormattedMessage = {
   audioPath?: string;
   imagePath?: string;
   templateName?: string | null;
+  templateBodyParams?: string[];
+  templateButtonUrlParam?: string;
   interactive?: { body: string; buttons: FormattedMessageButton[] };
 };

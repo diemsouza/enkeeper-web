@@ -83,6 +83,18 @@ export async function findSm2EligibleQuestion(
   });
 }
 
+export async function countSm2EligibleQuestions(
+  activityId: string,
+): Promise<number> {
+  return prisma.question.count({
+    where: {
+      activityId,
+      deletedAt: null,
+      nextRevisionAt: { lte: new Date() },
+    },
+  });
+}
+
 export async function findNextGeneralQuestion(
   activityId: string,
   lastQuestionId: string | null,

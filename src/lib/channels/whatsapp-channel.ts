@@ -56,7 +56,12 @@ export class WhatsAppChannel implements MessageChannel {
       return { externalId: await sendAudioPart(to, message.audioPath) };
     }
     if (message.templateName) {
-      return this.sendTemplate(to, message.templateName);
+      return this.sendTemplate(
+        to,
+        message.templateName,
+        message.templateBodyParams,
+        message.templateButtonUrlParam,
+      );
     }
     if (message.interactive) {
       const linkButton = message.interactive.buttons.find(
@@ -87,7 +92,14 @@ export class WhatsAppChannel implements MessageChannel {
     return { externalId: await sendWhatsAppMessage(to, message.text) };
   }
 
-  async sendTemplate(to: string, template: NudgeTemplate): Promise<ChannelSendResult> {
-    return { externalId: await sendWhatsAppTemplate(to, template) };
+  async sendTemplate(
+    to: string,
+    template: NudgeTemplate,
+    bodyParams?: string[],
+    buttonUrlParam?: string,
+  ): Promise<ChannelSendResult> {
+    return {
+      externalId: await sendWhatsAppTemplate(to, template, bodyParams, buttonUrlParam),
+    };
   }
 }

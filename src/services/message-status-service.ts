@@ -5,6 +5,7 @@ import {
   markMessagePlayedIfUnset,
   updateMessageExternalStatus,
 } from "../repo/messages.repo";
+import { markNotificationReadByExternalId } from "../repo/notifications.repo";
 import { recordFeedbackAudioPlayed } from "./activity-service";
 
 export async function markMessageAsPlayed(
@@ -48,6 +49,9 @@ export async function processWhatsAppStatusEvent(
   const mapped = mapWhatsAppStatus(rawStatus);
   if (mapped) {
     await markMessageExternalStatus(externalId, mapped, timestamp);
+    if (mapped === ExternalMessageStatus.read) {
+      await markNotificationReadByExternalId(externalId, timestamp ?? new Date());
+    }
   } else {
     console.log("[processWhatsAppStatusEvent] unmapped status, ignoring", {
       rawStatus,

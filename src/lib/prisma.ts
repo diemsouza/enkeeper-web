@@ -15,6 +15,7 @@ export type {
   Waitlist,
   Media,
   OtpCode,
+  Notification,
 } from "../../prisma/generated/client";
 
 export {

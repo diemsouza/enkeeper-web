@@ -848,6 +848,28 @@ export function formatCanceled(): FormattedMessage {
   return { text: "Ok, cancelado." };
 }
 
+// fonte de verdade do nome/texto real do template na Meta - alterar aqui antes de atualizar na Meta
+const DAILY_REMINDER_TEMPLATE_CONFIG = {
+  templateName: "daily_reminder", // placeholder ate aprovacao do template na Meta
+  text: (count: number) =>
+    `Sua revisão de perguntas passou da data prevista.\n\nPendentes: ${count} \n\nVocê pode acessar sua prática abaixo.`,
+};
+
+export function formatDailyReminderMessage(
+  count: number,
+  waLoginToken: string,
+): FormattedMessage {
+  return {
+    text: DAILY_REMINDER_TEMPLATE_CONFIG.text(count),
+    templateName: DAILY_REMINDER_TEMPLATE_CONFIG.templateName,
+    templateBodyParams: [String(count)],
+    templateButtonUrlParam: waLoginToken,
+  };
+}
+
+export const DAILY_REMINDER_TEMPLATE_NAME =
+  DAILY_REMINDER_TEMPLATE_CONFIG.templateName;
+
 export function formatActivityReplaceCanceled(): FormattedMessage {
   return { text: "Ok, cancelado e seguindo com a atividade atual." };
 }

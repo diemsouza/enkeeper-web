@@ -66,6 +66,7 @@ model User {
     sections      Section[]
     llmLogs       LlmLog[]
     docItems      DocItem[]
+    notifications Notification[]
 
     @@index([pendingIntent, pendingIntentAt])
     @@map("users")

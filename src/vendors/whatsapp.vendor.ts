@@ -181,8 +181,12 @@ export async function sendWhatsAppTemplate(
   to: string,
   templateName: string,
   parameters?: string[],
+  buttonUrlParam?: string,
 ): Promise<string | null> {
-  if (process.env.NODE_ENV !== "production") {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.SIMULATOR_MODE === "true"
+  ) {
     console.warn(
       `[sendWhatsAppTemplate] Skipping sending template ${templateName} to ${to} in non-production environment`,
     );
@@ -191,6 +195,27 @@ export async function sendWhatsAppTemplate(
 
   const token = process.env.WABA_TOKEN;
   const phoneNumberId = process.env.WABA_PHONE_ID;
+
+  const components = [
+    ...(parameters && parameters.length > 0
+      ? [
+          {
+            type: "body",
+            parameters: parameters.map((text) => ({ type: "text", text })),
+          },
+        ]
+      : []),
+    ...(buttonUrlParam
+      ? [
+          {
+            type: "button",
+            sub_type: "url",
+            index: "0",
+            parameters: [{ type: "text", text: buttonUrlParam }],
+          },
+        ]
+      : []),
+  ];
 
   const res = await fetch(
     `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
@@ -207,19 +232,7 @@ export async function sendWhatsAppTemplate(
         template: {
           name: templateName,
           language: { code: "pt_BR" },
-          ...(parameters && parameters.length > 0
-            ? {
-                components: [
-                  {
-                    type: "body",
-                    parameters: parameters.map((text) => ({
-                      type: "text",
-                      text,
-                    })),
-                  },
-                ],
-              }
-            : {}),
+          ...(components.length > 0 ? { components } : {}),
         },
       }),
     },

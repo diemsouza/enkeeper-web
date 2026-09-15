@@ -8,5 +8,10 @@ export type ChannelSendResult = {
 
 export interface MessageChannel {
   sendMessage(to: string, message: FormattedMessage): Promise<ChannelSendResult>;
-  sendTemplate(to: string, template: NudgeTemplate): Promise<ChannelSendResult>;
+  sendTemplate(
+    to: string,
+    template: NudgeTemplate,
+    bodyParams?: string[],
+    buttonUrlParam?: string,
+  ): Promise<ChannelSendResult>;
 }

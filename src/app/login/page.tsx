@@ -49,9 +49,7 @@ export default function LoginPage() {
   const [checkingWaToken, setCheckingWaToken] = useState(false);
 
   useEffect(() => {
-    const waToken = new URLSearchParams(window.location.search).get(
-      "wa_token",
-    );
+    const waToken = new URLSearchParams(window.location.search).get("wa_token");
     if (!waToken) return;
     setCheckingWaToken(true);
     (async () => {
@@ -87,10 +85,9 @@ export default function LoginPage() {
 
   async function submitRequest(digits: string): Promise<RequestResult> {
     setLoading(true);
-    const { ok, body } = await postJson<OtpErrorBody>(
-      "/api/auth/otp/request",
-      { phone: digits },
-    );
+    const { ok, body } = await postJson<OtpErrorBody>("/api/auth/otp/request", {
+      phone: digits,
+    });
     setLoading(false);
     if (!ok) return { ok: false, message: messageFor(body) };
     const now = Date.now();
@@ -123,10 +120,10 @@ export default function LoginPage() {
   async function verifyCode(code: string) {
     setLoading(true);
     setCodeError(null);
-    const { ok, body } = await postJson<OtpErrorBody>(
-      "/api/auth/otp/verify",
-      { phone: phoneDigits, code },
-    );
+    const { ok, body } = await postJson<OtpErrorBody>("/api/auth/otp/verify", {
+      phone: phoneDigits,
+      code,
+    });
     setLoading(false);
     if (!ok) {
       if (body.code === "OTP_EXPIRED") clearOtpRequest();
@@ -134,7 +131,9 @@ export default function LoginPage() {
       return;
     }
     clearOtpRequest();
-    const target = new URLSearchParams(window.location.search).get("redirect_to");
+    const target = new URLSearchParams(window.location.search).get(
+      "redirect_to",
+    );
     router.replace(sanitizeRedirectPath(target));
   }
 
@@ -156,7 +155,7 @@ export default function LoginPage() {
         }}
       >
         <h1 className="text-xl font-semibold text-foreground">
-          Entrar no Fluizer
+          {checkingWaToken ? "Carregando..." : "Entrar"}
         </h1>
         {checkingWaToken ? (
           <Spinner size="lg" />

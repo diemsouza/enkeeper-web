@@ -1,5 +1,4 @@
 import {
-  findCurrentActivityByUser,
   findEligibleActivities,
   updateActivity,
 } from "../repo/activities.repo";
@@ -411,51 +410,53 @@ export async function processExpiredFlowIntents(
   channel: MessageChannel,
 ): Promise<CronResult> {
   const threshold = new Date(Date.now() - COMMAND_TIMEOUT_MIN * 60 * 1000);
-  const users = await findUsersWithExpiredFlowIntent(threshold);
 
   let processed = 0;
   let skipped = 0;
   let errors = 0;
+  let cursorId: string | null = null;
 
-  for (const user of users) {
-    try {
-      if (
-        user.pendingIntent === "waiting_set_level" &&
-        !isNewActivityFlowIntent(user)
-      ) {
-        skipped++;
-        continue;
+  for (;;) {
+    const users = await findUsersWithExpiredFlowIntent(cursorId, threshold, 500);
+    if (users.length === 0) break;
+
+    for (const user of users) {
+      try {
+        if (
+          user.pendingIntent === "waiting_set_level" &&
+          !isNewActivityFlowIntent(user)
+        ) {
+          skipped++;
+          continue;
+        }
+
+        await updateUserPendingIntent(user.id, null);
+
+        const userChannel = await findUserChannelByUserId(user.id);
+        if (userChannel) {
+          const msg = formatNewActivityFlowExpired();
+          await sendAndSaveMessage({
+            channel,
+            to: userChannel.channelUserId,
+            userId: user.id,
+            userChannelId: userChannel.id,
+            message: msg,
+            today: startOfDay(new Date()),
+          });
+        }
+
+        processed++;
+      } catch (err) {
+        console.error(
+          `[processExpiredFlowIntents] expired flow intent for user ${user.id}:`,
+          err,
+        );
+        errors++;
       }
-
-      const currentActivity = await findCurrentActivityByUser(user.id);
-      if (!currentActivity) {
-        skipped++;
-        continue;
-      }
-
-      await updateUserPendingIntent(user.id, null);
-
-      const userChannel = await findUserChannelByUserId(user.id);
-      if (userChannel) {
-        const msg = formatNewActivityFlowExpired();
-        await sendAndSaveMessage({
-          channel,
-          to: userChannel.channelUserId,
-          userId: user.id,
-          userChannelId: userChannel.id,
-          message: msg,
-          today: startOfDay(new Date()),
-        });
-      }
-
-      processed++;
-    } catch (err) {
-      console.error(
-        `[processExpiredFlowIntents] expired flow intent for user ${user.id}:`,
-        err,
-      );
-      errors++;
     }
+
+    cursorId = users[users.length - 1].id;
+    if (users.length < 500) break;
   }
 
   return { processed, skipped, errors };

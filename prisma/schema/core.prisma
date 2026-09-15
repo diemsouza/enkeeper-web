@@ -135,6 +135,31 @@ model Message {
     @@map("messages")
 }
 
+model Notification {
+    id            String    @id @default(ulid()) @map("id")
+    userId        String    @map("user_id")
+    targetChannel String    @map("target_channel")
+    targetId      String    @map("target_id")
+    kind          String    @map("kind")
+    message       String    @map("message") @db.Text
+    templateId    String    @map("template_id")
+    metadata      Json?     @map("metadata")
+    createdAt     DateTime  @default(now()) @map("created_at")
+    updatedAt     DateTime  @updatedAt @map("updated_at")
+    nextAt        DateTime  @map("next_at")
+    sentAt        DateTime? @map("sent_at")
+    externalId    String?   @map("external_id")
+    readAt        DateTime? @map("read_at")
+    deletedAt     DateTime? @map("deleted_at")
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([kind, sentAt, deletedAt, nextAt])
+    @@index([userId, kind, createdAt])
+    @@index([externalId])
+    @@map("notifications")
+}
+
 model Doc {
     id         String    @id @default(ulid()) @map("id")
     userId     String    @map("user_id")

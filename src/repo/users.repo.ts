@@ -101,13 +101,21 @@ const NEW_ACTIVITY_FLOW_INTENTS = [
 ];
 
 export async function findUsersWithExpiredFlowIntent(
+  cursorId: string | null,
   threshold: Date,
+  limit = 500,
 ): Promise<User[]> {
   return prisma.user.findMany({
     where: {
       pendingIntent: { in: NEW_ACTIVITY_FLOW_INTENTS },
       pendingIntentAt: { lt: threshold },
+      ...(cursorId ? { id: { gt: cursorId } } : {}),
+      activities: {
+        some: { status: { in: ["active", "paused"] }, deletedAt: null },
+      },
     },
+    orderBy: { id: "asc" },
+    take: limit,
   });
 }
 
