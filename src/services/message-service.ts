@@ -1660,9 +1660,11 @@ export async function handleIncomingMessage(
                 waitingUser: false,
                 interactionCount,
                 lastInteractionAt: new Date(),
-                nextMessageAt: new Date(
-                  Date.now() + activeActivity.intervalMinutes * 60 * 1000,
-                ),
+                // Reagenda de cadência (§8) pausada: prática migrou para o web.
+                // TODO: review
+                // nextMessageAt: new Date(
+                //   Date.now() + activeActivity.intervalMinutes * 60 * 1000,
+                // ),
                 lastNudgeStep: null,
                 lastNudgeAt: null,
               });

@@ -8,10 +8,14 @@ import {
   findPendingDocByUser,
   updateDoc,
 } from "../repo/docs.repo";
-import { saveMessage, findLastActivityMessage } from "../repo/messages.repo";
+// saveMessage, findLastActivityMessage: só usados pelo nudge pausado (§12).
+// TODO: review
+// import { saveMessage, findLastActivityMessage } from "../repo/messages.repo";
 import {
   findNextUnansweredQuestion,
-  findNextGeneralQuestion,
+  // findNextGeneralQuestion: só usado por selectNextQuestion, pausado com a
+  // cadência normal (§8). TODO: review
+  // findNextGeneralQuestion,
   findSm2EligibleQuestion,
   updateQuestion,
   createQuestions,
@@ -24,11 +28,14 @@ import {
   findUsersWithExpiredFlowIntent,
   updateUserPendingIntent,
 } from "../repo/users.repo";
-import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
+// incrementAgentMessageCount: só usado pelo nudge pausado (§12).
+// TODO: review
+// import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 import { MessageChannel } from "../types/message-channel";
 import { sendAndSaveMessage } from "./message-sender-service";
 import {
-  formatNudgeMessage,
+  // formatNudgeMessage: só usado pelo nudge pausado (§12). TODO: review
+  // formatNudgeMessage,
   formatQuestion,
   formatActivityStart,
   formatNewActivityFlowExpired,
@@ -36,9 +43,11 @@ import {
 import { canPractice } from "../core/access";
 import {
   DOC_PROCESSING_TIMEOUT_MS,
-  NUDGE_THRESHOLDS_MS,
-  getNextNudgeStep,
-  getEntryNudgeStep,
+  // NUDGE_THRESHOLDS_MS, getNextNudgeStep, getEntryNudgeStep: só usados pelo
+  // nudge pausado (§12). TODO: review
+  // NUDGE_THRESHOLDS_MS,
+  // getNextNudgeStep,
+  // getEntryNudgeStep,
   MAX_RETRY_ATTEMPTS,
   RETRY_DELAY_MS,
   DOC_PENDING_TIMEOUT_MS,
@@ -46,12 +55,7 @@ import {
   DEFAULT_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
 import { delay } from "../lib/utils";
-import {
-  Activity,
-  Question,
-  QuestionFormat,
-  QuestionStatus,
-} from "../lib/prisma";
+import { Activity, Question, QuestionFormat } from "../lib/prisma";
 import { splitContentIntoBlocks } from "../core/pool-size";
 import { pickNextFormat } from "../core/question-format-picker";
 import { generateNextQuestion } from "../vendors/llm.vendor";
@@ -173,137 +177,144 @@ export async function processActivityCron(
         continue;
       }
 
-      const lastMsg = await findLastActivityMessage(activity.id);
-
-      if (
-        lastMsg?.role === "assistant" &&
-        (lastMsg.intent === "practice_question" ||
-          lastMsg.intent === "practice_nudge")
-      ) {
-        const userChannel = await findUserChannelByUserId(activity.userId);
-        if (!userChannel) {
-          skipped++;
-          continue;
-        }
-
-        const referenceTime = activity.lastInteractionAt ?? activity.createdAt;
-        const elapsedMs = Date.now() - referenceTime.getTime();
-
-        let nextStep;
-        if (activity.lastNudgeStep === null) {
-          const entryStep = getEntryNudgeStep(elapsedMs);
-          if (!entryStep) {
-            await updateActivity(activity.id, activity.userId, {
-              nextMessageAt: new Date(
-                referenceTime.getTime() + NUDGE_THRESHOLDS_MS.h12,
-              ),
-            });
-            skipped++;
-            continue;
-          }
-          nextStep = entryStep;
-        } else {
-          const candidate = getNextNudgeStep(activity.lastNudgeStep);
-          if (!candidate) {
-            await updateActivity(activity.id, activity.userId, {
-              nextMessageAt: null,
-            });
-            skipped++;
-            continue;
-          }
-          if (elapsedMs < NUDGE_THRESHOLDS_MS[candidate]) {
-            await updateActivity(activity.id, activity.userId, {
-              nextMessageAt: new Date(
-                referenceTime.getTime() + NUDGE_THRESHOLDS_MS[candidate],
-              ),
-            });
-            skipped++;
-            continue;
-          }
-          nextStep = candidate;
-        }
-
-        const today = startOfDay(new Date());
-        const nudge = formatNudgeMessage(nextStep);
-        const nextAfterStep = getNextNudgeStep(nextStep);
-
-        await updateActivity(activity.id, activity.userId, {
-          lastNudgeStep: nextStep,
-          lastNudgeAt: new Date(),
-          waitingUser: true,
-          nextMessageAt: nextAfterStep
-            ? new Date(
-                referenceTime.getTime() + NUDGE_THRESHOLDS_MS[nextAfterStep],
-              )
-            : null,
-        });
-
-        let nudgeExternalId: string | null = null;
-        try {
-          const result = await channel.sendMessage(
-            userChannel.channelUserId,
-            nudge,
-          );
-          nudgeExternalId = result.externalId;
-        } catch (err) {
-          console.error(
-            `[processActivityCron] nudge send error (${nextStep}):`,
-            err,
-          );
-          errors++;
-          continue;
-        }
-
-        await saveMessage({
-          userId: activity.userId,
-          userChannelId: userChannel.id,
-          activityId: activity.id,
-          role: "assistant",
-          content: nudge.text,
-          templateName: nudge.templateName,
-          intent: "practice_nudge",
-          externalId: nudgeExternalId ?? undefined,
-        });
-        await incrementAgentMessageCount(activity.userId, today);
-
-        processed++;
-        continue;
-      }
-
-      if (activity.waitingUser) {
-        skipped++;
-        continue;
-      }
-
-      const userChannel = await findUserChannelByUserId(activity.userId);
-      if (!userChannel) {
-        skipped++;
-        continue;
-      }
-
-      const today = startOfDay(new Date());
-
-      const question = await selectNextQuestion(
-        activity,
-        today,
-        userChannel.channelUserId,
-        userChannel.id,
-        channel,
-      );
-      if (!question) {
-        skipped++;
-        continue;
-      }
-
-      await sendCadenceQuestion(
-        question,
-        activity,
-        userChannel,
-        today,
-        channel,
-      );
-
-      processed++;
+      // Cadência normal e nudge (Product-Rules §8/§12) pausados: prática migrou
+      // para o web e o disparo/frequência do lado web ainda não existe.
+      // Bloco original comentado abaixo para reativar quando o nudge for
+      // reaproveitado por outro fluxo. TODO: review
+      //
+      // const lastMsg = await findLastActivityMessage(activity.id);
+      //
+      // if (
+      //   lastMsg?.role === "assistant" &&
+      //   (lastMsg.intent === "practice_question" ||
+      //     lastMsg.intent === "practice_nudge")
+      // ) {
+      //   const userChannel = await findUserChannelByUserId(activity.userId);
+      //   if (!userChannel) {
+      //     skipped++;
+      //     continue;
+      //   }
+      //
+      //   const referenceTime = activity.lastInteractionAt ?? activity.createdAt;
+      //   const elapsedMs = Date.now() - referenceTime.getTime();
+      //
+      //   let nextStep;
+      //   if (activity.lastNudgeStep === null) {
+      //     const entryStep = getEntryNudgeStep(elapsedMs);
+      //     if (!entryStep) {
+      //       await updateActivity(activity.id, activity.userId, {
+      //         nextMessageAt: new Date(
+      //           referenceTime.getTime() + NUDGE_THRESHOLDS_MS.h12,
+      //         ),
+      //       });
+      //       skipped++;
+      //       continue;
+      //     }
+      //     nextStep = entryStep;
+      //   } else {
+      //     const candidate = getNextNudgeStep(activity.lastNudgeStep);
+      //     if (!candidate) {
+      //       await updateActivity(activity.id, activity.userId, {
+      //         nextMessageAt: null,
+      //       });
+      //       skipped++;
+      //       continue;
+      //     }
+      //     if (elapsedMs < NUDGE_THRESHOLDS_MS[candidate]) {
+      //       await updateActivity(activity.id, activity.userId, {
+      //         nextMessageAt: new Date(
+      //           referenceTime.getTime() + NUDGE_THRESHOLDS_MS[candidate],
+      //         ),
+      //       });
+      //       skipped++;
+      //       continue;
+      //     }
+      //     nextStep = candidate;
+      //   }
+      //
+      //   const today = startOfDay(new Date());
+      //   const nudge = formatNudgeMessage(nextStep);
+      //   const nextAfterStep = getNextNudgeStep(nextStep);
+      //
+      //   await updateActivity(activity.id, activity.userId, {
+      //     lastNudgeStep: nextStep,
+      //     lastNudgeAt: new Date(),
+      //     waitingUser: true,
+      //     nextMessageAt: nextAfterStep
+      //       ? new Date(
+      //           referenceTime.getTime() + NUDGE_THRESHOLDS_MS[nextAfterStep],
+      //         )
+      //       : null,
+      //   });
+      //
+      //   let nudgeExternalId: string | null = null;
+      //   try {
+      //     const result = await channel.sendMessage(
+      //       userChannel.channelUserId,
+      //       nudge,
+      //     );
+      //     nudgeExternalId = result.externalId;
+      //   } catch (err) {
+      //     console.error(
+      //       `[processActivityCron] nudge send error (${nextStep}):`,
+      //       err,
+      //     );
+      //     errors++;
+      //     continue;
+      //   }
+      //
+      //   await saveMessage({
+      //     userId: activity.userId,
+      //     userChannelId: userChannel.id,
+      //     activityId: activity.id,
+      //     role: "assistant",
+      //     content: nudge.text,
+      //     templateName: nudge.templateName,
+      //     intent: "practice_nudge",
+      //     externalId: nudgeExternalId ?? undefined,
+      //   });
+      //   await incrementAgentMessageCount(activity.userId, today);
+      //
+      //   processed++;
+      //   continue;
+      // }
+      //
+      // if (activity.waitingUser) {
+      //   skipped++;
+      //   continue;
+      // }
+      //
+      // const userChannel = await findUserChannelByUserId(activity.userId);
+      // if (!userChannel) {
+      //   skipped++;
+      //   continue;
+      // }
+      //
+      // const today = startOfDay(new Date());
+      //
+      // const question = await selectNextQuestion(
+      //   activity,
+      //   today,
+      //   userChannel.channelUserId,
+      //   userChannel.id,
+      //   channel,
+      // );
+      // if (!question) {
+      //   skipped++;
+      //   continue;
+      // }
+      //
+      // await sendCadenceQuestion(
+      //   question,
+      //   activity,
+      //   userChannel,
+      //   today,
+      //   channel,
+      // );
+      //
+      // processed++;
+      skipped++;
+      continue;
     } catch (err) {
       console.error(
         `[processActivityCron] activity ${activity.id} error:`,
@@ -450,48 +461,50 @@ export async function processExpiredFlowIntents(
   return { processed, skipped, errors };
 }
 
-async function selectNextQuestion(
-  activity: Activity,
-  today: Date,
-  channelId: string,
-  userChannelId: string,
-  channel: MessageChannel,
-): Promise<{
-  id: string;
-  question: string;
-  status: QuestionStatus | null;
-  questionFormat: QuestionFormat | null;
-  questionOptions: string[];
-  termHint: string | null;
-} | null> {
-  const lastId = activity.lastQuestionId;
-
-  if (!activity.roundCompleted) {
-    const sm2 = await findSm2EligibleQuestion(activity.id, lastId);
-    if (sm2) return sm2;
-
-    const unanswered = await findNextUnansweredQuestion(activity.docId, lastId);
-    if (unanswered) return unanswered;
-
-    const outcome = await generateQuestionIfPoolNotFull(activity);
-    if (!outcome.poolExhausted) {
-      if (outcome.question) return outcome.question;
-      return null;
-    }
-
-    await completeRoundZero(
-      activity.id,
-      activity.userId,
-      today,
-      userChannelId,
-      activity.intervalMinutes,
-      channel,
-      channelId,
-    );
-  }
-
-  return findNextGeneralQuestion(activity.id, lastId);
-}
+// selectNextQuestion: só era usada pelo ramo de envio de pergunta da cadência
+// normal (§8), pausado em processActivityCron. TODO: review
+// async function selectNextQuestion(
+//   activity: Activity,
+//   today: Date,
+//   channelId: string,
+//   userChannelId: string,
+//   channel: MessageChannel,
+// ): Promise<{
+//   id: string;
+//   question: string;
+//   status: QuestionStatus | null;
+//   questionFormat: QuestionFormat | null;
+//   questionOptions: string[];
+//   termHint: string | null;
+// } | null> {
+//   const lastId = activity.lastQuestionId;
+//
+//   if (!activity.roundCompleted) {
+//     const sm2 = await findSm2EligibleQuestion(activity.id, lastId);
+//     if (sm2) return sm2;
+//
+//     const unanswered = await findNextUnansweredQuestion(activity.docId, lastId);
+//     if (unanswered) return unanswered;
+//
+//     const outcome = await generateQuestionIfPoolNotFull(activity);
+//     if (!outcome.poolExhausted) {
+//       if (outcome.question) return outcome.question;
+//       return null;
+//     }
+//
+//     await completeRoundZero(
+//       activity.id,
+//       activity.userId,
+//       today,
+//       userChannelId,
+//       activity.intervalMinutes,
+//       channel,
+//       channelId,
+//     );
+//   }
+//
+//   return findNextGeneralQuestion(activity.id, lastId);
+// }
 
 export type GenerateOutcome =
   | { poolExhausted: true }
