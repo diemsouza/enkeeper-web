@@ -230,7 +230,7 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Pagamento | Stripe Checkout (cartão), cobrança avulsa de 30 dias sem renovação automática; Pix manual via `suporte` como alternativa |
 | Número virtual | BRDID - (11) 5306-9000 |
 
-Arquitetura multicanal: cada canal de envio (hoje WhatsApp, a superfície web `/app` e o simulador de desenvolvimento) implementa sua própria interface de envio e decide sozinho se suporta camadas extras de apresentação (botão interativo, template, áudio) além do texto puro, que é sempre a representação canônica salva no histórico. Um canal novo pode nascer só com suporte a texto. Detalhe do contrato em `docs/Product-Rules.md`, Seção 19.
+Arquitetura multicanal: cada canal de envio (hoje WhatsApp e a superfície web `/app`) implementa sua própria interface de envio e decide sozinho se suporta camadas extras de apresentação (botão interativo, template, áudio) além do texto puro, que é sempre a representação canônica salva no histórico. Um canal novo pode nascer só com suporte a texto. Detalhe do contrato em `docs/Product-Rules.md`, Seção 19.
 
 ---
 

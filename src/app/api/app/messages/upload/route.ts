@@ -18,7 +18,7 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const user = await requireAuth();
-    const userChannel = await findUserChannelByUserId(user.id);
+    const userChannel = await findUserChannelByUserId(user.id, "web");
     if (!userChannel) {
       return Response.json({ error: "channel not found" }, { status: 409 });
     }
@@ -102,7 +102,7 @@ export async function POST(request: Request): Promise<Response> {
       channelUserId: userChannel.channelUserId,
       channelUserPhone: userChannel.channelUserPhone ?? undefined,
       channelUsername: userChannel.channelUsername ?? undefined,
-      channelType: "whatsapp",
+      channelType: "web",
       contactName: user.name ?? undefined,
       text: extractedText,
       externalId: resolvedExternalId,

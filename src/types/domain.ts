@@ -1,7 +1,7 @@
 import { DomainId } from "../lib/constants";
 
 export type PlanCode = "trial" | "pro";
-export type ChannelType = "whatsapp";
+export type ChannelType = "whatsapp" | "web";
 export type MessageRole = "user" | "assistant";
 
 export type MessageIntent =

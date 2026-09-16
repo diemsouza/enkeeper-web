@@ -90,16 +90,6 @@ export async function findLastUserMessage(
   });
 }
 
-export async function findMessagesSince(
-  userId: string,
-  since: Date,
-): Promise<Message[]> {
-  return prisma.message.findMany({
-    where: { userId, createdAt: { gt: since } },
-    orderBy: { createdAt: "asc" },
-  });
-}
-
 export async function findLastAssistantMessage(
   userId: string,
 ): Promise<Message | null> {

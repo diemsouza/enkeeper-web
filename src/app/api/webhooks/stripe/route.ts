@@ -9,7 +9,7 @@ import {
 } from "../../../../repo/users.repo";
 import { sendAndSaveMessage } from "../../../../services/message-sender-service";
 import { formatPaymentConfirmed } from "../../../../core/formatters";
-import { WhatsAppChannel } from "../../../../lib/channels/whatsapp-channel";
+import { resolveChannel } from "@/src/lib/channels/resolve-channel";
 
 const PRO_ACCESS_DAYS = 30;
 
@@ -64,7 +64,7 @@ async function handleCheckoutCompleted(
     return;
   }
 
-  const channel = new WhatsAppChannel();
+  const channel = resolveChannel();
   await sendAndSaveMessage({
     channel,
     to: userChannel.channelUserId,
@@ -92,11 +92,16 @@ export async function POST(req: NextRequest): Promise<Response> {
       process.env.STRIPE_WEBHOOK_SECRET!,
     );
   } catch (err) {
-    console.error("[post/api/webhooks/stripe] signature verification failed", err);
+    console.error(
+      "[post/api/webhooks/stripe] signature verification failed",
+      err,
+    );
     return new Response(null, { status: 403 });
   }
 
-  console.log("[post/api/webhooks/stripe] event received", { type: event.type });
+  console.log("[post/api/webhooks/stripe] event received", {
+    type: event.type,
+  });
 
   if (event.type !== "checkout.session.completed") {
     return new Response(null, { status: 200 });

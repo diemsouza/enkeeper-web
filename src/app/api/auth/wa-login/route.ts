@@ -15,7 +15,7 @@ export async function POST(request: Request): Promise<Response> {
     const payload = await verifyWaLoginToken(waToken);
     if (!payload) return Response.json({ ok: false });
 
-    const user = await findUserByIdentifier("whatsapp", payload.phone);
+    const user = await findUserByIdentifier("web", payload.phone);
     if (!user) return Response.json({ ok: false });
 
     await setSessionCookie(user.id);

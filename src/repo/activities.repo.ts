@@ -112,7 +112,7 @@ const REMINDER_CANDIDATE_INCLUDE = {
   user: {
     include: {
       channels: {
-        where: { channelType: "whatsapp", channelUserPhone: { not: null } },
+        where: { channelType: "web", channelUserPhone: { not: null } },
         take: 1,
       },
     },
@@ -152,7 +152,7 @@ export async function findActiveActivitiesForReminder(
           },
         },
         channels: {
-          some: { channelType: "whatsapp", channelUserPhone: { not: null } },
+          some: { channelType: "web", channelUserPhone: { not: null } },
         },
       },
     },

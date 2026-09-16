@@ -4,9 +4,13 @@ import {
   User,
   UserChannel,
 } from "../lib/prisma";
-import { findOrCreateUserChannel } from "../repo/users.repo";
+import {
+  findOrCreateUserChannel,
+  findUserChannelByPhone,
+  upsertWebUserChannel,
+} from "../repo/users.repo";
 import { ChannelType } from "../types/domain";
-import { TRIAL_DAYS, UserSource } from "../lib/constants";
+import { TRIAL_DAYS, USER_SOURCE, UserSource } from "../lib/constants";
 import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
 
 type UserWithChannels = User & { channels: UserChannel[] };
@@ -48,4 +52,34 @@ export async function findOrCreateUserByChannel(
     }
   }
   return { user, userChannel };
+}
+
+// Login web por telefone: reconhece usuário legado de outro canal (hoje só
+// whatsapp) e traz o histórico dele para um canal "web" novo, em vez de
+// criar conta do zero. O canal de origem nunca é alterado.
+export async function resolveWebLoginByPhone(
+  phone: string,
+): Promise<{ user: UserWithChannels; userChannel: UserChannel }> {
+  const existingWeb = await findUserChannelByPhone(phone, {
+    channelType: "web",
+  });
+  if (existingWeb) return existingWeb;
+
+  const otherType = await findUserChannelByPhone(phone, {
+    channelTypeNot: "web",
+  });
+  if (otherType) {
+    const userChannel = await upsertWebUserChannel(otherType.user.id, phone);
+    return { user: otherType.user, userChannel };
+  }
+
+  return findOrCreateUserByChannel(
+    "web",
+    phone,
+    phone,
+    undefined,
+    undefined,
+    USER_SOURCE.SITE,
+    { via: "web_otp_login" },
+  );
 }

@@ -17,8 +17,7 @@ import {
   incrementOtpAttempts,
 } from "../repo/otp.repo";
 import { sendOtpCode } from "../vendors/otp.vendor";
-import { findOrCreateUserByChannel } from "./user-service";
-import { USER_SOURCE } from "../lib/constants";
+import { resolveWebLoginByPhone } from "./user-service";
 import { User } from "../lib/prisma";
 import {
   InvalidPhoneError,
@@ -87,15 +86,7 @@ export async function verifyOtp(
 
   await consumeOtpCode(otp.id);
 
-  const { user } = await findOrCreateUserByChannel(
-    "whatsapp",
-    phone,
-    phone,
-    undefined,
-    undefined,
-    USER_SOURCE.SITE,
-    { via: "web_otp_login" },
-  );
+  const { user } = await resolveWebLoginByPhone(phone);
 
   return { user };
 }

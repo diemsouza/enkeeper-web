@@ -16,17 +16,6 @@ export async function findUserById(id: string): Promise<User | null> {
   return prisma.user.findUnique({ where: { id } });
 }
 
-export async function findUserByChannel(
-  channelType: ChannelType,
-  channelId: string,
-): Promise<UserWithChannels | null> {
-  const channel = await prisma.userChannel.findFirst({
-    where: { channelType, channelUserId: channelId },
-    include: { user: { include: { channels: true } } },
-  });
-  return channel?.user ?? null;
-}
-
 export async function findUserByIdentifier(
   channelType: ChannelType,
   identifier: string,
@@ -83,6 +72,39 @@ export async function findUserChannelByUserId(
 ): Promise<UserChannel | null> {
   return prisma.userChannel.findFirst({
     where: { userId, channelType },
+  });
+}
+
+export async function findUserChannelByPhone(
+  phone: string,
+  filter: { channelType: ChannelType } | { channelTypeNot: ChannelType },
+): Promise<{ user: UserWithChannels; userChannel: UserChannel } | null> {
+  const where =
+    "channelType" in filter
+      ? { channelUserPhone: phone, channelType: filter.channelType }
+      : { channelUserPhone: phone, channelType: { not: filter.channelTypeNot } };
+  const row = await prisma.userChannel.findFirst({
+    where,
+    include: { user: { include: { channels: true } } },
+  });
+  if (!row) return null;
+  const { user, ...userChannel } = row;
+  return { user, userChannel };
+}
+
+export async function upsertWebUserChannel(
+  userId: string,
+  phone: string,
+): Promise<UserChannel> {
+  return prisma.userChannel.upsert({
+    where: { userId_channelType: { userId, channelType: "web" } },
+    update: {},
+    create: {
+      userId,
+      channelType: "web",
+      channelUserId: phone,
+      channelUserPhone: phone,
+    },
   });
 }
 

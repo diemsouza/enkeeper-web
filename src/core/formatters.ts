@@ -81,6 +81,19 @@ export function formatPlanExpired(
   };
 }
 
+export function formatWhatsAppRedirect(url: string): FormattedMessage {
+  const text =
+    "Canal exclusivo para notificações. Para praticar, acesse abaixo.";
+
+  return {
+    text: [text, "", url].join("\n"),
+    interactive: {
+      body: text,
+      buttons: [{ id: "access", label: "Acessar", type: "link", url }],
+    },
+  };
+}
+
 export function formatPaymentConfirmed(): FormattedMessage {
   return {
     text: [

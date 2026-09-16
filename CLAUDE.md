@@ -55,14 +55,11 @@ No test suite is configured.
 src/
   app/            -- Next.js App Router: pages e API routes
     api/
-      cron/       -- activity, activity-ttl (+ develop-* variants)
+      cron/       -- activity, activity-ttl
       queue/      -- chat-dispatch, chat-compute, process-doc
       webhooks/   -- whatsapp inbound
-      simulate/   -- disparo manual para dev
       users/      -- endpoints de conta
       waitlist/   -- cadastro de lista de espera
-      dev/
-        messages/ -- historico de mensagens (desenvolvimento)
   components/     -- ui/ (shadcn), home/ (landing), shared/ (reutilizavel)
   core/           -- logica de dominio pura, zero I/O
   hooks/          -- custom React hooks

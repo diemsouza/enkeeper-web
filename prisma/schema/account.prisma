@@ -18,6 +18,7 @@ enum PlanStatus {
 
 enum ChannelType {
     whatsapp
+    web
 }
 
 model User {
@@ -122,6 +123,7 @@ model UserChannel {
     @@unique([channelType, channelUserId])
     @@unique([channelType, channelUsername])
     @@unique([channelType, channelUserPhone])
+    @@unique([userId, channelType])
     @@index([userId])
     @@map("user_channels")
 }

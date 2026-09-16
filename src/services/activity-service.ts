@@ -102,7 +102,6 @@ export async function resumeActivityFromWeb(
       leavingActivityId:
         leaving && leaving.id !== target.id ? leaving.id : null,
       targetActivityId: target.id,
-      source: "web",
     });
   } catch (err) {
     // Enqueue e best-effort: o status ja trocou e a confirmacao ja foi

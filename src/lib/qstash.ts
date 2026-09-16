@@ -1,18 +1,21 @@
-import { Client } from '@upstash/qstash'
-import { DOC_BUFFER_DELAY_SEC } from './constants'
+import { Client } from "@upstash/qstash";
+import { DOC_BUFFER_DELAY_SEC } from "./constants";
 
-let _client: Client | null = null
+let _client: Client | null = null;
 
 function getClient(): Client {
   if (!_client) {
-    _client = new Client({ token: process.env.QSTASH_TOKEN! })
+    _client = new Client({ token: process.env.QSTASH_TOKEN! });
   }
-  return _client
+  return _client;
 }
 
-export async function publishDocProcessing(docId: string, userId: string): Promise<void> {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/queue/process-doc`
-  await getClient().publishJSON({ url, body: { docId, userId } })
+export async function publishDocProcessing(
+  docId: string,
+  userId: string,
+): Promise<void> {
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/queue/process-doc`;
+  await getClient().publishJSON({ url, body: { docId, userId } });
 }
 
 export async function publishDocMerge(
@@ -20,20 +23,19 @@ export async function publishDocMerge(
   userId: string,
   latestDocItemId: string,
 ): Promise<void> {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/queue/merge-doc`
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/queue/merge-doc`;
   await getClient().publishJSON({
     url,
     body: { docId, userId, latestDocItemId },
     delay: DOC_BUFFER_DELAY_SEC,
-  })
+  });
 }
 
 export async function publishResumeSummary(params: {
-  userId: string
-  leavingActivityId: string | null
-  targetActivityId: string
-  source: 'web' | 'whatsapp'
+  userId: string;
+  leavingActivityId: string | null;
+  targetActivityId: string;
 }): Promise<void> {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/queue/resume-summary`
-  await getClient().publishJSON({ url, body: params })
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/queue/resume-summary`;
+  await getClient().publishJSON({ url, body: params });
 }

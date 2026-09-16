@@ -7,21 +7,18 @@ import { ZodError, z } from "zod";
 import { getErrorMessage } from "@/src/lib/custom-errors";
 import { sendResumeSummary } from "@/src/services/activity-service";
 import { resolveChannel } from "@/src/lib/channels/resolve-channel";
-import { WebChannel } from "@/src/lib/channels/web-channel";
 
 const ResumeSummaryPayloadSchema = z.object({
   userId: z.string().min(1, "userId is required"),
   leavingActivityId: z.string().min(1).nullable(),
   targetActivityId: z.string().min(1, "targetActivityId is required"),
-  source: z.enum(["web", "whatsapp"]),
 });
 
 export const POST = verifySignatureAppRouter(async (req: Request) => {
   try {
     const body = await req.json();
     const payload = ResumeSummaryPayloadSchema.parse(body);
-    const channel =
-      payload.source === "web" ? new WebChannel() : resolveChannel();
+    const channel = resolveChannel();
     await sendResumeSummary({
       userId: payload.userId,
       leavingActivityId: payload.leavingActivityId,
