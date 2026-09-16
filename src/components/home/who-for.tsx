@@ -3,7 +3,7 @@
 import { cn } from "@/src/lib/utils";
 import { useInView } from "@/src/hooks/use-in-view";
 import { useTranslations } from "next-intl";
-import { Briefcase, Calendar, MessageSquare, Brain } from "lucide-react";
+import { Briefcase, Calendar, MessageSquare, Brain, Paperclip } from "lucide-react";
 import React from "react";
 
 const CARD_COUNT = 4;
@@ -11,6 +11,7 @@ const CARD_ICONS = [Calendar, MessageSquare, Briefcase, Brain] as const;
 
 export default function WhoFor() {
   const t = useTranslations("home.who");
+  const tMaterial = useTranslations("home.material_extra");
   const [ref, visible] = useInView();
 
   return (
@@ -25,7 +26,7 @@ export default function WhoFor() {
             visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5",
           )}
         >
-          <h2 className="text-[40px] sm:text-[48px] lg:text-[52px] font-[600] leading-tight mb-4">
+          <h2 className="text-[28px] sm:text-[34px] md:text-[38px] font-normal leading-tight mb-4">
             {t("title")}
           </h2>
           <p className="text-[17px] text-muted-foreground max-w-xl mx-auto leading-[1.7]">
@@ -58,6 +59,27 @@ export default function WhoFor() {
               </p>
             </div>
           ))}
+
+          <div
+            style={{ transitionDelay: visible ? `${CARD_COUNT * 100}ms` : "0ms" }}
+            className={cn(
+              "sm:col-span-2 rounded-2xl border border-border bg-white dark:bg-[#2C2C2E] p-7",
+              "shadow-sm hover:shadow-md hover:-translate-y-0.5",
+              "transition-all duration-700 cursor-default",
+              "opacity-0 translate-y-5",
+              "flex items-center gap-4",
+              visible && "opacity-100 translate-y-0",
+            )}
+          >
+            <Paperclip
+              className="w-6 h-6 shrink-0 text-muted-foreground"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {tMaterial("text")}
+            </p>
+          </div>
         </div>
       </div>
     </section>

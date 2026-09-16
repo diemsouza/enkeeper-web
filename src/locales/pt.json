@@ -44,7 +44,7 @@
     },
     "sidebar": {
       "daily_limit_title": "Limite diário de atividades atingido",
-      "daily_limit_hint": "Envie um material pelo WhatsApp para começar",
+      "daily_limit_hint": "Envie um material ou escolha um tema para começar",
       "active_section": "Atividade ativa",
       "history_section": "Histórico de atividades",
       "empty": "Nenhuma",
@@ -99,16 +99,24 @@
     }
   },
   "home": {
-    "phrases": {
-      "0": "Você entendeu a reunião. <strong>No e-mail de resposta, travou.</strong>",
-      "1": "Você aprendeu a frase ontem. <strong>Hoje já não lembra.</strong>",
-      "2": "Você estudou inglês de viagem. <strong>No aeroporto, esqueceu tudo.</strong>",
-      "3": "Você fez a aula de terça. <strong>Na de quinta, já esqueceu metade.</strong>"
+    "hero": {
+      "badge": "Prática ativa para alcançar o inglês que você precisa.",
+      "headline": "Pratique inglês com IA, todo dia, no seu ritmo, sobre o que você quiser.",
+      "subphrases": {
+        "0": "Seu inglês evolui todo dia, não só na hora da aula.",
+        "1": "Teste grátis por 7 dias. R$21,90/mês para continuar.",
+        "2": "O que você pratica todo dia é o que não some depois."
+      },
+      "cta": "Comece grátis",
+      "microcopy": "Acesso rápido · Sem cartão de crédito"
     },
-    "headline": "Pratique inglês com IA, todo dia, no seu ritmo, sobre o que você quiser.",
-    "price_teaser": "Teste grátis por 7 dias. R$21,90/mês para continuar.",
-    "cta": "Comece grátis",
-    "microcopy": "Abre no WhatsApp · Sem cadastro",
+    "nav": {
+      "login": "Entrar"
+    },
+    "simulator": {
+      "differentiation_line": "Diferente de um assistente genérico, ele guarda o que você errou, traz de volta na hora certa pra fixar, e fecha cada atividade com um resumo do que evoluiu.",
+      "cta": "Quero praticar"
+    },
     "waitlist_microcopy": "Garanta sua vaga · Comece grátis",
     "waitlist": {
       "cta": "Entrar na lista de espera",
@@ -122,6 +130,65 @@
         "already_waitlisted": "Você já está na lista. Logo chega sua vez de praticar.",
         "close": "Fechar"
       }
+    },
+    "features_carousel": {
+      "title": "Na prática.",
+      "subtitle": "Material ou tema, você escolhe. A prática fica sempre pronta pra você.",
+      "blocks": {
+        "0": {
+          "title": "Pratique o que faz sentido pro seu momento.",
+          "description": "Não ter material em mãos não pode ser motivo pra não praticar. Você conta o que faz sentido pro seu momento, trabalho, viagem, aula, o que for, e a prática começa na hora, sem precisar montar nada antes."
+        },
+        "1": {
+          "title": "As perguntas chegam no seu ritmo.",
+          "description": "A prática fica pronta assim que você entra, sem hora marcada nem sessão de estudo formal. Você responde no seu tempo, e quando erra, entende o porquê na hora, não só que errou."
+        },
+        "2": {
+          "title": "Mais perguntas, na hora que você decidir.",
+          "description": "em hora que bate vontade de praticar mais de uma vez seguida. Um comando muda o ritmo: as perguntas passam a chegar em sequência, no fôlego que você quiser dar."
+        },
+        "3": {
+          "title": "Ouça e repita. Treine o listening também.",
+          "description": "Ler e escrever não é a mesma coisa que entender e falar. O feedback pode chegar em áudio, você escuta a pronúncia certa e repete, treinando o ouvido e a fala no mesmo lugar onde já pratica o resto."
+        },
+        "4": {
+          "title": "Também aceita material pronto.",
+          "description": "Já tem material da aula? Não precisa escolher entre um ou outro. Envie foto, PDF ou texto quando quiser, e as perguntas saem exatamente daquele conteúdo."
+        },
+        "5": {
+          "title": "Nunca é só decorar a mesma pergunta.",
+          "description": "As perguntas mudam de formato: completar frase, aplicar num cenário, escolher a opção certa. O que muda é a forma de treinar o mesmo termo, não o termo repetido do jeito idêntico."
+        }
+      }
+    },
+    "how": {
+      "badge": "Como funciona na prática",
+      "title": "Tudo o que você precisa para destravar o seu inglês.",
+      "cards": {
+        "0": {
+          "title": "Conversas Contextualizadas",
+          "description": "Cada pergunta parte do material ou do tema escolhido, não de frases prontas genéricas."
+        },
+        "1": {
+          "title": "Correção sem Julgamento",
+          "description": "As respostas recebem feedback direto e sem tom de prova, focado em ajudar a evoluir, não em apontar erro."
+        },
+        "2": {
+          "title": "Memória de Longo Prazo",
+          "description": "O histórico de respostas é usado pra trazer de volta o que travou, no momento certo, antes de esquecer de vez."
+        }
+      },
+      "secondary_cards": {
+        "0": {
+          "title": "Inteligência de Retenção",
+          "description": "Um algoritmo de repetição espaçada decide quando cada termo volta a aparecer, sem precisar montar deck nem lembrar de revisar."
+        },
+        "1": {
+          "title": "Sem esperar meses",
+          "description": "Um resumo de progresso fica disponível a qualquer momento, sem esperar semanas pra ver o que evoluiu."
+        }
+      },
+      "cta": "Comece grátis"
     },
     "who": {
       "title": "Para quem estuda inglês e quer praticar mais, sem obstáculo.",
@@ -145,259 +212,51 @@
         }
       }
     },
-    "how": {
-      "title": "Como funciona.",
-      "subtitle": "Três passos. Sem configuração.",
-      "steps": {
-        "0": {
-          "title": "Escolha o que praticar",
-          "description": "Diga o que quer praticar, ou envie texto, foto ou PDF: vocabulário, exercício, aula, o que fizer sentido pra você."
-        },
-        "1": {
-          "title": "As perguntas são geradas a partir do que você escolheu",
-          "description": "Extrai o vocabulário e os pontos centrais do que você escolheu e monta as perguntas em cima disso, não de cenários genéricos."
-        },
-        "2": {
-          "title": "Sua prática está sempre pronta",
-          "description": "A qualquer hora do dia, no seu ritmo, tem prática esperando por você sobre aquele vocabulário. Você responde de cabeça. O sistema avalia, dá feedback e registra o que travou."
-        }
-      }
+    "material_extra": {
+      "text": "Já tem material da aula? Envie foto, PDF ou texto quando quiser, as perguntas saem exatamente daquele conteúdo."
     },
     "pricing": {
-      "title": "Comece grátis.",
-      "subtitle": "Acesso completo por {days} dias, sem cartão e sem cadastro.",
-      "description": "Diga o que quer praticar, ou envie material: texto, imagem ou PDF. Pratique no seu ritmo. Se fizer sentido, continua por R$21,90/mês.",
+      "block_title": "Pratique no seu ritmo",
+      "block_subtitle": "Testar de graça por {days} dias. Se fizer sentido, continue.",
+      "price": "R$21,90",
+      "price_suffix": "/mês",
+      "price_note": "Ideal para manter a consistência todos os dias",
+      "benefits": {
+        "0": "Prática todo dia, no seu ritmo, sobre o que você quiser praticar",
+        "1": "Repetição espaçada automática, sem montar deck nem lembrar de revisar",
+        "2": "Feedback direto na hora, com áudio pra treinar o listening",
+        "3": "Resumo de progresso a qualquer momento",
+        "4": "Aceita seu próprio material quando quiser, foto, PDF ou texto",
+        "5": "Teste sem cartão de crédito"
+      },
       "cta": "Comece grátis"
     },
-    "features_demo": {
-      "title": "Na prática.",
-      "subtitle": "Material ou tema, você escolhe. A prática fica sempre pronta pra você.",
-      "cta_link": "Quero praticar",
-      "blocks": {
-        "0": {
-          "title": "Pratica o que faz sentido pro seu momento.",
-          "description": "Não ter material em mãos não pode ser motivo pra não praticar. Você conta o que faz sentido pro seu momento, trabalho, viagem, aula, o que for, e a prática começa na hora, sem precisar montar nada antes.",
-          "chat": [
-            {
-              "from": "bot",
-              "text": "Sobre qual área quer praticar?",
-              "time": "08:00"
-            },
-            {
-              "from": "user",
-              "text": "Dia a dia e lazer",
-              "time": "08:01"
-            },
-            {
-              "from": "bot",
-              "text": "Qual assunto?",
-              "time": "08:01"
-            },
-            {
-              "from": "user",
-              "text": "Redes sociais e streaming",
-              "time": "08:02"
-            },
-            {
-              "from": "bot",
-              "text": "Quer praticar sobre Vocabulário geral, Expressões, presente contínuo (-ing) ou algum outro?",
-              "time": "08:02"
-            },
-            {
-              "from": "user",
-              "text": "Vocabulário",
-              "time": "08:03"
-            },
-            {
-              "from": "bot",
-              "text": "Pronto. Em alguns minutos chega a primeira pergunta.",
-              "time": "08:03"
-            }
-          ]
+    "faq": {
+      "title": "Perguntas frequentes",
+      "items": {
+        "how-it-works": {
+          "question": "Como funciona na prática?",
+          "answer": "Você envia o que quer praticar, um material ou só o tema, e recebe perguntas sobre aquilo ao longo do dia. Você responde no seu ritmo e recebe feedback na hora."
         },
-        "1": {
-          "title": "As perguntas chegam no seu ritmo.",
-          "description": "A vida não para pra você estudar. A prática fica pronta no seu tempo, sem hora marcada. Você responde quando puder, e quando erra, entende o porquê na hora, não só que errou.",
-          "chat": [
-            {
-              "from": "bot",
-              "text": "Complete: \"Precisamos ___ a proposta até sexta.\" (finalizar)",
-              "time": "10:15"
-            },
-            {
-              "from": "user",
-              "text": "finish",
-              "time": "14:40"
-            },
-            {
-              "from": "bot",
-              "text": "❌ Quase! O certo aqui é \"finalize\": \"We need to finalize the proposal by Friday.\"",
-              "time": "14:41"
-            },
-            {
-              "from": "bot",
-              "text": "💡 \"Finalize\" é o verbo certo pra fechar algo formalmente. \"Finish\" existe, mas soa informal nesse contexto.",
-              "time": "14:41"
-            }
-          ]
+        "does-it-replace-classes": {
+          "question": "Isso substitui aula de inglês?",
+          "answer": "Não. A prática aqui é reforço diário do que você já está aprendendo, seja em aula, sozinho ou em qualquer outro lugar. Ela existe pra o que você aprende não sumir entre uma sessão e outra."
         },
-        "2": {
-          "title": "Quer praticar agora? É só pedir.",
-          "description": "Tem hora que bate vontade de praticar mais. Nessas horas, um comando muda o ritmo: as perguntas passam a chegar em sequência, sem esperar o dia, no fôlego que você quiser dar.",
-          "chat": [
-            {
-              "from": "user",
-              "text": "praticar",
-              "time": "20:00"
-            },
-            {
-              "from": "bot",
-              "text": "Perguntas chegam uma após a outra, no seu ritmo. \n\n_Pare usando *pausar* ou após 15 minutos sem resposta._",
-              "time": "20:00"
-            },
-            {
-              "from": "bot",
-              "text": "Complete: \"She ___ to the gym every morning.\" (vai)",
-              "time": "20:00"
-            },
-            {
-              "from": "user",
-              "text": "goes",
-              "time": "20:00"
-            },
-            {
-              "from": "bot",
-              "text": "✅ Boa! \"She goes to the gym every morning.\"",
-              "time": "20:01"
-            },
-            {
-              "from": "bot",
-              "text": "Qual o significado de \"deadline\"?",
-              "time": "20:01"
-            },
-            {
-              "from": "user",
-              "text": "prazo final",
-              "time": "20:01"
-            },
-            {
-              "from": "bot",
-              "text": "✅ Exato! \"The deadline is next Friday.\"",
-              "time": "20:01"
-            },
-            {
-              "from": "bot",
-              "type": "voice",
-              "duration": "0:03",
-              "time": "20:01"
-            },
-            {
-              "from": "bot",
-              "text": "Você chegou (atrasado) numa reunião importante e pediu desculpas ao entrar. Qual o termo em inglês?",
-              "time": "20:02"
-            },
-            {
-              "from": "user",
-              "text": "late",
-              "time": "20:02"
-            },
-            {
-              "from": "bot",
-              "text": "✅ Boa! \"You showed up late to an important meeting and apologized as you walked in.\"",
-              "time": "20:02"
-            },
-            {
-              "from": "bot",
-              "text": "Marque a opção certa: \"I ___ finished the report.\"\na) have\nb) has\nc) having",
-              "time": "20:03"
-            },
-            {
-              "from": "user",
-              "text": "a",
-              "time": "20:03"
-            },
-            {
-              "from": "bot",
-              "text": "✅ Correto! \"I have finished the report.\"",
-              "time": "20:03"
-            }
-          ]
+        "any-content-works": {
+          "question": "Funciona com qualquer conteúdo que eu mandar?",
+          "answer": "Sim. Pode ser material de aula, um assunto que você quer praticar ou até um PDF, foto ou texto solto. As perguntas saem exatamente daquele conteúdo."
         },
-        "3": {
-          "title": "Ouça e repita. Treine o listening também.",
-          "description": "Ler e escrever não é a mesma coisa que entender e falar. O feedback pode chegar em áudio, você escuta a pronúncia certa e repete, treinando o ouvido e a fala no mesmo lugar onde já pratica o resto.",
-          "chat": [
-            {
-              "from": "bot",
-              "text": "Complete: \"I need to ___ a meeting for tomorrow.\" (agendar)",
-              "time": "16:00"
-            },
-            {
-              "from": "user",
-              "text": "schedule",
-              "time": "16:03"
-            },
-            {
-              "from": "bot",
-              "text": "✅ Boa! \"I need to schedule a meeting for tomorrow.\"",
-              "time": "16:03"
-            },
-            {
-              "from": "bot",
-              "type": "voice",
-              "duration": "0:04",
-              "time": "16:03"
-            }
-          ]
+        "after-trial": {
+          "question": "O que acontece depois dos 7 dias grátis?",
+          "answer": "O acesso expira. Pra continuar, você assina por R$21,90/mês, com renovação automática, cancelável quando quiser. Sem assinatura, o histórico fica guardado e a prática só recomeça quando você decidir continuar."
         },
-        "4": {
-          "title": "Também aceita material pronto.",
-          "description": "Já tem material da aula? Não precisa escolher entre um ou outro. Envie foto, PDF ou texto quando quiser, e as perguntas saem exatamente daquele conteúdo.",
-          "chat": [
-            {
-              "from": "user",
-              "type": "file",
-              "fileName": "Vocabulario Aula 3.pdf",
-              "fileSize": "5 páginas · PDF · 12 kB",
-              "time": "08:10"
-            },
-            {
-              "from": "bot",
-              "text": "Recebido. Você pode enviar mais materiais ou só aguardar. Use *cancelar* para descartar e começar de novo.",
-              "time": "08:10"
-            },
-            {
-              "from": "bot",
-              "text": "Pronto. Em alguns minutos chega a primeira pergunta.",
-              "time": "08:11"
-            }
-          ]
+        "message-frequency": {
+          "question": "Preciso ficar entrando o dia todo?",
+          "answer": "Não. A prática fica pronta quando você entrar, no seu tempo. Se quiser praticar mais de uma vez seguida, um comando muda o ritmo e as perguntas chegam em sequência, no fôlego que você quiser dar."
         },
-        "5": {
-          "title": "Resumo a cada troca de atividade.",
-          "description": "Trocar de assunto não devia apagar o que você já tinha construído. A cada troca de atividade ou material novo, chega um resumo rápido do que ficou pra trás, antes da próxima pergunta chegar.",
-          "chat": [
-            {
-              "from": "bot",
-              "text": "📊 Resumo da atividade: *Advérbios de Conjunção*\n\nEm 3 dias, você respondeu 20 de 25 perguntas, 85% de acerto entre as respondidas (17 certas e 3 erradas), sendo 2 delas revisadas mais de uma vez antes de fixar. Ficaram 5 perguntas sem resposta.\n\nPoucas respostas saíram erradas. Você fixou a maior parte desse conteúdo antes de trocar de material.",
-              "time": "17:30"
-            },
-            {
-              "from": "bot",
-              "text": "📘 Hora de praticar! *Vocabulário de Tarefas Domésticas*",
-              "time": "17:31"
-            },
-            {
-              "from": "bot",
-              "text": "Complete: \"I need to ___ before we run out of clean clothes.\" (lavar roupa)",
-              "time": "17:31"
-            },
-            {
-              "from": "user",
-              "text": "do the laundry",
-              "time": "17:35"
-            }
-          ]
+        "cancel-anytime": {
+          "question": "Dá pra cancelar quando quiser?",
+          "answer": "Sim. É uma assinatura mensal que renova automaticamente a cada 30 dias, mas você pode cancelar quando quiser. Ao cancelar, o acesso continua até o fim do período já pago."
         }
       }
     },

@@ -32,9 +32,16 @@ export async function generateViewport(): Promise<Viewport> {
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("common.seo"); // usa o locale do request.ts
 
+  const title = t("title");
+  const description = t("description");
+  const ogImage = t("ogImage");
+
   return {
-    title: t("title"),
-    description: t("description"),
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_APP_URL ?? "https://fluizer.com",
+    ),
+    title,
+    description,
     keywords: t("keywords"),
     robots: "index, follow",
     alternates: {
@@ -43,6 +50,21 @@ export async function generateMetadata(): Promise<Metadata> {
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
+    },
+    openGraph: {
+      title,
+      description,
+      url: "https://fluizer.com",
+      siteName: "Fluizer",
+      images: [{ url: ogImage }],
+      locale: "pt_BR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
     },
   };
 }

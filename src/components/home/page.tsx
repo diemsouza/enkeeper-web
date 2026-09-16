@@ -2,10 +2,13 @@
 
 import Nav from "./nav";
 import Hero from "./hero";
+import Simulator from "./simulator/simulator";
 import FloatingCta from "./floating-cta";
-import FeaturesDemo from "./features-demo";
+import FeaturesCarouselSection from "./features-carousel-section";
+import HowItWorksSection from "./how-it-works-section";
 import WhoFor from "./who-for";
 import Pricing from "./pricing";
+import FaqSection from "./faq-section";
 import Footer from "./footer";
 
 export default function HomePage() {
@@ -13,10 +16,13 @@ export default function HomePage() {
     <div className="flex flex-col">
       <Nav />
       <Hero />
+      <Simulator />
       <FloatingCta />
-      <FeaturesDemo />
+      <FeaturesCarouselSection />
+      <HowItWorksSection />
       <WhoFor />
       <Pricing />
+      <FaqSection />
       <Footer />
     </div>
   );

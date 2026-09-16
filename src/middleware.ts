@@ -35,15 +35,25 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const res =
-    isLoginRoute && session
-      ? NextResponse.redirect(
-          new URL(
-            sanitizeRedirectPath(req.nextUrl.searchParams.get("redirect_to")),
-            req.url,
-          ),
-        )
-      : NextResponse.next();
+  const hasWaToken = req.nextUrl.searchParams.has("wa_token");
+
+  let res: NextResponse;
+  if (isLoginRoute && session) {
+    res = NextResponse.redirect(
+      new URL(
+        sanitizeRedirectPath(req.nextUrl.searchParams.get("redirect_to")),
+        req.url,
+      ),
+    );
+  } else if (isAppRoute && session && hasWaToken) {
+    const cleanParams = new URLSearchParams(search);
+    cleanParams.delete("wa_token");
+    const url = new URL(pathname, req.url);
+    url.search = cleanParams.toString();
+    res = NextResponse.redirect(url);
+  } else {
+    res = NextResponse.next();
+  }
 
   if (session && shouldRefreshSession(session.issuedAt)) {
     const fresh = await signSessionToken({ userId: session.userId });

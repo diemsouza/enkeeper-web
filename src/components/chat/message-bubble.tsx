@@ -16,17 +16,23 @@ export function MessageBubble({
   onRetry,
   onAudioPlay,
   onButtonClick,
+  zoomDisabled,
+  wide,
 }: {
   message: Message;
   isNew?: boolean;
   onRetry?: (externalId: string) => void;
   onAudioPlay?: (externalId: string) => void;
   onButtonClick?: (button: FormattedMessageButton) => void;
+  zoomDisabled?: boolean;
+  wide?: boolean;
 }) {
   const isUser = message.from === "user";
   const [shouldAnimate] = useState(isNew);
   const t = useTranslations("app.chat");
   const tErrors = useTranslations("app.errors");
+  const maxWidth = wide ? "max-w-[97%] md:max-w-[95%]" : "max-w-[85%] md:max-w-[70%]";
+  const imageWidth = wide ? "w-[97%] md:w-[95%]" : "w-[85%] md:w-[70%]";
 
   return (
     <div
@@ -42,9 +48,9 @@ export function MessageBubble({
             ? "bg-primary text-primary-foreground rounded-[10px_10px_2px_10px]"
             : "bg-white text-foreground dark:bg-[#1C1C1E] rounded-[10px_10px_10px_2px]",
           "px-3 pt-2 pb-1.5 text-[15px] md:text-[14px]",
-          "min-w-[80px] max-w-[85%] md:max-w-[70%]",
-          message.type === "image" &&
-            "w-[85%] md:w-[70%] max-w-[85%] md:max-w-[70%] overflow-hidden",
+          "min-w-[80px]",
+          maxWidth,
+          message.type === "image" && cn(imageWidth, maxWidth, "overflow-hidden"),
         )}
       >
         {message.type === "file" ? (
@@ -54,7 +60,11 @@ export function MessageBubble({
             mediaType={message.mediaType}
           />
         ) : message.type === "image" ? (
-          <ImageBubble imageUrl={message.imageUrl!} caption={message.caption} />
+          <ImageBubble
+            imageUrl={message.imageUrl!}
+            caption={message.caption}
+            zoomDisabled={zoomDisabled}
+          />
         ) : message.type === "audio" ? (
           <CustomAudioPlayer
             audioUrl={message.audioUrl!}

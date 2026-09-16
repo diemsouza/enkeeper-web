@@ -6,7 +6,7 @@ import { cn } from "@/src/lib/utils";
 import { HomeCTA } from "@/src/components/home/home-cta";
 
 export default function FloatingCta() {
-  const t = useTranslations("home");
+  const t = useTranslations("home.hero");
   const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const [pricingInView, setPricingInView] = useState(false);
 
