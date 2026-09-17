@@ -258,7 +258,9 @@
           "question": "Dá pra cancelar quando quiser?",
           "answer": "Sim. É uma assinatura mensal que renova automaticamente a cada 30 dias, mas você pode cancelar quando quiser. Ao cancelar, o acesso continua até o fim do período já pago."
         }
-      }
+      },
+      "cta_text": "Ainda com dúvida? Teste {days} dias grátis.",
+      "cta_button": "Quero praticar"
     },
     "footer": {
       "copyright": "Copyright © 2026 Fluizer. Todos os direitos reservados.",

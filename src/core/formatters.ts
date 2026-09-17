@@ -864,19 +864,18 @@ export function formatCanceled(): FormattedMessage {
 // fonte de verdade do nome/texto real do template na Meta - alterar aqui antes de atualizar na Meta
 const DAILY_REMINDER_TEMPLATE_CONFIG = {
   templateName: "daily_reminder", // placeholder ate aprovacao do template na Meta
-  text: (count: number) =>
-    `Sua revisão de perguntas passou da data prevista.\n\nPendentes: ${count} \n\nVocê pode acessar sua prática abaixo.`,
+  text: (count: number, link: string) =>
+    `Sua revisão de perguntas passou da data prevista.\n\nPendentes: ${count} \n\nVocê pode acessar sua prática abaixo.\n\n${link}\n\nEsse link expira em 24h.`,
 };
 
 export function formatDailyReminderMessage(
   count: number,
-  waLoginToken: string,
+  link: string,
 ): FormattedMessage {
   return {
-    text: DAILY_REMINDER_TEMPLATE_CONFIG.text(count),
+    text: DAILY_REMINDER_TEMPLATE_CONFIG.text(count, link),
     templateName: DAILY_REMINDER_TEMPLATE_CONFIG.templateName,
-    templateBodyParams: [String(count)],
-    templateButtonUrlParam: waLoginToken,
+    templateBodyParams: [String(count), link],
   };
 }
 

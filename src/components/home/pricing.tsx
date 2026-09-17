@@ -40,7 +40,7 @@ export default function Pricing() {
               {t("price_suffix")}
             </span>
           </p>
-          <p className="text-xs text-muted-foreground mb-8">
+          <p className="text-sm text-muted-foreground mb-8">
             {t("price_note")}
           </p>
 
@@ -60,6 +60,7 @@ export default function Pricing() {
           <HomeCTA
             waLabel={t("cta")}
             buttonClassName="w-full rounded-full h-12 font-semibold gap-2 text-base"
+            isCtaAnchor
           />
         </div>
       </div>

@@ -11,7 +11,6 @@ import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
 type DailyReminderMetadata = {
   currentActivityId?: string;
   templateBodyParams?: string[];
-  templateButtonUrlParam?: string;
 };
 
 type NotificationCronResult = {
@@ -37,7 +36,6 @@ async function processDailyReminderNotification(
     notification.targetId,
     notification.templateId,
     metadata.templateBodyParams,
-    metadata.templateButtonUrlParam,
   );
 
   await markNotificationSent(notification.id, externalId);

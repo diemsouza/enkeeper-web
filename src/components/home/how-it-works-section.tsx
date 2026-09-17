@@ -99,6 +99,7 @@ export default function HowItWorksSection() {
             <HomeCTA
               waLabel={t("cta")}
               buttonClassName="rounded-full px-10 h-12 font-semibold gap-2 text-base"
+              isCtaAnchor
             />
           </div>
         </div>

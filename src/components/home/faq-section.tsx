@@ -8,6 +8,8 @@ import {
   AccordionTrigger,
 } from "@/src/components/ui/accordion";
 import { FAQ_IDS } from "@/src/components/home/faq-data";
+import { HomeCTA } from "./home-cta";
+import { TRIAL_DAYS } from "@/src/lib/constants";
 
 export default function FaqSection() {
   const t = useTranslations("home.faq");
@@ -31,6 +33,17 @@ export default function FaqSection() {
             </AccordionItem>
           ))}
         </Accordion>
+
+        <div className="max-w-xl mx-auto text-center flex flex-col items-center gap-4 mt-20">
+          <p className="text-muted-foreground">
+            {t("cta_text", { days: TRIAL_DAYS })}
+          </p>
+          <HomeCTA
+            waLabel={t("cta_button")}
+            buttonClassName="rounded-full px-8 h-11 font-semibold gap-2 text-sm"
+            isCtaAnchor
+          />
+        </div>
       </div>
     </section>
   );

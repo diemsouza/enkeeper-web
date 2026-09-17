@@ -327,6 +327,20 @@ model Media {
     @@map("medias")
 }
 
+model ShortLink {
+    id           String    @id @default(ulid()) @map("id")
+    code         String    @unique @map("code")
+    kind         String    @map("kind")
+    url          String    @map("url") @db.Text
+    expiresAt    DateTime  @map("expires_at")
+    lastAccessAt DateTime? @map("last_access_at")
+    accessCount  Int       @default(0) @map("access_count")
+    createdAt    DateTime  @default(now()) @map("created_at")
+
+    @@index([expiresAt])
+    @@map("shortlinks")
+}
+
 model DocItem {
     id         String   @id @default(ulid()) @map("id")
     docId      String   @map("doc_id")

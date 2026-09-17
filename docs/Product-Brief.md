@@ -8,9 +8,9 @@
 
 ## 1. O que é
 
-**Um agente de prática de inglês que mantém seu estudo ativo o dia inteiro no WhatsApp.**
+**Um agente de prática de inglês que mantém seu estudo ativo o dia inteiro, no seu ritmo.**
 
-Você conta o que quer praticar, ou envia o material da sua aula - texto, imagem ou PDF - e recebe perguntas sobre aquilo ao longo do dia. Responde de cabeça, sem consultar. O sistema avalia, dá feedback e registra o que você acertou e errou.
+Você conta o que quer praticar, ou envia o material da sua aula - texto, imagem ou PDF - e recebe perguntas sobre aquilo ao longo do dia, na superfície de prática própria (`/app`). WhatsApp avisa quando há pergunta pendente e serve de canal de login automático, mas a prática em si acontece no app. Responde de cabeça, sem consultar. O sistema avalia, dá feedback e registra o que você acertou e errou.
 
 Aula tem 30 minutos. Sua prática tem o dia inteiro.
 
@@ -32,7 +32,7 @@ Fluizer mantém sua prática ativa no canal onde você já vive, com o material 
 > Sua aula de inglês tem 30 minutos. Sua prática tem o dia inteiro.
 
 **Subtítulo:**
-> Mande o material da sua aula. Pratique o vocabulário o dia todo no WhatsApp.
+> Mande o material da sua aula. Pratique o vocabulário o dia todo, no seu ritmo.
 
 **Diferencial em uma frase:**
 > Seu estudo não termina quando você fecha o caderno.
@@ -342,8 +342,9 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - OCR de imagem gera conteúdo de prática a partir de descrição da cena quando não há texto legível (antes era descartada), com tratamento dedicado para conteúdo impróprio (bloqueado) e imagem ilegível
 - Formatação de gap fill e cenário aplicada em código, independente do modelo reproduzir a formatação certa; cenário com variação de fechamento
 - Classificação de dica de erro (evalTip) expandida para 8 categorias, com contrato de formatação de texto
-- Botões interativos reais no simulador, incluindo seleção de nível
 - Charts visuais nos resumos: pentágono de desempenho na troca de atividade (compara com a atividade anterior) e gauge de score na conclusão da primeira rodada, renderizados por template sem custo de IA
+- Home refeita: hero sem menção a canal específico (WhatsApp deixou de ser citado na copy pública, prática é apresentada como algo que acontece no seu ritmo), demo visual por domínio (dia a dia, educação, viagem, trabalho) com roteiro fixo em shell de desktop e iPhone lado a lado substituindo o simulador antigo de botão real, seções de features, como funciona, para quem é e FAQ reescritas
+- Login automático via link do WhatsApp (Seção 11.2 do Product-Rules) passa a usar shortlink genérico e reutilizável em vez do token cru na URL, e o lembrete diário de dívida de revisão (Product-Rules Seção 12) entrega esse link como texto no corpo do template em vez de botão de CTA, evitando o navegador embutido da Meta
 
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou

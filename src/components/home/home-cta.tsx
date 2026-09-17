@@ -11,9 +11,15 @@ type HomeCTAProps = {
   waLabel: string;
   buttonClassName?: string;
   icon?: ReactNode;
+  isCtaAnchor?: boolean;
 };
 
-export function HomeCTA({ waLabel, buttonClassName, icon }: HomeCTAProps) {
+export function HomeCTA({
+  waLabel,
+  buttonClassName,
+  icon,
+  isCtaAnchor,
+}: HomeCTAProps) {
   const t = useTranslations("home");
   const [open, setOpen] = useState(false);
 
@@ -24,6 +30,7 @@ export function HomeCTA({ waLabel, buttonClassName, icon }: HomeCTAProps) {
           size="lg"
           className={buttonClassName}
           onClick={() => setOpen(true)}
+          data-cta-anchor={isCtaAnchor || undefined}
         >
           {t("waitlist.cta")}
         </Button>
@@ -33,7 +40,7 @@ export function HomeCTA({ waLabel, buttonClassName, icon }: HomeCTAProps) {
   }
 
   return (
-    <a href="/app">
+    <a href="/app" data-cta-anchor={isCtaAnchor || undefined}>
       <Button size="lg" className={buttonClassName}>
         {waLabel}
         {icon ?? <ArrowRight className="w-5 h-5" strokeWidth={2.5} />}

@@ -16,6 +16,7 @@ export type {
   Media,
   OtpCode,
   Notification,
+  ShortLink,
 } from "../../prisma/generated/client";
 
 export {

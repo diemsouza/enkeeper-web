@@ -1,7 +1,7 @@
 import { SignJWT } from "jose/jwt/sign";
 import { jwtVerify } from "jose/jwt/verify";
 
-const WA_LOGIN_TOKEN_MAX_AGE_SEC = 24 * 60 * 60;
+export const WA_LOGIN_TOKEN_MAX_AGE_SEC = 24 * 60 * 60;
 
 export type WaLoginPayload = { phone: string };
 

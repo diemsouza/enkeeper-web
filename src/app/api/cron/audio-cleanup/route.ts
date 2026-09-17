@@ -6,6 +6,8 @@ import {
   processAudioCleanup,
   processImageCleanup,
 } from "@/src/services/audio-cleanup-cron.service";
+import { deleteExpiredShortLinks } from "@/src/repo/shortlinks.repo";
+import { SHORTLINK_CLEANUP_TTL_DAYS } from "@/src/lib/constants";
 
 export async function GET(): Promise<NextResponse> {
   const authHeader = (await headers()).get("authorization");
@@ -14,13 +16,18 @@ export async function GET(): Promise<NextResponse> {
   }
 
   try {
-    const [audioResult, imageResult] = await Promise.all([
+    const shortLinkThreshold = new Date(
+      Date.now() - SHORTLINK_CLEANUP_TTL_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const [audioResult, imageResult, shortLinkDeleted] = await Promise.all([
       processAudioCleanup(),
       processImageCleanup(),
+      deleteExpiredShortLinks(shortLinkThreshold),
     ]);
     return NextResponse.json({
       audioCleanup: audioResult,
       imageCleanup: imageResult,
+      shortLinkCleanup: { deleted: shortLinkDeleted },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";

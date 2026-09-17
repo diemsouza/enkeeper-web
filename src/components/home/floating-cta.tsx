@@ -1,39 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/src/lib/utils";
 import { HomeCTA } from "@/src/components/home/home-cta";
 
+const PROXIMITY_MARGIN_PX = 150;
+
 export default function FloatingCta() {
   const t = useTranslations("home.hero");
-  const [scrolledPastHero, setScrolledPastHero] = useState(false);
-  const [pricingInView, setPricingInView] = useState(false);
+  const [ctaVisible, setCtaVisible] = useState(true);
+  const visibilityRef = useRef(new Map<Element, boolean>());
 
   useEffect(() => {
-    const onScroll = () => {
-      setScrolledPastHero(window.scrollY > window.innerHeight * 0.8);
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const elements = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-cta-anchor]"),
+    );
+    if (elements.length === 0) return;
 
-    const pricingEl = document.getElementById("pricing");
-    let observer: IntersectionObserver | undefined;
-    if (pricingEl) {
-      observer = new IntersectionObserver(
-        ([entry]) => setPricingInView(entry.isIntersecting),
-        { threshold: 0 },
-      );
-      observer.observe(pricingEl);
-    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) =>
+          visibilityRef.current.set(entry.target, entry.isIntersecting),
+        );
+        setCtaVisible(
+          Array.from(visibilityRef.current.values()).some(Boolean),
+        );
+      },
+      {
+        rootMargin: `${PROXIMITY_MARGIN_PX}px 0px ${PROXIMITY_MARGIN_PX}px 0px`,
+        threshold: 0,
+      },
+    );
+    elements.forEach((el) => observer.observe(el));
 
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      observer?.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
-  const visible = scrolledPastHero && !pricingInView;
+  const visible = !ctaVisible;
 
   return (
     <div

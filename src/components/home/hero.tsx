@@ -80,6 +80,7 @@ export default function Hero() {
         <HomeCTA
           waLabel={t("hero.cta")}
           buttonClassName="rounded-full px-12 h-12 font-semibold gap-2 text-base"
+          isCtaAnchor
         />
         <p className="text-sm text-muted-foreground/70 text-center">
           {IS_WAITLIST ? t("waitlist_microcopy") : t("hero.microcopy")}

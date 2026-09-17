@@ -443,9 +443,16 @@ Pagamento confirmado libera o acesso automaticamente, sem intervenção manual: 
 Link enviado pelo WhatsApp que aponta pro app pode carregar um token assinado que
 autentica automaticamente quem abre o link no navegador, sem passar pelo formulário
 de telefone e código. Sessão já ativa no navegador é sempre respeitada, o token nunca
-sobrescreve um login existente. Token expira em 48 horas; expirado, ausente ou sem
+sobrescreve um login existente. Token expira em 24 horas; expirado, ausente ou sem
 conta correspondente, cai no fluxo normal de login por telefone e código, sem nenhum
 aviso de erro.
+
+O link efetivamente entregue ao usuário não carrega o token direto na URL: é um
+link curto (shortlink) que resolve por redirecionamento pro destino real, com a
+mesma validade de 24 horas do token. Link expirado ou inexistente cai na home,
+silenciosamente. O mecanismo de shortlink é genérico, reutilizável por qualquer
+outro caso que precise de link curto com expiração (ex: link de pagamento,
+indicação), não é exclusivo do login por WhatsApp.
 
 ---
 
@@ -512,6 +519,21 @@ Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 c
 
 **d14:**
 > Duas semanas. Ainda dá pra voltar do zero ou continuar de onde parou. É só responder ou enviar um material novo.
+
+### Lembrete diário de dívida de revisão
+
+Fluxo adicional, separado do fluxo de steps acima: enquanto o usuário tiver pelo
+menos uma pergunta elegível pra revisão (SM-2, Seção 7) numa Activity ativa, um
+lembrete é reavaliado a cada dia sem prática, nos intervalos 1, 2, 3, 7 e 14 dias
+desde a última interação, até 5 envios. Sem pergunta elegível pendente, nenhum
+lembrete é enviado. Se o usuário já praticou no dia em que o lembrete seria
+disparado, o envio é cancelado silenciosamente.
+
+Enviado via template Meta (categoria Utility, nome `daily_reminder`), com a
+contagem de perguntas pendentes e um link curto de login (Seção 11.2) no corpo da
+mensagem, como texto, não como botão de CTA — botão de CTA em template abre no
+navegador embutido da Meta (in-app browser), que quebra o fluxo de login
+automático; texto simples no corpo abre no navegador nativo do dispositivo.
 
 ---
 
@@ -613,7 +635,7 @@ Comportamento pós-cancelamento depende do contexto. Sem Activity ativa (onboard
 
 - Produto focado em inglês. A arquitetura suporta expansão para outros idiomas e matérias, mas expansão só após validação e churn controlado.
 - Janela de 24h do WhatsApp é regra de ouro. Mais de 85% das mensagens devem ser enviadas dentro dela.
-- O sistema não depende de o usuário abrir um app. Toda a prática acontece no WhatsApp.
+- A prática acontece na superfície web própria (`/app`), não dentro do chat do WhatsApp (Seção 19). WhatsApp segue como canal de aquisição, autenticação (código e login automático, Seções 10 e 11.2) e notificação — onboarding, nudge (Seção 12) e confirmação de pagamento (Seção 11.1) — levando o usuário de volta ao app, não como superfície de prática em si.
 - Nenhuma mensagem do sistema deve terminar com pergunta quando a resposta esperada é a de uma pergunta de prática pendente.
 - Copy pode mencionar "IA" como qualificador funcional (o que o produto faz), nunca como identidade declarada em primeira pessoa ("eu sou uma IA", "sou um bot"). "Bot" e "agente" seguem fora de uso em qualquer copy. Personificação em primeira pessoa continua proibida independente de menção à IA, essa é regra separada e já coberta acima. Uso hoje: mensagem 2 do onboarding, bio Instagram, bio WhatsApp Business, texto do hero e SEO da home.
 - Posicionamento de complemento, não compete com professor, trabalha com ele. Isso vale igualmente para o fluxo de nova atividade (Seção 15): nenhuma copy sugere módulo, nível desbloqueado ou etapa concluída, mesmo quando o conteúdo é gerado pelo sistema em vez de trazido pelo usuário.

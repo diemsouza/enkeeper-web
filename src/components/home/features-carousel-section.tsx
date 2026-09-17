@@ -28,7 +28,7 @@ export default function FeaturesCarouselSection() {
   return (
     <section
       id="features"
-      className="section-light py-[120px] px-6 md:py-[80px] scroll-mt-24"
+      className="section-dark py-[120px] px-6 md:py-[80px] scroll-mt-24"
     >
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-14">

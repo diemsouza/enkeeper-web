@@ -8,7 +8,7 @@ import {
   countSentNotificationsSince,
   createNotification,
 } from "../repo/notifications.repo";
-import { signWaLoginToken } from "../core/wa-login-token";
+import { buildWaLoginUrl } from "./wa-login-link-service";
 import {
   formatDailyReminderMessage,
   DAILY_REMINDER_TEMPLATE_NAME,
@@ -45,8 +45,8 @@ async function tryCreateReminder(
   const threshold = addDays(lastPracticeAt, REMINDER_INTERVALS_DAYS[stepsSent]);
   if (now < threshold) return false;
 
-  const token = await signWaLoginToken(userChannel.channelUserPhone);
-  const message = formatDailyReminderMessage(eligibleCount, token);
+  const link = await buildWaLoginUrl(userChannel.channelUserPhone, "/login");
+  const message = formatDailyReminderMessage(eligibleCount, link);
 
   await createNotification({
     userId: activity.userId,
@@ -58,7 +58,6 @@ async function tryCreateReminder(
     metadata: {
       currentActivityId: activity.id,
       templateBodyParams: message.templateBodyParams,
-      templateButtonUrlParam: message.templateButtonUrlParam,
     },
     nextAt: now,
   });

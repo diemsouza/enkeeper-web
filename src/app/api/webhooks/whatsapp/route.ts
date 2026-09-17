@@ -10,7 +10,7 @@ import {
   verifyWebhookToken,
 } from "@/src/lib/whatsapp-verify";
 import { WhatsAppChannel } from "../../../../lib/channels/whatsapp-channel";
-import { buildWaLoginUrl } from "../../../../core/wa-login-link";
+import { buildWaLoginUrl } from "../../../../services/wa-login-link-service";
 import { normalizePhoneToWaId } from "../../../../core/phone";
 
 export async function GET(req: NextRequest): Promise<Response> {

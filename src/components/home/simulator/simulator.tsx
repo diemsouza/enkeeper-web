@@ -55,6 +55,7 @@ export default function Simulator() {
           <HomeCTA
             waLabel={t("cta")}
             buttonClassName="rounded-full px-8 h-11 font-semibold gap-2 text-sm"
+            isCtaAnchor
           />
         </div>
       </div>
