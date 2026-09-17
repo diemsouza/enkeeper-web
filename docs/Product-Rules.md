@@ -347,6 +347,14 @@ Limite do intensivo atingido, cadência ainda disponível:
 
 **Números sujeitos a revisão:** calibrados por estimativa de custo por resposta avaliada, sem dado real de produção ainda. Revisar após medição real de custo por resposta, e novamente quando a geração de perguntas migrar de lote para sob demanda, o que muda a estrutura de custo por interação.
 
+### 8.3 Banner de revisão pendente
+
+Na página de prática (`/app`), um banner fixo aparece entre a lista de mensagens e o composer quando há pelo menos uma pergunta elegível por SM-2 (mesma contagem usada no lembrete diário da Seção 12) numa Activity ativa do usuário, e ele não está em sessão intensiva no momento do carregamento da página.
+
+A contagem e a checagem de sessão ativa são feitas uma única vez, no carregamento inicial da página, sem verificação reativa contínua.
+
+O botão "Praticar" do banner dispara exatamente o comando `praticar` (Seção 9), o mesmo gatilho usado ao digitar o comando. O banner desaparece assim que a sessão intensiva começa, seja pelo botão ou pelo comando digitado, e só reaparece num novo carregamento da página.
+
 ---
 
 ## 9. Comandos disponíveis

@@ -11,6 +11,7 @@ import type {
   Message,
   MessageStatus,
 } from "@/src/components/chat/types";
+import { resolveCommand } from "@/src/lib/commands";
 import { getJson, postForm, postJson } from "@/src/lib/api-client";
 import { useRealtimeMessages } from "@/src/hooks/use-realtime-messages";
 import { setupAudioUnlock } from "@/src/lib/audio-unlock";
@@ -50,11 +51,15 @@ export function LiveThreadClient({
   initialMessages,
   initialHasMoreOlder,
   needsAutoStart,
+  pendingReviewCount = 0,
+  showPendingReviewBanner = false,
 }: {
   userId: string;
   initialMessages: Message[];
   initialHasMoreOlder: boolean;
   needsAutoStart: boolean;
+  pendingReviewCount?: number;
+  showPendingReviewBanner?: boolean;
 }) {
   const t = useTranslations("app.onboarding");
   const tChat = useTranslations("app.chat");
@@ -69,6 +74,9 @@ export function LiveThreadClient({
   const [waitTimedOut, setWaitTimedOut] = useState(false);
   const [hasMoreOlder, setHasMoreOlder] = useState(initialHasMoreOlder);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [showPendingReview, setShowPendingReview] = useState(
+    showPendingReviewBanner,
+  );
   const autoStartTriggered = useRef(false);
   const composerRef = useRef<ComposerHandle>(null);
 
@@ -233,6 +241,9 @@ export function LiveThreadClient({
   }, []);
 
   async function handleSend(text: string) {
+    if (showPendingReview && resolveCommand(text.trim()) === "practice_now") {
+      setShowPendingReview(false);
+    }
     const externalId = ulid();
     setMessages((prev) => [
       ...prev,
@@ -339,6 +350,9 @@ export function LiveThreadClient({
       onLoadOlder={loadOlderMessages}
       hasMoreOlder={hasMoreOlder}
       isLoadingOlder={isLoadingOlder}
+      showPendingReviewBanner={showPendingReview}
+      pendingReviewCount={pendingReviewCount}
+      onPracticeClick={() => handleSend("praticar")}
     />
   );
 }

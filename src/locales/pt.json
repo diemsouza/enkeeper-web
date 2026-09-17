@@ -82,7 +82,11 @@
       "file_type_generic": "Arquivo",
       "play": "Tocar",
       "pause": "Pausar",
-      "audio_position_aria": "Posição do áudio"
+      "audio_position_aria": "Posição do áudio",
+      "pending_review": {
+        "label": "Perguntas aguardando revisão",
+        "cta": "Praticar"
+      }
     },
     "errors": {
       "message_failed": "Mensagem não enviada.",

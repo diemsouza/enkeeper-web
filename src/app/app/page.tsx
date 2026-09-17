@@ -2,11 +2,17 @@ import { getTranslations } from "next-intl/server";
 import { mapActivityMessages } from "@/src/components/chat/map-messages";
 import { LiveThreadClient } from "@/src/components/app/live-thread-client";
 import { requireAuth } from "@/src/lib/auth/current-user";
-import { findMessagesTimelinePage } from "@/src/services/conversation-timeline-service";
+import {
+  findMessagesTimelinePage,
+  findPendingReviewBanner,
+} from "@/src/services/conversation-timeline-service";
 
 export default async function AppPage() {
   const user = await requireAuth();
-  const { messages, hasMore } = await findMessagesTimelinePage(user.id);
+  const [{ messages, hasMore }, pendingReviewBanner] = await Promise.all([
+    findMessagesTimelinePage(user.id),
+    findPendingReviewBanner(user.id),
+  ]);
   const t = await getTranslations("app.chat");
   const mapped = mapActivityMessages(messages, {
     image: t("file_type_image"),
@@ -21,6 +27,8 @@ export default async function AppPage() {
       initialMessages={mapped}
       initialHasMoreOlder={hasMore}
       needsAutoStart={mapped.length === 0}
+      pendingReviewCount={pendingReviewBanner.count}
+      showPendingReviewBanner={pendingReviewBanner.visible}
     />
   );
 }

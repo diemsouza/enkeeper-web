@@ -4,7 +4,10 @@ import { forwardRef } from "react";
 import { MessageBubble } from "@/src/components/chat/message-bubble";
 import { Composer } from "@/src/components/chat/composer";
 import type { Message } from "@/src/components/chat/types";
-import { generatePentagonChartSvg, type PentagonChartInput } from "@/src/core/pentagon-chart";
+import {
+  generatePentagonChartSvg,
+  type PentagonChartInput,
+} from "@/src/core/pentagon-chart";
 
 type SimulatorThreadPanelProps = {
   messages: Message[];
@@ -29,12 +32,12 @@ export const SimulatorThreadPanel = forwardRef<
   const compact = size === "compact";
 
   const content = (
-    <div className="flex h-full min-h-0 flex-col bg-[#F5F5F5] dark:bg-black">
+    <div className="flex h-full min-h-0 flex-col bg-[#F5F5F7] dark:bg-[#1C1C1E]">
       <div className="relative min-h-0 flex-1 overflow-hidden">
-        <div
+        {/* <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-0 bg-[url('/images/wa-background.svg')] bg-repeat opacity-[0.06] dark:opacity-[0.05] dark:invert"
-        />
+        /> */}
         <div
           ref={ref}
           onScroll={onScroll}
@@ -42,7 +45,11 @@ export const SimulatorThreadPanel = forwardRef<
         >
           <div className="mx-auto flex w-full max-w-md flex-col gap-3 pb-4">
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} wide={compact} />
+              <MessageBubble
+                key={message.id}
+                message={message}
+                wide={compact}
+              />
             ))}
             <MessageBubble
               wide={compact}

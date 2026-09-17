@@ -31,7 +31,9 @@ export function MessageBubble({
   const [shouldAnimate] = useState(isNew);
   const t = useTranslations("app.chat");
   const tErrors = useTranslations("app.errors");
-  const maxWidth = wide ? "max-w-[97%] md:max-w-[95%]" : "max-w-[85%] md:max-w-[70%]";
+  const maxWidth = wide
+    ? "max-w-[97%] md:max-w-[95%]"
+    : "max-w-[85%] md:max-w-[70%]";
   const imageWidth = wide ? "w-[97%] md:w-[95%]" : "w-[85%] md:w-[70%]";
 
   return (
@@ -46,11 +48,12 @@ export function MessageBubble({
         className={cn(
           isUser
             ? "bg-primary text-primary-foreground rounded-[10px_10px_2px_10px]"
-            : "bg-white text-foreground dark:bg-[#1C1C1E] rounded-[10px_10px_10px_2px]",
+            : "bg-white text-foreground dark:bg-[#252529] rounded-[10px_10px_10px_2px]",
           "px-3 pt-2 pb-1.5 text-[15px] md:text-[14px]",
           "min-w-[80px]",
           maxWidth,
-          message.type === "image" && cn(imageWidth, maxWidth, "overflow-hidden"),
+          message.type === "image" &&
+            cn(imageWidth, maxWidth, "overflow-hidden"),
         )}
       >
         {message.type === "file" ? (

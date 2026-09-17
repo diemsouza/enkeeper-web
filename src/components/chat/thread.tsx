@@ -18,6 +18,7 @@ import { Spinner } from "@/src/components/ui/spinner";
 import { Composer, type ComposerHandle } from "./composer";
 import { DateSeparator } from "./date-separator";
 import { MessageBubble } from "./message-bubble";
+import { PendingReviewBanner } from "./pending-review-banner";
 import { TypingIndicatorBubble } from "./typing-indicator";
 import type { FormattedMessageButton, Message } from "./types";
 
@@ -40,6 +41,9 @@ type ChatThreadProps = {
   onLoadOlder?: () => void | Promise<void>;
   hasMoreOlder?: boolean;
   isLoadingOlder?: boolean;
+  showPendingReviewBanner?: boolean;
+  pendingReviewCount?: number;
+  onPracticeClick?: () => void;
 };
 
 export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
@@ -59,6 +63,9 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       onLoadOlder,
       hasMoreOlder,
       isLoadingOlder,
+      showPendingReviewBanner,
+      pendingReviewCount = 0,
+      onPracticeClick,
     },
     ref,
   ) {
@@ -223,9 +230,9 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     }
 
     return (
-      <div className="flex h-full min-h-0 flex-col bg-[#F5F5F5] dark:bg-black">
+      <div className="flex h-full min-h-0 flex-col bg-[#F5F5F7] dark:bg-[#1C1C1E]">
         <div className="relative min-h-0 flex-1 overflow-hidden">
-          <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/images/wa-background.svg')] bg-repeat opacity-[0.06] dark:opacity-[0.05] dark:invert" />
+          {/* <div className="pointer-events-none absolute inset-0 z-0 bg-[url('/images/wa-background.svg')] bg-repeat opacity-[0.06] dark:opacity-[0.05] dark:invert" /> */}
           <div
             ref={containerRef}
             className="relative z-10 flex h-full flex-col gap-1.5 overflow-y-auto p-4"
@@ -302,6 +309,14 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
               ref={composerWrapperRef}
               className="pointer-events-none absolute inset-x-0 bottom-0 z-20 cz-margin-vv"
             >
+              {showPendingReviewBanner && onPracticeClick && (
+                <div className="px-3 pt-2">
+                  <PendingReviewBanner
+                    count={pendingReviewCount}
+                    onPractice={onPracticeClick}
+                  />
+                </div>
+              )}
               <Composer
                 ref={ref}
                 onSend={onSend}
