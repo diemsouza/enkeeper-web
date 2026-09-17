@@ -35,7 +35,7 @@ export function PhoneStep({ onSubmit, loading, error }: PhoneStepProps) {
     >
       <div className="flex flex-col gap-1.5">
         <label htmlFor="phone" className="text-sm font-medium text-foreground">
-          Seu WhatsApp
+          Número do WhatsApp
         </label>
         <Input
           ref={inputRef}
@@ -48,7 +48,7 @@ export function PhoneStep({ onSubmit, loading, error }: PhoneStepProps) {
           className="h-12 text-base"
         />
         <p className="text-sm text-muted-foreground">
-          Vamos te enviar um código de confirmação pelo WhatsApp.
+          Receba o código de acesso direto no seu WhatsApp.
         </p>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}

@@ -95,10 +95,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       lastMessage ? msgKey(lastMessage) : undefined,
     );
     const seenIdsRef = useRef<Set<string>>(new Set());
-    const scrollPreserveRef = useRef<{
-      scrollHeight: number;
-      scrollTop: number;
-    } | null>(null);
+    const scrollPreserveRef = useRef<{ scrollHeight: number } | null>(null);
     const pendingOlderLoadRef = useRef(false);
     const prevFirstIdRef = useRef<string | undefined>(
       messages[0] ? msgKey(messages[0]) : undefined,
@@ -196,7 +193,6 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
           if (!hasMoreOlder || isLoadingOlder) return;
           scrollPreserveRef.current = {
             scrollHeight: containerEl.scrollHeight,
-            scrollTop: containerEl.scrollTop,
           };
           pendingOlderLoadRef.current = true;
           void onLoadOlder();
@@ -220,7 +216,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       const containerEl = containerRef.current;
       if (!preserved || !containerEl) return;
       const delta = containerEl.scrollHeight - preserved.scrollHeight;
-      containerEl.scrollTop = preserved.scrollTop + delta;
+      containerEl.scrollTop = containerEl.scrollTop + delta;
       scrollPreserveRef.current = null;
     }, [messages, containerRef]);
 

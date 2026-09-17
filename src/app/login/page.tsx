@@ -150,7 +150,7 @@ export default function LoginPage() {
       <div
         className="flex min-h-[100dvh] flex-col items-center justify-center gap-8 bg-background px-6"
         style={{
-          paddingTop: "calc(env(safe-area-inset-top) + 5rem)",
+          paddingTop: "calc(env(safe-area-inset-top) + 0rem)",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
