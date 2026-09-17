@@ -10,7 +10,6 @@ import {
   verifyWebhookToken,
 } from "@/src/lib/whatsapp-verify";
 import { WhatsAppChannel } from "../../../../lib/channels/whatsapp-channel";
-import { buildWaLoginUrl } from "../../../../services/wa-login-link-service";
 import { normalizePhoneToWaId } from "../../../../core/phone";
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -108,8 +107,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         return;
       }
 
-      const url = await buildWaLoginUrl(normalizedPhone, "/login");
-      await channel.sendMessage(channelId, formatWhatsAppRedirect(url));
+      await channel.sendMessage(channelId, formatWhatsAppRedirect());
     } catch (err) {
       console.error("[post/api/webhooks/whatsapp] processing error", err);
       if (channelId) {

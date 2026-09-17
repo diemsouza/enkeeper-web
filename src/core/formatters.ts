@@ -81,17 +81,12 @@ export function formatPlanExpired(
   };
 }
 
-export function formatWhatsAppRedirect(url: string): FormattedMessage {
+export function formatWhatsAppRedirect(): FormattedMessage {
   const text =
-    "Canal exclusivo para notificações. Para praticar, acesse abaixo.";
+    "Pratique inglês todo dia, no seu ritmo. Acesse pelo link abaixo.";
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/app`;
 
-  return {
-    text: [text, "", url].join("\n"),
-    interactive: {
-      body: text,
-      buttons: [{ id: "access", label: "Acessar", type: "link", url }],
-    },
-  };
+  return { text: [text, "", url].join("\n") };
 }
 
 export function formatPaymentConfirmed(): FormattedMessage {
