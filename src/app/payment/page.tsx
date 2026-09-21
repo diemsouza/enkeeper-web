@@ -2,29 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Button } from "@/src/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Fluizer | Pagamento",
   robots: "noindex",
-};
-
-type PaymentStatus = "success" | "canceled";
-
-const STATUS_CONTENT: Record<
-  PaymentStatus,
-  { title: string; message: string; cta: string }
-> = {
-  success: {
-    title: "Pagamento confirmado",
-    message: "Seu acesso está liberado. Continue praticando.",
-    cta: "Continuar",
-  },
-  canceled: {
-    title: "Pagamento cancelado",
-    message: "Seu link continua válido. Volte quando quiser para concluir.",
-    cta: "Voltar",
-  },
 };
 
 export default async function PaymentPage({
@@ -38,7 +21,19 @@ export default async function PaymentPage({
     redirect("/");
   }
 
-  const { title, message, cta } = STATUS_CONTENT[status];
+  const t = await getTranslations("payment");
+  const { title, message, cta } =
+    status === "success"
+      ? {
+          title: t("success.title"),
+          message: t("success.message"),
+          cta: t("success.cta"),
+        }
+      : {
+          title: t("canceled.title"),
+          message: t("canceled.message"),
+          cta: t("canceled.cta"),
+        };
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6">

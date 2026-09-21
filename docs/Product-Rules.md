@@ -355,6 +355,12 @@ A contagem e a checagem de sessão ativa são feitas uma única vez, no carregam
 
 O botão "Praticar" do banner dispara exatamente o comando `praticar` (Seção 9), o mesmo gatilho usado ao digitar o comando. O banner desaparece assim que a sessão intensiva começa, seja pelo botão ou pelo comando digitado, e só reaparece num novo carregamento da página.
 
+### 8.4 Toast de confirmação em ações do app
+
+Ações do usuário em `/app` que dependem de uma chamada ao backend (hoje: salvar preferência de lembrete diário no modal de calendário) mostram um toast de confirmação de sucesso ou erro após a resposta.
+
+O toast é renderizado acima de qualquer modal aberto no momento (z-index maior que o de Dialog/Sheet/Popover), para não ficar escondido atrás de fluxos que abrem modal.
+
 ---
 
 ## 9. Comandos disponíveis

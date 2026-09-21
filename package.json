@@ -1,6 +1,6 @@
 {
   "name": "fluizer-web",
-  "version": "0.32.1",
+  "version": "0.33.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -72,6 +72,7 @@
     "fastest-levenshtein": "^1.0.16",
     "framer-motion": "^12.11.3",
     "handlebars": "^4.7.8",
+    "ics": "^3.12.0",
     "image-size": "^2.0.2",
     "input-otp": "^1.2.4",
     "isomorphic-dompurify": "^2.23.0",

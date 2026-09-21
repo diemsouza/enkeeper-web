@@ -11,14 +11,15 @@ import {
 const VerifyOtpSchema = z.object({
   phone: z.string().trim().min(8).max(20),
   code: z.string().trim().regex(/^\d{6}$/),
+  timezone: z.string().trim().min(1).optional(),
 });
 
 export async function POST(request: Request): Promise<Response> {
   try {
     const body = await request.json();
-    const { phone, code } = VerifyOtpSchema.parse(body);
+    const { phone, code, timezone } = VerifyOtpSchema.parse(body);
 
-    const { user } = await verifyOtp(phone, code);
+    const { user } = await verifyOtp(phone, code, timezone);
     await setSessionCookie(user.id);
     return Response.json({ ok: true });
   } catch (error: unknown) {

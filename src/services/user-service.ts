@@ -23,6 +23,7 @@ export async function findOrCreateUserByChannel(
   name?: string,
   source?: UserSource | null,
   sourceData?: Record<string, unknown> | null,
+  timezone?: string,
 ): Promise<{ user: UserWithChannels; userChannel: UserChannel }> {
   const prismaChannelType = channelType as PrismaChannelType;
   const planExpiresAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
@@ -34,6 +35,7 @@ export async function findOrCreateUserByChannel(
     planExpiresAt,
     source,
     sourceData as Prisma.InputJsonValue | null | undefined,
+    timezone,
   );
 
   const waSupport = process.env.WA_SUPPORT;
@@ -59,6 +61,7 @@ export async function findOrCreateUserByChannel(
 // criar conta do zero. O canal de origem nunca é alterado.
 export async function resolveWebLoginByPhone(
   phone: string,
+  timezone?: string,
 ): Promise<{ user: UserWithChannels; userChannel: UserChannel }> {
   const existingWeb = await findUserChannelByPhone(phone, {
     channelType: "web",
@@ -81,5 +84,6 @@ export async function resolveWebLoginByPhone(
     undefined,
     USER_SOURCE.SITE,
     { via: "web_otp_login" },
+    timezone,
   );
 }

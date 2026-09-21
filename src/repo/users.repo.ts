@@ -9,6 +9,7 @@ import {
 } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 import { CheckoutData } from "../types/domain";
+import { getNearestReminderTimeSlot } from "../core/daily-reminder-time";
 
 type UserWithChannels = User & { channels: UserChannel[] };
 
@@ -284,6 +285,7 @@ async function attemptFindOrCreateUserChannel(
   planExpiresAt: Date | undefined,
   source: string | null | undefined,
   sourceData: Prisma.InputJsonValue | null | undefined,
+  timezone: string | undefined,
 ): Promise<UserChannelResolution | null> {
   try {
     return await prisma.$transaction(async (tx) => {
@@ -320,6 +322,15 @@ async function attemptFindOrCreateUserChannel(
           planStatus: "active",
           planExpiresAt,
           ...(source ? { source, sourceData: sourceData ?? undefined } : {}),
+          ...(timezone
+            ? {
+                timezone,
+                dailyReminderTime: getNearestReminderTimeSlot(
+                  new Date(),
+                  timezone,
+                ),
+              }
+            : {}),
         },
       });
       const userChannel = await tx.userChannel.create({
@@ -356,6 +367,7 @@ export async function findOrCreateUserChannel(
   planExpiresAt?: Date,
   source?: string | null,
   sourceData?: Prisma.InputJsonValue | null,
+  timezone?: string,
 ): Promise<UserChannelResolution> {
   const first = await attemptFindOrCreateUserChannel(
     channelType,
@@ -365,6 +377,7 @@ export async function findOrCreateUserChannel(
     planExpiresAt,
     source,
     sourceData,
+    timezone,
   );
   if (first) return first;
 
@@ -378,10 +391,94 @@ export async function findOrCreateUserChannel(
     planExpiresAt,
     source,
     sourceData,
+    timezone,
   );
   if (retry) return retry;
 
   throw new Error(
     `[findOrCreateUserChannel] failed to resolve UserChannel after retry (channelUserId=${channelUserId})`,
   );
+}
+
+const DAILY_REMINDER_USER_INCLUDE = {
+  channels: {
+    where: { channelType: "web", channelUserPhone: { not: null } },
+    take: 1,
+  },
+} satisfies Prisma.UserInclude;
+
+export type DailyReminderCandidateUser = Prisma.UserGetPayload<{
+  include: typeof DAILY_REMINDER_USER_INCLUDE;
+}>;
+
+async function findUserIdsMatchingCurrentSlot(
+  cursorId: string | null,
+  limit: number,
+): Promise<string[]> {
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT u.id
+    FROM users u
+    WHERE u.daily_reminder_enabled = true
+      AND to_char(now() AT TIME ZONE u.timezone, 'HH24:MI') = u.daily_reminder_time
+      ${cursorId ? Prisma.sql`AND u.id > ${cursorId}` : Prisma.empty}
+    ORDER BY u.id ASC
+    LIMIT ${limit}
+  `;
+  return rows.map((r) => r.id);
+}
+
+export async function findUsersForDailyReminder(
+  todayStart: Date,
+  todayEnd: Date,
+  cursorId: string | null,
+  limit = 500,
+): Promise<{
+  users: DailyReminderCandidateUser[];
+  lastRawId: string | null;
+  rawBatchSize: number;
+}> {
+  const candidateIds = await findUserIdsMatchingCurrentSlot(cursorId, limit);
+  if (candidateIds.length === 0) {
+    return { users: [], lastRawId: null, rawBatchSize: 0 };
+  }
+
+  const users = await prisma.user.findMany({
+    where: {
+      id: { in: candidateIds },
+      status: "active",
+      planStatus: "active",
+      planExpiresAt: { gt: new Date() },
+      notifications: {
+        none: {
+          kind: "daily_reminder",
+          deletedAt: null,
+          createdAt: { gte: todayStart, lte: todayEnd },
+        },
+      },
+      channels: {
+        some: { channelType: "web", channelUserPhone: { not: null } },
+      },
+    },
+    include: DAILY_REMINDER_USER_INCLUDE,
+  });
+
+  return {
+    users,
+    lastRawId: candidateIds[candidateIds.length - 1],
+    rawBatchSize: candidateIds.length,
+  };
+}
+
+export async function updateUserDailyReminder(
+  userId: string,
+  data: { enabled: boolean; time: string; timezone: string },
+): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      dailyReminderEnabled: data.enabled,
+      dailyReminderTime: data.time,
+      timezone: data.timezone,
+    },
+  });
 }

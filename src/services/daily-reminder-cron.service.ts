@@ -1,68 +1,59 @@
-import { addDays, endOfDay, startOfDay } from "date-fns";
+import { endOfDay, startOfDay } from "date-fns";
 import {
-  findActiveActivitiesForReminder,
-  ReminderCandidateActivity,
-} from "../repo/activities.repo";
-import { countSm2EligibleQuestions } from "../repo/questions.repo";
-import {
-  countSentNotificationsSince,
-  createNotification,
-} from "../repo/notifications.repo";
+  DailyReminderCandidateUser,
+  findUsersForDailyReminder,
+} from "../repo/users.repo";
+import { countSm2EligibleQuestionsByUser } from "../repo/questions.repo";
+import { createNotification, markNotificationSent } from "../repo/notifications.repo";
 import { buildWaLoginUrl } from "./wa-login-link-service";
 import {
   formatDailyReminderMessage,
   DAILY_REMINDER_TEMPLATE_NAME,
 } from "../core/formatters";
+import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
 
-const REMINDER_INTERVALS_DAYS = [1, 2, 3, 7, 14];
-const REMINDER_BATCH_LIMIT = 500;
 const DAILY_REMINDER_KIND = "daily_reminder";
+const DAILY_REMINDER_BATCH_LIMIT = 500;
 
 type DailyReminderResult = {
   processed: number;
-  created: number;
+  sent: number;
   skipped: number;
+  errors: number;
 };
 
-async function tryCreateReminder(
-  activity: ReminderCandidateActivity,
+async function trySendReminder(
+  user: DailyReminderCandidateUser,
   now: Date,
-): Promise<boolean> {
-  const userChannel = activity.user.channels[0];
-  if (!userChannel?.channelUserPhone) return false;
+): Promise<"sent" | "skipped"> {
+  const userChannel = user.channels[0];
+  if (!userChannel?.channelUserPhone) return "skipped";
 
-  const eligibleCount = await countSm2EligibleQuestions(activity.id);
-  if (eligibleCount === 0) return false;
-
-  const lastPracticeAt = activity.lastInteractionAt ?? activity.createdAt;
-  const stepsSent = await countSentNotificationsSince(
-    activity.userId,
-    DAILY_REMINDER_KIND,
-    lastPracticeAt,
-  );
-  if (stepsSent >= REMINDER_INTERVALS_DAYS.length) return false;
-
-  const threshold = addDays(lastPracticeAt, REMINDER_INTERVALS_DAYS[stepsSent]);
-  if (now < threshold) return false;
+  const eligibleCount = await countSm2EligibleQuestionsByUser(user.id);
+  if (eligibleCount === 0) return "skipped";
 
   const link = await buildWaLoginUrl(userChannel.channelUserPhone, "/login");
   const message = formatDailyReminderMessage(eligibleCount, link);
 
-  await createNotification({
-    userId: activity.userId,
+  const externalId = await sendWhatsAppTemplate(
+    userChannel.channelUserPhone,
+    DAILY_REMINDER_TEMPLATE_NAME,
+    message.templateBodyParams,
+  );
+
+  const notification = await createNotification({
+    userId: user.id,
     targetChannel: "whatsapp",
     targetId: userChannel.channelUserPhone,
     kind: DAILY_REMINDER_KIND,
     message: message.text,
     templateId: DAILY_REMINDER_TEMPLATE_NAME,
-    metadata: {
-      currentActivityId: activity.id,
-      templateBodyParams: message.templateBodyParams,
-    },
+    metadata: { templateBodyParams: message.templateBodyParams },
     nextAt: now,
   });
+  await markNotificationSent(notification.id, externalId);
 
-  return true;
+  return "sent";
 }
 
 export async function decideDailyReminders(): Promise<DailyReminderResult> {
@@ -71,29 +62,35 @@ export async function decideDailyReminders(): Promise<DailyReminderResult> {
   const todayEnd = endOfDay(now);
 
   let processed = 0;
-  let created = 0;
+  let sent = 0;
   let skipped = 0;
+  let errors = 0;
   let cursorId: string | null = null;
 
   for (;;) {
-    const batch = await findActiveActivitiesForReminder(
-      cursorId,
+    const { users, lastRawId, rawBatchSize } = await findUsersForDailyReminder(
       todayStart,
       todayEnd,
-      REMINDER_BATCH_LIMIT,
+      cursorId,
+      DAILY_REMINDER_BATCH_LIMIT,
     );
-    if (batch.length === 0) break;
+    if (rawBatchSize === 0) break;
 
-    for (const activity of batch) {
+    for (const user of users) {
       processed++;
-      const wasCreated = await tryCreateReminder(activity, now);
-      if (wasCreated) created++;
-      else skipped++;
+      try {
+        const outcome = await trySendReminder(user, now);
+        if (outcome === "sent") sent++;
+        else skipped++;
+      } catch (err) {
+        console.error(`[decideDailyReminders] user ${user.id}:`, err);
+        errors++;
+      }
     }
 
-    cursorId = batch[batch.length - 1].id;
-    if (batch.length < REMINDER_BATCH_LIMIT) break;
+    cursorId = lastRawId;
+    if (rawBatchSize < DAILY_REMINDER_BATCH_LIMIT) break;
   }
 
-  return { processed, created, skipped };
+  return { processed, sent, skipped, errors };
 }

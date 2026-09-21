@@ -6,7 +6,6 @@ import {
   processActivityCron,
   processExpiredFlowIntents,
 } from "@/src/services/activity-cron.service";
-import { processDueNotifications } from "@/src/services/notification-cron.service";
 import { resolveChannel } from "@/src/lib/channels/resolve-channel";
 
 export async function GET(): Promise<NextResponse> {
@@ -19,11 +18,9 @@ export async function GET(): Promise<NextResponse> {
     const channel = resolveChannel();
     const result = await processActivityCron(channel);
     const flowResult = await processExpiredFlowIntents(channel);
-    const notificationResult = await processDueNotifications();
     return NextResponse.json({
       activity: result,
       expiredFlowIntents: flowResult,
-      notifications: notificationResult,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";

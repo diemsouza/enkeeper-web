@@ -54,16 +54,6 @@ export async function countSentNotificationsSince(
   });
 }
 
-export async function findDueNotifications(
-  limit = 100,
-): Promise<Notification[]> {
-  return prisma.notification.findMany({
-    where: { sentAt: null, deletedAt: null, nextAt: { lte: new Date() } },
-    orderBy: { nextAt: "asc" },
-    take: limit,
-  });
-}
-
 export async function markNotificationSent(
   id: string,
   externalId: string | null,
@@ -71,13 +61,6 @@ export async function markNotificationSent(
   await prisma.notification.updateMany({
     where: { id, sentAt: null },
     data: { sentAt: new Date(), externalId },
-  });
-}
-
-export async function markNotificationDeleted(id: string): Promise<void> {
-  await prisma.notification.updateMany({
-    where: { id, deletedAt: null },
-    data: { deletedAt: new Date() },
   });
 }
 

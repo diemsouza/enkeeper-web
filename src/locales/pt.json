@@ -61,7 +61,23 @@
       "logout_confirm_message": "Deseja realmente sair da sua conta?",
       "theme_light": "Claro",
       "theme_dark": "Escuro",
-      "theme_system": "Sistema"
+      "theme_system": "Sistema",
+      "add_to_calendar": "Lembrete",
+      "add_to_calendar_modal_title": "Lembrete de prática",
+      "add_to_calendar_time_label": "Horário",
+      "add_to_calendar_google_button": "Google Calendar",
+      "add_to_calendar_ics_button": "Baixar arquivo (.ics)",
+      "add_to_calendar_event_title": "Praticar inglês no Fluizer",
+      "add_to_calendar_event_description": "Sua prática diária de inglês. Acesse: ",
+      "daily_reminder_modal_subtitle": "Escolha um horário e receba um aviso todo dia pelo WhatsApp pra praticar.",
+      "daily_reminder_toggle_label": "Lembrete diário",
+      "daily_reminder_toggle_on": "Ativado",
+      "daily_reminder_toggle_off": "Desativado",
+      "daily_reminder_save_button": "Salvar",
+      "daily_reminder_saving": "Salvando...",
+      "daily_reminder_save_success": "Lembrete salvo com sucesso.",
+      "daily_reminder_save_error": "Não deu pra salvar o lembrete. Tenta de novo.",
+      "daily_reminder_calendar_divider": "Você também pode adicionar na sua agenda"
     },
     "chat": {
       "attach_file_aria": "Anexar arquivo",
@@ -270,6 +286,18 @@
       "copyright": "Copyright © 2026 Fluizer. Todos os direitos reservados.",
       "privacy": "Política de Privacidade",
       "terms": "Termos de Uso"
+    }
+  },
+  "payment": {
+    "success": {
+      "title": "Pagamento confirmado",
+      "message": "Seu acesso está liberado. Continue praticando.",
+      "cta": "Continuar"
+    },
+    "canceled": {
+      "title": "Pagamento cancelado",
+      "message": "Seu link continua válido. Volte quando quiser para concluir.",
+      "cta": "Voltar"
     }
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { CalendarPlus, LogOut, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { TAnyEnv } from "@/src/i18n/types";
@@ -28,6 +28,7 @@ import { SidebarFooter } from "@/src/components/ui/sidebar";
 import { canPractice } from "@/src/core/access";
 import { postJson } from "@/src/lib/api-client";
 import type { User } from "@/src/lib/prisma";
+import { AddToCalendarModal } from "./add-to-calendar-modal";
 import { ThemeMenuItems } from "./theme-menu";
 
 function planLabel(user: User, t: TAnyEnv): string {
@@ -56,6 +57,7 @@ export function SidebarFooterMenu({
   const tCommon = useTranslations("app.common");
   const initial = user.name?.trim()?.[0]?.toUpperCase();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   async function handleLogout() {
     await postJson("/api/auth/logout", {});
@@ -90,6 +92,17 @@ export function SidebarFooterMenu({
           <DropdownMenuItem
             onSelect={(e) => {
               e.preventDefault();
+              setCalendarOpen(true);
+            }}
+            className="gap-2"
+          >
+            <CalendarPlus className="h-4 w-4" />
+            {t("add_to_calendar")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
               setConfirmOpen(true);
             }}
             className="gap-2"
@@ -99,6 +112,12 @@ export function SidebarFooterMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <AddToCalendarModal
+        open={calendarOpen}
+        onOpenChange={setCalendarOpen}
+        dailyReminderEnabled={user.dailyReminderEnabled}
+        dailyReminderTime={user.dailyReminderTime}
+      />
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

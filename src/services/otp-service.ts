@@ -63,6 +63,7 @@ export async function requestOtp(
 export async function verifyOtp(
   rawPhone: string,
   code: string,
+  timezone?: string,
 ): Promise<{ user: User }> {
   const phone = normalizePhoneToWaId(rawPhone);
   if (!phone) throw new InvalidPhoneError();
@@ -86,7 +87,7 @@ export async function verifyOtp(
 
   await consumeOtpCode(otp.id);
 
-  const { user } = await resolveWebLoginByPhone(phone);
+  const { user } = await resolveWebLoginByPhone(phone, timezone);
 
   return { user };
 }

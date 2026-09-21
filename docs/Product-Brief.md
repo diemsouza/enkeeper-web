@@ -345,6 +345,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Charts visuais nos resumos: pentágono de desempenho na troca de atividade (compara com a atividade anterior) e gauge de score na conclusão da primeira rodada, renderizados por template sem custo de IA
 - Home refeita: hero sem menção a canal específico (WhatsApp deixou de ser citado na copy pública, prática é apresentada como algo que acontece no seu ritmo), demo visual por domínio (dia a dia, educação, viagem, trabalho) com roteiro fixo em shell de desktop e iPhone lado a lado substituindo o simulador antigo de botão real, seções de features, como funciona, para quem é e FAQ reescritas
 - Login automático via link do WhatsApp (Seção 11.2 do Product-Rules) passa a usar shortlink genérico e reutilizável em vez do token cru na URL, e o lembrete diário de dívida de revisão (Product-Rules Seção 12) entrega esse link como texto no corpo do template em vez de botão de CTA, evitando o navegador embutido da Meta
+- Toast de confirmação de sucesso/erro ao salvar preferências no app (ex: lembrete diário), renderizado acima de modais abertos (Product-Rules Seção 8.4)
 
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou

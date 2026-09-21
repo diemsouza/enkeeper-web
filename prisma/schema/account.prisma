@@ -42,6 +42,12 @@ model User {
     metadata        Json?      @map("metadata")
     checkoutData    Json?      @map("checkout_data")
     onboardedAt     DateTime?  @map("onboarded_at")
+
+    // preferência de lembrete diário de prática; horário é hora de parede
+    // ("HH:mm"), só faz sentido combinado com o timezone do usuário
+    dailyReminderEnabled Boolean @default(true) @map("daily_reminder_enabled")
+    dailyReminderTime    String  @default("20:00") @map("daily_reminder_time")
+    timezone             String  @default("America/Sao_Paulo") @map("timezone")
     // snapshot da origem do usuário, gravado só na criação e nunca reescrito depois
     source     String? @map("source")
     sourceData Json?   @map("source_data")
@@ -70,6 +76,7 @@ model User {
     notifications Notification[]
 
     @@index([pendingIntent, pendingIntentAt])
+    @@index([dailyReminderEnabled, dailyReminderTime])
     @@map("users")
 }
 

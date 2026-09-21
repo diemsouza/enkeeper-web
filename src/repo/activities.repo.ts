@@ -108,59 +108,6 @@ export async function findEligibleActivities(limit = 100): Promise<Activity[]> {
   });
 }
 
-const REMINDER_CANDIDATE_INCLUDE = {
-  user: {
-    include: {
-      channels: {
-        where: { channelType: "web", channelUserPhone: { not: null } },
-        take: 1,
-      },
-    },
-  },
-} satisfies Prisma.ActivityInclude;
-
-export type ReminderCandidateActivity = Prisma.ActivityGetPayload<{
-  include: typeof REMINDER_CANDIDATE_INCLUDE;
-}>;
-
-export async function findActiveActivitiesForReminder(
-  cursorId: string | null,
-  todayStart: Date,
-  todayEnd: Date,
-  limit = 100,
-): Promise<ReminderCandidateActivity[]> {
-  return prisma.activity.findMany({
-    where: {
-      status: "active",
-      deletedAt: null,
-      ...(cursorId ? { id: { gt: cursorId } } : {}),
-      questions: {
-        some: { deletedAt: null, nextRevisionAt: { lte: new Date() } },
-      },
-      user: {
-        status: "active",
-        planStatus: "active",
-        planExpiresAt: { gt: new Date() },
-        dailyUsages: {
-          none: { date: todayStart, practiceCount: { gt: 0 } },
-        },
-        notifications: {
-          none: {
-            kind: "daily_reminder",
-            deletedAt: null,
-            createdAt: { gte: todayStart, lte: todayEnd },
-          },
-        },
-        channels: {
-          some: { channelType: "web", channelUserPhone: { not: null } },
-        },
-      },
-    },
-    include: REMINDER_CANDIDATE_INCLUDE,
-    orderBy: { id: "asc" },
-    take: limit,
-  });
-}
 
 export async function findCurrentActivityByUser(
   userId: string,

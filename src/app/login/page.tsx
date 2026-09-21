@@ -123,6 +123,7 @@ export default function LoginPage() {
     const { ok, body } = await postJson<OtpErrorBody>("/api/auth/otp/verify", {
       phone: phoneDigits,
       code,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     setLoading(false);
     if (!ok) {

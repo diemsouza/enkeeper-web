@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/daily-reminder",
-      "schedule": "0 12,18,0 * * *"
+      "schedule": "0,30 * * * *"
     }
   ]
 }
