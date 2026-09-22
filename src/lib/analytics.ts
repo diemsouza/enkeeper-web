@@ -21,3 +21,10 @@ export const logEvent = ({
     value: value,
   });
 };
+
+export const setAnalyticsUserId = (userId: string): void => {
+  if (typeof window === "undefined") return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event: "set_user_id", user_id: userId });
+};

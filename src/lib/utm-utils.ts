@@ -5,6 +5,7 @@ export interface UtmParams {
   utmTerm?: string | null;
   utmContent?: string | null;
   gclid?: string | null;
+  fbclid?: string | null;
 }
 
 export const getUtmParams = (url?: string | null): UtmParams => {
@@ -37,5 +38,6 @@ export const getUtmParams = (url?: string | null): UtmParams => {
     utmTerm: getValue(["utm_term", "utmTerm"]),
     utmContent: getValue(["utm_content", "utmContent"]),
     gclid: getValue(["gclid"]),
+    fbclid: getValue(["fbclid"]),
   };
 };

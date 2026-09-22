@@ -18,6 +18,7 @@ import {
 } from "../repo/otp.repo";
 import { sendOtpCode } from "../vendors/otp.vendor";
 import { resolveWebLoginByPhone } from "./user-service";
+import { AttributionCookie } from "../core/attribution";
 import { User } from "../lib/prisma";
 import {
   InvalidPhoneError,
@@ -64,6 +65,7 @@ export async function verifyOtp(
   rawPhone: string,
   code: string,
   timezone?: string,
+  attribution?: AttributionCookie | null,
 ): Promise<{ user: User }> {
   const phone = normalizePhoneToWaId(rawPhone);
   if (!phone) throw new InvalidPhoneError();
@@ -87,7 +89,7 @@ export async function verifyOtp(
 
   await consumeOtpCode(otp.id);
 
-  const { user } = await resolveWebLoginByPhone(phone, timezone);
+  const { user } = await resolveWebLoginByPhone(phone, timezone, attribution);
 
   return { user };
 }

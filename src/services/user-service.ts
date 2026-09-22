@@ -10,8 +10,9 @@ import {
   upsertWebUserChannel,
 } from "../repo/users.repo";
 import { ChannelType } from "../types/domain";
-import { TRIAL_DAYS, USER_SOURCE, UserSource } from "../lib/constants";
+import { TRIAL_DAYS } from "../lib/constants";
 import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
+import { AttributionCookie, resolveSource } from "../core/attribution";
 
 type UserWithChannels = User & { channels: UserChannel[] };
 
@@ -21,7 +22,7 @@ export async function findOrCreateUserByChannel(
   channelUserPhone?: string,
   channelUsername?: string,
   name?: string,
-  source?: UserSource | null,
+  source?: string | null,
   sourceData?: Record<string, unknown> | null,
   timezone?: string,
 ): Promise<{ user: UserWithChannels; userChannel: UserChannel }> {
@@ -62,6 +63,7 @@ export async function findOrCreateUserByChannel(
 export async function resolveWebLoginByPhone(
   phone: string,
   timezone?: string,
+  attribution?: AttributionCookie | null,
 ): Promise<{ user: UserWithChannels; userChannel: UserChannel }> {
   const existingWeb = await findUserChannelByPhone(phone, {
     channelType: "web",
@@ -82,8 +84,10 @@ export async function resolveWebLoginByPhone(
     phone,
     undefined,
     undefined,
-    USER_SOURCE.SITE,
-    { via: "web_otp_login" },
+    resolveSource(attribution ?? null),
+    (attribution as Record<string, unknown> | null | undefined) ?? {
+      via: "web_otp_login",
+    },
     timezone,
   );
 }

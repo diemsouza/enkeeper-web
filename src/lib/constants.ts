@@ -299,16 +299,23 @@ export const FOCUS_ENUM = [
 ] as const;
 export type FocusKey = (typeof FOCUS_ENUM)[number]["key"];
 
-// SITE hoje representa "chegou via clique num link da landing para o
-// WhatsApp" (ver core/user-source-classifier.ts). Reaproveitado também para
-// "criou conta direto pelo login web" por ser o valor mais próximo já
-// existente; ajustável depois com um valor próprio se o produto quiser
-// distinguir os dois casos.
+// SITE representa "chegou via clique num link da landing para o WhatsApp"
+// (ver core/user-source-classifier.ts) — hoje sem call site ativo, já que o
+// webhook do WhatsApp não cria mais usuário. O login web usa
+// core/attribution.ts (resolveSource) para resolver a origem a partir do
+// cookie de atribuição, com os demais valores abaixo.
 export const USER_SOURCE = {
   META_ADS: "meta_ads",
+  GOOGLE_ADS: "google_ads",
+  DIRECT: "direct",
+  ORGANIC_SEARCH: "organic_search",
+  REFERRAL: "referral",
   SITE: "site",
 } as const;
 export type UserSource = (typeof USER_SOURCE)[keyof typeof USER_SOURCE];
 
 export const SITE_WHATSAPP_MESSAGE = "Oi, quero começar a praticar.";
 export const SITE_MESSAGE_PATTERNS: string[] = [SITE_WHATSAPP_MESSAGE];
+
+export const ATTRIBUTION_COOKIE_NAME = "fz_attribution";
+export const ATTRIBUTION_COOKIE_MAX_AGE_DAYS = 30;

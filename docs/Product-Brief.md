@@ -189,7 +189,6 @@ Não é teaser - é o produto inteiro por tempo limitado. Quem sente o valor no 
 
 **Trial estendido como ferramenta de campanha:**
 - Padrão: 7 dias
-- Indicação de professor parceiro: 14 dias
 - Campanha sazonal: 30 dias
 - Beta testers / cortesia permanente: sem expiração (planExpiresAt = 2099-12-31)
 
@@ -280,23 +279,13 @@ Base necessária: 15.000–22.000 trials.
 ### Timeline conservadora
 
 - Meses 1–3: 30–50 usuários (validação técnica e qualidade conversacional)
-- Meses 3–6: 200–400 pagantes (parcerias com 5–10 professores)
+- Meses 3–6: 200–400 pagantes
 - Meses 6–12: 800–1.500 pagantes (orgânico + tráfego pago leve)
 - Meses 12–18: 1.800–3.000 pagantes (independência)
 
 ---
 
 ## 12. Distribuição
-
-### Canal #1: parceria com professor de inglês
-
-O professor passa o material, o Fluizer entrega a prática. O resultado do aluno melhora na aula seguinte - o professor fica mais valorizado.
-
-- Trial estendido de 7 dias para alunos indicados pelo professor
-- Material institucional pronto (1 página)
-- Link de indicação com rastreio
-
-Meta: 20 professores com 5k+ seguidores nos primeiros 3 meses.
 
 ### Canal #2: founder como usuário real
 
@@ -354,7 +343,6 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - [ ] Evolução semanal com % acerto e vocabulário que travou
 - [ ] Gatilhos de upgrade contextuais
 - [ ] Pix manual via suporte
-- [ ] Material institucional para professor (1 página)
 - [ ] Dica de erro (evalTip) no feedback de resposta
 
 **Testes antes do beta:**

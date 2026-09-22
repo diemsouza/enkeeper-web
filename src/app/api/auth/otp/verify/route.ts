@@ -1,6 +1,9 @@
+import { cookies } from "next/headers";
 import { z, ZodError } from "zod";
 import { verifyOtp } from "@/src/services/otp-service";
 import { setSessionCookie } from "@/src/lib/auth/session-cookie";
+import { parseAttributionCookie } from "@/src/core/attribution";
+import { ATTRIBUTION_COOKIE_NAME } from "@/src/lib/constants";
 import {
   InvalidPhoneError,
   OtpAttemptsExceededError,
@@ -19,7 +22,12 @@ export async function POST(request: Request): Promise<Response> {
     const body = await request.json();
     const { phone, code, timezone } = VerifyOtpSchema.parse(body);
 
-    const { user } = await verifyOtp(phone, code, timezone);
+    const cookieStore = await cookies();
+    const attribution = parseAttributionCookie(
+      cookieStore.get(ATTRIBUTION_COOKIE_NAME)?.value,
+    );
+
+    const { user } = await verifyOtp(phone, code, timezone, attribution);
     await setSessionCookie(user.id);
     return Response.json({ ok: true });
   } catch (error: unknown) {

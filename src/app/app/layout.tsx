@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { AppHeader } from "@/src/components/app/app-header";
 import { AppSidebar } from "@/src/components/app/app-sidebar";
+import { AnalyticsIdentify } from "@/src/components/shared/AnalyticsIdentify";
 import { SidebarProvider } from "@/src/components/ui/sidebar";
 import { canStartActivity } from "@/src/core/limits";
 import { requireAuth } from "@/src/lib/auth/current-user";
@@ -43,6 +44,7 @@ export default async function AppLayout({
 
   return (
     <NextIntlClientProvider locale={locale} messages={scopedMessages}>
+      <AnalyticsIdentify userId={user.id} />
       <SidebarProvider defaultOpen={defaultOpen}>
         <div className="flex h-[100dvh] w-full overflow-hidden">
           <AppSidebar

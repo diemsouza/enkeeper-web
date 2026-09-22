@@ -7,7 +7,7 @@ Avalie a resposta do usuário e classifique como right, partial ou wrong.
 Critérios para o status:
 
 - right: correta ou equivalente. Ignore maiúsculas, acentos, pontuação e contrações. A equivalência semântica vale em resposta livre. Quando o bloco de exemplos definir correspondência exata (formatos de escolha entre opções), só a opção correta é aceita, sinônimos não passam.
-- partial: ideia certa mas incompleta ou imprecisa. Inclui grafia muito próxima quando é claramente o mesmo termo com erro de digitação, como letra duplicada, trocada de posição ou faltando ("bellow" por "below", "recieve" por "receive"). Diferença de acentuação nunca gera partial, cai direto em right pela normalização acima. Palavras diferentes com grafia parecida são wrong, mesmo que relacionadas, incluindo quando uma é a outra mais um sufixo que muda o significado (ex: "shelve" no lugar de "shelf" é wrong; "brief" no lugar de "briefing" é wrong, mesmo sendo a mesma raiz).
+- partial: ideia certa mas incompleta ou imprecisa. Inclui grafia muito próxima quando é claramente o mesmo termo com erro de digitação, como letra duplicada, trocada de posição, faltando ou inserida a mais ("bellow" por "below", "recieve" por "receive"). Diferença de acentuação nunca gera partial, cai direto em right pela normalização acima. Palavras diferentes com grafia parecida são wrong, mesmo que relacionadas, incluindo quando uma é a outra mais um sufixo que muda o significado (ex: "shelve" no lugar de "shelf" é wrong; "brief" no lugar de "briefing" é wrong, mesmo sendo a mesma raiz).
 - wrong: errada ou em branco.
 
 Quando a resposta do usuário indicar claramente desconhecimento ("não sei", "não lembro", "esqueci", "sem ideia" ou equivalente), o status é wrong e user_unknown é true.
@@ -16,7 +16,11 @@ Alguns formatos são binários e não usam partial. Quando o bloco de exemplos n
 
 Se o termo avaliado tiver mais de um sentido de uso comum, o exemplo de uso no feedback_text corresponde ao sentido correto do termo, aquele contra o qual a resposta foi avaliada, nunca um sentido genérico ou diferente do que fundamentou a avaliação.
 
-right_answer: precisa sempre do mesmo termo usado na frase do feedback_text (mesmo quando o usuário respondeu uma variação aceita em answerKeys), nunca vazio. No recall invertido, a frase do feedback_text usa o termo em EN como exemplo de uso, mas right_answer é o significado em PT esperado como resposta, o primeiro item de answerKeys. No choice, é sempre a palavra ou expressão da opção correta, nunca a letra do rótulo.
+right_answer: precisa sempre do mesmo termo usado na frase do feedback_text (mesmo quando o usuário respondeu uma variação aceita em answerKeys), nunca vazio. 
+
+Com mais de uma answerKey válida, use a mais próxima do que o usuário escreveu (menor distância de edição), mesmo em resposta errada ou typo. Só cai na primeira answerKey se a resposta não se aproximar claramente de nenhuma. 
+
+No recall invertido, a frase do feedback_text usa o termo em EN como exemplo de uso, mas right_answer é o significado em PT esperado como resposta, o primeiro item de answerKeys. No choice, é sempre a palavra ou expressão da opção correta, nunca a letra do rótulo.
 
 IMPORTANTE:
 Não invente critério.
