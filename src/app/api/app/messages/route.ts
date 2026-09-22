@@ -20,17 +20,19 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const user = await requireAuth();
     const before = new URL(request.url).searchParams.get("before") ?? undefined;
-    const { messages, hasMore } = await findMessagesTimelinePage(
-      user.id,
-      before,
-    );
+    const { messages, hasMore, feedbackTranslations } =
+      await findMessagesTimelinePage(user.id, before);
     const t = await getTranslations("app.chat");
-    const mapped = mapActivityMessages(messages, {
-      image: t("file_type_image"),
-      pdf: t("file_type_pdf"),
-      text: t("file_type_text"),
-      generic: t("file_type_generic"),
-    });
+    const mapped = mapActivityMessages(
+      messages,
+      {
+        image: t("file_type_image"),
+        pdf: t("file_type_pdf"),
+        text: t("file_type_text"),
+        generic: t("file_type_generic"),
+      },
+      feedbackTranslations,
+    );
     return Response.json({ messages: mapped, hasMore });
   } catch (error) {
     if (error instanceof UnauthorizedError) {

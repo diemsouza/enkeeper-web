@@ -9,17 +9,22 @@ import {
 
 export default async function AppPage() {
   const user = await requireAuth();
-  const [{ messages, hasMore }, pendingReviewBanner] = await Promise.all([
-    findMessagesTimelinePage(user.id),
-    findPendingReviewBanner(user.id),
-  ]);
+  const [{ messages, hasMore, feedbackTranslations }, pendingReviewBanner] =
+    await Promise.all([
+      findMessagesTimelinePage(user.id),
+      findPendingReviewBanner(user.id),
+    ]);
   const t = await getTranslations("app.chat");
-  const mapped = mapActivityMessages(messages, {
-    image: t("file_type_image"),
-    pdf: t("file_type_pdf"),
-    text: t("file_type_text"),
-    generic: t("file_type_generic"),
-  });
+  const mapped = mapActivityMessages(
+    messages,
+    {
+      image: t("file_type_image"),
+      pdf: t("file_type_pdf"),
+      text: t("file_type_text"),
+      generic: t("file_type_generic"),
+    },
+    feedbackTranslations,
+  );
 
   return (
     <LiveThreadClient

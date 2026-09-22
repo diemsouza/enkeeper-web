@@ -99,6 +99,7 @@
       "play": "Tocar",
       "pause": "Pausar",
       "audio_position_aria": "Posição do áudio",
+      "translation_label": "Ver tradução",
       "pending_review": {
         "label": "Perguntas aguardando revisão",
         "cta": "Praticar"

@@ -98,7 +98,8 @@ export const sectionQuestionsSchema = z.object({
 
 export const answerEvaluationSchema = z.object({
   status: z.enum(["right", "partial", "wrong"]),
-  feedback: z.string(),
+  feedback_text: z.string(),
+  feedback_translation: z.string(),
   right_answer: z.string().nullable(),
   user_unknown: z.boolean().nullable(),
   eval_tip_class: z.enum([

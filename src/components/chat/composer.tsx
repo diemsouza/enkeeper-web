@@ -75,6 +75,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
       const trimmed = text.trim();
       if (!trimmed || disabled || isWaitingForResponse) return;
       setText("");
+      textareaRef.current?.blur();
       await onSend(trimmed);
     }
 

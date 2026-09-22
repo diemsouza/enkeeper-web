@@ -146,7 +146,7 @@ import {
   DEFAULT_MESSAGE_INTERVAL_SEC,
   MEDIA_PARENT_TYPE,
 } from "../lib/constants";
-import { delay } from "../lib/utils";
+import { delay, sanitizeText } from "../lib/utils";
 import { sendAndSaveMessage } from "./message-sender-service";
 import {
   IncomingMessage,
@@ -1510,7 +1510,7 @@ export async function handleIncomingMessage(
                 ? formatFeedback(evaluation, activeActivity.userLevel)
                 : formatFeedbackFailed();
               const feedbackAudioPath = evaluation
-                ? await resolveFeedbackAudioPath(evaluation, pendingQuestion.id)
+                ? await resolveFeedbackAudioPath(evaluation, pendingQuestion)
                 : null;
               const feedbackSpeechText = evaluation
                 ? formatFeedbackToSpeech(evaluation)
@@ -1575,6 +1575,14 @@ export async function handleIncomingMessage(
                 model: evaluation?.model,
                 evalTip: evalTip || null,
                 evalTipClass: tipClass ?? null,
+                ...(evaluation
+                  ? {
+                      feedbackText: sanitizeText(evaluation.feedback_text),
+                      feedbackTranslation: sanitizeText(
+                        evaluation.feedback_translation,
+                      ),
+                    }
+                  : {}),
                 metadata: scoreMetadata,
                 score: computeQuestionScore(scoreMetadata),
               });

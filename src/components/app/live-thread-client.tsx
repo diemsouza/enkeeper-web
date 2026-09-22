@@ -14,6 +14,7 @@ import type {
 import { resolveCommand } from "@/src/lib/commands";
 import { getJson, postForm, postJson } from "@/src/lib/api-client";
 import { useRealtimeMessages } from "@/src/hooks/use-realtime-messages";
+import { useIsMobile } from "@/src/hooks/use-is-mobile";
 import { setupAudioUnlock } from "@/src/lib/audio-unlock";
 import { delay } from "@/src/lib/utils";
 
@@ -63,6 +64,7 @@ export function LiveThreadClient({
 }) {
   const t = useTranslations("app.onboarding");
   const tChat = useTranslations("app.chat");
+  const isMobile = useIsMobile();
   const fileLabels = {
     image: tChat("file_type_image"),
     pdf: tChat("file_type_pdf"),
@@ -109,6 +111,13 @@ export function LiveThreadClient({
       let changed = false;
 
       const reconciled = prev.map((m) => {
+        if (m.type === "audio" && !m.translation) {
+          const server = body.messages.find((s) => s.id === m.id);
+          if (server?.translation) {
+            changed = true;
+            return { ...m, translation: server.translation };
+          }
+        }
         if (!m.status || m.status === "sent" || !m.externalId) return m;
         const server = body.messages.find(
           (s) => s.externalId === m.externalId,
@@ -167,6 +176,10 @@ export function LiveThreadClient({
       );
       replyWaitStartedAtRef.current = null;
       setStarting(false);
+      // Mensagem de audio de feedback chega via broadcast sem a traducao
+      // (mapBroadcastRecord nao faz join com Question) - a rota /api/app/messages
+      // ja tem, entao um refresh logo em seguida preenche via refreshMessages.
+      if (mapped.type === "audio") void refreshMessages();
     };
     if (wait > 0) setTimeout(reveal, wait);
     else reveal();
@@ -259,7 +272,10 @@ export function LiveThreadClient({
     ]);
     replyWaitStartedAtRef.current = Date.now();
     const { ok } = await postJson("/api/app/messages", { text, externalId });
-    composerRef.current?.focus();
+    // No mobile o textarea foi desfocado no envio (Composer.handleSend) pra
+    // fechar o teclado - refocar aqui reabriria. So no desktop mantem o foco
+    // pro usuario continuar digitando sem precisar clicar de novo.
+    if (!isMobile) composerRef.current?.focus();
     setMessageStatus(externalId, ok ? "sent" : "failed");
   }
 

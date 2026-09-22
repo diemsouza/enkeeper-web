@@ -1,9 +1,10 @@
 import { parseBuffer } from "music-metadata";
+import { Question } from "../lib/prisma";
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { generateSpeech } from "../vendors/tts.vendor";
 import { uploadFile } from "../vendors/storage.vendor";
 import { updateQuestion } from "../repo/questions.repo";
-import { createMedia } from "../repo/media.repo";
+import { createMedia, getMediaById } from "../repo/media.repo";
 import { MEDIA_PARENT_TYPE } from "../lib/constants";
 import { formatFeedbackToSpeech } from "../core/formatters";
 
@@ -26,8 +27,9 @@ async function readAudioDuration(
 
 export async function resolveFeedbackAudioPath(
   feedbackResult: AnswerEvaluationResult,
-  questionId: string,
+  question: Pick<Question, "id" | "feedbackText" | "feedbackAudioMediaId">,
 ): Promise<string | null> {
+  const questionId = question.id;
   const random = Math.random();
   if (random >= AUDIO_ROLLOUT_FRACTION) {
     console.info(
@@ -38,6 +40,14 @@ export async function resolveFeedbackAudioPath(
 
   try {
     const speechText = formatFeedbackToSpeech(feedbackResult).text;
+
+    if (
+      question.feedbackAudioMediaId &&
+      question.feedbackText === speechText
+    ) {
+      const existingMedia = await getMediaById(question.feedbackAudioMediaId);
+      if (existingMedia) return existingMedia.mediaPath;
+    }
 
     const speech = await generateSpeech(speechText);
     if (speech.status === "error") {

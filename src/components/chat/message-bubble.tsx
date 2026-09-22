@@ -74,6 +74,7 @@ export function MessageBubble({
             externalId={message.externalId}
             onPlay={onAudioPlay}
             textFallback={message.textFallback}
+            translation={message.translation}
           />
         ) : message.type === "voice" ? (
           <VoiceNoteCard duration={message.duration ?? ""} />

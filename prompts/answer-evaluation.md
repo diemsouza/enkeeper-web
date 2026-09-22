@@ -14,21 +14,21 @@ Quando a resposta do usuário indicar claramente desconhecimento ("não sei", "n
 
 Alguns formatos são binários e não usam partial. Quando o bloco de exemplos não traz partial, use apenas right ou wrong.
 
-Se o termo avaliado tiver mais de um sentido de uso comum, o exemplo de uso no feedback corresponde ao sentido correto do termo, aquele contra o qual a resposta foi avaliada, nunca um sentido genérico ou diferente do que fundamentou a avaliação.
+Se o termo avaliado tiver mais de um sentido de uso comum, o exemplo de uso no feedback_text corresponde ao sentido correto do termo, aquele contra o qual a resposta foi avaliada, nunca um sentido genérico ou diferente do que fundamentou a avaliação.
 
-right_answer: precisa sempre do mesmo termo usado na frase de feedback (mesmo quando o usuário respondeu uma variação aceita em answerKeys), nunca vazio. No recall invertido, a frase de feedback usa o termo em EN como exemplo de uso, mas right_answer é o significado em PT esperado como resposta, o primeiro item de answerKeys. No choice, é sempre a palavra ou expressão da opção correta, nunca a letra do rótulo.
+right_answer: precisa sempre do mesmo termo usado na frase do feedback_text (mesmo quando o usuário respondeu uma variação aceita em answerKeys), nunca vazio. No recall invertido, a frase do feedback_text usa o termo em EN como exemplo de uso, mas right_answer é o significado em PT esperado como resposta, o primeiro item de answerKeys. No choice, é sempre a palavra ou expressão da opção correta, nunca a letra do rótulo.
 
 IMPORTANTE:
 Não invente critério.
 Não encerre com pergunta.
-O feedback é apenas o corpo. Não inclua abertura de resultado ("Correto!", "Errado!", "Quase!"), ela é adicionada fora deste prompt.
-O feedback segue exatamente a fórmula, a nota e o padrão do bloco de exemplos. Replique a fórmula completa, mesmo quando o termo isolado pareceria suficiente. Nunca abrevie, nunca troque a frase de uso por termo solto, nem explicação ou tradução, nunca adicione meta-comentário.
-O feedback é uma única frase: a frase de uso real do termo, e nada além dela. Não abre com afirmação sobre o que o termo significa, mesmo quando a pergunta avaliada usa essa estrutura.
+O feedback_text é apenas o corpo do feedback. Não inclua abertura de resultado ("Correto!", "Errado!", "Quase!"), ela é adicionada fora deste prompt.
+O feedback_text segue exatamente a fórmula, a nota e o padrão do bloco de exemplos. Replique a fórmula completa, mesmo quando o termo isolado pareceria suficiente. Nunca abrevie, nunca troque a frase de uso por termo solto, nem explicação ou tradução, nunca adicione meta-comentário.
+O feedback_text é uma única frase: a frase de uso real do termo, e nada além dela. Não abre com afirmação sobre o que o termo significa, mesmo quando a pergunta avaliada usa essa estrutura.
 Em wrong e partial, o termo em destaque é sempre a resposta correta esperada, nunca o que o usuário respondeu.
 Use sempre texto corrido, sem quebra de linha, sem markdown, sem emoji, sem travessão.
 
 ## Tip
-As regras desta seção valem apenas para os campos eval_tip_class e eval_tip. Não afetam o feedback nem os demais campos.
+As regras desta seção valem apenas para os campos eval_tip_class e eval_tip. Não afetam o feedback_text nem os demais campos.
 
 eval_tip_class: classifique a causa do erro do usuário antes de escrever a dica.
 
@@ -66,7 +66,7 @@ Validação da dica:
 - Linguagem de aluno, sem nomenclatura gramatical.
 - Descreve, não instrui.
 - Não nomeia a classe no texto.
-- Não repete a frase do feedback.
+- Não repete a frase do feedback_text.
 - Não compara com opção que o usuário não mencionou.
 - Os usos em inglês nunca contêm o termo correto acrescido de uma única palavra.
 - Marcação permitida: *negrito* nas formas contrastadas, _itálico_ em termo ou expressão curta em inglês, "aspas duplas" em frase completa em inglês (com sujeito e verbo), ~riscado~ apenas na forma exata que não existe em inglês (palavra inventada ou combinação inexistente). Nunca risca palavra que existe com outro significado ou escopo. Na dúvida, não risca. Nenhuma outra marcação.
@@ -74,9 +74,14 @@ Validação da dica:
 - Sem quebra de linha, sem emoji, sem travessão.
 - Vazia quando: status right, user_unknown true, eval_tip_class spelling ou none.
 
+## Translation
+feedback_translation: tradução natural em português da frase completa em feedback_text, mesmo conteúdo, sem explicar o significado do termo isolado nem funcionar como definição de dicionário. Nunca adiciona informação que não está em feedback_text, nem contexto extra. Texto corrido, sem quebra de linha, sem markdown, sem emoji, sem travessão, sem aspas envolvendo a frase inteira.
+
+Diferente do eval_tip, feedback_translation é sempre preenchida, inclusive quando status é right.
+
 ## Output
 Retorne APENAS UM JSON válido. Sem markdown, sem cercas de código (```), sem texto antes ou depois.
-{"status": "right | partial | wrong", "feedback": "...", "right_answer": "...", "user_unknown": true | false, "eval_tip_class": "...", "eval_tip": "..."}
+{"status": "right | partial | wrong", "feedback_text": "...", "feedback_translation": "...", "right_answer": "...", "user_unknown": true | false, "eval_tip_class": "...", "eval_tip": "..."}
 
 O bloco de exemplos abaixo corresponde ao formato da pergunta avaliada.
 

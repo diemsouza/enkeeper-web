@@ -19,6 +19,7 @@ export interface Message {
   imageUrl?: string;
   caption?: string;
   textFallback?: string;
+  translation?: string;
   externalId?: string;
   duration?: string;
   interactive?: { body: string; buttons: FormattedMessageButton[] } | null;

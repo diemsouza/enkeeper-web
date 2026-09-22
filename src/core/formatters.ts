@@ -1004,7 +1004,8 @@ export function formatFeedback(
 ): FormattedMessage {
   const {
     status: evalStatus,
-    feedback: agentFeedback,
+    feedback_text: agentFeedback,
+    feedback_translation: agentFeedbackTranslation,
     right_answer: rightAnswer,
     user_unknown: userUnknown,
   } = feedbackResult;
@@ -1039,7 +1040,7 @@ export function formatFeedback(
 export function formatFeedbackToSpeech(
   feedbackResult: AnswerEvaluationResult,
 ): FormattedMessage {
-  const { feedback: agentFeedback } = feedbackResult;
+  const { feedback_text: agentFeedback } = feedbackResult;
 
   return { text: sanitizeText(agentFeedback) };
 }

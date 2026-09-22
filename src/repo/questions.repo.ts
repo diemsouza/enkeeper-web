@@ -158,6 +158,15 @@ export async function findLatestUnansweredQuestion(
   });
 }
 
+export async function findFeedbackTranslationsByIds(
+  ids: string[],
+): Promise<Pick<Question, "id" | "feedbackTranslation">[]> {
+  return prisma.question.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, feedbackTranslation: true },
+  });
+}
+
 export async function countQuestionsEligibleForAudioCleanup(
   threshold: Date,
 ): Promise<number> {
@@ -220,6 +229,8 @@ export async function updateQuestion(
     model?: string;
     evalTip?: string | null;
     evalTipClass?: EvalTipClass | null;
+    feedbackText?: string | null;
+    feedbackTranslation?: string | null;
     questionAudioMediaId?: string | null;
     feedbackAudioMediaId?: string | null;
     answerAudioMediaId?: string | null;

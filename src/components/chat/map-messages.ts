@@ -16,6 +16,7 @@ type NormalizedRow = {
   mediaId: string | null;
   metadata: unknown;
   interactive: unknown;
+  questionId: string | null;
 };
 
 export type FileLabels = {
@@ -63,7 +64,11 @@ function parseJsonMaybe(value: unknown): unknown {
   }
 }
 
-function toMessage(row: NormalizedRow, labels: FileLabels): Message {
+function toMessage(
+  row: NormalizedRow,
+  labels: FileLabels,
+  feedbackTranslations: Record<string, string>,
+): Message {
   const from: Message["from"] = row.role === "user" ? "user" : "bot";
   const time = formatTime(row.createdAt);
   const date = row.createdAt.toISOString();
@@ -109,6 +114,9 @@ function toMessage(row: NormalizedRow, labels: FileLabels): Message {
   }
 
   if (row.mediaType === "audio" && row.mediaId) {
+    const translation = row.questionId
+      ? feedbackTranslations[row.questionId]
+      : undefined;
     return {
       id: row.id,
       from,
@@ -118,6 +126,7 @@ function toMessage(row: NormalizedRow, labels: FileLabels): Message {
       audioUrl: buildMediaUrl(row.mediaId),
       textFallback: row.content,
       externalId: row.externalId ?? undefined,
+      translation,
     };
   }
 
@@ -135,6 +144,7 @@ function toMessage(row: NormalizedRow, labels: FileLabels): Message {
 export function mapActivityMessages(
   raw: PrismaMessage[],
   labels: FileLabels,
+  feedbackTranslations: Record<string, string> = {},
 ): Message[] {
   return raw.map((m) =>
     toMessage(
@@ -148,8 +158,10 @@ export function mapActivityMessages(
         mediaId: m.mediaId,
         metadata: m.metadata,
         interactive: m.interactive,
+        questionId: m.questionId,
       },
       labels,
+      feedbackTranslations,
     ),
   );
 }
@@ -171,7 +183,10 @@ export function mapBroadcastRecord(
       mediaId: typeof record.media_id === "string" ? record.media_id : null,
       metadata: parseJsonMaybe(record.metadata),
       interactive: parseJsonMaybe(record.interactive),
+      questionId:
+        typeof record.question_id === "string" ? record.question_id : null,
     },
     labels,
+    {},
   );
 }

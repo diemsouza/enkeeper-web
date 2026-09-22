@@ -100,6 +100,8 @@ Geração é individual por usuário e por troca de atividade, sem pool comparti
 
 Após o feedback em texto de uma resposta, uma fração das interações recebe também uma versão em áudio da frase de exemplo, enviada como mensagem separada, sem a abertura de resultado. É a única camada de listening do produto hoje, prática que era ausente antes dessa camada, que combinava só leitura e escrita.
 
+Na superfície web, o usuário pode revelar a tradução em português da frase de exemplo do áudio, tocando num toggle discreto abaixo do player.
+
 Rollout é parcial por configuração, o que permite validar a percepção de valor do listening antes de decidir expandir a cobertura. Frequência maior de áudio é candidata natural a virar benefício de um tier superior no futuro, uma vez validada a aceitação.
 
 ### Resumo de atividade
@@ -346,6 +348,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Home refeita: hero sem menção a canal específico (WhatsApp deixou de ser citado na copy pública, prática é apresentada como algo que acontece no seu ritmo), demo visual por domínio (dia a dia, educação, viagem, trabalho) com roteiro fixo em shell de desktop e iPhone lado a lado substituindo o simulador antigo de botão real, seções de features, como funciona, para quem é e FAQ reescritas
 - Login automático via link do WhatsApp (Seção 11.2 do Product-Rules) passa a usar shortlink genérico e reutilizável em vez do token cru na URL, e o lembrete diário de dívida de revisão (Product-Rules Seção 12) entrega esse link como texto no corpo do template em vez de botão de CTA, evitando o navegador embutido da Meta
 - Toast de confirmação de sucesso/erro ao salvar preferências no app (ex: lembrete diário), renderizado acima de modais abertos (Product-Rules Seção 8.4)
+- Persistência da frase de demonstração e da tradução do feedback por pergunta (`feedback_text`/`feedback_translation`), com toggle "Ver tradução" no player de áudio da superfície web e reaproveitamento do áudio quando a frase não muda entre respostas
 
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou

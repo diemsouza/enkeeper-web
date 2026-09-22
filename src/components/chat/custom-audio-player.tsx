@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ChevronDown } from "lucide-react";
 import { Spinner } from "@/src/components/ui/spinner";
 
 type PlayerState = "loading" | "ready" | "playing" | "paused" | "error";
@@ -150,11 +151,13 @@ export function CustomAudioPlayer({
   externalId,
   onPlay,
   textFallback,
+  translation,
 }: {
   audioUrl: string;
   externalId?: string;
   onPlay?: (externalId: string) => void;
   textFallback?: string;
+  translation?: string;
 }) {
   const t = useTranslations("app.chat");
   const tErrors = useTranslations("app.errors");
@@ -163,6 +166,7 @@ export function CustomAudioPlayer({
   const [progress, setProgress] = useState(0);
   const [waveform, setWaveform] = useState<number[]>([]);
   const [showErrorHint, setShowErrorHint] = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
 
   const decodedRef = useRef<DecodedAudio | null>(null);
   const bufferRef = useRef<AudioBuffer | null>(null);
@@ -470,7 +474,7 @@ export function CustomAudioPlayer({
     duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-1 py-1 min-w-[260px]">
+    <div className="flex flex-col gap-1 py-1 min-w-[260px] max-w-[320px]">
       <div
         className={`flex items-center gap-3${isError ? " text-destructive" : ""}`}
       >
@@ -569,7 +573,7 @@ export function CustomAudioPlayer({
       </div>
 
       {isError && textFallback && (
-        <p className="mt-1 whitespace-pre-line leading-[1.5] break-words opacity-80">
+        <p className="mt-1 min-w-0 whitespace-pre-line leading-[1.5] break-words opacity-80">
           {textFallback}
         </p>
       )}
@@ -577,6 +581,33 @@ export function CustomAudioPlayer({
         <p className="mt-0.5 text-[11px] text-destructive">
           {tErrors("audio_load_failed")}
         </p>
+      )}
+      {translation && !isLoading && !isError && (
+        <>
+          <div className="mt-3 h-px bg-foreground/10" />
+          <button
+            type="button"
+            onClick={() => setShowTranslation((prev) => !prev)}
+            aria-expanded={showTranslation}
+            className="mt-0 flex w-full items-center justify-between gap-2 rounded-b-lg px-1 py-2.5 text-[13px] text-muted-foreground outline-none transition-colors hover:bg-foreground/[0.03] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+          >
+            <span>{t("translation_label")}</span>
+            <ChevronDown
+              className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200${showTranslation ? " rotate-180 text-foreground/70" : ""}`}
+            />
+          </button>
+          <div
+            className={`grid transition-[grid-template-rows] duration-[280ms] ease-out ${showTranslation ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
+            <div className="min-w-0 overflow-hidden">
+              <p
+                className={`whitespace-pre-line break-words px-1 pb-3.5 pt-0.5 text-[14px] leading-[1.55] text-muted-foreground transition-all duration-200 ${showTranslation ? "translate-y-0 opacity-100 delay-[60ms]" : "-translate-y-1 opacity-0"}`}
+              >
+                {translation}
+              </p>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

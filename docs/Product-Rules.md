@@ -221,6 +221,8 @@ Feedback pode ser acompanhado de uma versão em áudio, enviada como mensagem se
 
 Envio de áudio é parcial, não em toda resposta, controlado por uma fração configurável do total. Falha na geração ou envio do áudio nunca atrasa nem impede o feedback em texto, que segue as regras desta seção normalmente, sem nenhuma indicação de erro visível ao usuário.
 
+A frase de demonstração usada no feedback e no áudio (`feedback_text`) e sua tradução em português (`feedback_translation`) são persistidas por pergunta, junto com o resultado de cada avaliação. A tradução não é enviada como mensagem separada em nenhum canal: na superfície web, quando disponível, fica atrás de um toggle oculto por padrão ("Ver tradução") logo abaixo do player de áudio, revelado só depois do áudio terminar de carregar e nunca junto de um erro de carregamento. No WhatsApp não há equivalente.
+
 No WhatsApp, o áudio é enviado como nota de voz reconhecida pelo canal, não como anexo de áudio comum: é essa forma de envio que habilita o webhook de status de reprodução, um áudio enviado como anexo genérico não gera esse evento.
 
 Reprodução do áudio pelo usuário é rastreada, mas a origem do evento depende do canal: no WhatsApp vem do webhook de status da mensagem, na superfície web vem de um evento do próprio player no client. Qualquer que seja a origem, o evento converge para o mesmo registro por pergunta, que alimenta o bônus de prática passiva (Seção 6.3), e é idempotente por pergunta: uma segunda notificação de reprodução da mesma pergunta não duplica o efeito (ver Seção 18).
@@ -673,7 +675,7 @@ Nem toda mídia é descartada após uso. PDF e texto em arquivo continuam sendo 
 
 Em todos os casos, o conteúdo de origem (texto do feedback falado, transcrição da resposta em áudio, transcrição ou descrição da imagem) é guardado junto ao arquivo, servindo de auditoria do que foi de fato produzido ou extraído, e permitindo reenvio em texto sem necessidade de gerar áudio novo, caso necessário no futuro.
 
-O áudio de feedback armazenado é reaproveitado sempre que a mesma pergunta volta, seja por revisão espaçada (Seção 7) ou por reenvio dentro da sessão intensiva, sem gerar de novo. Regeneração só ocorre se o áudio original não existir mais no armazenamento.
+O áudio de feedback armazenado é reaproveitado quando a mesma pergunta volta, seja por revisão espaçada (Seção 7) ou por reenvio dentro da sessão intensiva, e a nova avaliação gera a mesma frase de demonstração (`feedback_text`) já persistida para aquela pergunta (Seção 6.1) — nesse caso não gera áudio de novo. Regeneração ocorre quando a frase de demonstração muda entre uma resposta e outra, mesmo pra mesma pergunta, ou quando o áudio original não existe mais no armazenamento.
 
 Mídia associada a uma pergunta (áudio de feedback, áudio de resposta) é removida do armazenamento (não o registro em si, que permanece como histórico) quando a atividade correspondente está `archived` ou `cancelled` há mais de 30 dias. Atividade `active` nunca tem mídia removida, independente de quanto tempo estiver parada. Imagem original de OCR e charts de resumo seguem o mesmo critério de 30 dias, mas contado a partir do próprio registro de mídia, sem depender de status de activity (o pentágono referencia duas atividades e o gauge é gerado no meio de uma atividade ainda `active`, então amarrar a status de activity seria ambíguo). A remoção roda automaticamente, uma vez por dia, em lotes, sem necessidade de intervenção manual.
 
