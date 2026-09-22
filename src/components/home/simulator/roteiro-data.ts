@@ -56,6 +56,7 @@ type TurnSpec = {
   opening: string;
   rightAnswer?: string;
   feedbackSentence: string;
+  translation: string;
   tip?: string;
 };
 
@@ -72,6 +73,7 @@ function buildTurn(spec: TurnSpec): { messages: Message[]; audio: SimulatorAudio
     opening,
     rightAnswer,
     feedbackSentence,
+    translation,
     tip,
   } = spec;
 
@@ -107,6 +109,7 @@ function buildTurn(spec: TurnSpec): { messages: Message[]; audio: SimulatorAudio
       type: "audio",
       audioUrl: simulatorAudioUrl(domainId, turn),
       textFallback: feedbackSentence,
+      translation,
     },
   ];
 
@@ -173,6 +176,7 @@ const workResult = buildRoteiro(
       emoji: "✅",
       opening: "Exato!",
       feedbackSentence: "Let's reschedule the meeting to next week.",
+      translation: "Vamos remarcar a reunião pra semana que vem.",
     },
     {
       domainId: "work",
@@ -187,6 +191,7 @@ const workResult = buildRoteiro(
       opening: "Quase!",
       rightAnswer: "Follow up",
       feedbackSentence: "You promise your boss you'll follow up on the client by tomorrow.",
+      translation: "Você promete ao seu chefe que vai dar retorno sobre o cliente até amanhã.",
       tip: '"Give feedback" existe, mas não é usado pra "retornar contato" no trabalho. "Follow up" é o termo certo aqui.',
     },
     {
@@ -202,6 +207,7 @@ const workResult = buildRoteiro(
       opening: "Ops, errado!",
       rightAnswer: "Deadline",
       feedbackSentence: "We need to finish this before the deadline.",
+      translation: "Precisamos terminar isso antes do prazo final.",
       tip: '"Duration" é sobre quanto tempo algo dura, não sobre o prazo final pra entregar algo.',
     },
     {
@@ -215,6 +221,7 @@ const workResult = buildRoteiro(
       emoji: "✅",
       opening: "Isso!",
       feedbackSentence: "Let's go over the agenda before we start.",
+      translation: "Vamos revisar a pauta antes de começar.",
     },
   ],
 );
@@ -235,6 +242,7 @@ const travelResult = buildRoteiro(
       emoji: "✅",
       opening: "Perfeito!",
       feedbackSentence: "I can't find my boarding pass.",
+      translation: "Não consigo achar meu cartão de embarque.",
     },
     {
       domainId: "travel",
@@ -249,6 +257,7 @@ const travelResult = buildRoteiro(
       opening: "Quase lá!",
       rightAnswer: "Connecting flight",
       feedbackSentence: "Your connecting flight is delayed and you're running to catch it.",
+      translation: "Seu voo de conexão está atrasado e você está correndo pra pegá-lo.",
       tip: 'O certo é "connecting flight", com -ing. "Connection flight" não é uma expressão usada em inglês.',
     },
     {
@@ -264,6 +273,7 @@ const travelResult = buildRoteiro(
       opening: "Ops, não é isso!",
       rightAnswer: "Lost luggage",
       feedbackSentence: "I need to report my lost luggage.",
+      translation: "Preciso comunicar que perdi minha mala.",
       tip: '"Hand luggage" é a bagagem de mão, não tem relação com bagagem perdida.',
     },
     {
@@ -277,6 +287,7 @@ const travelResult = buildRoteiro(
       emoji: "✅",
       opening: "Boa!",
       feedbackSentence: "Please proceed to gate twelve for boarding.",
+      translation: "Por favor, dirija-se ao portão doze para embarque.",
     },
   ],
 );
@@ -297,6 +308,7 @@ const educationResult = buildRoteiro(
       emoji: "✅",
       opening: "Correto!",
       feedbackSentence: "I need to submit my assignment by Monday.",
+      translation: "Preciso entregar meu trabalho até segunda-feira.",
     },
     {
       domainId: "education",
@@ -311,6 +323,7 @@ const educationResult = buildRoteiro(
       opening: "Por pouco!",
       rightAnswer: "Tuition",
       feedbackSentence: "You get a notice that the tuition is due next week.",
+      translation: "Você recebe um aviso de que a mensalidade vence na próxima semana.",
       tip: '"Monthly fee" existe, mas o termo específico pra mensalidade de faculdade é "tuition".',
     },
     {
@@ -326,6 +339,7 @@ const educationResult = buildRoteiro(
       opening: "Hmmm, errou!",
       rightAnswer: "Scholarship",
       feedbackSentence: "She applied for a scholarship to study abroad.",
+      translation: "Ela se candidatou a uma bolsa de estudos pra estudar no exterior.",
       tip: '"Fellowship" também é um tipo de apoio financeiro, mas em contexto de pesquisa avançada, não de bolsa de graduação.',
     },
     {
@@ -339,6 +353,7 @@ const educationResult = buildRoteiro(
       emoji: "✅",
       opening: "Exato!",
       feedbackSentence: "My advisor helped me choose the right courses.",
+      translation: "Meu orientador me ajudou a escolher as disciplinas certas.",
     },
   ],
 );
@@ -359,6 +374,7 @@ const dailyLifeResult = buildRoteiro(
       emoji: "✅",
       opening: "Isso!",
       feedbackSentence: "Just never mind, it's not a big deal.",
+      translation: "Deixa pra lá, não é nada demais.",
     },
     {
       domainId: "daily_life",
@@ -373,6 +389,7 @@ const dailyLifeResult = buildRoteiro(
       opening: "Quase!",
       rightAnswer: "Binge-watch",
       feedbackSentence: "You spent the whole weekend binge-watching the new show.",
+      translation: "Você passou o fim de semana inteiro maratonando a série nova.",
       tip: '"Watching a lot" funciona, mas "binge-watch" é o termo específico pra maratonar uma série.',
     },
     {
@@ -388,6 +405,7 @@ const dailyLifeResult = buildRoteiro(
       opening: "Errado!",
       rightAnswer: "Groceries",
       feedbackSentence: "I need to buy some groceries for dinner.",
+      translation: "Preciso comprar umas compras de mercado pro jantar.",
       tip: '"Shopping" é compras em geral. Pra compras de mercado/comida, o termo é "groceries".',
     },
     {
@@ -401,6 +419,7 @@ const dailyLifeResult = buildRoteiro(
       emoji: "✅",
       opening: "Perfeito!",
       feedbackSentence: "I read a great review of that movie.",
+      translation: "Eu li uma ótima resenha desse filme.",
     },
   ],
 );

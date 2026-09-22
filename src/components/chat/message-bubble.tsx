@@ -75,31 +75,34 @@ export function MessageBubble({
             onPlay={onAudioPlay}
             textFallback={message.textFallback}
             translation={message.translation}
+            time={message.time}
           />
         ) : message.type === "voice" ? (
           <VoiceNoteCard duration={message.duration ?? ""} />
         ) : (
           <TextBubble text={message.interactive?.body ?? message.text ?? ""} />
         )}
-        <div className="mt-0.5 flex items-center justify-end gap-1">
-          <p className="text-[10.5px] opacity-55 text-right">{message.time}</p>
-          {isUser && message.status === "sending" && (
-            <Clock3
-              className="h-3 w-3 opacity-55"
-              aria-label={t("sending_aria")}
-            />
-          )}
-          {isUser && message.status === "failed" && (
-            <button
-              type="button"
-              onClick={() => onRetry?.(message.externalId ?? message.id)}
-              aria-label={tErrors("resend_aria")}
-              className="flex items-center text-red-200 transition-opacity hover:opacity-80"
-            >
-              <AlertCircle className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
+        {message.type !== "audio" && (
+          <div className="mt-0.5 flex items-center justify-end gap-1">
+            <p className="text-[10.5px] opacity-55 text-right">{message.time}</p>
+            {isUser && message.status === "sending" && (
+              <Clock3
+                className="h-3 w-3 opacity-55"
+                aria-label={t("sending_aria")}
+              />
+            )}
+            {isUser && message.status === "failed" && (
+              <button
+                type="button"
+                onClick={() => onRetry?.(message.externalId ?? message.id)}
+                aria-label={tErrors("resend_aria")}
+                className="flex items-center text-red-200 transition-opacity hover:opacity-80"
+              >
+                <AlertCircle className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
         {message.interactive && (
           <InteractiveButtonList
             buttons={message.interactive.buttons}

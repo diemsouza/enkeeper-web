@@ -152,12 +152,14 @@ export function CustomAudioPlayer({
   onPlay,
   textFallback,
   translation,
+  time,
 }: {
   audioUrl: string;
   externalId?: string;
   onPlay?: (externalId: string) => void;
   textFallback?: string;
   translation?: string;
+  time?: string;
 }) {
   const t = useTranslations("app.chat");
   const tErrors = useTranslations("app.errors");
@@ -507,44 +509,39 @@ export function CustomAudioPlayer({
           )}
         </button>
 
-        <div className="flex-1 relative min-w-0">
-          <div className="relative h-6">
-            <div className="absolute inset-0 flex items-center gap-[2px] pointer-events-none">
-              {(waveform.length > 0
-                ? waveform
-                : new Array(WAVEFORM_BARS).fill(0.15)
-              ).map((height, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-full bg-current"
-                  style={{
-                    height: `${Math.max(3, height * 22)}px`,
-                    opacity: i < filledBars ? 0.85 : 0.3,
-                  }}
-                />
-              ))}
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={duration || 0}
-              step={0.01}
-              value={progress}
-              disabled={isLoading || isError || duration === 0}
-              onChange={(e) => handleSeek(Number(e.target.value))}
-              aria-label={t("audio_position_aria")}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
-            />
-            {duration > 0 && (
+        <div className="flex-1 relative h-6 min-w-0">
+          <div className="absolute inset-0 flex items-center gap-[2px] pointer-events-none">
+            {(waveform.length > 0
+              ? waveform
+              : new Array(WAVEFORM_BARS).fill(0.15)
+            ).map((height, i) => (
               <div
-                className="absolute top-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current shadow pointer-events-none"
-                style={{ left: `${thumbLeft}%` }}
+                key={i}
+                className="flex-1 rounded-full bg-current"
+                style={{
+                  height: `${Math.max(3, height * 22)}px`,
+                  opacity: i < filledBars ? 0.85 : 0.3,
+                }}
               />
-            )}
+            ))}
           </div>
-          <span className="absolute left-0 top-full mt-0.5 text-[10px] opacity-60 tabular-nums">
-            {formatTime(displayTime)}
-          </span>
+          <input
+            type="range"
+            min={0}
+            max={duration || 0}
+            step={0.01}
+            value={progress}
+            disabled={isLoading || isError || duration === 0}
+            onChange={(e) => handleSeek(Number(e.target.value))}
+            aria-label={t("audio_position_aria")}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
+          />
+          {duration > 0 && (
+            <div
+              className="absolute top-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current shadow pointer-events-none"
+              style={{ left: `${thumbLeft}%` }}
+            />
+          )}
         </div>
 
         <div className="relative shrink-0">
@@ -572,6 +569,21 @@ export function CustomAudioPlayer({
         </div>
       </div>
 
+      <div className="flex items-center gap-3">
+        <div className="w-9 shrink-0" aria-hidden="true" />
+        <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
+          <span className="text-[10.5px] opacity-60 tabular-nums">
+            {formatTime(displayTime)}
+          </span>
+          {time && (
+            <span className="text-[10.5px] opacity-55 whitespace-nowrap">
+              {time}
+            </span>
+          )}
+        </div>
+        <div className="w-9 shrink-0" aria-hidden="true" />
+      </div>
+
       {isError && textFallback && (
         <p className="mt-1 min-w-0 whitespace-pre-line leading-[1.5] break-words opacity-80">
           {textFallback}
@@ -584,7 +596,7 @@ export function CustomAudioPlayer({
       )}
       {translation && !isLoading && !isError && (
         <>
-          <div className="mt-3 h-px bg-foreground/10" />
+          <div className="mt-1 h-px bg-foreground/10" />
           <button
             type="button"
             onClick={() => setShowTranslation((prev) => !prev)}
