@@ -419,7 +419,11 @@ async function findUserIdsMatchingCurrentSlot(
     SELECT u.id
     FROM users u
     WHERE u.daily_reminder_enabled = true
-      AND to_char(now() AT TIME ZONE u.timezone, 'HH24:MI') = u.daily_reminder_time
+      AND to_char(
+        date_trunc('hour', now() AT TIME ZONE u.timezone)
+        + (floor(extract(minute from now() AT TIME ZONE u.timezone) / 30) * 30 || ' minutes')::interval,
+        'HH24:MI'
+      ) = u.daily_reminder_time
       ${cursorId ? Prisma.sql`AND u.id > ${cursorId}` : Prisma.empty}
     ORDER BY u.id ASC
     LIMIT ${limit}
