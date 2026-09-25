@@ -102,7 +102,7 @@ export async function countSm2EligibleQuestionsByUser(
     where: {
       deletedAt: null,
       nextRevisionAt: { lte: new Date() },
-      activity: { userId, deletedAt: null },
+      activity: { userId, status: "active", deletedAt: null },
     },
   });
 }
