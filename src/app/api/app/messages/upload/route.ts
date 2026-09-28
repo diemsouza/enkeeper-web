@@ -4,7 +4,8 @@ import { requireAuth } from "@/src/lib/auth/current-user";
 import { UnauthorizedError } from "@/src/lib/custom-errors";
 import { findUserChannelByUserId } from "@/src/repo/users.repo";
 import { handleIncomingMessage } from "@/src/services/message-service";
-import { WebChannel } from "@/src/lib/channels/web-channel";
+import { resolveChannel } from "@/src/lib/channels/resolve-channel";
+import { DEFAULT_CHANNEL_TYPE } from "@/src/lib/constants";
 import {
   extractTextFromImage,
   extractTextFromPdf,
@@ -18,7 +19,7 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const user = await requireAuth();
-    const userChannel = await findUserChannelByUserId(user.id, "web");
+    const userChannel = await findUserChannelByUserId(user.id);
     if (!userChannel) {
       return Response.json({ error: "channel not found" }, { status: 409 });
     }
@@ -102,7 +103,7 @@ export async function POST(request: Request): Promise<Response> {
       channelUserId: userChannel.channelUserId,
       channelUserPhone: userChannel.channelUserPhone ?? undefined,
       channelUsername: userChannel.channelUsername ?? undefined,
-      channelType: "web",
+      channelType: DEFAULT_CHANNEL_TYPE,
       contactName: user.name ?? undefined,
       text: extractedText,
       externalId: resolvedExternalId,
@@ -111,7 +112,7 @@ export async function POST(request: Request): Promise<Response> {
       receivedAt,
     };
 
-    after(() => handleIncomingMessage(input, new WebChannel()));
+    after(() => handleIncomingMessage(input, resolveChannel()));
 
     return Response.json({ ok: true, externalId: resolvedExternalId });
   } catch (error) {

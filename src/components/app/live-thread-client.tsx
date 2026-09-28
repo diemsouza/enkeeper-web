@@ -1,6 +1,7 @@
 "use client";
 
 import { ulid } from "ulid";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatThread } from "@/src/components/chat/thread";
@@ -49,6 +50,7 @@ function sameMessage(a: Message, key: string): boolean {
 
 export function LiveThreadClient({
   userId,
+  currentActivityId,
   initialMessages,
   initialHasMoreOlder,
   needsAutoStart,
@@ -56,6 +58,7 @@ export function LiveThreadClient({
   showPendingReviewBanner = false,
 }: {
   userId: string;
+  currentActivityId: string | null;
   initialMessages: Message[];
   initialHasMoreOlder: boolean;
   needsAutoStart: boolean;
@@ -64,6 +67,7 @@ export function LiveThreadClient({
 }) {
   const t = useTranslations("app.onboarding");
   const tChat = useTranslations("app.chat");
+  const router = useRouter();
   const isMobile = useIsMobile();
   const fileLabels = {
     image: tChat("file_type_image"),
@@ -81,6 +85,7 @@ export function LiveThreadClient({
   );
   const autoStartTriggered = useRef(false);
   const composerRef = useRef<ComposerHandle>(null);
+  const knownActivityIdRef = useRef(currentActivityId);
 
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
@@ -164,6 +169,15 @@ export function LiveThreadClient({
     }
 
     if (messagesRef.current.some((m) => sameMessage(m, key))) return;
+
+    // Atividade nova e criada de forma assincrona (process-doc, onboarding):
+    // o sidebar vem do server layout e so atualiza com refresh.
+    const activityId =
+      typeof record.activity_id === "string" ? record.activity_id : null;
+    if (activityId && activityId !== knownActivityIdRef.current) {
+      knownActivityIdRef.current = activityId;
+      router.refresh();
+    }
 
     const elapsed =
       replyWaitStartedAtRef.current !== null

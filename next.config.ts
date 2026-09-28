@@ -46,7 +46,11 @@ const nextConfig = {
     return config;
   },
   outputFileTracingIncludes: {
-    "/api/(.*)": ["./prompts/**/*.md", "./assets/fonts/**/*"],
+    "/api/(.*)": [
+      "./prompts/**/*.md",
+      "./assets/fonts/**/*",
+      "./email-templates/**/*",
+    ],
   },
   allowedDevOrigins: ["192.168.15.5"],
   serverExternalPackages: ["@resvg/resvg-js"],

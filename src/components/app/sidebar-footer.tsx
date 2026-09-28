@@ -67,7 +67,7 @@ export function SidebarFooterMenu({
 
   return (
     <SidebarFooter className="pb-[max(0.75rem,calc(env(safe-area-inset-bottom)-0.75rem))]">
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger className="flex h-11 w-full items-center gap-2 rounded-md px-1.5 text-left hover:bg-sidebar-accent">
           <Avatar className="h-8 w-8 shrink-0">
             <AvatarFallback>
@@ -90,10 +90,7 @@ export function SidebarFooterMenu({
           <ThemeMenuItems />
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
-              setCalendarOpen(true);
-            }}
+            onSelect={() => setCalendarOpen(true)}
             className="gap-2"
           >
             <CalendarPlus className="h-4 w-4" />
@@ -101,10 +98,7 @@ export function SidebarFooterMenu({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
-              setConfirmOpen(true);
-            }}
+            onSelect={() => setConfirmOpen(true)}
             className="gap-2"
           >
             <LogOut className="h-4 w-4" />

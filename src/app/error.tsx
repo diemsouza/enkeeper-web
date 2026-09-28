@@ -20,8 +20,13 @@ export default function AppError({
   }
 
   async function goToLogin() {
-    await postJson("/api/auth/logout", {});
-    router.replace("/login");
+    try {
+      await postJson("/api/auth/logout", {});
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      window.location.replace("/login");
+    }
   }
 
   return (
@@ -34,11 +39,7 @@ export default function AppError({
           {t("description")}
         </p>
         <div className="mt-10 flex items-center justify-center gap-x-4">
-          <Button
-            size="lg"
-            className="rounded-full px-5"
-            onClick={retry}
-          >
+          <Button size="lg" className="rounded-full px-5" onClick={retry}>
             {t("cta_retry")}
           </Button>
           <Button

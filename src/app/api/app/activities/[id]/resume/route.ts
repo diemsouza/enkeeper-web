@@ -3,7 +3,7 @@ import { UnauthorizedError } from "@/src/lib/custom-errors";
 import { findActivityById } from "@/src/repo/activities.repo";
 import { findUserChannelByUserId } from "@/src/repo/users.repo";
 import { resumeActivityFromWeb } from "@/src/services/activity-service";
-import { WebChannel } from "@/src/lib/channels/web-channel";
+import { resolveChannel } from "@/src/lib/channels/resolve-channel";
 
 export async function POST(
   request: Request,
@@ -27,7 +27,7 @@ export async function POST(
     await resumeActivityFromWeb(
       user.id,
       activity,
-      new WebChannel(),
+      resolveChannel(),
       userChannel.id,
       userChannel.channelUserId,
     );

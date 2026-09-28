@@ -10,6 +10,7 @@ import {
 import { prisma } from "../lib/prisma";
 import { CheckoutData } from "../types/domain";
 import { getNearestReminderTimeSlot } from "../core/daily-reminder-time";
+import { DEFAULT_CHANNEL_TYPE } from "../lib/constants";
 
 type UserWithChannels = User & { channels: UserChannel[] };
 
@@ -69,7 +70,7 @@ export async function updateUserPlanStatus(
 
 export async function findUserChannelByUserId(
   userId: string,
-  channelType: ChannelType = "whatsapp",
+  channelType: ChannelType = DEFAULT_CHANNEL_TYPE,
 ): Promise<UserChannel | null> {
   return prisma.userChannel.findFirst({
     where: { userId, channelType },
@@ -83,7 +84,10 @@ export async function findUserChannelByPhone(
   const where =
     "channelType" in filter
       ? { channelUserPhone: phone, channelType: filter.channelType }
-      : { channelUserPhone: phone, channelType: { not: filter.channelTypeNot } };
+      : {
+          channelUserPhone: phone,
+          channelType: { not: filter.channelTypeNot },
+        };
   const row = await prisma.userChannel.findFirst({
     where,
     include: { user: { include: { channels: true } } },
@@ -223,7 +227,7 @@ export async function fetchUserStats(): Promise<UserStat> {
             channelUsername: true,
             channelUserPhone: true,
           },
-          where: { channelType: "whatsapp" },
+          where: { channelType: DEFAULT_CHANNEL_TYPE },
           take: 1,
         },
       },
