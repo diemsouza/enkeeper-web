@@ -11,8 +11,12 @@ import {
 } from "../repo/users.repo";
 import { ChannelType } from "../types/domain";
 import { TRIAL_DAYS } from "../lib/constants";
-import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
-import { AttributionCookie, resolveSource } from "../core/attribution";
+import { sendSupportEmail } from "../vendors/email.vendor";
+import {
+  AttributionCookie,
+  hasAttributionSignal,
+  resolveSource,
+} from "../core/attribution";
 
 type UserWithChannels = User & { channels: UserChannel[] };
 
@@ -39,20 +43,21 @@ export async function findOrCreateUserByChannel(
     timezone,
   );
 
-  const waSupport = process.env.WA_SUPPORT;
-  if (isNew && waSupport && channelUserPhone !== waSupport) {
-    try {
-      await sendWhatsAppTemplate(waSupport, "new_user_notification", [
-        user.id,
-        name ?? "Não identificado",
-        `+${(channelUserPhone ?? channelUserId).replace("+", "")}`,
-      ]);
-    } catch (error) {
-      console.error(
-        "[findOrCreateUserByChannel] Failed to notify WA_SUPPORT",
-        error,
-      );
-    }
+  if (isNew) {
+    await sendSupportEmail({
+      subject: "Novo usuário",
+      title: "Novo usuário cadastrado",
+      fields: [
+        { label: "ID", value: user.id },
+        { label: "Nome", value: name ?? "Não identificado" },
+        {
+          label: "Telefone",
+          value: `+${(channelUserPhone ?? channelUserId).replace("+", "")}`,
+        },
+        { label: "Canal", value: channelType },
+        { label: "Origem", value: source ?? "-" },
+      ],
+    });
   }
   return { user, userChannel };
 }
@@ -85,9 +90,7 @@ export async function resolveWebLoginByPhone(
     undefined,
     undefined,
     resolveSource(attribution ?? null),
-    (attribution as Record<string, unknown> | null | undefined) ?? {
-      via: "web_otp_login",
-    },
+    hasAttributionSignal(attribution ?? null) ? attribution : null,
     timezone,
   );
 }

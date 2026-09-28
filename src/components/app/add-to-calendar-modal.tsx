@@ -93,10 +93,12 @@ export function AddToCalendarModal({
       "_blank",
       "noopener,noreferrer",
     );
+    onOpenChange(false);
   }
 
   function handleIcsClick(): void {
     downloadIcsFile(buildIcsFileContent(buildInput()));
+    onOpenChange(false);
   }
 
   async function handleSave(): Promise<void> {
@@ -118,6 +120,7 @@ export function AddToCalendarModal({
     setSavedTime(time);
     router.refresh();
     toast({ description: t("daily_reminder_save_success") });
+    onOpenChange(false);
   }
 
   return (

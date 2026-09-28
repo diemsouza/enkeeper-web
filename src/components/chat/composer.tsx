@@ -145,11 +145,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
               "max(0.75rem, calc(env(safe-area-inset-bottom) - 0.75rem))",
           }}
         >
-          {disabled && disabledReason && (
-            <p className="text-center text-xs text-muted-foreground">
-              {disabledReason}
-            </p>
-          )}
           <div ref={containerRef} className="relative mx-auto w-full max-w-3xl">
             {showCommandMenu && (
               <div className="pointer-events-auto absolute inset-x-0 bottom-full z-30 mb-2 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-md">
@@ -212,7 +207,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                 disabled={disabled}
                 placeholder={
                   disabled
-                    ? t("placeholder_archived")
+                    ? (disabledReason ?? t("placeholder_archived"))
                     : t("placeholder_default")
                 }
                 className="max-h-40 min-h-9 flex-1 resize-none rounded-2xl border-0 focus-visible:ring-0 focus-visible:ring-offset-0"

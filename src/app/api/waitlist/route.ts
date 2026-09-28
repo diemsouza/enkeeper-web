@@ -4,7 +4,7 @@ import {
   createWaitlistEntry,
   countWaitlistEntriesSince,
 } from "@/src/repo/waitlist.repo";
-import { sendWhatsAppTemplate } from "@/src/vendors/whatsapp.vendor";
+import { sendSupportEmail } from "@/src/vendors/email.vendor";
 
 const WaitlistPayloadSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -91,24 +91,18 @@ export async function POST(request: Request): Promise<Response> {
     }
     await createWaitlistEntry(name, phone);
 
-    const waSupport = process.env.WA_SUPPORT;
-    if (waSupport) {
-      const recentCount = await countWaitlistEntriesSince(
-        new Date(Date.now() - NOTIFY_WINDOW_MS),
-      );
-      if (recentCount <= NOTIFY_MAX_PER_WINDOW) {
-        try {
-          await sendWhatsAppTemplate(waSupport, "waitlist_notification", [
-            name,
-            `+${phone.replace("+", "")}`,
-          ]);
-        } catch (error) {
-          console.error(
-            "[post/api/waitlist] Failed to notify WA_SUPPORT",
-            error,
-          );
-        }
-      }
+    const recentCount = await countWaitlistEntriesSince(
+      new Date(Date.now() - NOTIFY_WINDOW_MS),
+    );
+    if (recentCount <= NOTIFY_MAX_PER_WINDOW) {
+      await sendSupportEmail({
+        subject: "Nova inscrição na waitlist",
+        title: "Nova inscrição na waitlist",
+        fields: [
+          { label: "Nome", value: name },
+          { label: "Telefone", value: `+${phone.replace("+", "")}` },
+        ],
+      });
     }
     return Response.json({ success: true });
   } catch (error: unknown) {

@@ -1,3 +1,5 @@
+import type { ChannelType } from "./prisma";
+
 export const THEME_COLOR_LIGHT = "#ffffff";
 export const THEME_COLOR_DARK = "#0a0a0a";
 
@@ -8,6 +10,7 @@ export const NEXT_MESSAGE_INTERVAL_MIN = 60;
 export const FIRST_MESSAGE_INTERVAL_MIN = 1;
 export const DEFAULT_LOCALE = "pt-BR";
 export const DEFAULT_CURRENCY = "BRL";
+export const DEFAULT_CHANNEL_TYPE: ChannelType = "web";
 export const INTENSIVE_UNTIL_MIN = 15;
 export const DAILY_PRACTICE_LIMIT = 60;
 export const CADENCE_RESERVE = 24;

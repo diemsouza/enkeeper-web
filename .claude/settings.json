@@ -1,0 +1,7 @@
+{
+  "model": "sonnet",
+  "permissions": {
+    "deny": ["Read(./.env)", "Read(./.env.*)", "Bash(cat .env*)"],
+    "allow": ["Read(./.env.example)"]
+  }
+}

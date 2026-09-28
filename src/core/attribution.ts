@@ -65,6 +65,22 @@ export function parseAttributionCookie(
   }
 }
 
+export function hasAttributionSignal(
+  attribution: AttributionCookie | null,
+): boolean {
+  if (!attribution) return false;
+  return [
+    attribution.utmSource,
+    attribution.utmMedium,
+    attribution.utmCampaign,
+    attribution.utmContent,
+    attribution.utmTerm,
+    attribution.gclid,
+    attribution.fbclid,
+    attribution.referrer,
+  ].some((value) => value != null);
+}
+
 function isPaidMedium(medium: string | null): boolean {
   if (!medium) return false;
   return PAID_MEDIUM_VALUES.includes(medium.toLowerCase());

@@ -43,11 +43,11 @@ stripe login
 2. Escutar e encaminhar para seu Next.js (App Router)
 
 ```bash
-
+# obter secret de teste
 stripe listen -f http://localhost:3000/api/webhooks/stripe --print-secret
 
-# ou mais enxuto
-stripe listen --forward-to http://localhost:3000/api/webhooks/stripe
+# executar listening dos eventos
+stripe listen --forward-to http://localhost:3000/api/webhooks/stripe --all-thin
 ```
 
 Guarde o Webhook Signing Secret que aparece (whsec\_...) → ponha em .env.local:
@@ -58,15 +58,9 @@ STRIPE_SECRET_KEY=sk_test_xxx
 ```
 
 
-# Terminal 1: Next.js rodando
+# Terminal: Next.js rodando
 
 npm run dev
-
-# Terminal 2: ngrok expondo a porta
-
-ngrok http 3000
-
-Example url: https://1bb0-187-56-243-58.ngrok-free.app
 
 ## Supabase (Realtime local)
 
@@ -89,8 +83,10 @@ Caso queira, edite `supabase/config.toml`, ajuste `project_id` para `"fluizer"`.
 
 ### Subir (só o necessário)
 
+Se for a primeira vez, como o migration do supabase vai referenciar tabelas do prisma que ainda nao foram criados, é preciso renomear a pasta de migrations pra _migrations, rodar o comando abaixo, e depois se aplicar o migration do prisma, voltar para o nome original migrations e aplicar migrations como os passos abaixo.
+
 ```bash
-npx supabase start -x storage -x imgproxy -x edge-runtime
+npx supabase start -x storage -x imgproxy -x edge-runtime 
 ```
 
 Copie a `DB URL` impressa no final para `DATABASE_URL` no `.env` (porta `54322`, não `5432`).

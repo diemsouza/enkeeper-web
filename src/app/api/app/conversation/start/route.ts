@@ -3,7 +3,7 @@ import { requireAuth } from "@/src/lib/auth/current-user";
 import { UnauthorizedError } from "@/src/lib/custom-errors";
 import { findUserChannelByUserId } from "@/src/repo/users.repo";
 import { startConversationIfNeeded } from "@/src/services/message-service";
-import { WebChannel } from "@/src/lib/channels/web-channel";
+import { resolveChannel } from "@/src/lib/channels/resolve-channel";
 
 export async function POST(): Promise<Response> {
   try {
@@ -13,7 +13,13 @@ export async function POST(): Promise<Response> {
       return Response.json({ error: "channel not found" }, { status: 409 });
     }
 
-    after(() => startConversationIfNeeded(user, userChannel, new WebChannel()));
+    after(async () => {
+      try {
+        await startConversationIfNeeded(user, userChannel, resolveChannel());
+      } catch (error) {
+        console.error("[post/api/app/conversation/start] after", error);
+      }
+    });
 
     return Response.json({ started: true });
   } catch (error) {

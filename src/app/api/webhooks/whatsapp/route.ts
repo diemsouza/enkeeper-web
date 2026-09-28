@@ -9,7 +9,7 @@ import {
   verifyMetaSignature,
   verifyWebhookToken,
 } from "@/src/lib/whatsapp-verify";
-import { WhatsAppChannel } from "../../../../lib/channels/whatsapp-channel";
+import { resolveChannel } from "../../../../lib/channels/resolve-channel";
 import { normalizePhoneToWaId } from "../../../../core/phone";
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   after(async () => {
-    const channel = new WhatsAppChannel();
+    const channel = resolveChannel("whatsapp");
     let wa_id: string | undefined;
     let channelId: string | undefined;
     try {

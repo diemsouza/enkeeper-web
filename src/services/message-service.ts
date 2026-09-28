@@ -6,6 +6,8 @@ import {
   Message,
   Prisma,
   QuestionFormat,
+  User,
+  UserChannel,
 } from "../lib/prisma";
 import { parseMessage } from "../core/parser";
 import { canPractice } from "../core/access";
@@ -115,7 +117,7 @@ import {
   publishDocProcessing,
   publishResumeSummary,
 } from "../lib/qstash";
-import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
+import { sendSupportEmail } from "../vendors/email.vendor";
 import { formatDateTime } from "../lib/datetime-utils";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
 import { getFeedbackExamples } from "../core/format-loader";
@@ -318,25 +320,7 @@ export async function handleIncomingMessage(
           });
           return;
         }
-        const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
-        if (process.env.WA_SUPPORT) {
-          try {
-            await sendWhatsAppTemplate(
-              process.env.WA_SUPPORT,
-              "support_notification",
-              [
-                user.id,
-                user.name ?? "Não identificado",
-                `+${(userChannel.channelUserPhone ?? userChannel.channelUserId).replace("+", "")}`,
-                planLabel,
-                formatDateTime(user.planExpiresAt ?? undefined, "pt-BR"),
-                text,
-              ],
-            );
-          } catch {
-            // notificação interna, falha silenciosa
-          }
-        }
+        await notifySupportRequest(user, userChannel, text);
         await updateUserPendingIntent(user.id, null);
         await saveUserMsg({
           userId: user.id,
@@ -404,6 +388,7 @@ export async function handleIncomingMessage(
       }
 
       if (parsed.intent === "support") {
+        await updateUserPendingIntent(user.id, "support");
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
@@ -1090,22 +1075,7 @@ export async function handleIncomingMessage(
           return;
         }
         await updateUserPendingIntent(user.id, null);
-        const planLabel = user.planCode === "pro" ? "Pro" : "Trial";
-        const supportNumber = process.env.WA_SUPPORT;
-        if (supportNumber) {
-          try {
-            await sendWhatsAppTemplate(supportNumber, "support_notification", [
-              user.id,
-              user.name ?? "Não identificado",
-              `+${(userChannel.channelUserPhone ?? userChannel.channelUserId).replace("+", "")}`,
-              planLabel,
-              formatDateTime(user.planExpiresAt ?? undefined, "pt-BR"),
-              text,
-            ]);
-          } catch {
-            // notificação interna, falha silenciosa
-          }
-        }
+        await notifySupportRequest(user, userChannel, text);
 
         await saveUserMsg({
           userId: user.id,
@@ -2044,6 +2014,29 @@ type SaveUserMsgParams = {
   activityId?: string;
 };
 
+async function notifySupportRequest(
+  user: User,
+  userChannel: UserChannel,
+  text: string,
+): Promise<void> {
+  const phone = userChannel.channelUserPhone ?? userChannel.channelUserId;
+  await sendSupportEmail({
+    subject: "Pedido de suporte",
+    title: "Novo pedido de suporte",
+    message: text,
+    fields: [
+      { label: "ID", value: user.id },
+      { label: "Nome", value: user.name ?? "Não identificado" },
+      { label: "Telefone", value: `+${phone.replace("+", "")}` },
+      { label: "Plano", value: user.planCode === "pro" ? "Pro" : "Trial" },
+      {
+        label: "Expira em",
+        value: formatDateTime(user.planExpiresAt ?? undefined, "pt-BR"),
+      },
+    ],
+  });
+}
+
 async function saveUserMsg(params: SaveUserMsgParams): Promise<Message> {
   const {
     userId,
@@ -2178,7 +2171,6 @@ export async function runOnboardingAndFirstActivityFlow(
   today: Date,
   channel: MessageChannel,
 ): Promise<void> {
-  await markUserOnboarded(user.id);
   try {
     if (userChannel.channelUserPhone) {
       await markWaitlistActive(userChannel.channelUserPhone);
@@ -2206,6 +2198,7 @@ export async function runOnboardingAndFirstActivityFlow(
       message: msgs[i],
       today,
     });
+    if (i === 0) await markUserOnboarded(user.id);
   }
 
   await delay(ONBOARDING_MESSAGE_INTERVAL_SEC);
