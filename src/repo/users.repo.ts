@@ -8,7 +8,7 @@ import {
   UserChannel,
 } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
-import { CheckoutData } from "../types/domain";
+import { CheckoutData, UserSignedLinkMetadata } from "../types/domain";
 import { getNearestReminderTimeSlot } from "../core/daily-reminder-time";
 import { DEFAULT_CHANNEL_TYPE } from "../lib/constants";
 
@@ -151,14 +151,58 @@ export async function updateUserPendingIntent(
   intent: string | null,
   metadata: Prisma.InputJsonValue | null = null,
 ): Promise<void> {
+  const current = await findUserMetadata(userId);
+  const rest = Object.fromEntries(
+    Object.entries(current).filter(([key]) => key !== "intent_data"),
+  );
+  const nextMetadata =
+    intent && metadata !== null ? { ...rest, intent_data: metadata } : rest;
   await prisma.user.update({
     where: { id: userId },
     data: {
       pendingIntent: intent,
       pendingIntentAt: intent ? new Date() : null,
       metadata:
-        intent && metadata !== null ? { intent_data: metadata } : Prisma.DbNull,
+        Object.keys(nextMetadata).length > 0
+          ? (nextMetadata as Prisma.InputJsonObject)
+          : Prisma.DbNull,
     },
+  });
+}
+
+async function findUserMetadata(userId: string): Promise<Prisma.JsonObject> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { metadata: true },
+  });
+  const metadata = user?.metadata;
+  return metadata && typeof metadata === "object" && !Array.isArray(metadata)
+    ? metadata
+    : {};
+}
+
+export async function findUserSignedLink(
+  userId: string,
+): Promise<UserSignedLinkMetadata | null> {
+  const { signedLinkToken, signedLinkExpiresAt } =
+    await findUserMetadata(userId);
+  if (
+    typeof signedLinkToken !== "string" ||
+    typeof signedLinkExpiresAt !== "string"
+  ) {
+    return null;
+  }
+  return { signedLinkToken, signedLinkExpiresAt };
+}
+
+export async function updateUserSignedLink(
+  userId: string,
+  signedLink: UserSignedLinkMetadata,
+): Promise<void> {
+  const metadata = await findUserMetadata(userId);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { metadata: { ...metadata, ...signedLink } },
   });
 }
 
@@ -409,25 +453,42 @@ const DAILY_REMINDER_USER_INCLUDE = {
     where: { channelType: "web", channelUserPhone: { not: null } },
     take: 1,
   },
+  activities: {
+    where: { status: "active", deletedAt: null },
+    orderBy: { statusUpdatedAt: "desc" },
+    take: 1,
+    select: { lastInteractionAt: true, createdAt: true },
+  },
 } satisfies Prisma.UserInclude;
 
 export type DailyReminderCandidateUser = Prisma.UserGetPayload<{
   include: typeof DAILY_REMINDER_USER_INCLUDE;
 }>;
 
+// "Hoje" é o dia no fuso do usuário: em UTC, um lembrete das 21h BRT cairia no
+// dia seguinte e bloquearia (ou liberaria em dobro) o lembrete do outro dia.
 async function findUserIdsMatchingCurrentSlot(
+  reminderKinds: string[],
   cursorId: string | null,
   limit: number,
 ): Promise<string[]> {
   const rows = await prisma.$queryRaw<{ id: string }[]>`
     SELECT u.id
     FROM users u
-    WHERE u.daily_reminder_enabled = true
-      AND to_char(
+    WHERE to_char(
         date_trunc('hour', now() AT TIME ZONE u.timezone)
         + (floor(extract(minute from now() AT TIME ZONE u.timezone) / 30) * 30 || ' minutes')::interval,
         'HH24:MI'
       ) = u.daily_reminder_time
+      AND NOT EXISTS (
+        SELECT 1
+        FROM notifications n
+        WHERE n.user_id = u.id
+          AND n.kind IN (${Prisma.join(reminderKinds)})
+          AND n.deleted_at IS NULL
+          AND (n.created_at AT TIME ZONE 'UTC' AT TIME ZONE u.timezone)::date
+            = (now() AT TIME ZONE u.timezone)::date
+      )
       ${cursorId ? Prisma.sql`AND u.id > ${cursorId}` : Prisma.empty}
     ORDER BY u.id ASC
     LIMIT ${limit}
@@ -436,8 +497,7 @@ async function findUserIdsMatchingCurrentSlot(
 }
 
 export async function findUsersForDailyReminder(
-  todayStart: Date,
-  todayEnd: Date,
+  reminderKinds: string[],
   cursorId: string | null,
   limit = 500,
 ): Promise<{
@@ -445,7 +505,11 @@ export async function findUsersForDailyReminder(
   lastRawId: string | null;
   rawBatchSize: number;
 }> {
-  const candidateIds = await findUserIdsMatchingCurrentSlot(cursorId, limit);
+  const candidateIds = await findUserIdsMatchingCurrentSlot(
+    reminderKinds,
+    cursorId,
+    limit,
+  );
   if (candidateIds.length === 0) {
     return { users: [], lastRawId: null, rawBatchSize: 0 };
   }
@@ -456,13 +520,7 @@ export async function findUsersForDailyReminder(
       status: "active",
       planStatus: "active",
       planExpiresAt: { gt: new Date() },
-      notifications: {
-        none: {
-          kind: "daily_reminder",
-          deletedAt: null,
-          createdAt: { gte: todayStart, lte: todayEnd },
-        },
-      },
+      activities: { some: { status: "active", deletedAt: null } },
       channels: {
         some: { channelType: "web", channelUserPhone: { not: null } },
       },

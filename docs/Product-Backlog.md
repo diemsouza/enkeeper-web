@@ -148,4 +148,33 @@ Polling de fallback: enquanto o indicador estiver ativo, o cliente busca as mens
 
 O polling aumenta a carga em `/api/app/messages` e só vale a pena se as correções do Realtime não resolverem em produção (ainda não confirmado se o problema era só em dev). Um evento de fim perdido deixa o indicador preso, por isso o TTL local é obrigatório.
 
+---
+
+## 5) Imagem só para itens que dá para ilustrar
+
+**Contexto**
+
+Nos testes de `image_recognition` com rollout em 100%, várias rodadas passaram sem nenhuma pergunta com imagem. A rotação balanceada de formatos resolveu a frequência, mas a decisão de "dá para ilustrar" ainda acontece só depois que o formato já foi escolhido.
+
+**Problema**
+
+O item da pergunta é fixo pela posição no material e só o LLM de geração diz se ele é ilustrável. Em material com muita expressão ou phrasal verb, a pergunta com imagem é tentada em quase toda rodada e cai para outro formato, gastando uma geração extra a cada tentativa.
+*Exemplo:* lista com "break the ice", "look forward to", "suitcase": a imagem é tentada nos dois primeiros, falha, e só sai no terceiro.
+
+**Solução**
+
+Cada item do material já sabe, desde o processamento, se pode virar pergunta com imagem.
+
+**Como**
+
+O doc-extraction marca imageabilidade por item com o mesmo critério do bloco de exemplos de `image_recognition`: objeto, ação, estado, sentimento ou lugar em que o sentido literal da cena é o sentido real do termo.
+*Exemplo:* "suitcase" é marcado ilustrável; "break the ice" não, porque gelo quebrando mostra outro sentido.
+
+O sorteio de formato só oferece imagem quando o item da vez é ilustrável.
+*Exemplo:* chegou a vez de "suitcase" e a imagem está atrasada na rotação: sai pergunta com imagem. Chegou a vez de "break the ice": a imagem nem entra no sorteio.
+
+**Objeção**
+
+Falta decidir onde guardar a marca por item, já que o conteúdo é texto corrido com um item por bloco. Material já processado não tem a marca (sem backfill, vale só para material novo ou reprocessado). O critério passa a viver em dois prompts (extração e exemplo de formato) e pode divergir.
+
 senão viram fonte de verdade errada para prompts futuros de Claude Code.

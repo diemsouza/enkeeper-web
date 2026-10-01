@@ -1333,7 +1333,7 @@ export async function handleIncomingMessage(
         if (alreadyPending) {
           // Reexibir a pergunta sem alinhar o estado da activity deixava
           // waitingUser/lastQuestionId dessincronizados: a resposta seguinte
-          // caia no fallback "Aguarde" e o reset de nudge nao rodava. Alinha
+          // caia no fallback "Aguarde". Alinha
           // antes dos envios pra fechar tambem a janela de concorrencia.
           await updateActivity(activeActivity.id, user.id, {
             waitingUser: true,
@@ -1468,7 +1468,7 @@ export async function handleIncomingMessage(
         // waitingUser tiver dessincronizado do status da pergunta (straggler
         // de conclusao de rodada, duas perguntas pendentes, ou escrita parcial
         // entre updateQuestion e updateActivity). O bloco de sucesso abaixo
-        // ja auto-cura waitingUser/nudge/lastInteractionAt.
+        // ja auto-cura waitingUser/lastInteractionAt.
         if (activeActivity) {
           const practiceDoc = await findDocById(activeActivity.docId, user.id);
           if (practiceDoc) {
@@ -1633,8 +1633,6 @@ export async function handleIncomingMessage(
                 // nextMessageAt: new Date(
                 //   Date.now() + activeActivity.intervalMinutes * 60 * 1000,
                 // ),
-                lastNudgeStep: null,
-                lastNudgeAt: null,
               });
               await saveUserMsg({
                 userId: user.id,

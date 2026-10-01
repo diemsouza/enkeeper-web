@@ -11,6 +11,7 @@ import {
 } from "@/src/lib/whatsapp-verify";
 import { resolveChannel } from "../../../../lib/channels/resolve-channel";
 import { normalizePhoneToWaId } from "../../../../core/phone";
+import { resolveWhatsAppAccessLink } from "../../../../services/wa-login-link-service";
 
 export async function GET(req: NextRequest): Promise<Response> {
   const { searchParams } = req.nextUrl;
@@ -93,21 +94,14 @@ export async function POST(req: NextRequest): Promise<Response> {
       }
 
       // Canal WhatsApp não roda mais nenhum pipeline de produto (prática,
-      // comando, onboarding, doc/OCR/transcrição) — qualquer mensagem
-      // recebida, de qualquer tipo, gera só essa resposta fixa redirecionando
-      // pro app web, sem gravar em Message (mesmo princípio já aplicado a
-      // Notification).
+      // comando, onboarding, doc/OCR/transcrição). Qualquer mensagem recebida,
+      // de qualquer tipo, inclusive o clique no Quick Reply dos templates de
+      // lembrete/nudge, gera só essa resposta redirecionando pro app web, sem
+      // gravar em Message. Mensagem de sessão abre no navegador nativo, ao
+      // contrário de link em template (Product-Rules §12).
       const normalizedPhone = wa_id ? normalizePhoneToWaId(wa_id) : null;
-      if (!normalizedPhone) {
-        console.warn(
-          "[post/api/webhooks/whatsapp] could not normalize wa_id, sending fallback reply",
-          { wa_id },
-        );
-        await channel.sendMessage(channelId, formatGenericError());
-        return;
-      }
-
-      await channel.sendMessage(channelId, formatWhatsAppRedirect());
+      const link = await resolveWhatsAppAccessLink(normalizedPhone);
+      await channel.sendMessage(channelId, formatWhatsAppRedirect(link));
     } catch (err) {
       console.error("[post/api/webhooks/whatsapp] processing error", err);
       if (channelId) {

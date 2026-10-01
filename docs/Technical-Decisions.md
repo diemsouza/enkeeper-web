@@ -6,6 +6,63 @@ topo.
 
 ---
 
+## Lembrete diário e reengajamento unificados
+
+Data: 2026-10-01
+
+Contexto: o lembrete diário de revisão mandava o link de login como texto no
+corpo do template `daily_reminder_v2`, e teste real mostrou que até link em texto
+puro de template abre no navegador embutido da Meta, quebrando o login
+automático. O nudge por steps (h12 a d14, `Activity.lastNudgeStep` /
+`lastNudgeAt`) estava comentado desde que a prática migrou para o web, e foi
+desenhado para a cadência de 1h, que também está pausada. Com o pricing da Meta
+de 1/out/2026 (1.000 mensagens de serviço grátis por número por mês), uma
+resposta de sessão depois do template não tem custo relevante.
+
+Decisões:
+
+- **Um cron só, sem estado de nudge.** O cron `/api/cron/daily-reminder`
+  (`daily-reminder-cron.service.ts`, mesmo slot de 30 min no `timezone` +
+  `dailyReminderTime` do usuário) calcula `daysSince(lastInteractionAt ??
+  createdAt)` da Activity ativa e decide em `pickEngagementReminder`
+  (`src/core/engagement-reminder.ts`): 0 a 6 dias, `daily_reminder_revision` ou
+  `daily_reminder_v2` conforme `countSm2EligibleQuestionsByUser`, só com
+  `dailyReminderEnabled`; 7 e 14 `nudge_days` (param = dias), ignorando o toggle;
+  resto nada. Por isso o filtro `daily_reminder_enabled = true` saiu do SQL de
+  slot e foi para o core. `daysSince` é em blocos de 24h, e como o cron roda uma
+  vez por dia no mesmo horário cada número aparece uma vez.
+- **`lastInteractionAt` continua em `Activity`.** Já é gravado em toda
+  avaliação (`right`, `wrong`, `partial`) em `message-service.ts`, que vira o
+  reset natural. Sem campo novo em `User`.
+- **Drop de `lastNudgeStep` / `lastNudgeAt`** (migration
+  `drop_activity_nudge_fields`), junto com `NUDGE_STEPS`,
+  `NUDGE_THRESHOLDS_MS`, os pools de nudge livre e o bloco comentado de nudge em
+  `activity-cron.service.ts`. A cadência comentada continua lá.
+- **Dedup diário por `Notification.kind`.** O `kind` passa a ser o nome do
+  template, e a busca de candidatos exclui quem já tem qualquer um dos três
+  kinds (`ENGAGEMENT_REMINDERS`) no dia, mantendo uma mensagem por dia.
+- **Template sem link, Quick Reply cai no catch-all.** Os três templates
+  (`formatEngagementReminder` em `formatters.ts`, texto de referência) têm um
+  único botão Quick Reply criado na Meta, e o envio continua só nome + body
+  params (`sendWhatsAppTemplate`, sem component de botão). O webhook WhatsApp
+  já não roda pipeline nenhum (desde a remoção do simulador) e responde
+  `formatWhatsAppRedirect(link)` a qualquer mensagem, então o clique não precisa
+  de payload nem handler por origem.
+- **Link do catch-all.** `resolveWhatsAppAccessLink`
+  (`wa-login-link-service.ts`) procura o User pelo telefone normalizado
+  (`findUserByIdentifier("web", phone)`); achou, link assinado de login
+  automático; não achou ou o `wa_id` não normaliza (BSUID/username), `/app`
+  fixo. O caso sem normalização antes recebia erro genérico.
+- **Cache do link assinado em `User.metadata`.** `signedLinkToken` guarda o
+  código do shortlink (é o que fica na URL `/r/<code>`) e
+  `signedLinkExpiresAt` a validade do token (24h). `getOrCreateWaLoginUrl`
+  reusa enquanto válido; senão gera e sobrescreve os dois.
+- **`updateUserPendingIntent` passou a fazer merge.** Antes sobrescrevia o
+  `metadata` inteiro (`{ intent_data }` ou null) em quase toda mensagem web, o
+  que apagaria o cache. Agora troca só a chave `intent_data` e preserva o resto.
+
+---
+
 ## Passos de captura como lista de opções
 
 Data: 2026-09-30
@@ -171,8 +228,16 @@ Decisões:
   sortear outro formato para o mesmo bloco de conteúdo, com
   `console.warn` do motivo. Rollout por `IMAGE_QUESTION_ROLLOUT_FRACTION`,
   mesmo padrão de `AUDIO_ROLLOUT_FRACTION`.
+- **Rotação balanceada no picker.** O sorteio uniforme fazia o
+  image_recognition quase sumir: o item da pergunta é fixo por posição, o
+  formato era sorteado às cegas e item abstrato cai em fallback. Agora
+  `pickNextFormat` sorteia só entre os formatos permitidos com menor contagem
+  na atividade (`countQuestionFormatsByActivity`). Fallback não gera pergunta,
+  então o image_recognition atrasado tem prioridade nas perguntas seguintes.
+  Custo aceito: em material quase todo abstrato, uma geração extra por
+  pergunta até aparecer um item ilustrável (melhoria em Product-Backlog item 5).
 - **Adjacência com `choice` imposta no picker.** `pickNextFormat` sorteia
-  aleatoriamente entre os formatos restantes, então a ordem do array sozinha
+  entre os formatos restantes, então a ordem do array sozinha
   não impediria a sequência. O picker exclui a família de escolha inteira
   (`choice` e `image_recognition`) quando o último formato é de escolha. No
   array, `image_recognition` fica no índice 2, a posição mais distante de
@@ -257,7 +322,8 @@ Decisões:
   concorrência) não passa de duas casas, então não há necessidade de lógica de
   abreviação.
 - **Reaproveita `countSm2EligibleQuestions`** (`src/repo/questions.repo.ts`),
-  a mesma função já usada no lembrete diário via WhatsApp
+  mesma regra de elegibilidade da variante por usuário
+  (`countSm2EligibleQuestionsByUser`) usada no lembrete diário via WhatsApp
   (`daily-reminder-cron.service.ts`), sem somar perguntas com `status: "pending"`
   — essa contagem na prática nunca passa de 0 ou 1 por Activity e não faz parte
   da definição de "dívida de revisão" já documentada no produto.

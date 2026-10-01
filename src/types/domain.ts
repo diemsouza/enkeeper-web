@@ -55,6 +55,11 @@ export type UserIntentMetadata = {
 
 export type CheckoutData = { url: string; expiresAt: string };
 
+export type UserSignedLinkMetadata = {
+  signedLinkToken: string;
+  signedLinkExpiresAt: string;
+};
+
 export type AdminSendMessageIntentData = {
   targetUserId: string;
   targetUserChannelId: string;

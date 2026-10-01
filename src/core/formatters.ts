@@ -19,6 +19,7 @@ import { COMMANDS, formatCommand, isAutoCompletable } from "../lib/commands";
 import { shuffle } from "lodash";
 import type { FormattedMessage } from "../types/out-message";
 import type { GeneratedDocMetadata } from "../types/domain";
+import type { EngagementReminder } from "./engagement-reminder";
 
 export function formatOnboardingMsg1(): FormattedMessage {
   return {
@@ -82,12 +83,11 @@ export function formatPlanExpired(
   };
 }
 
-export function formatWhatsAppRedirect(): FormattedMessage {
+export function formatWhatsAppRedirect(link: string): FormattedMessage {
   const text =
     "Pratique inglês todo dia, no seu ritmo. Acesse pelo link abaixo.";
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}/app`;
 
-  return { text: [text, "", url].join("\n") };
+  return { text: [text, "", link].join("\n") };
 }
 
 export function formatPaymentConfirmed(): FormattedMessage {
@@ -769,90 +769,47 @@ export function formatUpgradePrompt(): FormattedMessage {
   };
 }
 
-const NUDGE_BODY_POOL = [
-  "Não deixa o inglês esfriar.",
-  "Sem prática, o cérebro esquece rápido demais.",
-  "Você já começou, o mais difícil já passou.",
-  "Consistência é o que separa quem aprende de quem tenta.",
-  "Um pouco por dia vale mais que muito de vez em quando.",
-  "Vocabulário sem uso enferruja rápido.",
-  "Prática puxa memória, pausa apaga memória.",
-  "Seu inglês não evolui enquanto você espera.",
-  "A repetição é o que fixa o aprendizado.",
-  "Quanto mais tempo parado, mais difícil retomar.",
-  "O que você estudou só fica se for revisado.",
-  "Hábito vale mais que vontade.",
-  "Só tem duas opções: praticar ou esquecer.",
-  "O progresso depende de manter o ritmo.",
-  "Sem repetição, o que você aprendeu se perde.",
-];
-
-const NUDGE_CLOSING_POOL = [
-  "É só responder.",
-  "Quando puder, é só responder.",
-  "A pergunta continua aqui te esperando.",
-  "Pode responder quando quiser.",
-  "É só responder que seguimos pra próxima.",
-];
-
-// fonte de verdade do texto real dos templates na Meta - alterar aqui antes de atualizar na Meta
-const NUDGE_TEMPLATE_CONFIG: Record<
-  string,
-  { templateName: string; text: string }
-> = {
-  d2: {
-    templateName: "nudge_d2",
-    text: "Você não respondeu suas perguntas nos últimos 2 dias. Quando quiser retomar, é só responder.",
-  },
-  d3: {
-    templateName: "nudge_d3",
-    text: "Você não respondeu suas perguntas nos últimos 3 dias. Sua atividade continua aqui te esperando. É só responder.",
-  },
-  d7: {
-    templateName: "nudge_d7",
-    text: "Você não respondeu suas perguntas nos últimos 7 dias. Sua atividade continua aqui te esperando. É só responder.",
-  },
-  d14: {
-    templateName: "nudge_d14",
-    text: "Você não respondeu suas perguntas nos últimos 14 dias. Sua atividade continua aqui te esperando. É só responder.",
-  },
-};
-
-export function formatNudgeMessage(step: string): FormattedMessage {
-  const template = NUDGE_TEMPLATE_CONFIG[step];
-  if (template)
-    return { text: template.text, templateName: template.templateName };
-  const body =
-    NUDGE_BODY_POOL[Math.floor(Math.random() * NUDGE_BODY_POOL.length)];
-  const closing =
-    NUDGE_CLOSING_POOL[Math.floor(Math.random() * NUDGE_CLOSING_POOL.length)];
-  return { text: `${body} ${closing}`, templateName: null };
-}
-
 export function formatCanceled(): FormattedMessage {
   return { text: "Ok, cancelado." };
 }
 
-// fonte de verdade do nome/texto real do template na Meta - alterar aqui antes de atualizar na Meta
-const DAILY_REMINDER_TEMPLATE_CONFIG = {
-  templateName: "daily_reminder", // placeholder ate aprovacao do template na Meta
-  text: (count: number, link: string) =>
-    `Sua revisão de perguntas passou da data prevista.\n\nPendentes: ${count} \n\nVocê pode acessar sua prática abaixo.\n\n${link}\n\nEsse link expira em 24h.`,
+// fonte de verdade do texto real dos templates na Meta - alterar aqui antes de atualizar na Meta
+type EngagementReminderParams = {
+  eligibleCount: number;
+  daysInactive: number;
 };
 
-export function formatDailyReminderMessage(
-  count: number,
-  link: string,
+const ENGAGEMENT_REMINDER_TEXT: Record<
+  EngagementReminder,
+  (params: EngagementReminderParams) => string
+> = {
+  daily_reminder_revision: ({ eligibleCount }) =>
+    `Lembrete: você tem perguntas para revisar.\n\nPendentes: ${eligibleCount}\n\nToque abaixo para acessar sua prática.`,
+  daily_reminder_v2: () =>
+    "Lembrete: sua atividade de prática em inglês está disponível.\n\nToque abaixo para acessar.",
+  nudge_days: ({ daysInactive }) =>
+    `Sua prática de inglês está parada há ${daysInactive} dias.`,
+};
+
+const ENGAGEMENT_REMINDER_PARAMS: Record<
+  EngagementReminder,
+  (params: EngagementReminderParams) => string[]
+> = {
+  daily_reminder_revision: ({ eligibleCount }) => [String(eligibleCount)],
+  daily_reminder_v2: () => [],
+  nudge_days: ({ daysInactive }) => [String(daysInactive)],
+};
+
+export function formatEngagementReminder(
+  reminder: EngagementReminder,
+  params: EngagementReminderParams,
 ): FormattedMessage {
   return {
-    text: DAILY_REMINDER_TEMPLATE_CONFIG.text(count, link),
-    templateName: DAILY_REMINDER_TEMPLATE_CONFIG.templateName,
-    templateBodyParams: [String(count), link],
+    text: ENGAGEMENT_REMINDER_TEXT[reminder](params),
+    templateName: reminder,
+    templateBodyParams: ENGAGEMENT_REMINDER_PARAMS[reminder](params),
   };
 }
-
-export const DAILY_REMINDER_TEMPLATE_NAME =
-  DAILY_REMINDER_TEMPLATE_CONFIG.templateName;
 
 export function formatActivityReplaceCanceled(): FormattedMessage {
   return { text: "Ok, cancelado e seguindo com a atividade atual." };

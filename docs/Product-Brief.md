@@ -60,7 +60,7 @@ A interseção "prática contextual contínua, ancorada no material do aluno, de
 
 1. Usuário conta o que quer praticar, ou envia o material da aula - texto, imagem ou PDF.
 2. Sistema extrai o vocabulário do material (ou gera o conteúdo a partir do tema informado), detecta o nível e gera perguntas de prática.
-3. Durante o dia, perguntas chegam para responder no app. WhatsApp segue avisando quando há pergunta pendente.
+3. O usuário pratica no app, no próprio ritmo. Uma vez por dia, no horário que escolheu, o WhatsApp lembra que a prática está disponível (e quantas revisões estão pendentes, se houver). Quem fica parado recebe um último aviso em 7 e em 14 dias, e depois disso nada automático.
 4. Sistema avalia a resposta, dá feedback natural e registra acerto/erro.
 5. Perguntas que travaram voltam com prioridade, calculadas por repetição espaçada.
 6. Ao trocar de atividade, o usuário recebe um resumo da atividade anterior: tempo, perguntas respondidas, acertos e erros.
@@ -82,11 +82,11 @@ Todo material vira uma lista de vocabulário, com variação automática entre 6
 
 O sistema usa SM-2 adaptado para priorizar revisões. Após a primeira exposição completa, perguntas que travaram voltam primeiro. Perguntas dominadas ganham espaço crescente entre revisões, até o teto de 3 dias - ajustado ao ciclo real de troca de material do produto.
 
-Cadência e sessão intensiva aceleram a exposição sem interferir no algoritmo. O SM-2 opera sobre revisões de dias distintos, não sobre repetições do mesmo dia. Quem pratica mais rápido chega mais cedo na revisão espaçada.
+A sessão intensiva acelera a exposição sem interferir no algoritmo. O SM-2 opera sobre revisões de dias distintos, não sobre repetições do mesmo dia. Quem pratica mais rápido chega mais cedo na revisão espaçada.
 
 ### Modo sessão (praticar)
 
-Usuário pode iniciar sessão ativa - perguntas chegam em sequência, uma após a outra, sem esperar a cadência. Sessão dura 15 minutos de inatividade.
+Usuário pode iniciar sessão ativa - perguntas chegam em sequência, uma após a outra. Sessão dura 15 minutos de inatividade. Com a cadência automática de perguntas pausada, é hoje o único canal de entrega de pergunta.
 
 ### Nova atividade por tema
 
@@ -319,7 +319,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - OCR e descrição de imagem (Vision)
 - Schema atualizado com Question, QuestionFormat, llm_logs
 - Motor de prática com loop acerto/erro
-- Cadência e sessão ativa (praticar)
+- Sessão ativa (praticar). A cadência automática de perguntas existe, mas está pausada desde que a prática migrou para o app
 - Sistema de formatos granulares de vocabulário (gap_fill, recall, recall_inverted, scenario, choice, image_recognition). open_text e open_question ficaram legados desde a simplificação de material (ver checklist abaixo)
 - Detecção automática de nível do material no upload
 - Múltipla escolha (choice) com opções embaralhadas
@@ -338,7 +338,8 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Classificação de dica de erro (evalTip) expandida para 8 categorias, com contrato de formatação de texto
 - Charts visuais nos resumos: pentágono de desempenho na troca de atividade (compara com a atividade anterior) e gauge de score na conclusão da primeira rodada, renderizados por template sem custo de IA
 - Home refeita: hero sem menção a canal específico (WhatsApp deixou de ser citado na copy pública, prática é apresentada como algo que acontece no seu ritmo), demo visual por domínio (dia a dia, educação, viagem, trabalho) com roteiro fixo em shell de desktop e iPhone lado a lado substituindo o simulador antigo de botão real, seções de features, como funciona, para quem é e FAQ reescritas
-- Login automático via link do WhatsApp (Seção 11.2 do Product-Rules) passa a usar shortlink genérico e reutilizável em vez do token cru na URL, e o lembrete diário de dívida de revisão (Product-Rules Seção 12) entrega esse link como texto no corpo do template em vez de botão de CTA, evitando o navegador embutido da Meta
+- Login automático via link do WhatsApp (Seção 11.2 do Product-Rules) usando shortlink genérico e reutilizável em vez do token cru na URL
+- Lembrete diário e reengajamento unificados num único fluxo por dias desde a última prática (Product-Rules Seção 12): lembrete de 0 a 6 dias (com ou sem revisão pendente), reengajamento em 7 e 14 dias. Templates sem link, com botão de resposta rápida; o toque recebe a resposta universal do WhatsApp com o link de login automático, que abre no navegador nativo em vez do navegador embutido da Meta
 - Toast de confirmação de sucesso/erro ao salvar preferências no app (ex: lembrete diário), renderizado acima de modais abertos (Product-Rules Seção 8.4)
 - Reconhecimento por imagem (image_recognition): imagem gerada ilustra o termo e o usuário escolhe a opção, com fallback silencioso para outro formato quando o termo não é visualizável, rollout parcial habilitado por configuração
 - Persistência da frase de demonstração e da tradução do feedback por pergunta (`feedback_text`/`feedback_translation`), com toggle "Ver tradução" no player de áudio da superfície web e reaproveitamento do áudio quando a frase não muda entre respostas

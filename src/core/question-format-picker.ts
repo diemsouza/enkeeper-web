@@ -16,6 +16,8 @@ const CHOICE_FAMILY: QuestionFormat[] = [
   QuestionFormat.image_recognition,
 ];
 
+export type FormatCounts = Partial<Record<QuestionFormat, number>>;
+
 function getExcludedFormats(
   lastFormat: QuestionFormat,
   canUseImage: boolean,
@@ -27,12 +29,24 @@ function getExcludedFormats(
   return excluded;
 }
 
+// Rotacao balanceada: sorteia so entre os formatos menos usados na atividade.
+// image_recognition que cai em fallback (item nao ilustravel) nao conta, entao
+// continua com prioridade nas perguntas seguintes ate sair.
+function pickLeastUsed(
+  formats: QuestionFormat[],
+  counts: FormatCounts,
+): QuestionFormat {
+  const minCount = Math.min(...formats.map((f) => counts[f] ?? 0));
+  const leastUsed = formats.filter((f) => (counts[f] ?? 0) === minCount);
+  return leastUsed[Math.floor(Math.random() * leastUsed.length)];
+}
+
 export function pickNextFormat(
   lastFormat: QuestionFormat | null,
-  options: { canUseImage: boolean },
+  options: { canUseImage: boolean; formatCounts: FormatCounts },
 ): QuestionFormat {
   if (lastFormat === null) return QuestionFormat.gap_fill;
   const excluded = getExcludedFormats(lastFormat, options.canUseImage);
   const remaining = VOCABULARY_FORMATS.filter((f) => !excluded.includes(f));
-  return remaining[Math.floor(Math.random() * remaining.length)];
+  return pickLeastUsed(remaining, options.formatCounts);
 }

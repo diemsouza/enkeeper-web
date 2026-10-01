@@ -23,12 +23,14 @@ export type SimulatorImageItem = {
   description: string;
 };
 
+const SIMULATOR_IMAGE_VERSION = 3;
+
 export function simulatorAudioUrl(domainId: DomainId, turn: number): string {
   return `/audio/simulator/${domainId}-${turn}.ogg`;
 }
 
-export function simulatorImageUrl(domainId: DomainId, turn: number): string {
-  return `/images/simulator/${domainId}-${turn}.webp`;
+export function simulatorImageUrl(domainId: DomainId): string {
+  return `/images/simulator/${domainId}-${SIMULATOR_IMAGE_VERSION}.webp`;
 }
 
 const IMAGE_QUESTION_PROMPT = "Qual opção descreve a imagem?";
@@ -106,7 +108,7 @@ function buildQuestionMessage(spec: TurnSpec): Message {
   return {
     ...base,
     type: "image",
-    imageUrl: simulatorImageUrl(spec.domainId, spec.turn),
+    imageUrl: simulatorImageUrl(spec.domainId),
     interactive,
   };
 }

@@ -218,8 +218,6 @@ model Activity {
     chartRoundMediaId String?        @map("chart_round_media_id")
     userLevel         Level          @default(basic) @map("user_level")
     title             String         @default("") @map("title")
-    lastNudgeStep     String?        @map("last_nudge_step")
-    lastNudgeAt       DateTime?      @map("last_nudge_at")
     metadata          Json?          @map("metadata")
     createdAt         DateTime       @default(now()) @map("created_at")
     updatedAt         DateTime       @updatedAt @map("updated_at")

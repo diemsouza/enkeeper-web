@@ -134,8 +134,6 @@ export async function switchToActivity(
     pausedAt: null,
     intensiveUntil: null,
     waitingUser: false,
-    lastNudgeStep: null,
-    lastNudgeAt: null,
   });
 }
 

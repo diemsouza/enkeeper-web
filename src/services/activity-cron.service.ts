@@ -7,9 +7,6 @@ import {
   findPendingDocByUser,
   updateDoc,
 } from "../repo/docs.repo";
-// saveMessage, findLastActivityMessage: só usados pelo nudge pausado (§12).
-// TODO: review
-// import { saveMessage, findLastActivityMessage } from "../repo/messages.repo";
 import {
   findNextUnansweredQuestion,
   // findNextGeneralQuestion: só usado por selectNextQuestion, pausado com a
@@ -19,6 +16,7 @@ import {
   updateQuestion,
   createQuestions,
   findQuestionById,
+  countQuestionFormatsByActivity,
   findLatestUnansweredQuestion,
   CreateQuestionData,
 } from "../repo/questions.repo";
@@ -28,14 +26,9 @@ import {
   findUsersWithExpiredFlowIntent,
   updateUserPendingIntent,
 } from "../repo/users.repo";
-// incrementAgentMessageCount: só usado pelo nudge pausado (§12).
-// TODO: review
-// import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
 import { MessageChannel } from "../types/message-channel";
 import { sendAndSaveMessage } from "./message-sender-service";
 import {
-  // formatNudgeMessage: só usado pelo nudge pausado (§12). TODO: review
-  // formatNudgeMessage,
   formatQuestion,
   formatActivityStart,
   formatNewActivityFlowExpired,
@@ -43,11 +36,6 @@ import {
 import { canPractice } from "../core/access";
 import {
   DOC_PROCESSING_TIMEOUT_MS,
-  // NUDGE_THRESHOLDS_MS, getNextNudgeStep, getEntryNudgeStep: só usados pelo
-  // nudge pausado (§12). TODO: review
-  // NUDGE_THRESHOLDS_MS,
-  // getNextNudgeStep,
-  // getEntryNudgeStep,
   MAX_RETRY_ATTEMPTS,
   RETRY_DELAY_MS,
   DOC_PENDING_TIMEOUT_MS,
@@ -57,7 +45,7 @@ import {
 import { delay } from "../lib/utils";
 import { Activity, Question, QuestionFormat } from "../lib/prisma";
 import { splitContentIntoBlocks } from "../core/pool-size";
-import { pickNextFormat } from "../core/question-format-picker";
+import { FormatCounts, pickNextFormat } from "../core/question-format-picker";
 import { generateNextQuestion } from "../vendors/llm.vendor";
 import { SectionQuestionResult } from "../lib/llm-schemas";
 import {
@@ -183,107 +171,9 @@ export async function processActivityCron(
         continue;
       }
 
-      // Cadência normal e nudge (Product-Rules §8/§12) pausados: prática migrou
-      // para o web e o disparo/frequência do lado web ainda não existe.
-      // Bloco original comentado abaixo para reativar quando o nudge for
-      // reaproveitado por outro fluxo. TODO: review
-      //
-      // const lastMsg = await findLastActivityMessage(activity.id);
-      //
-      // if (
-      //   lastMsg?.role === "assistant" &&
-      //   (lastMsg.intent === "practice_question" ||
-      //     lastMsg.intent === "practice_nudge")
-      // ) {
-      //   const userChannel = await findUserChannelByUserId(activity.userId);
-      //   if (!userChannel) {
-      //     skipped++;
-      //     continue;
-      //   }
-      //
-      //   const referenceTime = activity.lastInteractionAt ?? activity.createdAt;
-      //   const elapsedMs = Date.now() - referenceTime.getTime();
-      //
-      //   let nextStep;
-      //   if (activity.lastNudgeStep === null) {
-      //     const entryStep = getEntryNudgeStep(elapsedMs);
-      //     if (!entryStep) {
-      //       await updateActivity(activity.id, activity.userId, {
-      //         nextMessageAt: new Date(
-      //           referenceTime.getTime() + NUDGE_THRESHOLDS_MS.h12,
-      //         ),
-      //       });
-      //       skipped++;
-      //       continue;
-      //     }
-      //     nextStep = entryStep;
-      //   } else {
-      //     const candidate = getNextNudgeStep(activity.lastNudgeStep);
-      //     if (!candidate) {
-      //       await updateActivity(activity.id, activity.userId, {
-      //         nextMessageAt: null,
-      //       });
-      //       skipped++;
-      //       continue;
-      //     }
-      //     if (elapsedMs < NUDGE_THRESHOLDS_MS[candidate]) {
-      //       await updateActivity(activity.id, activity.userId, {
-      //         nextMessageAt: new Date(
-      //           referenceTime.getTime() + NUDGE_THRESHOLDS_MS[candidate],
-      //         ),
-      //       });
-      //       skipped++;
-      //       continue;
-      //     }
-      //     nextStep = candidate;
-      //   }
-      //
-      //   const today = startOfDay(new Date());
-      //   const nudge = formatNudgeMessage(nextStep);
-      //   const nextAfterStep = getNextNudgeStep(nextStep);
-      //
-      //   await updateActivity(activity.id, activity.userId, {
-      //     lastNudgeStep: nextStep,
-      //     lastNudgeAt: new Date(),
-      //     waitingUser: true,
-      //     nextMessageAt: nextAfterStep
-      //       ? new Date(
-      //           referenceTime.getTime() + NUDGE_THRESHOLDS_MS[nextAfterStep],
-      //         )
-      //       : null,
-      //   });
-      //
-      //   let nudgeExternalId: string | null = null;
-      //   try {
-      //     const result = await channel.sendMessage(
-      //       userChannel.channelUserId,
-      //       nudge,
-      //     );
-      //     nudgeExternalId = result.externalId;
-      //   } catch (err) {
-      //     console.error(
-      //       `[processActivityCron] nudge send error (${nextStep}):`,
-      //       err,
-      //     );
-      //     errors++;
-      //     continue;
-      //   }
-      //
-      //   await saveMessage({
-      //     userId: activity.userId,
-      //     userChannelId: userChannel.id,
-      //     activityId: activity.id,
-      //     role: "assistant",
-      //     content: nudge.text,
-      //     templateName: nudge.templateName,
-      //     intent: "practice_nudge",
-      //     externalId: nudgeExternalId ?? undefined,
-      //   });
-      //   await incrementAgentMessageCount(activity.userId, today);
-      //
-      //   processed++;
-      //   continue;
-      // }
+      // Cadência normal (Product-Rules §8) pausada: prática migrou para o web e
+      // o disparo/frequência do lado web ainda não existe. Bloco original
+      // comentado abaixo para reativar. TODO: review
       //
       // if (activity.waitingUser) {
       //   skipped++;
@@ -593,10 +483,11 @@ async function buildImageRecognitionQuestion(
 // upload) cai em outro formato para o mesmo item, sem aviso ao usuario.
 async function buildQuestionData(
   lastFormat: QuestionFormat | null,
+  formatCounts: FormatCounts,
   baseParams: QuestionGenBaseParams,
 ): Promise<CreateQuestionData | null> {
   const canUseImage = Math.random() < IMAGE_QUESTION_ROLLOUT_FRACTION;
-  let format = pickNextFormat(lastFormat, { canUseImage });
+  let format = pickNextFormat(lastFormat, { canUseImage, formatCounts });
 
   if (format === QuestionFormat.image_recognition) {
     const outcome = await buildImageRecognitionQuestion(baseParams);
@@ -604,7 +495,7 @@ async function buildQuestionData(
     console.warn(
       `[buildQuestionData] image_recognition fallback: ${outcome.reason}`,
     );
-    format = pickNextFormat(lastFormat, { canUseImage: false });
+    format = pickNextFormat(lastFormat, { canUseImage: false, formatCounts });
   }
 
   const validated = await generateValidatedQuestion(format, baseParams);
@@ -634,8 +525,12 @@ export async function generateQuestionIfPoolNotFull(
     lastFormat = lastQuestion?.questionFormat ?? null;
   }
 
+  const formatCounts = await countQuestionFormatsByActivity(
+    activity.id,
+    activity.userId,
+  );
   const blocks = splitContentIntoBlocks(doc.content);
-  const questionData = await buildQuestionData(lastFormat, {
+  const questionData = await buildQuestionData(lastFormat, formatCounts, {
     sectionType: "vocabulary",
     sectionTitle: doc.title ?? "",
     sectionContent: blocks[activity.questionCount % blocks.length],

@@ -125,7 +125,7 @@ Formatos validos (`QuestionFormat` enum): `gap_fill`, `recall`, `recall_inverted
 
 Cada formato tem um arquivo de exemplo em `prompts/examples/<format>.md` com blocos por nivel (`## BASIC`, `## INTERMEDIATE`, `## ADVANCED`) e secao (`### question`, `### feedback`).
 
-Selecao de formato ativa hoje: `pickNextFormat()` em `src/core/question-format-picker.ts`, que rotaciona os 6 formatos de vocabulario (`gap_fill`, `recall`, `recall_inverted`, `scenario`, `choice`, `image_recognition`). `image_recognition` so entra quando o sorteio de `IMAGE_QUESTION_ROLLOUT_FRACTION` permite e nunca sai logo antes ou logo depois de `choice`. `open_text`/`open_question` existem no enum mas nao tem call site ativo (eram usados por `text`/`exercise`, que nao existem mais como tipo de conteudo, ver Product-Rules.md Secao 3).
+Selecao de formato ativa hoje: `pickNextFormat()` em `src/core/question-format-picker.ts`, que rotaciona os 6 formatos de vocabulario (`gap_fill`, `recall`, `recall_inverted`, `scenario`, `choice`, `image_recognition`) de forma balanceada: sorteia so entre os formatos permitidos menos usados na atividade (`countQuestionFormatsByActivity`). `image_recognition` que cai em fallback nao conta, entao ganha prioridade nas perguntas seguintes. `image_recognition` so entra quando o sorteio de `IMAGE_QUESTION_ROLLOUT_FRACTION` permite e nunca sai logo antes ou logo depois de `choice`. `open_text`/`open_question` existem no enum mas nao tem call site ativo (eram usados por `text`/`exercise`, que nao existem mais como tipo de conteudo, ver Product-Rules.md Secao 3).
 
 Funcoes em `src/core/format-loader.ts`:
 - `getQuestionExamples(formats, level)` -- string formatada com exemplos de pergunta por formato

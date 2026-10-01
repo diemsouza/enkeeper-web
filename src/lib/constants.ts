@@ -55,45 +55,6 @@ export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 export const ONBOARDING_MESSAGE_INTERVAL_SEC = 2;
 export const DEFAULT_MESSAGE_INTERVAL_SEC = 3;
 export const AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC = 8;
-export const NUDGE_STEPS = [
-  // "h4",
-  "h12",
-  "h23",
-  "d2",
-  "d3",
-  "d7",
-  "d14",
-] as const;
-export type NudgeStep = (typeof NUDGE_STEPS)[number];
-
-export const NUDGE_THRESHOLDS_MS: Record<NudgeStep, number> = {
-  // h4: 4 * 60 * 60 * 1000, // 4 hours porque após 1h usuário recebe nova pergunta, isso vai dar 3h depois da ultima msg (esperado)
-  h12: 12 * 60 * 60 * 1000,
-  h23: 23 * 60 * 60 * 1000,
-  d2: 2 * 24 * 60 * 60 * 1000,
-  d3: 3 * 24 * 60 * 60 * 1000,
-  d7: 7 * 24 * 60 * 60 * 1000,
-  d14: 14 * 24 * 60 * 60 * 1000,
-};
-
-export function getNextNudgeStep(current: string | null): NudgeStep | null {
-  if (!current) return "h12";
-  const idx = NUDGE_STEPS.indexOf(current as NudgeStep);
-  return idx >= 0 && idx < NUDGE_STEPS.length - 1 ? NUDGE_STEPS[idx + 1] : null;
-}
-
-export function getEntryNudgeStep(elapsedMs: number): NudgeStep | null {
-  let entry: NudgeStep | null = null;
-  for (const step of NUDGE_STEPS) {
-    if (elapsedMs >= NUDGE_THRESHOLDS_MS[step]) {
-      entry = step;
-    } else {
-      break;
-    }
-  }
-  return entry;
-}
-
 export const ANSWER_EMOJI = {
   right: "✅",
   partial: "⚠️",

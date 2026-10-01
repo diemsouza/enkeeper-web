@@ -1,18 +1,22 @@
-import { endOfDay, startOfDay } from "date-fns";
 import {
   DailyReminderCandidateUser,
   findUsersForDailyReminder,
 } from "../repo/users.repo";
 import { countSm2EligibleQuestionsByUser } from "../repo/questions.repo";
-import { createNotification, markNotificationSent } from "../repo/notifications.repo";
-import { buildWaLoginUrl } from "./wa-login-link-service";
 import {
-  formatDailyReminderMessage,
-  DAILY_REMINDER_TEMPLATE_NAME,
-} from "../core/formatters";
+  createNotification,
+  markNotificationSent,
+} from "../repo/notifications.repo";
+import { formatEngagementReminder } from "../core/formatters";
+import {
+  daysSince,
+  EngagementReminder,
+  ENGAGEMENT_REMINDERS,
+  isDailyReminderWindow,
+  pickEngagementReminder,
+} from "../core/engagement-reminder";
 import { sendWhatsAppTemplate } from "../vendors/whatsapp.vendor";
 
-const DAILY_REMINDER_KIND = "daily_reminder";
 const DAILY_REMINDER_BATCH_LIMIT = 500;
 
 type DailyReminderResult = {
@@ -22,44 +26,75 @@ type DailyReminderResult = {
   errors: number;
 };
 
+async function countEligibleIfNeeded(
+  user: DailyReminderCandidateUser,
+  daysInactive: number,
+): Promise<number> {
+  if (!user.dailyReminderEnabled || !isDailyReminderWindow(daysInactive)) {
+    return 0;
+  }
+  return countSm2EligibleQuestionsByUser(user.id);
+}
+
 async function trySendReminder(
   user: DailyReminderCandidateUser,
   now: Date,
 ): Promise<"sent" | "skipped"> {
   const userChannel = user.channels[0];
-  if (!userChannel?.channelUserPhone) return "skipped";
+  const activity = user.activities[0];
+  if (!userChannel?.channelUserPhone || !activity) return "skipped";
 
-  const eligibleCount = await countSm2EligibleQuestionsByUser(user.id);
-  if (eligibleCount === 0) return "skipped";
+  const daysInactive = daysSince(
+    activity.lastInteractionAt ?? activity.createdAt,
+    now,
+  );
+  const eligibleCount = await countEligibleIfNeeded(user, daysInactive);
+  const reminder = pickEngagementReminder({
+    daysInactive,
+    isReminderEnabled: user.dailyReminderEnabled,
+    eligibleCount,
+  });
+  if (!reminder) return "skipped";
 
-  const link = await buildWaLoginUrl(userChannel.channelUserPhone, "/login");
-  const message = formatDailyReminderMessage(eligibleCount, link);
-
-  const externalId = await sendWhatsAppTemplate(
+  await sendReminder(
+    user.id,
     userChannel.channelUserPhone,
-    DAILY_REMINDER_TEMPLATE_NAME,
+    reminder,
+    { eligibleCount, daysInactive },
+    now,
+  );
+  return "sent";
+}
+
+async function sendReminder(
+  userId: string,
+  phone: string,
+  reminder: EngagementReminder,
+  params: { eligibleCount: number; daysInactive: number },
+  now: Date,
+): Promise<void> {
+  const message = formatEngagementReminder(reminder, params);
+  const externalId = await sendWhatsAppTemplate(
+    phone,
+    reminder,
     message.templateBodyParams,
   );
 
   const notification = await createNotification({
-    userId: user.id,
+    userId,
     targetChannel: "whatsapp",
-    targetId: userChannel.channelUserPhone,
-    kind: DAILY_REMINDER_KIND,
+    targetId: phone,
+    kind: reminder,
     message: message.text,
-    templateId: DAILY_REMINDER_TEMPLATE_NAME,
+    templateId: reminder,
     metadata: { templateBodyParams: message.templateBodyParams },
     nextAt: now,
   });
   await markNotificationSent(notification.id, externalId);
-
-  return "sent";
 }
 
 export async function decideDailyReminders(): Promise<DailyReminderResult> {
   const now = new Date();
-  const todayStart = startOfDay(now);
-  const todayEnd = endOfDay(now);
 
   let processed = 0;
   let sent = 0;
@@ -69,8 +104,7 @@ export async function decideDailyReminders(): Promise<DailyReminderResult> {
 
   for (;;) {
     const { users, lastRawId, rawBatchSize } = await findUsersForDailyReminder(
-      todayStart,
-      todayEnd,
+      ENGAGEMENT_REMINDERS,
       cursorId,
       DAILY_REMINDER_BATCH_LIMIT,
     );

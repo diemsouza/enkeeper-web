@@ -152,6 +152,22 @@ export async function findPendingQuestion(
   });
 }
 
+export async function countQuestionFormatsByActivity(
+  activityId: string,
+  userId: string,
+): Promise<Partial<Record<QuestionFormat, number>>> {
+  const groups = await prisma.question.groupBy({
+    by: ["questionFormat"],
+    where: { activityId, userId, deletedAt: null },
+    _count: { _all: true },
+  });
+  const counts: Partial<Record<QuestionFormat, number>> = {};
+  for (const group of groups) {
+    if (group.questionFormat) counts[group.questionFormat] = group._count._all;
+  }
+  return counts;
+}
+
 export async function findQuestionById(id: string): Promise<Question | null> {
   return prisma.question.findFirst({ where: { id, deletedAt: null } });
 }

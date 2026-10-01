@@ -25,7 +25,7 @@ Uma activity pode nascer de duas origens: material enviado pelo usuário (upload
 
 Cada mudança de status é registrada com a data em que ocorreu, permitindo saber precisamente há quanto tempo uma activity está em determinado status, sem depender de qualquer campo técnico genérico de atualização, que pode mudar por motivos não relacionados ao status (ex: uma edição pontual de título não deve ser confundida com uma transição de status).
 
-Activity nunca encerra por inatividade. Só muda de status por ação do usuário, envio de novo material, ou conclusão do fluxo de nova atividade. O fluxo de nudge (seção 12) cuida do reengajamento enquanto a activity permanece `active`.
+Activity nunca encerra por inatividade. Só muda de status por ação do usuário, envio de novo material, ou conclusão do fluxo de nova atividade. O lembrete diário e o reengajamento (Seção 12) cuidam de trazer o usuário de volta enquanto a activity permanece `active`.
 
 ### Recebimento de material (buffer antes da atividade)
 
@@ -317,11 +317,9 @@ Perguntas respondidas várias vezes no mesmo dia pelo fallback não recalculam o
 
 ## 8. Cadência e sessão intensiva
 
-Sem janela de horário fixa. Mensagens enviadas 24h, respeitando o ritmo do usuário.
+**Cadência automática pausada.** O envio automático de uma pergunta a cada intervalo fixo, pensado para quando a prática acontecia dentro do chat do WhatsApp, está pausado desde que a prática migrou para a superfície web. Não foi removido, pode voltar quando existir disparo equivalente do lado web. Enquanto isso, a sessão intensiva é o único canal ativo de entrega de pergunta, e o retorno do usuário é estimulado pelo lembrete diário e pelo reengajamento da Seção 12.
 
-O sistema para de enviar perguntas quando o usuário não responde e aguarda retomada via nudge.
-
-**Sessão intensiva** (`praticar`): perguntas chegam em sequência imediata, uma após a outra, sem esperar a cadência. Não interfere no SM-2.
+**Sessão intensiva** (`praticar`): perguntas chegam em sequência imediata, uma após a outra. Não interfere no SM-2.
 
 ### 8.1 Supressão de mensagens concorrentes
 
@@ -331,17 +329,15 @@ Objetivo: evitar avaliação duplicada quando o usuário corrige uma resposta di
 
 Janela de segurança: intervalo curto, medido em segundos, que também serve como proteção contra falha silenciosa. Se o processamento de uma mensagem travar ou não retornar, o bloqueio expira sozinho após esse intervalo, liberando o usuário para nova tentativa sem necessidade de intervenção manual.
 
-O mesmo princípio de supressão se aplica à cadência e ao nudge enquanto o usuário está dentro do fluxo de nova atividade (Seção 15): nenhuma pergunta de cadência ou mensagem de nudge é enviada enquanto o usuário está respondendo os passos do fluxo, para não competir pela atenção com uma pergunta que ainda não existe.
-
 ### 8.2 Limite diário de prática
 
-Controle de volume por custo, separado da cadência de envio, que já é naturalmente limitada pelo próprio ritmo de disparo.
+Controle de volume por custo.
 
-**Limite total:** 60 práticas avaliadas (`right`, `wrong`, `partial`) por usuário por dia, cadência e intensivo somados.
+**Limite total:** 60 práticas avaliadas (`right`, `wrong`, `partial`) por usuário por dia.
 
-**Reserva de cadência:** 24 práticas do total são reservadas. O intensivo não pode consumir mais que `60 - 24 = 36` práticas por dia. Cadência normal não tem teto próprio, é protegida por essa reserva dentro do total.
+**Reserva de cadência sem efeito hoje:** existe uma divisão histórica da cota, com 24 práticas reservadas para a cadência e teto de 36 para o intensivo dentro do total de 60. Com a cadência pausada (Seção 8), o intensivo é o único canal de entrega, e essa divisão não tem efeito prático. Fica registrada para revisão caso a cadência volte.
 
-**Verificação:** antes de avaliar qualquer resposta, o sistema checa o contador do dia. Se o total já atingiu 60, bloqueia qualquer prática, cadência ou intensivo. Se for prática intensiva e o subcontador de intensivo já atingiu 36, bloqueia só o canal intensivo, cadência segue liberada até o teto total.
+**Verificação:** antes de avaliar qualquer resposta, o sistema checa o contador do dia. Se o total já atingiu 60, bloqueia qualquer prática.
 
 **Reset:** automático, pela mesma lógica de chave por usuário e data já usada nos demais contadores diários (atividades, imagens, áudios). Sem cron dedicado.
 
@@ -355,10 +351,7 @@ Os 15 minutos de inatividade são medidos a partir do envio de cada pergunta pel
 
 **Mensagens:**
 
-Limite total atingido:
-> Você usou toda sua prática disponível de hoje, mas amanhã tem mais.
-
-Limite do intensivo atingido, cadência ainda disponível:
+Limite atingido:
 > Você usou toda sua prática disponível de hoje, mas amanhã tem mais.
 
 **Números sujeitos a revisão:** calibrados por estimativa de custo por resposta avaliada, sem dado real de produção ainda. Revisar após medição real de custo por resposta, e novamente quando a geração de perguntas migrar de lote para sob demanda, o que muda a estrutura de custo por interação.
@@ -442,6 +435,8 @@ O comando `nova atividade` não é mencionado nesta sequência porque o fluxo j�
 
 Usuário que envia texto solto sem nenhuma atividade criada (texto nunca é interpretado como material, ver Seção 14), ou aciona `ajuda` nessa mesma condição, recebe a mesma orientação usada no onboarding, adaptada ao contexto de quem já iniciou e ainda não tem atividade. Fonte de conteúdo única com o item de onboarding correspondente, sem redação divergente entre as situações.
 
+Isso vale para a superfície web, onde a prática acontece. No WhatsApp, qualquer mensagem recebida, de usuário com ou sem atividade, recebe a resposta universal com o link de acesso ao app (ver Seção 12, "Resposta universal no WhatsApp").
+
 ---
 
 ## 11. Planos e acesso
@@ -485,86 +480,67 @@ indicação), não é exclusivo do login por WhatsApp.
 
 ---
 
-## 12. Nudge de reengajamento
+## 12. Lembrete diário e reengajamento
 
-Fluxo automático de mensagens quando o usuário para de responder. Como a prática acontece na superfície web (`/app`), o objetivo do nudge é levar o usuário de volta a ela para responder a pergunta pendente — sem soar como notificação genérica de app pedindo atenção, cada mensagem tem uma razão ligada ao aprendizado.
+Um único fluxo automático de notificação pelo WhatsApp leva o usuário de volta à prática na superfície web (`/app`). Lembrete diário e reengajamento por inatividade não são fluxos separados: a decisão sai só de quantos dias se passaram desde a última resposta de prática do usuário, calculada no momento do disparo, sem estado próprio guardado entre um dia e outro.
 
-Este fluxo se aplica a usuário com ao menos uma Activity ativa, é reengajamento em torno de pergunta pendente. Usuário que nunca teve atividade criada não entra neste fluxo, esse caso é tratado pela Seção 10.1. O fluxo também é suprimido enquanto o usuário está dentro do fluxo de nova atividade (Seção 15, ver também Seção 8.1).
+Aplica-se só a usuário com ao menos uma Activity ativa. Usuário sem atividade não recebe nada deste fluxo, esse caso é tratado pela Seção 10.1.
 
-Nenhuma mensagem deve soar como notificação de app pedindo atenção. Cada uma tem uma razão ligada ao aprendizado.
+### Disparo
 
-### Fluxo de steps
+Uma vez por dia, no horário configurado pelo usuário nas preferências (padrão: horário do cadastro). No máximo uma mensagem por usuário por dia.
 
-| Step | Tempo desde última resposta | Tipo |
-| ---- | ---------------------------- | ---- |
-| h4 | 4 horas | Nudge livre (janela 24h) | (removido temporariamente)
-| h12 | 12 horas | Nudge livre (janela 24h) |
-| h23 | 23 horas | Nudge livre (janela 24h) |
-| d2 | 2 dias | Template Meta - Utility |
-| d3 | 3 dias | Template Meta - Utility |
-| d7 | 7 dias | Template Meta - Utility |
-| d14 | 14 dias | Template Meta - Utility |
+| Dias desde a última resposta de prática | Ação |
+| --- | --- |
+| 0 a 6 | Lembrete diário, só se o usuário tiver o lembrete ativado nas preferências. Desativado, nada. |
+| 7 | Reengajamento de 7 dias, sempre, independente do lembrete estar ativado. |
+| 8 a 13 | Nada. |
+| 14 | Reengajamento de 14 dias, sempre, independente do lembrete estar ativado. Última mensagem automática. |
+| 15 ou mais | Nada, até o usuário responder uma pergunta de prática. |
 
-**Racional do intervalo h4:** cadência normal já dispara uma pergunta em +1h após a última resposta do usuário. Se o primeiro nudge livre disparasse em +3h da última resposta, o intervalo real entre esse primeiro toque (pergunta de cadência) e o nudge seria de só 2h, dois estímulos próximos sem respiro. Ajustar o step para +4h da última resposta recompõe esse espaçamento para 3h reais entre os dois toques.
+**Reset:** qualquer resposta de prática (`right`, `wrong`, `partial`) zera a contagem e reabre o ciclo de lembrete diário, se estiver ativado. Comandos e mensagens soltas não contam. Atividade que ainda não teve nenhuma resposta conta a partir da sua criação.
 
-Após d14 sem resposta: usuário entra na lista de abordagem manual. Sem mensagem adicional automática.
+Dentro da janela de 0 a 6 dias, o lembrete diário sempre é enviado quando ativado, variando só o conteúdo: com pelo menos uma pergunta elegível para revisão (SM-2, Seção 7) numa Activity ativa, o lembrete informa quantas estão pendentes; sem revisão elegível, o lembrete só avisa que a prática está disponível.
 
-**Reset:** qualquer resposta a uma pergunta de prática zera o fluxo completamente, `lastNudgeStep` e `lastNudgeAt` voltam a `null`.
+### Mensagens
 
-**Step inicial baseado no tempo real:** quando `lastNudgeStep` é `null`, o cron não assume h4 automaticamente. Calcula quanto tempo passou desde `lastInteractionAt` e entra diretamente no step correspondente, pulando os já vencidos. Isso evita que um usuário que sumiu há 5 dias receba o nudge de 4h.
+Todas são templates Meta da categoria Utility, com um único botão de resposta rápida (Quick Reply). Nenhuma carrega link, nem no corpo nem no botão: link dentro de template, seja em botão de CTA ou como texto no corpo, abre no navegador embutido da Meta, que quebra o login automático (Seção 11.2). O link chega só na resposta ao toque no botão, que é mensagem de sessão e abre no navegador nativo do dispositivo.
 
-### Lista de abordagem manual
+**Lembrete com revisão pendente:**
+> Lembrete: você tem perguntas para revisar.
+>
+> Pendentes: {quantidade}
+>
+> Toque abaixo para acessar sua prática.
 
-Usuários que chegaram ao d14 e ficaram mais de 21 dias sem interação são candidatos à abordagem pelo fundador. A saída da lista é automática quando o usuário responde qualquer pergunta.
+Botão: "Quero acessar"
 
-### Mensagens, nudges livres (h4, h12, h23)
+**Lembrete sem revisão pendente:**
+> Lembrete: sua atividade de prática em inglês está disponível.
+>
+> Toque abaixo para acessar.
 
-Compostas por sorteio: 1 corpo + 1 encerramento, escolhidos aleatoriamente. 25 combinações possíveis. Nunca terminam com pergunta, a resposta do usuário é sempre a resposta da pergunta pendente, não uma interação com o nudge.
+Botão: "Quero acessar"
 
-**Pool de corpo:**
-- "Não deixa o inglês esfriar."
-- "O cérebro esquece rápido sem prática."
-- "Você já começou, o mais difícil já passou."
-- "Consistência é o que separa quem aprende de quem tenta."
-- "Um pouquinho todo dia vale mais que muito de vez em quando."
+**Reengajamento (7 e 14 dias):**
+> Sua prática de inglês está parada há {dias} dias.
 
-**Pool de encerramento:**
-- "É só responder."
-- "Quando puder, é só responder."
-- "A pergunta continua aqui te esperando."
-- "Pode responder quando quiser."
-- "É só responder quando estiver pronto."
+Botão: "Quero retomar"
 
-### Mensagens, templates fixos (d2 a d14)
+O toque em qualquer um dos botões não tem tratamento próprio por origem: chega como uma mensagem comum e recebe a resposta universal abaixo.
 
-**d2:**
-> Já faz 2 dias sem praticar. O vocabulário novo esquece rápido sem repetição. É só responder pra retomar.
+### Resposta universal no WhatsApp
 
-**d3:**
-> 3 dias sem praticar. O que você aprendeu começa a escapar. Retoma quando puder, é só responder.
+O WhatsApp não é superfície de prática nem de comandos. Qualquer mensagem recebida, de qualquer tipo, incluindo o toque nos botões acima, um "Oi" solto ou um comando, recebe a mesma resposta:
 
-**d7:**
-> Uma semana sem praticar. Boa parte do que você treinou já começou a sumir. Ainda dá pra recuperar, é só retomar.
+> Pratique inglês todo dia, no seu ritmo. Acesse por aqui:
+>
+> {link}
 
-**d14:**
-> Duas semanas. Ainda dá pra voltar do zero ou continuar de onde parou. É só responder ou enviar um material novo.
+O texto é o mesmo em todos os casos, só o link muda:
 
-### Lembrete diário de dívida de revisão
-
-Fluxo adicional, separado do fluxo de steps acima: enquanto o usuário tiver pelo
-menos uma pergunta elegível pra revisão (SM-2, Seção 7) numa Activity ativa, um
-lembrete é reavaliado a cada dia sem prática, nos intervalos 1, 2, 3, 7 e 14 dias
-desde a última interação, até 5 envios. Sem pergunta elegível pendente, nenhum
-lembrete é enviado. Se o usuário já praticou no dia em que o lembrete seria
-disparado, o envio é cancelado silenciosamente.
-
-Enviado via template Meta (categoria Utility, nome `daily_reminder`), com a
-contagem de perguntas pendentes e um link curto de login (Seção 11.2) no corpo da
-mensagem, como texto, não como botão de CTA — botão de CTA em template abre no
-navegador embutido da Meta (in-app browser), que quebra o fluxo de login
-automático; texto simples no corpo abre no navegador nativo do dispositivo.
-
----
+- **Número de um usuário com conta:** link de login automático (Seção 11.2), que leva direto ao app sem passar pelo formulário de telefone e código. O mesmo link é reaproveitado enquanto estiver válido, em vez de gerar um novo a cada mensagem do mesmo usuário dentro da janela de 24 horas.
+- **Número sem conta, ou que não pôde ser identificado:** link fixo do app, que cai no fluxo normal de login por telefone e código, ou entra direto se o navegador já tiver sessão válida.
 
 ## 13. Relatório semanal
 
@@ -606,7 +582,7 @@ Caminho alternativo ao upload de material para criar uma atividade. O usuário i
 
 ### Disparo
 
-O fluxo inicia de duas formas: automaticamente ao final da sequência de onboarding (Seção 10), ou a qualquer momento pelo comando `nova atividade`.
+O fluxo inicia de duas formas, sempre pelo app: automaticamente ao final da sequência de onboarding (Seção 10), ou a qualquer momento pelo comando `nova atividade`. O fluxo não é iniciável pelo WhatsApp, que só responde com o link de acesso ao app (Seção 12).
 
 ### Sequência de captura
 
@@ -635,9 +611,9 @@ Novo item só entra no catálogo por decisão deliberada, mesmo princípio de mu
 
 ### Estado do fluxo
 
-Controlado por um campo de intenção pendente por usuário, com um valor por passo em andamento. Enquanto o fluxo está ativo, qualquer texto recebido do usuário é tratado como resposta ao passo atual, com prioridade sobre qualquer resposta de prática pendente. Cadência e nudge são suprimidos nesse período (ver Seção 8.1).
+Controlado por um campo de intenção pendente por usuário, com um valor por passo em andamento. Enquanto o fluxo está ativo, qualquer texto recebido do usuário é tratado como resposta ao passo atual, com prioridade sobre qualquer resposta de prática pendente.
 
-**Timeout:** fora do onboarding, o fluxo expira por inatividade após um tempo configurável. Ao expirar, o fluxo é cancelado silenciosamente, o usuário recebe aviso de que pode recomeçar quando quiser, e a cadência da activity em andamento retoma normal. Dentro do onboarding, o fluxo não expira, aguarda resposta indefinidamente, já que não há activity nem cadência competindo pela atenção do usuário nesse momento.
+**Timeout:** fora do onboarding, o fluxo expira por inatividade após um tempo configurável. Ao expirar, o fluxo é cancelado silenciosamente, o usuário recebe aviso de que pode recomeçar quando quiser. Dentro do onboarding, o fluxo não expira, aguarda resposta indefinidamente, já que não há activity competindo pela atenção do usuário nesse momento.
 
 **Cancelamento:** o comando `cancelar` sai do fluxo em qualquer passo, sem criar nada. Não existe retorno a um passo anterior, cancelar sempre descarta o fluxo inteiro.
 
@@ -668,7 +644,7 @@ Comportamento pós-cancelamento depende do contexto. Sem Activity ativa (onboard
 
 - Produto focado em inglês. A arquitetura suporta expansão para outros idiomas e matérias, mas expansão só após validação e churn controlado.
 - Janela de 24h do WhatsApp é regra de ouro. Mais de 85% das mensagens devem ser enviadas dentro dela.
-- A prática acontece na superfície web própria (`/app`), não dentro do chat do WhatsApp (Seção 19). WhatsApp segue como canal de aquisição, autenticação (código e login automático, Seções 10 e 11.2) e notificação — onboarding, nudge (Seção 12) e confirmação de pagamento (Seção 11.1) — levando o usuário de volta ao app, não como superfície de prática em si.
+- A prática acontece na superfície web própria (`/app`), não dentro do chat do WhatsApp (Seção 19). WhatsApp segue como canal de aquisição, autenticação (código e login automático, Seções 10 e 11.2) e notificação — onboarding, lembrete diário e reengajamento (Seção 12) e confirmação de pagamento (Seção 11.1) — levando o usuário de volta ao app, não como superfície de prática em si.
 - Nenhuma mensagem do sistema deve terminar com pergunta quando a resposta esperada é a de uma pergunta de prática pendente.
 - Copy pode mencionar "IA" como qualificador funcional (o que o produto faz), nunca como identidade declarada em primeira pessoa ("eu sou uma IA", "sou um bot"). "Bot" e "agente" seguem fora de uso em qualquer copy. Personificação em primeira pessoa continua proibida independente de menção à IA, essa é regra separada e já coberta acima. Uso hoje: mensagem 2 do onboarding, bio Instagram, bio WhatsApp Business, texto do hero e SEO da home.
 - Posicionamento de complemento, não compete com professor, trabalha com ele. Isso vale igualmente para o fluxo de nova atividade (Seção 15): nenhuma copy sugere módulo, nível desbloqueado ou etapa concluída, mesmo quando o conteúdo é gerado pelo sistema em vez de trazido pelo usuário.
