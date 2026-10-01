@@ -74,6 +74,8 @@ model User {
     llmLogs       LlmLog[]
     docItems      DocItem[]
     notifications Notification[]
+    questions     Question[]
+    medias        Media[]
 
     @@index([pendingIntent, pendingIntentAt])
     @@index([dailyReminderEnabled, dailyReminderTime])

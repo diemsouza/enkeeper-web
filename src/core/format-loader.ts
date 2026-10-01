@@ -13,6 +13,7 @@ const VOCABULARY_FORMATS: QuestionFormat[] = [
   QuestionFormat.recall_inverted,
   QuestionFormat.scenario,
   QuestionFormat.choice,
+  QuestionFormat.image_recognition,
 ];
 
 const FORMAT_FILES: Record<QuestionFormat, string> = {
@@ -23,6 +24,7 @@ const FORMAT_FILES: Record<QuestionFormat, string> = {
   [QuestionFormat.choice]: read("choice.md"),
   [QuestionFormat.open_text]: read("open_text.md"),
   [QuestionFormat.open_question]: read("open_question.md"),
+  [QuestionFormat.image_recognition]: read("image_recognition.md"),
 };
 
 function read(file: string): string {
@@ -275,6 +277,11 @@ export function validateGeneratedQuestion(
   return undefined;
 }
 
+const FORMATS_WITH_OPTIONS: QuestionFormat[] = [
+  QuestionFormat.choice,
+  QuestionFormat.image_recognition,
+];
+
 export function sanitizeQuestionData(
   data: SectionQuestionResult,
 ): CreateQuestionData {
@@ -288,10 +295,11 @@ export function sanitizeQuestionData(
     question: sanitizeText(data.question),
     answerKeys: data.answerKeys.map((k) => sanitizeText(k)),
     questionFormat: data.questionFormat as QuestionFormat,
-    questionOptions:
-      data.questionFormat === QuestionFormat.choice
-        ? shuffle(data.questionOptions.map((o) => sanitizeText(o)))
-        : [],
+    questionOptions: FORMATS_WITH_OPTIONS.includes(
+      data.questionFormat as QuestionFormat,
+    )
+      ? shuffle(data.questionOptions.map((o) => sanitizeText(o)))
+      : [],
     term: data.term ? sanitizeText(data.term) : undefined,
     termHint: termHing,
     meaning: data.meaning ? sanitizeText(data.meaning) : undefined,

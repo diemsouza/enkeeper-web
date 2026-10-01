@@ -140,8 +140,6 @@ export async function processDoc(docId: string, userId: string, channel: Message
             userId,
             userChannelId: userChannel.id,
             message: summary,
-            mediaType: summary.imagePath ? "image" : undefined,
-            mediaId: summary.imagePath,
           });
         }
         await sendFirstQuestionNow(activity, userChannel, date, channel);

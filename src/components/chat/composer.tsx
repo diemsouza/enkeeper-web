@@ -15,6 +15,9 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { type Command, searchAutoCompleteCommands } from "@/src/lib/commands";
 import { capitalizeFirst } from "@/src/lib/utils";
 
+const COMPOSER_BACKDROP_MASK =
+  "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.85) 100%)";
+
 export type ComposerHandle = {
   focus: () => void;
 };
@@ -124,18 +127,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
 
     return (
       <div className="relative">
-        {/* Fundo desfocado do footer, atrás de tudo. Nasce transparente no
-            topo (se mistura com as mensagens passando por trás) e vira
-            blur+tint sólido conforme desce, cobrindo a faixa da bolha e a
-            safe-area inteira. Sem isso o conteúdo aparecia vazando por trás
-            do respiro de baixo. */}
+        {/* Fundo desfocado do footer, atrás de tudo. Rampa contínua: nasce
+            transparente no topo (se mistura com as mensagens passando por
+            trás) e escurece até o fim, terminando ainda levemente
+            transparente, sem faixa sólida no meio. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-background/60 backdrop-blur-sm"
+          className="pointer-events-none absolute inset-0 -z-10 bg-background backdrop-blur-sm"
           style={{
-            maskImage: "linear-gradient(to bottom, transparent, black 40%)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, transparent, black 40%)",
+            maskImage: COMPOSER_BACKDROP_MASK,
+            WebkitMaskImage: COMPOSER_BACKDROP_MASK,
           }}
         />
         <div

@@ -20,7 +20,7 @@ right_answer: precisa sempre do mesmo termo usado na frase do feedback_text (mes
 
 Com mais de uma answerKey válida, use a mais próxima do que o usuário escreveu (menor distância de edição), mesmo em resposta errada ou typo. Só cai na primeira answerKey se a resposta não se aproximar claramente de nenhuma. 
 
-No recall invertido, a frase do feedback_text usa o termo em EN como exemplo de uso, mas right_answer é o significado em PT esperado como resposta, o primeiro item de answerKeys. No choice, é sempre a palavra ou expressão da opção correta, nunca a letra do rótulo.
+No recall invertido, a frase do feedback_text usa o termo em EN como exemplo de uso, mas right_answer é o significado em PT esperado como resposta, o primeiro item de answerKeys. No choice, é sempre a palavra ou expressão da opção correta, nunca o número ou a letra do rótulo. No image_recognition, é sempre a palavra ou expressão da opção correta, nunca o número do rótulo.
 
 IMPORTANTE:
 Não invente critério.

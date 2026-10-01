@@ -7,4 +7,5 @@ export type LlmUsageType =
   | "practice_feedback"
   | "question_extraction"
   | "answer_evaluation"
-  | "weekly_report";
+  | "weekly_report"
+  | "question_image";

@@ -4,23 +4,22 @@ import {
   MEDIA_EXPIRES_IN_SEC,
 } from "@/src/lib/constants";
 import { UnauthorizedError } from "@/src/lib/custom-errors";
-import { findMessageByMediaId } from "@/src/repo/messages.repo";
+import { findUserMediaById } from "@/src/repo/media.repo";
 import { createSignedUrl } from "@/src/vendors/storage.vendor";
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ mediaId: string[] }> },
+  { params }: { params: Promise<{ mediaId: string }> },
 ): Promise<Response> {
   try {
     const user = await requireAuth();
-    const { mediaId: segments } = await params;
-    const mediaId = segments.join("/");
+    const { mediaId } = await params;
 
-    const message = await findMessageByMediaId(mediaId, user.id);
-    if (!message) return new Response("Not found", { status: 404 });
+    const media = await findUserMediaById(mediaId, user.id);
+    if (!media) return new Response("Not found", { status: 404 });
 
     const signedUrl = await createSignedUrl({
-      filePath: mediaId,
+      filePath: media.mediaPath,
       expiresIn: MEDIA_EXPIRES_IN_SEC,
     });
 

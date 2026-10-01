@@ -15,6 +15,8 @@ import type { IncomingMessage } from "@/src/types/domain";
 const PostMessageSchema = z.object({
   text: z.string().trim().min(1).max(2000),
   externalId: z.string().trim().min(1).max(64).optional(),
+  buttonId: z.string().trim().min(1).max(64).optional(),
+  messageId: z.string().trim().min(1).max(64).optional(),
 });
 
 export async function GET(request: Request): Promise<Response> {
@@ -47,7 +49,9 @@ export async function GET(request: Request): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   try {
     const user = await requireAuth();
-    const { text, externalId } = PostMessageSchema.parse(await request.json());
+    const { text, externalId, buttonId, messageId } = PostMessageSchema.parse(
+      await request.json(),
+    );
     const userChannel = await findUserChannelByUserId(user.id);
     if (!userChannel) {
       return Response.json({ error: "channel not found" }, { status: 409 });
@@ -63,6 +67,8 @@ export async function POST(request: Request): Promise<Response> {
       contactName: user.name ?? undefined,
       text,
       externalId: resolvedExternalId,
+      buttonId,
+      buttonMessageId: messageId,
       receivedAt: new Date(),
     };
 

@@ -11,6 +11,7 @@ import {
 import { prisma } from "../lib/prisma";
 
 export type CreateQuestionData = {
+  id?: string;
   question: string;
   answerKeys: string[];
   questionFormat?: QuestionFormat;
@@ -21,15 +22,19 @@ export type CreateQuestionData = {
   sourceContent?: string;
   provider?: AiProvider;
   model?: string;
+  questionImageMediaId?: string;
+  questionImageDescription?: string;
 };
 
 export async function createQuestions(
-  activityId: string,
+  activity: { id: string; userId: string },
   questions: CreateQuestionData[],
 ): Promise<void> {
   await prisma.question.createMany({
     data: questions.map((q) => ({
-      activityId,
+      ...(q.id ? { id: q.id } : {}),
+      activityId: activity.id,
+      userId: activity.userId,
       question: q.question,
       answerKeys: q.answerKeys,
       ...(q.questionFormat ? { questionFormat: q.questionFormat } : {}),
@@ -40,6 +45,8 @@ export async function createQuestions(
       model: q.model,
       termHint: q.termHint,
       sourceContent: q.sourceContent,
+      questionImageMediaId: q.questionImageMediaId,
+      questionImageDescription: q.questionImageDescription,
     })),
   });
 }

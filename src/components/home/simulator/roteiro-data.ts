@@ -17,9 +17,21 @@ export type SimulatorAudioItem = {
   text: string;
 };
 
+export type SimulatorImageItem = {
+  domainId: DomainId;
+  turn: number;
+  description: string;
+};
+
 export function simulatorAudioUrl(domainId: DomainId, turn: number): string {
   return `/audio/simulator/${domainId}-${turn}.ogg`;
 }
+
+export function simulatorImageUrl(domainId: DomainId, turn: number): string {
+  return `/images/simulator/${domainId}-${turn}.webp`;
+}
+
+const IMAGE_QUESTION_PROMPT = "Qual opção descreve a imagem?";
 
 function samplePentagon(score: number): PentagonChartInput {
   return {
@@ -49,6 +61,8 @@ type TurnSpec = {
   turn: number;
   baseTime: string;
   question: string;
+  options?: string[];
+  imageDescription?: string;
   userAnswer: string;
   userTime: string;
   status: "right" | "partial" | "wrong";
@@ -60,12 +74,47 @@ type TurnSpec = {
   tip?: string;
 };
 
+function buildOptionsInteractive(
+  spec: TurnSpec,
+  options: string[],
+): NonNullable<Message["interactive"]> {
+  const buttons = options.map((label, i) => ({
+    id: `${spec.domainId}_option_${spec.turn}_${i + 1}`,
+    label,
+  }));
+  return {
+    body: spec.question,
+    buttons,
+    isOptionList: true,
+    disabled: true,
+    selectedId: buttons.find((b) => b.label === spec.userAnswer)?.id,
+  };
+}
+
+function buildQuestionMessage(spec: TurnSpec): Message {
+  const base: Message = {
+    id: `${spec.domainId}-q${spec.turn}`,
+    from: "bot",
+    time: spec.baseTime,
+    text: spec.question,
+  };
+  if (!spec.options) return base;
+
+  const interactive = buildOptionsInteractive(spec, spec.options);
+  if (!spec.imageDescription) return { ...base, interactive };
+
+  return {
+    ...base,
+    type: "image",
+    imageUrl: simulatorImageUrl(spec.domainId, spec.turn),
+    interactive,
+  };
+}
+
 function buildTurn(spec: TurnSpec): { messages: Message[]; audio: SimulatorAudioItem } {
   const {
     domainId,
     turn,
-    baseTime,
-    question,
     userAnswer,
     userTime,
     status,
@@ -84,12 +133,7 @@ function buildTurn(spec: TurnSpec): { messages: Message[]; audio: SimulatorAudio
   feedbackParts.push(`"${feedbackSentence}"`);
 
   const messages: Message[] = [
-    {
-      id: `${domainId}-q${turn}`,
-      from: "bot",
-      time: baseTime,
-      text: question,
-    },
+    buildQuestionMessage(spec),
     {
       id: `${domainId}-a${turn}`,
       from: "user",
@@ -133,7 +177,11 @@ function buildRoteiro(
   activityTitle: string,
   summaryTime: string,
   turns: TurnSpec[],
-): { roteiro: DomainRoteiro; audioItems: SimulatorAudioItem[] } {
+): {
+  roteiro: DomainRoteiro;
+  audioItems: SimulatorAudioItem[];
+  imageItems: SimulatorImageItem[];
+} {
   const domainLabel = DOMAINS.find((d) => d.id === domainId)?.label ?? domainId;
   const built = turns.map(buildTurn);
 
@@ -157,6 +205,11 @@ function buildRoteiro(
       messages,
     },
     audioItems: built.map((b) => b.audio),
+    imageItems: turns.flatMap((t) =>
+      t.imageDescription
+        ? [{ domainId, turn: t.turn, description: t.imageDescription }]
+        : [],
+    ),
   };
 }
 
@@ -181,6 +234,22 @@ const workResult = buildRoteiro(
     {
       domainId: "work",
       turn: 2,
+      baseTime: "09:10",
+      question: IMAGE_QUESTION_PROMPT,
+      options: ["paycheck", "stapler", "handshake", "elevator"],
+      imageDescription:
+        "Two business people shaking hands in a bright modern office, seen from the side at waist height, both smiling.",
+      userAnswer: "handshake",
+      userTime: "09:12",
+      status: "right",
+      emoji: "✅",
+      opening: "Perfeito!",
+      feedbackSentence: "They closed the deal with a firm handshake.",
+      translation: "Eles fecharam o negócio com um aperto de mão firme.",
+    },
+    {
+      domainId: "work",
+      turn: 3,
       baseTime: "10:30",
       question:
         "Você promete ao seu chefe que vai (dar retorno) sobre o cliente até amanhã. Como se diz isso em inglês?",
@@ -196,11 +265,11 @@ const workResult = buildRoteiro(
     },
     {
       domainId: "work",
-      turn: 3,
+      turn: 4,
       baseTime: "14:15",
-      question:
-        'Qual palavra significa "prazo final" em inglês?\n\na) deadline\nb) duration\nc) delay\nd) draft',
-      userAnswer: "b",
+      question: 'Qual palavra significa "prazo final" em inglês?',
+      options: ["delay", "duration", "deadline", "draft"],
+      userAnswer: "duration",
       userTime: "14:18",
       status: "wrong",
       emoji: "❌",
@@ -212,7 +281,7 @@ const workResult = buildRoteiro(
     },
     {
       domainId: "work",
-      turn: 4,
+      turn: 5,
       baseTime: "17:00",
       question: 'Como se diz "pauta da reunião" em inglês?',
       userAnswer: "agenda",
@@ -247,6 +316,22 @@ const travelResult = buildRoteiro(
     {
       domainId: "travel",
       turn: 2,
+      baseTime: "10:10",
+      question: IMAGE_QUESTION_PROMPT,
+      options: ["boarding gate", "customs desk", "baggage carousel", "taxi stand"],
+      imageDescription:
+        "Several suitcases moving on a baggage carousel in an airport arrivals hall, no people in focus.",
+      userAnswer: "baggage carousel",
+      userTime: "10:13",
+      status: "right",
+      emoji: "✅",
+      opening: "Exato!",
+      feedbackSentence: "My suitcase was the last one on the baggage carousel.",
+      translation: "Minha mala foi a última na esteira de bagagem.",
+    },
+    {
+      domainId: "travel",
+      turn: 3,
       baseTime: "11:20",
       question:
         "Seu (voo de conexão) está atrasado e você corre pra não perdê-lo. Como você diria essa parte em inglês?",
@@ -262,11 +347,11 @@ const travelResult = buildRoteiro(
     },
     {
       domainId: "travel",
-      turn: 3,
+      turn: 4,
       baseTime: "15:40",
-      question:
-        'Qual das opções significa "mala perdida" em inglês?\n\na) lost luggage\nb) heavy luggage\nc) hand luggage\nd) spare luggage',
-      userAnswer: "c",
+      question: 'Qual das opções significa "mala perdida" em inglês?',
+      options: ["heavy luggage", "hand luggage", "lost luggage", "spare luggage"],
+      userAnswer: "hand luggage",
       userTime: "15:43",
       status: "wrong",
       emoji: "❌",
@@ -278,7 +363,7 @@ const travelResult = buildRoteiro(
     },
     {
       domainId: "travel",
-      turn: 4,
+      turn: 5,
       baseTime: "17:50",
       question: 'Como se diz "portão de embarque" em inglês?',
       userAnswer: "gate",
@@ -313,6 +398,22 @@ const educationResult = buildRoteiro(
     {
       domainId: "education",
       turn: 2,
+      baseTime: "10:05",
+      question: IMAGE_QUESTION_PROMPT,
+      options: ["enrollment", "internship", "graduation", "tuition"],
+      imageDescription:
+        "A group of university graduates in black caps and gowns throwing their caps in the air outdoors on a sunny day.",
+      userAnswer: "graduation",
+      userTime: "10:07",
+      status: "right",
+      emoji: "✅",
+      opening: "Isso!",
+      feedbackSentence: "Her whole family came to her graduation.",
+      translation: "A família toda dela veio pra formatura.",
+    },
+    {
+      domainId: "education",
+      turn: 3,
       baseTime: "12:00",
       question:
         "Você recebe um aviso de que a (mensalidade) vence na próxima semana. Como se diz isso em inglês?",
@@ -328,11 +429,11 @@ const educationResult = buildRoteiro(
     },
     {
       domainId: "education",
-      turn: 3,
+      turn: 4,
       baseTime: "16:10",
-      question:
-        'Qual palavra significa "bolsa de estudos" em inglês?\n\na) scholarship\nb) sponsorship\nc) internship\nd) fellowship',
-      userAnswer: "d",
+      question: 'Qual palavra significa "bolsa de estudos" em inglês?',
+      options: ["sponsorship", "fellowship", "scholarship", "internship"],
+      userAnswer: "fellowship",
       userTime: "16:14",
       status: "wrong",
       emoji: "❌",
@@ -344,7 +445,7 @@ const educationResult = buildRoteiro(
     },
     {
       domainId: "education",
-      turn: 4,
+      turn: 5,
       baseTime: "18:00",
       question: 'Como se diz "orientador" (de curso) em inglês?',
       userAnswer: "advisor",
@@ -361,7 +462,7 @@ const educationResult = buildRoteiro(
 const dailyLifeResult = buildRoteiro(
   "daily_life",
   "Vocabulário do Dia a Dia",
-  "19:30",
+  "20:30",
   [
     {
       domainId: "daily_life",
@@ -379,6 +480,22 @@ const dailyLifeResult = buildRoteiro(
     {
       domainId: "daily_life",
       turn: 2,
+      baseTime: "11:00",
+      question: IMAGE_QUESTION_PROMPT,
+      options: ["dishes", "lawn", "laundry", "trash"],
+      imageDescription:
+        "A wicker basket full of freshly washed, neatly folded clothes and towels on a bed with white sheets.",
+      userAnswer: "laundry",
+      userTime: "11:03",
+      status: "right",
+      emoji: "✅",
+      opening: "Boa!",
+      feedbackSentence: "I still have to do the laundry tonight.",
+      translation: "Ainda tenho que lavar a roupa hoje à noite.",
+    },
+    {
+      domainId: "daily_life",
+      turn: 3,
       baseTime: "13:05",
       question:
         "Você passou o fim de semana inteiro (maratonando) a série nova. Como se diz isso em inglês?",
@@ -394,11 +511,11 @@ const dailyLifeResult = buildRoteiro(
     },
     {
       domainId: "daily_life",
-      turn: 3,
+      turn: 4,
       baseTime: "16:45",
-      question:
-        'Qual palavra significa "compras de mercado" em inglês?\n\na) groceries\nb) grocery\nc) market\nd) shopping',
-      userAnswer: "d",
+      question: 'Qual palavra significa "compras de mercado" em inglês?',
+      options: ["market", "shopping", "groceries", "grocery"],
+      userAnswer: "shopping",
       userTime: "16:48",
       status: "wrong",
       emoji: "❌",
@@ -410,7 +527,7 @@ const dailyLifeResult = buildRoteiro(
     },
     {
       domainId: "daily_life",
-      turn: 4,
+      turn: 5,
       baseTime: "20:00",
       question: 'Como se diz "resenha" (crítica de filme/série) em inglês?',
       userAnswer: "review",
@@ -436,4 +553,11 @@ export const SIMULATOR_AUDIO_ITEMS: SimulatorAudioItem[] = [
   ...travelResult.audioItems,
   ...educationResult.audioItems,
   ...dailyLifeResult.audioItems,
+];
+
+export const SIMULATOR_IMAGE_ITEMS: SimulatorImageItem[] = [
+  ...workResult.imageItems,
+  ...travelResult.imageItems,
+  ...educationResult.imageItems,
+  ...dailyLifeResult.imageItems,
 ];

@@ -5,7 +5,8 @@ import { UnauthorizedError } from "@/src/lib/custom-errors";
 import { findUserChannelByUserId } from "@/src/repo/users.repo";
 import { handleIncomingMessage } from "@/src/services/message-service";
 import { resolveChannel } from "@/src/lib/channels/resolve-channel";
-import { DEFAULT_CHANNEL_TYPE } from "@/src/lib/constants";
+import { DEFAULT_CHANNEL_TYPE, OCR_IMAGE_FOLDER } from "@/src/lib/constants";
+import { buildMediaPath } from "@/src/lib/utils";
 import {
   extractTextFromImage,
   extractTextFromPdf,
@@ -50,9 +51,10 @@ export async function POST(request: Request): Promise<Response> {
     if (mediaType === "image") {
       const mimeType = file.type || "image/jpeg";
       const format = mimeType.split("/")[1]?.split(";")[0] ?? "jpeg";
+      const mediaId = ulid();
       let mediaPath: string | null = null;
       try {
-        mediaPath = `ocr/${ulid()}.${format}`;
+        mediaPath = buildMediaPath(OCR_IMAGE_FOLDER, mediaId, format);
         await uploadFile({
           filePath: mediaPath,
           file: new Blob([new Uint8Array(buffer)], { type: mimeType }),
@@ -75,6 +77,7 @@ export async function POST(request: Request): Promise<Response> {
         statusMessage: visionResult.status_message,
         sizeBytes: file.size,
         format,
+        mediaId,
         mediaPath,
         file_name: file.name,
         size_bytes: file.size,

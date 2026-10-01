@@ -4,6 +4,7 @@ import {
   ANSWER_EMOJI,
   DOMAINS,
   INTENSIVE_UNTIL_MIN,
+  LEVEL_OPTIONS,
   MAX_DOC_ITEMS_PER_DOC,
   TRIAL_DAYS,
 } from "../lib/constants";
@@ -109,32 +110,48 @@ const LEVEL_LABEL: Record<Level, string> = {
   [Level.advanced]: "avançado",
 };
 
-export function formatLevelQuestion(): FormattedMessage {
+function formatCaptureStep(
+  bodyLines: string[],
+  options: string[],
+  idPrefix: string,
+): FormattedMessage {
+  const body = [
+    ...bodyLines,
+    "",
+    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
+  ].join("\n");
   return {
-    text: [
-      "*Nível de Inglês*",
-      "Qual é o seu nível de inglês? Isso define o idioma e o formato das perguntas que você vai receber.",
-      "",
-      "a) Básico",
-      "b) Intermediário",
-      "c) Avançado",
-      "",
-      `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-    ].join("\n"),
+    text: body,
     interactive: {
-      body: [
-        "*Nível de Inglês*",
-        "Qual é o seu nível de inglês? Isso define o idioma e o formato das perguntas que você vai receber.",
-        "",
-        `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-      ].join("\n"),
-      buttons: [
-        { id: "level_basic", label: "Básico" },
-        { id: "level_intermediate", label: "Intermediário" },
-        { id: "level_advanced", label: "Avançado" },
-      ],
+      ...buildOptionsInteractive(body, options, idPrefix),
+      isCaptureStep: true,
     },
   };
+}
+
+export function formatCaptureStepOptionsText(
+  body: string,
+  options: string[],
+): string {
+  const numbered = options.map((o, i) => `${getEmojiNumber(i + 1)} ${o}`);
+  return [
+    body,
+    "",
+    ...numbered,
+    "",
+    "_Responda com o número de uma opção._",
+  ].join("\n");
+}
+
+export function formatLevelQuestion(): FormattedMessage {
+  return formatCaptureStep(
+    [
+      "*Nível de Inglês*",
+      "Qual é o seu nível de inglês? Isso define o idioma e o formato das perguntas que você vai receber.",
+    ],
+    LEVEL_OPTIONS.map((o) => o.label),
+    "level_option",
+  );
 }
 
 export function formatLevelConfirmed(): FormattedMessage {
@@ -183,74 +200,38 @@ function getEmojiNumber(num: number): string {
 }
 
 export function formatDomainQuestion(): FormattedMessage {
-  const options = DOMAINS.map((g, i) => `${getEmojiNumber(i + 1)} ${g.label}`);
-  const body = [
-    "*Objetivo (1/3)*",
-    "Informe o número de um objetivo abaixo.",
-    "",
-    ...options,
-    "",
-    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-  ].join("\n");
-  return {
-    text: body,
-    interactive: {
-      body,
-      buttons: [
-        { id: "first_option", type: "reply", label: "Primeira opção" },
-        { id: "random", type: "reply", label: "Escolha para mim" },
-      ],
-    },
-  };
+  return formatCaptureStep(
+    [
+      "*Objetivo (1/3)*",
+      "Escolha o objetivo desta prática. Isso define o tipo de conteúdo gerado para as suas perguntas, baseado no que você quer alcançar.",
+    ],
+    DOMAINS.map((d) => d.label),
+    "domain_option",
+  );
 }
 
 export function formatTopicQuestion(topics: string[]): FormattedMessage {
-  const options = topics.map((s, i) => `${getEmojiNumber(i + 1)} ${s}`);
-  const body = [
-    "*Assunto (2/3)*",
-    "Do que você gosta? Escreva qualquer assunto que queira praticar.",
-    "Se preferir, escolha um número abaixo.",
-    "",
-    ...options,
-    "",
-    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-  ].join("\n");
-  return {
-    text: body,
-    interactive: {
-      body,
-      buttons: [
-        { id: "first_option", type: "reply", label: "Primeira opção" },
-        { id: "random", type: "reply", label: "Escolha para mim" },
-      ],
-    },
-  };
+  return formatCaptureStep(
+    [
+      "*Assunto (2/3)*",
+      "Escolha um assunto para esta prática ou escreva algo do seu interesse. Quanto mais específico, mais as perguntas combinam com você.",
+    ],
+    topics,
+    "topic_option",
+  );
 }
 
 export function formatFocusQuestion(
   suggestions: { key: string; label: string }[],
 ): FormattedMessage {
-  const options = suggestions.map(
-    (s, i) => `${getEmojiNumber(i + 1)} ${s.label}`,
+  return formatCaptureStep(
+    [
+      "*Foco (3/3)*",
+      "Escolha o foco desta prática ou escreva outro do seu interesse ou necessidade. Isso define o que será praticado no assunto e no objetivo escolhidos",
+    ],
+    suggestions.map((s) => s.label),
+    "focus_option",
   );
-  const body = [
-    "*Foco (3/3)*",
-    "Informe o número de um foco abaixo ou escreva outro.",
-    "",
-    ...options,
-    "",
-    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-  ].join("\n");
-  return {
-    text: body,
-    interactive: {
-      body,
-      buttons: [
-        { id: "first_option", type: "reply", label: "Primeira opção" },
-        { id: "random", type: "reply", label: "Escolha para mim" },
-      ],
-    },
-  };
 }
 
 export function formatNewActivityFlowCanceled(
@@ -454,7 +435,7 @@ export function formatDailyPracticeLimitReached(): FormattedMessage {
 
 export function formatIntensiveDailyLimitReached(): FormattedMessage {
   return {
-    text: "Você atingiu o limite diário de prática intensiva. Sua prática ao longo do dia continua normal.",
+    text: "Você usou toda sua prática disponível de hoje, mas amanhã tem mais.",
   };
 }
 
@@ -765,13 +746,9 @@ export function formatActivityStart(title: string): FormattedMessage {
   return { text: `📘 ${prefix} *${sanitizeWhatsappContent(title)}*` };
 }
 
-export function formatChoiceQuestion(
-  question: string,
-  options: string[],
-): string {
-  if (!options.length) return question;
-  const labels = "abcde";
-  return `${question}\n\n${options.map((o, i) => `${labels[i]}) ${o}`).join("\n")}`;
+export function formatNumberedOptions(text: string, options: string[]): string {
+  if (!options.length) return text;
+  return `${text}\n\n${options.map((o, i) => `${i + 1}) ${o}`).join("\n")}`;
 }
 
 type PreviousActivitySummaryData = {
@@ -905,7 +882,11 @@ export function formatFeedbackFailed(): FormattedMessage {
 
 export function formatPracticeWaiting(): FormattedMessage {
   return {
-    text: "Aguarde, a próxima mensagem chega em breve. Para mudar de atividade, envie um novo material.",
+    text: `Nenhuma pergunta em aberto agora. A próxima chega no seu ritmo de prática, ou use ${formatCommand("practice_now")} para receber agora.`,
+    interactive: {
+      body: "Nenhuma pergunta em aberto agora. A próxima chega no seu ritmo de prática, ou toque em Praticar para receber agora.",
+      buttons: [{ id: "practice_now", label: "Praticar", type: "reply" }],
+    },
   };
 }
 
@@ -1088,15 +1069,74 @@ function pickScenarioClosing(level: Level): string {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+const imageRecognitionEnPrompts = [
+  "Select the option below that best describes the image.",
+  "Look at the image and choose the word that matches it best.",
+  "Choose the option that best represents what you see in the image.",
+  "Take a look at the image and pick the option that fits it.",
+];
+
+const imageRecognitionPtPrompts = [
+  "Selecione a opção em inglês que mais descreve a imagem.",
+  "Observe a imagem e escolha abaixo a palavra em inglês que combina com ela.",
+  "Escolha, entre as opções abaixo, a que melhor representa o que aparece na imagem.",
+  "Olhe a imagem com atenção e selecione a opção em inglês que corresponde a ela.",
+];
+
+function pickImageRecognitionPrompt(level: Level): string {
+  const pool =
+    level === Level.basic
+      ? imageRecognitionPtPrompts
+      : imageRecognitionEnPrompts;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function buildOptionsInteractive(
+  body: string,
+  options: string[],
+  idPrefix: string,
+): NonNullable<FormattedMessage["interactive"]> {
+  return {
+    body,
+    buttons: options.map((o, i) => ({ id: `${idPrefix}_${i + 1}`, label: o })),
+    isOptionList: true,
+  };
+}
+
+function formatImageRecognitionQuestion(
+  options: string[],
+  imageMediaId: string | null | undefined,
+  level: Level,
+): FormattedMessage {
+  const prompt = pickImageRecognitionPrompt(level);
+  const interactive = buildOptionsInteractive(prompt, options, "image_option");
+  if (!imageMediaId) return { text: prompt, interactive };
+
+  return {
+    text: prompt,
+    imageMediaId,
+    interactive,
+  };
+}
+
 export function formatQuestion(
   question: {
     question: string;
     questionFormat: QuestionFormat | null;
     questionOptions: string[];
     termHint?: string | null;
+    questionImageMediaId?: string | null;
   },
   options: { level: Level },
 ): FormattedMessage {
+  if (question.questionFormat === QuestionFormat.image_recognition) {
+    return formatImageRecognitionQuestion(
+      question.questionOptions,
+      question.questionImageMediaId,
+      options.level,
+    );
+  }
+
   const withHint = insertTermHint(
     question.question,
     question.termHint,
@@ -1107,7 +1147,14 @@ export function formatQuestion(
     question.questionFormat === QuestionFormat.choice &&
     question.questionOptions.length > 0
   ) {
-    return { text: formatChoiceQuestion(withHint, question.questionOptions) };
+    return {
+      text: withHint,
+      interactive: buildOptionsInteractive(
+        withHint,
+        question.questionOptions,
+        "choice_option",
+      ),
+    };
   }
 
   if (question.questionFormat === QuestionFormat.gap_fill) {

@@ -1,4 +1,9 @@
-import { ExternalMessageStatus, Message, MessageRole, Prisma } from "../lib/prisma";
+import {
+  ExternalMessageStatus,
+  Message,
+  MessageRole,
+  Prisma,
+} from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 import type { FormattedMessage } from "../types/out-message";
 
@@ -18,13 +23,6 @@ type SaveMessageData = {
   questionId?: string;
   receivedAt?: Date;
 };
-
-export async function findMessageByMediaId(
-  mediaId: string,
-  userId: string,
-): Promise<Message | null> {
-  return prisma.message.findFirst({ where: { mediaId, userId } });
-}
 
 export async function findMessagesByActivity(
   activityId: string,
@@ -180,5 +178,48 @@ export async function updateMessageExternalStatus(
   await prisma.message.update({
     where: { id },
     data: { externalStatus: status, externalStatusAt: statusAt },
+  });
+}
+
+export async function findOptionListMessagesByQuestion(
+  userId: string,
+  questionId: string,
+): Promise<Pick<Message, "id" | "interactive">[]> {
+  return prisma.message.findMany({
+    where: {
+      userId,
+      questionId,
+      role: "assistant",
+      interactive: { path: ["isOptionList"], equals: true },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, interactive: true },
+    take: 5,
+  });
+}
+
+export async function findOptionListMessageById(
+  id: string,
+  userId: string,
+): Promise<Pick<Message, "id" | "interactive"> | null> {
+  return prisma.message.findFirst({
+    where: {
+      id,
+      userId,
+      role: "assistant",
+      interactive: { path: ["isOptionList"], equals: true },
+    },
+    select: { id: true, interactive: true },
+  });
+}
+
+export async function updateMessageInteractive(
+  id: string,
+  userId: string,
+  interactive: NonNullable<FormattedMessage["interactive"]>,
+): Promise<void> {
+  await prisma.message.updateMany({
+    where: { id, userId },
+    data: { interactive: interactive as Prisma.InputJsonObject },
   });
 }

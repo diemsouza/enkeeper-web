@@ -37,7 +37,7 @@ import {
   formatRoundCompletedFallback,
   formatRoundCompletedSummary,
 } from "../core/formatters";
-import { findMediaByParent } from "../repo/media.repo";
+import { findMediaByParent, getMediaById } from "../repo/media.repo";
 import { Media } from "../lib/prisma";
 import {
   AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
@@ -68,9 +68,18 @@ export async function archiveOrCancelActivity(
 }
 
 export async function findClosingSummaryMedia(
-  activityId: string,
+  activity: Pick<Activity, "id" | "chartCompletedMediaId">,
 ): Promise<Media | null> {
-  const media = await findMediaByParent(MEDIA_PARENT_TYPE.ACTIVITY, activityId);
+  if (activity.chartCompletedMediaId) {
+    const media = await getMediaById(activity.chartCompletedMediaId);
+    return media && !media.deletedAt ? media : null;
+  }
+
+  // legado: chart gravado antes de chartCompletedMediaId existir (sem backfill)
+  const media = await findMediaByParent(
+    MEDIA_PARENT_TYPE.ACTIVITY,
+    activity.id,
+  );
   return (
     media
       .filter((m) => m.mediaPath.startsWith("charts/activity-completed/"))
@@ -193,8 +202,6 @@ export async function sendResumeSummary(
           message: summary,
           intent: "previous_activity_summary",
           activityId: targetActivityId,
-          mediaType: summary.imagePath ? "image" : undefined,
-          mediaId: summary.imagePath,
           today,
         });
         summarySent = true;
@@ -216,7 +223,7 @@ export async function sendResumeSummary(
   });
 }
 
-export type SummaryMessage = { text: string; imagePath?: string };
+export type SummaryMessage = { text: string; imageMediaId?: string };
 
 // Mesmo número da linha de leitura da Seção 1 ("menos de 5 respondidas"): com
 // menos que isso o chart não tem valor de leitura, manda só texto.
@@ -300,7 +307,12 @@ async function buildActivitySwapChartImage(
       );
     }
 
-    return await buildPentagonChartImage(current.id, series, previousSeries);
+    return await buildPentagonChartImage(
+      current.id,
+      userId,
+      series,
+      previousSeries,
+    );
   } catch (err) {
     console.error("[activity-service] pentagon chart failed:", err);
     return null;
@@ -309,10 +321,11 @@ async function buildActivitySwapChartImage(
 
 async function buildRoundCompletedChartImage(
   activityId: string,
+  userId: string,
   score: number,
 ): Promise<string | null> {
   try {
-    return await buildGaugeChartImage(activityId, score);
+    return await buildGaugeChartImage(activityId, userId, score);
   } catch (err) {
     console.error("[activity-service] gauge chart failed:", err);
     return null;
@@ -381,8 +394,8 @@ export async function buildPreviousActivitySummary(
       await updateActivity(data.id, userId, { summary: text });
     }
 
-    const imagePath = await buildActivitySwapChartImage(userId, data, score);
-    return imagePath ? { text, imagePath } : { text };
+    const imageMediaId = await buildActivitySwapChartImage(userId, data, score);
+    return imageMediaId ? { text, imageMediaId } : { text };
   } catch (err) {
     console.error("[activity-service] previous activity summary failed:", err);
     return null;
@@ -391,6 +404,7 @@ export async function buildPreviousActivitySummary(
 
 export async function buildRoundCompletedSummary(
   activityId: string,
+  userId: string,
 ): Promise<SummaryMessage> {
   try {
     const data = await findActivityForSummary(activityId);
@@ -412,11 +426,11 @@ export async function buildRoundCompletedSummary(
       score,
     }).text;
 
-    const imagePath =
+    const imageMediaId =
       data.questionCount >= MIN_CHART_VOLUME
-        ? await buildRoundCompletedChartImage(activityId, score)
+        ? await buildRoundCompletedChartImage(activityId, userId, score)
         : null;
-    return imagePath ? { text, imagePath } : { text };
+    return imageMediaId ? { text, imageMediaId } : { text };
   } catch {
     return { text: formatRoundCompletedFallback().text };
   }

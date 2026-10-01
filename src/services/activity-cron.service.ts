@@ -20,6 +20,7 @@ import {
   createQuestions,
   findQuestionById,
   findLatestUnansweredQuestion,
+  CreateQuestionData,
 } from "../repo/questions.repo";
 import {
   findUserChannelByUserId,
@@ -65,8 +66,14 @@ import {
   sanitizeQuestionData,
 } from "../core/format-loader";
 import { startOfDay } from "date-fns";
+import { ulid } from "ulid";
+import { storeQuestionImage } from "./question-image-service";
 import { buildRoundCompletedSummary } from "./activity-service";
 import { UserIntentMetadata } from "../types/domain";
+
+const IMAGE_QUESTION_ROLLOUT_FRACTION = parseFloat(
+  process.env.IMAGE_QUESTION_ROLLOUT_FRACTION ?? "0",
+);
 
 function isNewActivityFlowIntent(user: { metadata: unknown }): boolean {
   const metadata = user.metadata as UserIntentMetadata | null;
@@ -333,6 +340,7 @@ async function sendCadenceQuestion(
     questionFormat: QuestionFormat | null;
     questionOptions: string[];
     termHint: string | null;
+    questionImageMediaId: string | null;
   },
   activity: Activity,
   userChannel: { channelUserId: string; id: string },
@@ -507,6 +515,102 @@ export async function processExpiredFlowIntents(
 //   return findNextGeneralQuestion(activity.id, lastId);
 // }
 
+type QuestionGenBaseParams = Omit<
+  Parameters<typeof generateNextQuestion>[0],
+  "format" | "questionExamples" | "retryContext"
+>;
+
+type ImageQuestionOutcome =
+  | { status: "success"; data: CreateQuestionData }
+  | { status: "fallback"; reason: string };
+
+async function generateValidatedQuestion(
+  format: QuestionFormat,
+  baseParams: QuestionGenBaseParams,
+): Promise<SectionQuestionResult | null> {
+  const genParams = {
+    ...baseParams,
+    format,
+    questionExamples: getQuestionExamples([format], baseParams.level),
+    retryContext: undefined as string | undefined,
+  };
+
+  for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+    const generated = await generateNextQuestion(genParams);
+    if (!generated) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      continue;
+    }
+
+    genParams.retryContext = validateGeneratedQuestion(generated, "vocabulary");
+    if (!genParams.retryContext) return generated;
+  }
+
+  return null;
+}
+
+async function buildImageRecognitionQuestion(
+  baseParams: QuestionGenBaseParams,
+): Promise<ImageQuestionOutcome> {
+  const generated = await generateValidatedQuestion(
+    QuestionFormat.image_recognition,
+    baseParams,
+  );
+  if (!generated) {
+    return { status: "fallback", reason: "question_generation_failed" };
+  }
+  if (generated.imageable !== true) {
+    return { status: "fallback", reason: "not_imageable" };
+  }
+  const description = generated.questionImageDescription?.trim();
+  if (!description) {
+    return { status: "fallback", reason: "missing_image_description" };
+  }
+
+  const questionId = ulid();
+  const image = await storeQuestionImage({
+    questionId,
+    description,
+    userId: baseParams.userId,
+    docId: baseParams.docId,
+  });
+  if (image.status === "error") {
+    return { status: "fallback", reason: image.reason };
+  }
+
+  return {
+    status: "success",
+    data: {
+      ...sanitizeQuestionData(generated),
+      id: questionId,
+      questionImageMediaId: image.mediaId,
+      questionImageDescription: description,
+    },
+  };
+}
+
+// image_recognition que falha (nao imageable, erro de geracao, vendor ou
+// upload) cai em outro formato para o mesmo item, sem aviso ao usuario.
+async function buildQuestionData(
+  lastFormat: QuestionFormat | null,
+  baseParams: QuestionGenBaseParams,
+): Promise<CreateQuestionData | null> {
+  const canUseImage = Math.random() < IMAGE_QUESTION_ROLLOUT_FRACTION;
+  let format = pickNextFormat(lastFormat, { canUseImage });
+
+  if (format === QuestionFormat.image_recognition) {
+    const outcome = await buildImageRecognitionQuestion(baseParams);
+    if (outcome.status === "success") return outcome.data;
+    console.warn(
+      `[buildQuestionData] image_recognition fallback: ${outcome.reason}`,
+    );
+    format = pickNextFormat(lastFormat, { canUseImage: false });
+  }
+
+  const validated = await generateValidatedQuestion(format, baseParams);
+  return validated ? sanitizeQuestionData(validated) : null;
+}
+
 export type GenerateOutcome =
   | { poolExhausted: true }
   | { poolExhausted: false; question: Question | null };
@@ -530,43 +634,19 @@ export async function generateQuestionIfPoolNotFull(
     lastFormat = lastQuestion?.questionFormat ?? null;
   }
 
-  const format = pickNextFormat(lastFormat);
-  const questionExamples = getQuestionExamples([format], activity.userLevel);
-
   const blocks = splitContentIntoBlocks(doc.content);
-  const docContent = blocks[activity.questionCount % blocks.length];
-
-  const genParams = {
-    sectionType: "vocabulary" as const,
+  const questionData = await buildQuestionData(lastFormat, {
+    sectionType: "vocabulary",
     sectionTitle: doc.title ?? "",
-    sectionContent: docContent,
+    sectionContent: blocks[activity.questionCount % blocks.length],
     level: activity.userLevel,
-    format,
-    questionExamples,
     userId: activity.userId,
     docId: activity.docId,
-    retryContext: undefined as string | undefined,
-  };
+  });
 
-  let validated: SectionQuestionResult | null = null;
+  if (!questionData) return { poolExhausted: false, question: null };
 
-  for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
-    const generated = await generateNextQuestion(genParams);
-    if (!generated) {
-      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-      continue;
-    }
-
-    genParams.retryContext = validateGeneratedQuestion(generated, "vocabulary");
-    if (!genParams.retryContext) {
-      validated = generated;
-      break;
-    }
-  }
-
-  if (!validated) return { poolExhausted: false, question: null };
-
-  await createQuestions(activity.id, [sanitizeQuestionData(validated)]);
+  await createQuestions(activity, [questionData]);
 
   await updateActivity(activity.id, activity.userId, {
     questionCount: activity.questionCount + 1,
@@ -620,7 +700,7 @@ export async function completeRoundZero(
     lastQuestionId: null,
   });
 
-  const msg = await buildRoundCompletedSummary(activityId);
+  const msg = await buildRoundCompletedSummary(activityId, userId);
 
   await sendAndSaveMessage({
     channel,
@@ -629,8 +709,6 @@ export async function completeRoundZero(
     userChannelId,
     activityId,
     message: msg,
-    mediaType: msg.imagePath ? "image" : undefined,
-    mediaId: msg.imagePath,
     intent: "practice_complete",
     today,
   });

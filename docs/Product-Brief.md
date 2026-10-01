@@ -76,7 +76,7 @@ O usuário pode informar seu próprio nível, que passa a valer para qualquer at
 
 ### Formatos de pergunta
 
-Todo material vira uma lista de vocabulário, com variação automática entre 5 formatos: gap fill, recall, recall invertido, cenário e múltipla escolha.
+Todo material vira uma lista de vocabulário, com variação automática entre 6 formatos: gap fill, recall, recall invertido, cenário, múltipla escolha e reconhecimento por imagem.
 
 ### Repetição espaçada
 
@@ -90,7 +90,7 @@ Usuário pode iniciar sessão ativa - perguntas chegam em sequência, uma após 
 
 ### Nova atividade por tema
 
-Quando o usuário não tem material em mãos, ou quer trocar de assunto sem subir arquivo, o comando `nova atividade` inicia um fluxo curto de pergunta e resposta: nível (se ainda não informado), objetivo, assunto e ponto. Objetivo é uma lista fechada de 4 opções (Mercado de Trabalho, Viagens Internacionais, Educação e Intercâmbio, Dia a Dia e Lazer). Assunto e ponto combinam lista de sugestões com opção de resposta livre, o assunto com 5 sugestões fixas por objetivo, o ponto com 5 sugestões geradas com base no objetivo e no assunto escolhidos, sempre incluindo a opção de vocabulário geral. Cada pergunta do fluxo também oferece atalhos de resposta rápida, "Primeira opção" e "Escolha para mim" (aleatório), além de continuar aceitando resposta por número ou por texto livre, reduzindo a fricção de quem só quer começar logo. O sistema gera o conteúdo individualmente para aquele usuário a partir dessa combinação, e a atividade segue o mesmo ciclo de sempre a partir daí. Upload de material continua disponível a qualquer momento, inclusive durante esse fluxo.
+Quando o usuário não tem material em mãos, ou quer trocar de assunto sem subir arquivo, o comando `nova atividade` inicia um fluxo curto de pergunta e resposta: nível (se ainda não informado), objetivo, assunto e ponto. Objetivo é uma lista fechada de 4 opções (Mercado de Trabalho, Viagens Internacionais, Educação e Intercâmbio, Dia a Dia e Lazer). Assunto e ponto combinam lista de sugestões com opção de resposta livre, o assunto com 5 sugestões fixas por objetivo, o ponto com 5 sugestões geradas com base no objetivo e no assunto escolhidos, sempre incluindo a opção de vocabulário geral. Na web, cada passo mostra as opções como lista de escolha única por toque, e a opção escolhida fica destacada, o que deixa a primeira interação de prática, logo no fim do onboarding, direta e rápida. No WhatsApp, o nível vem em botões nativos e os demais passos trazem as opções numeradas com os atalhos de resposta rápida "Primeira opção" e "Escolha para mim" (aleatório). Em qualquer canal, o passo continua aceitando resposta por número ou por texto livre. O sistema gera o conteúdo individualmente para aquele usuário a partir dessa combinação, e a atividade segue o mesmo ciclo de sempre a partir daí. Upload de material continua disponível a qualquer momento, inclusive durante esse fluxo.
 
 Ponto representa o aspecto da língua a praticar dentro do assunto escolhido, vocabulário geral, um tempo verbal, uma estrutura gramatical, entre outros, e pode combinar até 2 pontos numa mesma geração quando informado por texto livre.
 
@@ -224,8 +224,9 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Geração de perguntas | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Avaliação de respostas + feedback | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Texto-para-voz (áudio de feedback) | OpenAI (`gpt-4o-mini-tts`, principal) e Google Cloud TTS (fallback), alternável por configuração |
+| Geração de imagem (reconhecimento por imagem) | OpenAI `gpt-image-1-mini`, qualidade baixa, rollout parcial habilitado por configuração |
 | Charts de resumo (pentágono, gauge) | SVG por template rasterizado com `@resvg/resvg-js` (nativo, sem headless browser), fontes Inter e IBM Plex Mono embutidas no bundle |
-| Armazenamento de mídia | Supabase Storage, bucket separado por ambiente — cobre áudio gerado (feedback), áudio de resposta do usuário, a imagem original enviada para OCR e os charts de resumo |
+| Armazenamento de mídia | Supabase Storage, bucket separado por ambiente, cobre áudio gerado (feedback), áudio de resposta do usuário, a imagem original enviada para OCR, os charts de resumo e as imagens geradas para perguntas de reconhecimento por imagem |
 | Evolução semanal | Modelo médio em batch |
 | Jobs agendados | Vercel Cron |
 | Pagamento | Stripe Checkout (cartão), cobrança avulsa de 30 dias sem renovação automática; Pix manual via `suporte` como alternativa |
@@ -255,6 +256,8 @@ Custo variável por usuário Pro ativo:
 Taxa de processamento do Stripe por transação ainda não medida nem incluída na tabela acima. Revisar quando houver volume real de cobranças.
 
 Custo de texto-para-voz do feedback (rollout parcial, ver Seção 4) ainda não tem medição real em produção. Estimativa inicial, baseada em preço de mercado dos provedores usados, fica bem abaixo dos demais itens da tabela, na casa de centavos por milhares de gerações, e é reduzida ainda mais pelo reuso do áudio já gerado por pergunta (sem regeneração em revisão espaçada). Revisar quando houver volume real desse fluxo, inclusive para decidir se maior frequência de áudio vira benefício de tier superior.
+
+Custo de geração de imagem do reconhecimento por imagem (rollout parcial) ainda não tem medição real em produção. Preço de tabela do modelo em qualidade baixa fica na casa de meio centavo de dólar por imagem, e a imagem é gerada uma única vez por pergunta, reaproveitada em toda reexibição e revisão. Itens sem imagem viável caem para outro formato depois da chamada de geração da pergunta, o que custa uma chamada extra de geração de pergunta nesses casos, sem gerar imagem. Cada geração fica registrada em `llm_logs` e `llm_usage`; revisar quando houver volume real desse fluxo.
 
 Geração de conteúdo por tema (nova atividade) ainda não tem custo médio medido em produção, é individual por usuário e por troca de atividade, sem compartilhamento entre usuários. O fluxo passou a usar duas chamadas de LLM por troca (validação do assunto com sugestão de pontos, depois resolução do ponto e geração), em vez de uma. Vale revisar essa tabela quando houver volume real desse fluxo.
 
@@ -317,7 +320,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Schema atualizado com Question, QuestionFormat, llm_logs
 - Motor de prática com loop acerto/erro
 - Cadência e sessão ativa (praticar)
-- Sistema de formatos granulares de vocabulário (gap_fill, recall, recall_inverted, scenario, choice) — open_text e open_question ficaram legados desde a simplificação de material (ver checklist abaixo)
+- Sistema de formatos granulares de vocabulário (gap_fill, recall, recall_inverted, scenario, choice, image_recognition). open_text e open_question ficaram legados desde a simplificação de material (ver checklist abaixo)
 - Detecção automática de nível do material no upload
 - Múltipla escolha (choice) com opções embaralhadas
 - Logs de LLM com DISABLE_LLM_LOGS
@@ -337,6 +340,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Home refeita: hero sem menção a canal específico (WhatsApp deixou de ser citado na copy pública, prática é apresentada como algo que acontece no seu ritmo), demo visual por domínio (dia a dia, educação, viagem, trabalho) com roteiro fixo em shell de desktop e iPhone lado a lado substituindo o simulador antigo de botão real, seções de features, como funciona, para quem é e FAQ reescritas
 - Login automático via link do WhatsApp (Seção 11.2 do Product-Rules) passa a usar shortlink genérico e reutilizável em vez do token cru na URL, e o lembrete diário de dívida de revisão (Product-Rules Seção 12) entrega esse link como texto no corpo do template em vez de botão de CTA, evitando o navegador embutido da Meta
 - Toast de confirmação de sucesso/erro ao salvar preferências no app (ex: lembrete diário), renderizado acima de modais abertos (Product-Rules Seção 8.4)
+- Reconhecimento por imagem (image_recognition): imagem gerada ilustra o termo e o usuário escolhe a opção, com fallback silencioso para outro formato quando o termo não é visualizável, rollout parcial habilitado por configuração
 - Persistência da frase de demonstração e da tradução do feedback por pergunta (`feedback_text`/`feedback_translation`), com toggle "Ver tradução" no player de áudio da superfície web e reaproveitamento do áudio quando a frase não muda entre respostas
 
 **Falta:**

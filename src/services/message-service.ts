@@ -9,7 +9,12 @@ import {
   User,
   UserChannel,
 } from "../lib/prisma";
-import { parseMessage } from "../core/parser";
+import {
+  buildAnsweredInteractive,
+  parseMessage,
+  resolveOptionIndex,
+  resolveSelectedButtonId,
+} from "../core/parser";
 import { canPractice } from "../core/access";
 import { classifyUserSource } from "../core/user-source-classifier";
 import {
@@ -67,6 +72,9 @@ import {
   saveMessage,
   findLastUserMessage,
   findMessageByExternalId,
+  findOptionListMessageById,
+  findOptionListMessagesByQuestion,
+  updateMessageInteractive,
 } from "../repo/messages.repo";
 import { createMedia } from "../repo/media.repo";
 import {
@@ -103,8 +111,8 @@ import {
   maybeSendActivitySuggestion,
   switchToActivity,
 } from "./activity-service";
-import { resolveFeedbackAudioPath } from "./feedback-audio-service";
-import { resolveAnswerAudioPath } from "./answer-audio-service";
+import { resolveFeedbackAudioMediaId } from "./feedback-audio-service";
+import { storeAnswerAudio } from "./answer-audio-service";
 import {
   getTodayActivityCount,
   getTodayUsage,
@@ -136,6 +144,7 @@ import {
 import {
   formatIntensivePendingQuestion,
   formatQuestion,
+  formatNumberedOptions,
   formatActivityStart,
 } from "../core/formatters";
 import {
@@ -147,6 +156,9 @@ import {
   DAILY_PRACTICE_LIMIT,
   DEFAULT_MESSAGE_INTERVAL_SEC,
   MEDIA_PARENT_TYPE,
+  MEDIA_SOURCE,
+  DOMAINS,
+  LEVEL_OPTIONS,
 } from "../lib/constants";
 import { delay, sanitizeText } from "../lib/utils";
 import { sendAndSaveMessage } from "./message-sender-service";
@@ -652,7 +664,15 @@ export async function handleIncomingMessage(
           return;
         }
 
-        const { outcome, message } = await processLevelResponse(text, user.id);
+        const levelIndex = await applyCaptureStepSelection({
+          userId: user.id,
+          input,
+          expectedLabels: LEVEL_OPTIONS.map((o) => o.label),
+        });
+        const { outcome, message } = await processLevelResponse(
+          levelIndex !== null ? LEVEL_OPTIONS[levelIndex].label : text,
+          user.id,
+        );
         await sendAndSaveMessage({
           channel,
           to: userChannel.channelUserId,
@@ -714,7 +734,14 @@ export async function handleIncomingMessage(
 
       // Aguardando escolha de objetivo (domain)
       if (pendingIntent === "waiting_set_activity_domain") {
-        const result = processDomainResponse(text);
+        const domainIndex = await applyCaptureStepSelection({
+          userId: user.id,
+          input,
+          expectedLabels: DOMAINS.map((d) => d.label),
+        });
+        const result = processDomainResponse(
+          domainIndex !== null ? String(domainIndex + 1) : text,
+        );
         await sendAndSaveMessage({
           channel,
           to: userChannel.channelUserId,
@@ -820,8 +847,13 @@ export async function handleIncomingMessage(
           return;
         }
 
+        const topicIndex = await applyCaptureStepSelection({
+          userId: user.id,
+          input,
+          expectedLabels: topics,
+        });
         const result = await processTopicResponse(
-          text,
+          topicIndex !== null ? String(topicIndex + 1) : text,
           user.id,
           userLevel,
           domain,
@@ -931,8 +963,13 @@ export async function handleIncomingMessage(
           return;
         }
 
+        const focusIndex = await applyCaptureStepSelection({
+          userId: user.id,
+          input,
+          expectedLabels: focusSuggestions.map((s) => s.label),
+        });
         const result = await processFocusResponse(
-          text,
+          focusIndex !== null ? String(focusIndex + 1) : text,
           focusSuggestions,
           subtopics,
           user.id,
@@ -1326,21 +1363,16 @@ export async function handleIncomingMessage(
             today,
           });
           await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+          const pendingQuestionMsg = formatQuestion(alreadyPending, {
+            level: activeActivity.userLevel,
+          });
           await sendAndSaveMessage({
             channel,
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
             activityId: activeActivity.id,
-            message: formatQuestion(
-              {
-                question: alreadyPending.question,
-                questionFormat: alreadyPending.questionFormat,
-                questionOptions: alreadyPending.questionOptions,
-                termHint: alreadyPending.termHint,
-              },
-              { level: activeActivity.userLevel },
-            ),
+            message: pendingQuestionMsg,
             intent: "practice_question",
             questionId: alreadyPending.id,
             today,
@@ -1452,7 +1484,7 @@ export async function handleIncomingMessage(
                 ? getFeedbackExamples(questionFormats, activeActivity.userLevel)
                 : "";
 
-              const questionForEvaluation = formatQuestion(
+              const formattedQuestion = formatQuestion(
                 {
                   question: pendingQuestion.question,
                   questionFormat: pendingQuestion.questionFormat,
@@ -1460,7 +1492,14 @@ export async function handleIncomingMessage(
                   termHint: pendingQuestion.termHint,
                 },
                 { level: activeActivity.userLevel },
-              ).text;
+              );
+              const questionForEvaluation = formattedQuestion.interactive
+                ?.isOptionList
+                ? formatNumberedOptions(
+                    formattedQuestion.text,
+                    pendingQuestion.questionOptions,
+                  )
+                : formattedQuestion.text;
 
               const evaluation = await generateAnswerEvaluation({
                 question: questionForEvaluation,
@@ -1479,8 +1518,8 @@ export async function handleIncomingMessage(
               const feedback = evaluation
                 ? formatFeedback(evaluation, activeActivity.userLevel)
                 : formatFeedbackFailed();
-              const feedbackAudioPath = evaluation
-                ? await resolveFeedbackAudioPath(evaluation, pendingQuestion)
+              const feedbackAudioMediaId = evaluation
+                ? await resolveFeedbackAudioMediaId(evaluation, pendingQuestion)
                 : null;
               const feedbackSpeechText = evaluation
                 ? formatFeedbackToSpeech(evaluation)
@@ -1500,11 +1539,11 @@ export async function handleIncomingMessage(
               let tipSent = false;
               const answerType = input.isVoiceNote ? "audio" : "text";
               if (input.isVoiceNote && input.voiceAudioBuffer) {
-                await resolveAnswerAudioPath(
+                await storeAnswerAudio(
                   input.voiceAudioBuffer,
                   input.voiceAudioMimeType ?? "audio/ogg",
                   text,
-                  pendingQuestion.id,
+                  pendingQuestion,
                 );
               }
               const isWrongOrPartial =
@@ -1556,6 +1595,20 @@ export async function handleIncomingMessage(
                 metadata: scoreMetadata,
                 score: computeQuestionScore(scoreMetadata),
               });
+              // Precisa rodar antes do saveUserMsg: o cliente web reconcilia a
+              // selecao otimista quando a mensagem do usuario chega.
+              if (
+                pendingQuestion.questionFormat === QuestionFormat.choice ||
+                pendingQuestion.questionFormat ===
+                  QuestionFormat.image_recognition
+              ) {
+                await markOptionListAnswered({
+                  userId: user.id,
+                  questionId: pendingQuestion.id,
+                  buttonId: input.buttonId,
+                  answerText: text,
+                });
+              }
               const updatedCounts = await incrementDailyPracticeCount(
                 user.id,
                 today,
@@ -1604,7 +1657,7 @@ export async function handleIncomingMessage(
                 today,
               });
 
-              if (feedbackAudioPath) {
+              if (feedbackAudioMediaId) {
                 await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
                 await sendAndSaveMessage({
                   channel,
@@ -1614,12 +1667,10 @@ export async function handleIncomingMessage(
                   activityId: activeActivity.id,
                   message: {
                     ...(feedbackSpeechText ?? feedback),
-                    audioPath: feedbackAudioPath,
+                    audioMediaId: feedbackAudioMediaId,
                   },
                   intent: "practice_feedback",
                   questionId: pendingQuestion.id,
-                  mediaType: "audio",
-                  mediaId: feedbackAudioPath,
                   today,
                 });
               }
@@ -1948,6 +1999,7 @@ async function sendIntensiveQuestion(
     questionFormat: QuestionFormat | null;
     questionOptions: string[];
     termHint?: string | null;
+    questionImageMediaId?: string | null;
   },
   activity: Activity,
   userId: string,
@@ -2037,6 +2089,79 @@ async function notifySupportRequest(
   });
 }
 
+async function markOptionListAnswered(params: {
+  userId: string;
+  questionId: string;
+  buttonId?: string;
+  answerText: string;
+}): Promise<void> {
+  const messages = await findOptionListMessagesByQuestion(
+    params.userId,
+    params.questionId,
+  );
+  const target = messages
+    .map((m) => ({
+      id: m.id,
+      interactive: m.interactive as FormattedMessage["interactive"],
+    }))
+    .find((m) => m.interactive && !m.interactive.disabled);
+  if (!target?.interactive) return;
+
+  const selectedId = resolveSelectedButtonId(
+    target.interactive.buttons,
+    params.buttonId,
+    params.answerText,
+  );
+  await markOptionListSelection({
+    userId: params.userId,
+    messageId: target.id,
+    interactive: target.interactive,
+    selectedId,
+  });
+}
+
+async function markOptionListSelection(params: {
+  userId: string;
+  messageId: string;
+  interactive: NonNullable<FormattedMessage["interactive"]>;
+  selectedId: string | null;
+}): Promise<void> {
+  if (params.interactive.disabled) return;
+  await updateMessageInteractive(
+    params.messageId,
+    params.userId,
+    buildAnsweredInteractive(params.interactive, params.selectedId),
+  );
+}
+
+// Clique na web num passo de captura: valida a mensagem da lista, grava a
+// selecao e devolve a posicao da opcao. null = segue como texto digitado.
+async function applyCaptureStepSelection(params: {
+  userId: string;
+  input: IncomingMessage;
+  expectedLabels: string[];
+}): Promise<number | null> {
+  const { userId, input, expectedLabels } = params;
+  if (!input.buttonId || !input.buttonMessageId) return null;
+  const message = await findOptionListMessageById(
+    input.buttonMessageId,
+    userId,
+  );
+  const interactive = message?.interactive as
+    | FormattedMessage["interactive"]
+    | undefined;
+  if (!message || !interactive) return null;
+  const index = resolveOptionIndex(interactive, input.buttonId, expectedLabels);
+  if (index === null) return null;
+  await markOptionListSelection({
+    userId,
+    messageId: message.id,
+    interactive,
+    selectedId: input.buttonId,
+  });
+  return index;
+}
+
 async function saveUserMsg(params: SaveUserMsgParams): Promise<Message> {
   const {
     userId,
@@ -2075,23 +2200,27 @@ async function saveUserMsg(params: SaveUserMsgParams): Promise<Message> {
     throw err;
   }
   await incrementUserMessageCount(userId, today);
-  await saveImageMedia(message.id, input, content);
+  await saveImageMedia(message, input, content);
   return message;
 }
 
 async function saveImageMedia(
-  messageId: string,
+  message: Pick<Message, "id" | "userId">,
   input: Pick<IncomingMessage, "mediaType" | "mediaMetadata">,
   transcription: string,
 ): Promise<void> {
   const mediaPath = input.mediaMetadata?.mediaPath;
   if (input.mediaType !== "image" || typeof mediaPath !== "string") return;
+  const mediaId = input.mediaMetadata?.mediaId;
   const format = input.mediaMetadata?.format;
   const sizeBytes = input.mediaMetadata?.sizeBytes;
   const width = input.mediaMetadata?.width;
   const height = input.mediaMetadata?.height;
   await createMedia({
-    parentId: messageId,
+    id: typeof mediaId === "string" ? mediaId : undefined,
+    userId: message.userId,
+    source: MEDIA_SOURCE.USER,
+    parentId: message.id,
     parentType: MEDIA_PARENT_TYPE.MESSAGE,
     mediaType: "image",
     contentType: `image/${typeof format === "string" ? format : "jpeg"}`,
@@ -2328,7 +2457,7 @@ async function handleDocUpload(
       receivedAt: input.receivedAt,
     });
     await incrementUserMessageCount(userId, today);
-    await saveImageMedia(savedMsg.id, input, rawContent);
+    await saveImageMedia(savedMsg, input, rawContent);
     if (!itemValidation.success) {
       await sendAndSaveMessage({
         channel,
@@ -2443,7 +2572,7 @@ async function handleDocUpload(
     receivedAt: input.receivedAt,
   });
   await incrementUserMessageCount(userId, today);
-  await saveImageMedia(savedMsg.id, input, rawContent);
+  await saveImageMedia(savedMsg, input, rawContent);
   await createPendingBuffer(
     userId,
     userChannelId,

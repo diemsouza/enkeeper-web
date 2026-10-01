@@ -3,6 +3,7 @@ import { MessageChannel } from "../types/message-channel";
 import { FormattedMessage } from "../types/out-message";
 import { saveMessage } from "../repo/messages.repo";
 import { incrementAgentMessageCount } from "../repo/daily-usage.repo";
+import { MEDIA_TYPE } from "../lib/constants";
 
 type SendAndSaveMessageParams = {
   channel: MessageChannel;
@@ -13,10 +14,20 @@ type SendAndSaveMessageParams = {
   intent?: string;
   activityId?: string;
   questionId?: string;
-  mediaType?: string;
-  mediaId?: string;
   today?: Date;
 };
+
+function resolveMessageMedia(
+  message: FormattedMessage,
+): { mediaType?: string; mediaId?: string } {
+  if (message.imageMediaId) {
+    return { mediaType: MEDIA_TYPE.IMAGE, mediaId: message.imageMediaId };
+  }
+  if (message.audioMediaId) {
+    return { mediaType: MEDIA_TYPE.AUDIO, mediaId: message.audioMediaId };
+  }
+  return {};
+}
 
 export async function sendAndSaveMessage(
   params: SendAndSaveMessageParams,
@@ -25,6 +36,7 @@ export async function sendAndSaveMessage(
   const result = await channel.sendMessage(to, message);
   const saved = await saveMessage({
     ...rest,
+    ...resolveMessageMedia(message),
     role: "assistant",
     content: message.text,
     templateName: message.templateName,

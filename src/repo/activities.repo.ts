@@ -18,6 +18,8 @@ type CreateActivityData = {
 };
 
 type UpdateActivityData = {
+  chartCompletedMediaId?: string;
+  chartRoundMediaId?: string;
   topicIndex?: number;
   nextMessageAt?: Date | null;
   intervalMinutes?: number;

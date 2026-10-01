@@ -88,6 +88,8 @@ export const sectionQuestionSchema = z.object({
   meaning: z.string().nullable(),
   sourceContent: z.string().nullable(),
   warning: z.string().nullable(),
+  imageable: z.boolean().nullable(),
+  questionImageDescription: z.string().nullable(),
 });
 
 export type SectionQuestionResult = z.infer<typeof sectionQuestionSchema>;

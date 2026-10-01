@@ -1,4 +1,4 @@
-import type { ChannelType } from "./prisma";
+import type { ChannelType, Level } from "./prisma";
 
 export const THEME_COLOR_LIGHT = "#ffffff";
 export const THEME_COLOR_DARK = "#0a0a0a";
@@ -17,6 +17,7 @@ export const CADENCE_RESERVE = 24;
 export const INTENSIVE_LIMIT = 60 - 24; // 36
 export const TRIAL_DAYS = 7;
 export const AUDIO_CLEANUP_TTL_DAYS = 30;
+export const IMAGE_CLEANUP_TTL_DAYS = 90;
 export const AUDIO_CLEANUP_BATCH_LIMIT = 50;
 export const AUDIO_CLEANUP_SUBBATCH_SIZE = 10;
 export const SHORTLINK_CLEANUP_TTL_DAYS = 30;
@@ -31,6 +32,21 @@ export const MEDIA_PARENT_TYPE = {
 } as const;
 export type MediaParentType =
   (typeof MEDIA_PARENT_TYPE)[keyof typeof MEDIA_PARENT_TYPE];
+export const MEDIA_SOURCE = {
+  USER: "user",
+  SYSTEM: "system",
+} as const;
+export type MediaSource = (typeof MEDIA_SOURCE)[keyof typeof MEDIA_SOURCE];
+export const MEDIA_TYPE = {
+  AUDIO: "audio",
+  IMAGE: "image",
+} as const;
+export const QUESTION_IMAGE_FOLDER = "question-image";
+export const QUESTION_IMAGE_EXTENSION = "jpg";
+export const FEEDBACK_AUDIO_FOLDER = "feedback-audio";
+export const ANSWER_AUDIO_FOLDER = "answer-audio";
+export const CHART_FOLDER = "chart";
+export const OCR_IMAGE_FOLDER = "ocr-image";
 export const MAX_ACTIVITIES_PER_DAY = 5;
 export const MAX_DOC_ITEMS_PER_DOC = 3;
 export const DOC_BUFFER_DELAY_SEC = 45;
@@ -103,6 +119,17 @@ export type DomainId = (typeof DOMAINS)[number]["id"];
 export function getDomainLabel(id: string): string {
   return DOMAINS.find((g) => g.id === id)?.label ?? id;
 }
+
+export const LEVEL_OPTIONS: readonly { level: Level; label: string }[] = [
+  { level: "basic", label: "Básico" },
+  { level: "intermediate", label: "Intermediário" },
+  { level: "advanced", label: "Avançado" },
+];
+
+export const PICK_SHORTCUTS = {
+  FIRST_OPTION: { id: "first_option", label: "Primeira opção" },
+  RANDOM: { id: "random", label: "Escolha para mim" },
+} as const;
 
 export const TOPIC_SUGGESTIONS_DISPLAY_COUNT = 5;
 

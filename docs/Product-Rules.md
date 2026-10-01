@@ -165,7 +165,7 @@ Conteúdo gerado pelo fluxo de nova atividade (Seção 15) segue o mesmo formato
 
 ## 4. Formatos de pergunta
 
-Cinco formatos em uso ativo, todos de vocabulário — hoje todo material vira uma lista de vocabulário (Seção 3), então são os únicos que entram em jogo. O sorteio de formato acontece antes de gerar, o modelo executa, não decide.
+Seis formatos em uso ativo, todos de vocabulário: hoje todo material vira uma lista de vocabulário (Seção 3), então são os únicos que entram em jogo. O sorteio de formato acontece antes de gerar, o modelo executa, não decide. A única decisão que cabe ao modelo é se o item pode virar reconhecimento por imagem (ver abaixo).
 
 | Formato | O que faz |
 | ------- | --------- |
@@ -174,8 +174,20 @@ Cinco formatos em uso ativo, todos de vocabulário — hoje todo material vira u
 | recall invertido | Dado o termo, trazer o significado ou uso |
 | cenário | Situação realista que leva ao uso do termo |
 | múltipla escolha | 2 a 5 opções, embaralhadas antes de salvar |
+| reconhecimento por imagem | Uma imagem ilustra o termo e o usuário escolhe, entre 4 opções embaralhadas antes de salvar, qual termo ela representa |
 
 O prefixo "Complete:" do gap fill e a pergunta de fechamento do cenário não vêm mais do modelo — são aplicados depois, de forma determinística. Isso elimina falha de formatação (prefixo esquecido, fechamento reformulado ou fora do padrão). O fechamento do cenário hoje sorteia entre 4 variações em português e 4 em inglês, em vez de repetir sempre a mesma frase.
+
+### Reconhecimento por imagem
+
+Existe para quebrar o ritmo textual de pergunta, resposta e feedback. A mecânica é de escolha, como a múltipla escolha, mas é um formato próprio.
+
+- **Sorteio:** entra no sorteio com o mesmo peso dos demais, mas nunca sai imediatamente antes nem imediatamente depois da múltipla escolha, porque os dois são de escolha e não devem sair em sequência. Fica atrás de uma fração configurável de rollout, no mesmo princípio do áudio de feedback (Seção 6.1): fora da fração, o formato simplesmente não entra no sorteio daquela geração.
+- **Critério de imagem (`imageable`):** decidido na própria geração da pergunta. Vale para termos que uma cena sem texto mostra de forma que o sentido literal da imagem é o sentido real do termo: objeto, ação, estado, sentimento ou lugar. Expressões idiomáticas, phrasal verbs e termos abstratos ou gramaticais ficam de fora, porque a imagem literal de uma expressão reforça o erro de interpretar ao pé da letra (ex: "break the ice" mostraria gelo quebrando).
+- **Imagem:** gerada no momento em que a pergunta é gerada, a partir de uma descrição da cena em inglês produzida na mesma chamada: cena simples, um sujeito em destaque, fundo neutro, sem texto dentro da imagem e sem nada que represente os distratores, para servir a uma única opção.
+- **Fallback:** se o item não pode virar imagem, ou qualquer etapa falha (geração da pergunta, da imagem ou armazenamento), a pergunta é gerada em outro formato elegível para o mesmo item, sem nenhuma indicação ao usuário. O motivo fica registrado em log.
+- **Enunciado:** aplicado depois, de forma determinística, no mesmo princípio do prefixo do gap fill e do fechamento do cenário. Sorteia entre 3 variações em português no nível básico e 3 em inglês nos níveis intermediário e avançado. Opções numeradas.
+- **Avaliação:** igual à múltipla escolha, binária, aceitando o toque no botão, o número ou o texto da opção. Feedback, áudio de feedback, dica de erro, SM-2 e nota seguem as regras atuais, sem tratamento especial.
 
 `pergunta aberta` e `pergunta direta` (usadas antes para material de texto corrido e de exercício, respectivamente) ficaram sem uso desde que esses tipos de conteúdo deixaram de existir (Seção 3) — formatos legados, fora do fluxo ativo hoje.
 
@@ -186,6 +198,8 @@ O prefixo "Complete:" do gap fill e a pergunta de fechamento do cenário não v�
 O nível pode vir de duas fontes: informado pelo usuário ou detectado automaticamente no material enviado.
 
 O usuário informa seu nível uma vez (no início do uso, ou quando quiser trocar) e esse nível passa a valer para qualquer atividade futura, tendo prioridade sobre o nível do material. Se o usuário não informar nível, o sistema usa o nível detectado no material enviado. Para conteúdo gerado pelo fluxo de nova atividade (Seção 15), o nível declarado do usuário é sempre a referência, não há detecção automática nesse caminho.
+
+A pergunta de nível, tanto no fluxo de nova atividade quanto pelo comando `nivel`, usa a mesma lista de opções dos passos da Seção 15: seleção por toque na web, botões nativos no WhatsApp (ver Seção 19).
 
 Cada atividade guarda o nível que foi usado para gerar suas perguntas, então o histórico permanece consistente mesmo se o usuário trocar de nível depois.
 
@@ -345,7 +359,7 @@ Limite total atingido:
 > Você usou toda sua prática disponível de hoje, mas amanhã tem mais.
 
 Limite do intensivo atingido, cadência ainda disponível:
-> Você atingiu o limite diário de prática intensiva. Sua prática ao longo do dia continua normal.
+> Você usou toda sua prática disponível de hoje, mas amanhã tem mais.
 
 **Números sujeitos a revisão:** calibrados por estimativa de custo por resposta avaliada, sem dado real de produção ainda. Revisar após medição real de custo por resposta, e novamente quando a geração de perguntas migrar de lote para sob demanda, o que muda a estrutura de custo por interação.
 
@@ -605,13 +619,17 @@ Pergunta e resposta fixa, na ordem:
 
 Nenhum termo técnico de categoria aparece em copy voltada ao usuário, tanto assunto quanto ponto são perguntados em linguagem natural.
 
-Cada um dos três passos acima também aceita os atalhos de botão "Primeira opção" e "Escolha para mim" (ver Seção 19), além de número ou texto livre. A resposta por número é tolerante a variações de digitação: aceita separadores equivalentes à vírgula (`1 e 2`, `1, 2`, `1-2`, `1/2`) quando o passo permite mais de uma seleção. Número fora da lista, misturar número com texto na mesma resposta, ou informar mais números do que o passo aceita, cada caso retorna um aviso específico pedindo pra corrigir, não um "resposta inválida" genérico.
+Os quatro passos (nível, objetivo, assunto e ponto) mostram as opções como lista. Na superfície web, a lista é de escolha única por toque: o usuário toca na opção, ela fica destacada e a lista trava (ver Seção 19). Assunto e ponto continuam aceitando texto livre digitado, e o enunciado deixa isso claro. Ponto é escolha única na lista; a combinação de até 2 pontos (ver "Catálogo de foco linguístico") é feita por texto livre, e o enunciado do ponto indica isso.
+
+No WhatsApp, até 3 opções (nível) viram botões de resposta rápida nativos. Com mais de 3 opções (objetivo, assunto e ponto), as opções vão numeradas no texto, com instrução de responder pelo número e os atalhos de botão "Primeira opção" e "Escolha para mim". Os atalhos existem só no WhatsApp, a web não mostra atalho porque a seleção já é direta.
+
+Em qualquer canal, o passo aceita também número ou texto livre digitado. A resposta por número é tolerante a variações de digitação: aceita separadores equivalentes à vírgula (`1 e 2`, `1, 2`, `1-2`, `1/2`) quando o passo permite mais de uma seleção. Número fora da lista, misturar número com texto na mesma resposta, ou informar mais números do que o passo aceita, cada caso retorna um aviso específico pedindo pra corrigir, não um "resposta inválida" genérico.
 
 ### Catálogo de foco linguístico
 
 Ponto é escolhido de um catálogo fixo de aspectos da língua: vocabulário geral, classes de palavra (substantivos, adjetivos), tempos verbais, conectores, phrasal verbs, estruturas gramaticais, entre outros. O catálogo vale igualmente para os três níveis, sem restrição por nível, o que muda por nível é só o peso de prioridade nas 5 sugestões exibidas, não a disponibilidade do item.
 
-Usuário pode combinar até 2 pontos numa mesma atividade, tanto por texto livre quanto escolhendo até 2 números da lista numerada. Quando vêm 2 números, o texto das duas opções é classificado contra o catálogo antes de gerar, mesmo caminho do texto livre. Se pedir mais de 2, o sistema não trata como erro, pede pra escolher no máximo 2 entre o que foi mencionado. Objetivo e assunto continuam aceitando uma seleção só, em qualquer formato.
+Usuário pode combinar até 2 pontos numa mesma atividade, por texto livre ou, no WhatsApp, digitando até 2 números da lista numerada. A lista por toque da web é de escolha única. Quando vêm 2 números, o texto das duas opções é classificado contra o catálogo antes de gerar, mesmo caminho do texto livre. Se pedir mais de 2, o sistema não trata como erro, pede pra escolher no máximo 2 entre o que foi mencionado. Objetivo e assunto continuam aceitando uma seleção só, em qualquer formato.
 
 Novo item só entra no catálogo por decisão deliberada, mesmo princípio de mudança rara que já vale para outras regras de negócio deste documento.
 
@@ -670,13 +688,18 @@ Nem toda mídia é descartada após uso. PDF e texto em arquivo continuam sendo 
 - **Áudio de feedback**, gerado pelo sistema (Seção 6.1).
 - **Áudio de resposta**: quando o usuário responde uma pergunta pendente por nota de voz, o áudio é armazenado e usado no cálculo da nota da pergunta (Seção 6.3), diferente de uma resposta por texto, que não é retida.
 - **Imagem original de OCR**: a imagem enviada como material é armazenada junto com o texto (ou descrição) extraído dela (Seção 14.1), independente do desfecho ser texto, descrição, bloqueio ou imagem ilegível.
-- **Charts de resumo**: as imagens de pentágono (Seção 1) e gauge (Seção 2) geradas junto dos resumos. Pastas `charts/activity-completed/<id>` e `charts/round-completed/<id>`.
+- **Charts de resumo**: as imagens de pentágono (Seção 1) e gauge (Seção 2) geradas junto dos resumos. Cada atividade referencia os seus: um chart de conclusão (pentágono) e um de rodada (gauge).
+- **Imagem de pergunta**: a imagem gerada para o reconhecimento por imagem (Seção 4), guardada com a descrição da cena que a originou.
 
-Em todos os casos, o conteúdo de origem (texto do feedback falado, transcrição da resposta em áudio, transcrição ou descrição da imagem) é guardado junto ao arquivo, servindo de auditoria do que foi de fato produzido ou extraído, e permitindo reenvio em texto sem necessidade de gerar áudio novo, caso necessário no futuro.
+**Organização do armazenamento:** toda mídia nova é salva em `<pasta>/<id da mídia>`, com uma pasta por tipo e o nome do arquivo igual ao identificador do próprio registro de mídia: `feedback-audio` (áudio de feedback), `answer-audio` (áudio de resposta), `ocr-image` (imagem original de OCR), `question-image` (imagem de pergunta) e `chart` (pentágono e gauge). Mídia ligada a uma entidade (pergunta, atividade) é referenciada por ela diretamente, nunca localizada pelo caminho do arquivo. Mídias gravadas antes dessa convenção permanecem nas pastas antigas (`feedback/`, `answer/`, `ocr/`, `charts/...`), sem migração.
+
+Em todos os casos, o conteúdo de origem (texto do feedback falado, transcrição da resposta em áudio, transcrição ou descrição da imagem, descrição da cena da imagem de pergunta) é guardado junto ao arquivo, servindo de auditoria do que foi de fato produzido ou extraído, e permitindo reenvio em texto sem necessidade de gerar áudio novo, caso necessário no futuro.
 
 O áudio de feedback armazenado é reaproveitado quando a mesma pergunta volta, seja por revisão espaçada (Seção 7) ou por reenvio dentro da sessão intensiva, e a nova avaliação gera a mesma frase de demonstração (`feedback_text`) já persistida para aquela pergunta (Seção 6.1) — nesse caso não gera áudio de novo. Regeneração ocorre quando a frase de demonstração muda entre uma resposta e outra, mesmo pra mesma pergunta, ou quando o áudio original não existe mais no armazenamento.
 
-Mídia associada a uma pergunta (áudio de feedback, áudio de resposta) é removida do armazenamento (não o registro em si, que permanece como histórico) quando a atividade correspondente está `archived` ou `cancelled` há mais de 30 dias. Atividade `active` nunca tem mídia removida, independente de quanto tempo estiver parada. Imagem original de OCR e charts de resumo seguem o mesmo critério de 30 dias, mas contado a partir do próprio registro de mídia, sem depender de status de activity (o pentágono referencia duas atividades e o gauge é gerado no meio de uma atividade ainda `active`, então amarrar a status de activity seria ambíguo). A remoção roda automaticamente, uma vez por dia, em lotes, sem necessidade de intervenção manual.
+Áudio associado a uma pergunta (áudio de feedback, áudio de resposta) é removido do armazenamento (não o registro em si, que permanece como histórico) quando a atividade correspondente está `archived` ou `cancelled` há mais de 30 dias. Atividade `active` nunca tem mídia removida, independente de quanto tempo estiver parada. Imagens (original de OCR, charts de resumo e imagem de pergunta) são removidas após 90 dias, contados a partir do próprio registro de mídia, sem depender de status de activity (o pentágono referencia duas atividades e o gauge é gerado no meio de uma atividade ainda `active`, então amarrar a status de activity seria ambíguo). A remoção roda automaticamente, uma vez por dia, em lotes, sem necessidade de intervenção manual.
+
+A imagem de pergunta é reaproveitada sempre que a mesma pergunta volta (revisão espaçada, reexibição de pergunta pendente, sessão intensiva), e uma pergunta que já tem imagem nunca gera outra.
 
 ---
 
@@ -703,8 +726,19 @@ Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje
 - **WhatsApp**: usa `imagePath` se presente (envia a imagem com o `text` como caption); senão `audioPath` se presente (envia o áudio); senão `templateName` se presente (envia via template aprovado da Meta, necessário fora da janela de 24h); senão `interactive` se presente (envia com botões); senão `text` puro.
 - **Superfície web** (`/app`): usa `imagePath` se presente, renderizando a imagem com o `text` como legenda e permitindo abrir a imagem em tela cheia com zoom ao clicar (pentágono e gauge, Seções 1 e 2); usa `audioPath` decodificando o próprio arquivo Ogg/Opus no client, por decoder próprio, sem depender de suporte nativo do navegador ao codec. O arquivo de áudio é o mesmo canônico servido ao WhatsApp: Ogg/Opus segue como único formato gerado e armazenado (sem mudança no TTS nem no schema, ver Seção 17), sem geração de mídia duplicada por canal, só a decodificação muda por canal.
 
+`imagePath` e `interactive` podem vir juntos na mesma mensagem (hoje: pergunta de reconhecimento por imagem, Seção 4, com um botão por opção). A superfície web mostra a imagem, o texto como legenda e as opções como botões. O WhatsApp segue a prioridade acima: envia a imagem com o `text` como legenda e acrescenta as opções numeradas à legenda no envio, sem botões.
+
+**Listas de opções.** Toda mensagem com lista de opções (`choice`, `image_recognition` e os passos de nível, objetivo, assunto e ponto) segue o mesmo padrão: o `text` leva só o enunciado, neutro de canal, sem opções numeradas nem instrução de responder por número; as opções vivem no `interactive`, que é persistido com a lista completa; cada canal monta a apresentação a partir dele. A web renderiza a lista a partir do `interactive`, inclusive ao recarregar. O WhatsApp pode acrescentar as opções numeradas ao texto no envio, e nos passos de captura decide entre botões nativos (até 3 opções) ou lista numerada com instrução e atalhos (mais de 3, ver Seção 15). O que é salvo no histórico é o `text` canônico, não o texto montado pelo canal.
+
 Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais depois, sem quebrar nada que já existe (ver Seção 7 do Product-Brief, arquitetura multicanal).
 
 Dentro de `interactive`, um botão pode ser de dois tipos: ação (resposta rápida nativa do canal, ex: "Nova atividade") ou link (abre uma URL externa, ex: link de pagamento do bloqueio de acesso, Seção 11.1). Mensagem com botão de link sempre inclui a mesma URL também no `text` puro, como fallback para quem recebe só a camada canônica.
 
-`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário — não só o texto equivalente. O `interactive` em produção cobre hoje quatro casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade"; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre o checkout no WhatsApp e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; os passos de objetivo/assunto/ponto do fluxo de nova atividade (Seção 15), com botões de ação "Primeira opção" e "Escolha para mim"; e a seleção de nível (Seção 5, comando `nivel`), com um botão por nível.
+`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário, não só o texto equivalente. O `interactive` em produção cobre hoje cinco casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade"; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre o checkout no WhatsApp e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; os passos de nível (Seção 5, também pelo comando `nivel`), objetivo, assunto e ponto do fluxo de nova atividade (Seção 15), com um botão por opção; e as perguntas `choice` e de reconhecimento por imagem (Seção 4), com um botão por opção.
+
+Nas listas de opções, o `interactive` guarda também o estado da seleção: `disabled` (todas as opções travadas) e `selectedId` (id da opção escolhida, destacada). Ausentes, a lista está pendente. Dois caminhos gravam:
+
+- **Avaliação da resposta** (`choice` e `image_recognition`): na mensagem mais recente e ainda livre daquela pergunta; a opção vem do botão clicado, senão do número ou do texto digitado, e sem correspondência grava só `disabled`.
+- **Clique num passo de captura** (nível, objetivo, assunto, ponto): só quando a web envia o id da mensagem e o id do botão, a mensagem é do usuário, é do sistema com lista, o botão existe nela, a opção bate com a lista atual do passo e a lista ainda não está travada. O clique segue o mesmo caminho da escolha daquela opção da lista. Texto digitado nesses passos não grava estado.
+
+Comandos e respostas barradas (limite, supressão) não alteram a mensagem; a gravação só acontece depois que a mensagem é aceita para processamento. A superfície web antecipa localmente a seleção no clique e volta ao pendente se o envio falhar ou se o servidor não avaliar a mensagem como resposta. Mensagens anteriores a essa regra ficam sem estado (sem backfill).

@@ -1,7 +1,11 @@
 import { ParsedMessage } from "../types/domain";
 import { Level } from "../lib/prisma";
-import { DOMAINS, DomainId } from "../lib/constants";
+import { DOMAINS, DomainId, PICK_SHORTCUTS } from "../lib/constants";
 import { resolveCommand } from "../lib/commands";
+import type {
+  FormattedMessage,
+  FormattedMessageButton,
+} from "../types/out-message";
 
 function normalize(s: string): string {
   // eslint-disable-next-line no-misleading-character-class
@@ -17,7 +21,8 @@ export function parseLevelInput(text: string): Level | "cancel" | null {
   return null;
 }
 
-export type NumericSelectionError = "out_of_range" | "too_many" | "mixed_format";
+export type NumericSelectionError =
+  "out_of_range" | "too_many" | "mixed_format";
 
 export type NumericSelectionResult =
   | { type: "numeric"; indices: number[]; texts: string[] }
@@ -61,6 +66,46 @@ export function parseNumericSelection(
   };
 }
 
+export function resolveSelectedButtonId(
+  buttons: FormattedMessageButton[],
+  buttonId: string | undefined,
+  answerText: string,
+): string | null {
+  if (buttonId && buttons.some((b) => b.id === buttonId)) return buttonId;
+
+  const labels = buttons.map((b) => b.label);
+  const selection = parseNumericSelection(answerText, labels, 1);
+  if (selection.type === "numeric") return buttons[selection.indices[0]].id;
+
+  const answer = normalize(answerText.trim());
+  const match = buttons.find((b) => normalize(b.label.trim()) === answer);
+  return match?.id ?? null;
+}
+
+export function resolveOptionIndex(
+  interactive: FormattedMessage["interactive"] | null,
+  buttonId: string,
+  expectedLabels: string[],
+): number | null {
+  if (!interactive?.isOptionList || interactive.disabled) return null;
+  const index = interactive.buttons.findIndex((b) => b.id === buttonId);
+  if (index === -1) return null;
+  // Rotulo divergente = lista de outro passo ou de um fluxo anterior.
+  if (interactive.buttons[index].label !== expectedLabels[index]) return null;
+  return index;
+}
+
+export function buildAnsweredInteractive(
+  interactive: NonNullable<FormattedMessage["interactive"]>,
+  selectedId: string | null,
+): NonNullable<FormattedMessage["interactive"]> {
+  return {
+    ...interactive,
+    disabled: true,
+    ...(selectedId ? { selectedId } : {}),
+  };
+}
+
 export type DomainInputResult =
   | { type: "known"; id: DomainId }
   | { type: "cancel" }
@@ -70,10 +115,10 @@ export type DomainInputResult =
 export function parseDomainInput(text: string): DomainInputResult {
   const n = normalize(text.trim());
   if (resolveCommand(text) === "cancel") return { type: "cancel" };
-  if (n === normalize("Primeira opção")) {
+  if (n === normalize(PICK_SHORTCUTS.FIRST_OPTION.label)) {
     return { type: "known", id: DOMAINS[0].id };
   }
-  if (n === normalize("Escolha para mim")) {
+  if (n === normalize(PICK_SHORTCUTS.RANDOM.label)) {
     return {
       type: "known",
       id: DOMAINS[Math.floor(Math.random() * DOMAINS.length)].id,
@@ -115,10 +160,10 @@ export function parseTopicSelectionInput(
   const n = normalize(trimmed);
   if (resolveCommand(text) === "cancel") return { type: "cancel" };
 
-  if (n === normalize("Primeira opção")) {
+  if (n === normalize(PICK_SHORTCUTS.FIRST_OPTION.label)) {
     return { type: "known", topic: suggestions[0] };
   }
-  if (n === normalize("Escolha para mim")) {
+  if (n === normalize(PICK_SHORTCUTS.RANDOM.label)) {
     return {
       type: "known",
       topic: suggestions[Math.floor(Math.random() * suggestions.length)],
@@ -135,8 +180,7 @@ export function parseTopicSelectionInput(
 }
 
 export type FocusSelectionInput =
-  | { type: "known"; keys: [string] }
-  | { type: "freeText"; text: string };
+  { type: "known"; keys: [string] } | { type: "freeText"; text: string };
 
 export type FocusInputResult =
   | FocusSelectionInput
@@ -153,10 +197,10 @@ export function parseFocusSelectionInput(
   const n = normalize(trimmed);
   if (resolveCommand(text) === "cancel") return { type: "cancel" };
 
-  if (n === normalize("Primeira opção")) {
+  if (n === normalize(PICK_SHORTCUTS.FIRST_OPTION.label)) {
     return { type: "known", keys: [suggestions[0].key] };
   }
-  if (n === normalize("Escolha para mim")) {
+  if (n === normalize(PICK_SHORTCUTS.RANDOM.label)) {
     const picked = suggestions[Math.floor(Math.random() * suggestions.length)];
     return { type: "known", keys: [picked.key] };
   }

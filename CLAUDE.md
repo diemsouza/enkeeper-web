@@ -121,11 +121,11 @@ Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.servic
 
 ## Sistema de formatos de pergunta
 
-Formatos validos (`QuestionFormat` enum): `gap_fill`, `recall`, `recall_inverted`, `scenario`, `choice`, `open_text`, `open_question`.
+Formatos validos (`QuestionFormat` enum): `gap_fill`, `recall`, `recall_inverted`, `scenario`, `choice`, `image_recognition`, `open_text`, `open_question`.
 
 Cada formato tem um arquivo de exemplo em `prompts/examples/<format>.md` com blocos por nivel (`## BASIC`, `## INTERMEDIATE`, `## ADVANCED`) e secao (`### question`, `### feedback`).
 
-Selecao de formato ativa hoje: `pickNextFormat()` em `src/core/question-format-picker.ts`, que rotaciona os 5 formatos de vocabulario (`gap_fill`, `recall`, `recall_inverted`, `scenario`, `choice`). `open_text`/`open_question` existem no enum mas nao tem call site ativo (eram usados por `text`/`exercise`, que nao existem mais como tipo de conteudo, ver Product-Rules.md Secao 3).
+Selecao de formato ativa hoje: `pickNextFormat()` em `src/core/question-format-picker.ts`, que rotaciona os 6 formatos de vocabulario (`gap_fill`, `recall`, `recall_inverted`, `scenario`, `choice`, `image_recognition`). `image_recognition` so entra quando o sorteio de `IMAGE_QUESTION_ROLLOUT_FRACTION` permite e nunca sai logo antes ou logo depois de `choice`. `open_text`/`open_question` existem no enum mas nao tem call site ativo (eram usados por `text`/`exercise`, que nao existem mais como tipo de conteudo, ver Product-Rules.md Secao 3).
 
 Funcoes em `src/core/format-loader.ts`:
 - `getQuestionExamples(formats, level)` -- string formatada com exemplos de pergunta por formato
@@ -135,7 +135,13 @@ Funcoes em `src/core/format-loader.ts`:
 
 O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotacao manual do texto da pergunta, so decide qual formato pedir (`pickNextFormat`).
 
-**Choice shuffle:** opcoes sao embaralhadas uma vez antes de salvar no banco (`updateQuestion`). `formatChoiceQuestion` apenas aplica labels `a) b) c)` -- nao embaralha.
+**image_recognition:** a geracao devolve `imageable` e `questionImageDescription`; a imagem sai de `src/vendors/image.vendor.ts` (`gpt-image-1-mini`) via `src/services/question-image-service.ts`, salva em `question-image/<mediaId>.jpg` (JPEG comprimido, landscape 1536x1024 por padrao ou `square` via parametro `orientation`; largura/altura em `Media.metadata`; Media `image`, removida pela limpeza de imagens apos 90 dias). Falha ou `imageable: false` cai para outro formato em `buildQuestionData` (`activity-cron.service.ts`). `formatQuestion` aplica o enunciado e monta `text` + `imageMediaId` + `interactive`. O estilo visual fixo (foto realista) fica em `prompts/question-image.md`, anexado a descricao pelo `image.vendor`, seguido do adendo de composicao da orientacao ("Wide landscape composition, subject centered."); a descricao gerada fala so da cena, com o termo no ambiente real onde aparece.
+
+**Choice shuffle:** opcoes sao embaralhadas uma vez antes de salvar no banco (`updateQuestion`). **Opcoes por canal:** choice e image_recognition devolvem so a pergunta em `text` e as opcoes em `interactive.buttons` com `isOptionList: true`. O `WhatsAppChannel` anexa a lista numerada via `formatNumberedOptions` (texto ou legenda); a web salva so a pergunta e o cliente renderiza os botoes. `formatNumberedOptions` nao embaralha.
+
+**Passos de captura:** nivel, objetivo, assunto e ponto tambem sao listas (`isOptionList` + `isCaptureStep`; `text` = `body` com enunciado e aviso de cancelar, opcoes so nos botoes). No WhatsApp, ate 3 opcoes viram reply buttons; acima disso, `formatCaptureStepOptionsText` + atalhos `PICK_SHORTCUTS`. O clique na web manda `buttonId` + `messageId`; `applyCaptureStepSelection` valida (`resolveOptionIndex`), grava a selecao e passa a posicao ao parser do passo.
+
+**Estado da selecao:** o `interactive` de lista de opcoes ganha `disabled` e `selectedId`, gravados por `markOptionListSelection` (`message-service.ts`, idempotente): na avaliacao (`markOptionListAnswered`, antes do `saveUserMsg`) na mensagem mais recente e livre da pergunta (`question_id`), e no clique de um passo de captura. A resolucao da opcao e `resolveSelectedButtonId` (`src/core/parser.ts`): id do botao, senao numero, senao texto. A web antecipa a selecao no clique e reconcilia quando a mensagem do usuario chega pelo realtime.
 
 ## LLM vendor
 
@@ -150,6 +156,8 @@ O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotac
 | `generateAnswerEvaluation`| answer-evaluation | PROVIDER_STANDARD  |
 | `extractTextFromImage`    | ocr               | gpt-4o-mini        |
 | `extractTextFromPdf`      | --                | unpdf (sem LLM)    |
+
+Geracao de imagem: `src/vendors/image.vendor.ts` (OpenAI gpt-image-1-mini, stage `question-image` no `LlmLog`).
 
 `PROVIDER_STANDARD` alterna entre `"anthropic"` (claude-haiku-4-5) e `"openai"` (gpt-4.1). Mudar a constante no topo do arquivo para trocar.
 
@@ -234,6 +242,23 @@ await sendAndSaveMessage({ channel, to: userChannel.channelId, userId, userChann
 `sendAndSaveMessage` envia via `channel.sendMessage`/`sendTemplate`, captura o `externalId` (wamid) retornado pela Cloud API e so entao salva a `Message` ja com esse valor -- envio sempre antes do save, nunca depois. Passar `today` quando a mensagem deve contar para `incrementAgentMessageCount`; omitir quando o fluxo nunca contou (ex: `process-doc-service.ts`, `merge-doc-service.ts`).
 
 `MessageChannel.sendMessage`/`sendTemplate` enviam uma mensagem por chamada (sem array, sem `{ delay }`). Para pausas entre mensagens, usar `delay(segundos)` de `src/lib/utils.ts` explicitamente entre chamadas de `sendAndSaveMessage`.
+
+### Padrao de armazenamento de midia
+
+Toda midia nova vai em `<pasta>/<mediaId>.<ext>`, com o nome do arquivo igual ao id da `Media`:
+```typescript
+const mediaId = ulid();
+const mediaPath = buildMediaPath(FEEDBACK_AUDIO_FOLDER, mediaId, "ogg");
+await uploadFile({ filePath: mediaPath, file });
+await createMedia({ id: mediaId, userId, source: MEDIA_SOURCE.SYSTEM, mediaPath, parentId, parentType, mediaType, contentType });
+```
+- Pastas sao constantes `*_FOLDER` em `src/lib/constants.ts` (`FEEDBACK_AUDIO_FOLDER`, `ANSWER_AUDIO_FOLDER`, `OCR_IMAGE_FOLDER`, `QUESTION_IMAGE_FOLDER`, `CHART_FOLDER`). Pasta nova entra como nova constante, nunca string solta.
+- Midia ligada a uma entidade e referenciada por coluna `<algo>MediaId` com FK para `Media` (ex: `Question.feedbackAudioMediaId`, `Activity.chartCompletedMediaId`, `Message.mediaId`), nunca localizada por prefixo de caminho.
+- Caminho e extensao so existem no upload. Depois disso tudo circula pelo id da `Media` (`FormattedMessage.imageMediaId`/`audioMediaId`, `Message.mediaId`) e quem precisa do arquivo le `Media.mediaPath`. Nunca remontar caminho com `buildMediaPath` fora da criacao.
+- Toda `Media` tem dono (`userId`) e origem (`source`: `MEDIA_SOURCE.USER` para o que o usuario enviou, voz e foto; `MEDIA_SOURCE.SYSTEM` para o que geramos, IA, TTS e grafico).
+- A web abre midia por `/api/app/media/<mediaId>` (`buildMediaUrl`), que busca a `Media` por id + `userId` e redireciona para a signed URL.
+- `sendAndSaveMessage` grava `mediaType`/`mediaId` a partir de `imageMediaId`/`audioMediaId` da mensagem; nao passar esses campos a mao.
+- Limpeza (`audio-cleanup-cron.service.ts`) filtra por `mediaType`, nao por pasta. Midias antigas continuam nas pastas legadas (`feedback/`, `answer/`, `ocr/`, `charts/...`), sem backfill.
 
 ### Prisma
 

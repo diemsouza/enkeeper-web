@@ -371,8 +371,6 @@ async function sendActivityCreatedConfirmation(
       userId,
       userChannelId: userChannel.id,
       message: summary,
-      mediaType: summary.imagePath ? "image" : undefined,
-      mediaId: summary.imagePath,
     });
   }
 }

@@ -6,6 +6,194 @@ topo.
 
 ---
 
+## Passos de captura como lista de opções
+
+Data: 2026-09-30
+
+Contexto: nível (e comando `nivel`), objetivo, assunto e ponto mostravam as
+opções numeradas no `text`, com os atalhos "Primeira opção" / "Escolha para
+mim" como botões. Como a web já tem lista com seleção por toque e estado
+(`choice`/`image_recognition`), os passos passam a usar a mesma lista, para o
+onboarding ficar mais rápido. O WhatsApp entrega o mesmo de antes.
+
+Decisões:
+
+- **Opções no `interactive` como fonte.** Um botão por opção
+  (`<passo>_option_<n>`), `isOptionList: true`, persistido com a lista
+  completa. A web renderiza e reidrata a partir dele.
+- **Texto neutro de canal.** `text` = `interactive.body` = cabeçalho de
+  progresso + enunciado + aviso de cancelar, sem opções nem "informe o
+  número". O texto todo fica em cima e as opções embaixo, em qualquer canal;
+  no WhatsApp o aviso de cancelar passa a vir antes da lista numerada.
+- **Canal monta a apresentação.** `isCaptureStep` diferencia os passos de
+  `choice`/`image_recognition`. No WhatsApp: até 3 opções viram reply
+  buttons nativos; acima disso, `formatCaptureStepOptionsText` (corpo,
+  opções com emoji e instrução de número) com os atalhos como botões.
+  Rótulos dos atalhos em `PICK_SHORTCUTS` (`constants.ts`), compartilhados
+  com o parser.
+- **Clique segue o caminho da opção.** A web envia `buttonId` e `messageId`.
+  `applyCaptureStepSelection` (`message-service.ts`) só aceita se a mensagem é
+  do usuário, `assistant` com `isOptionList` (`findOptionListMessageById`), e
+  se `resolveOptionIndex` (`core/parser.ts`) confirma botão existente, lista
+  livre e rótulo igual à opção atual do passo. A checagem de rótulo barra o
+  clique numa lista de outro passo ou de um fluxo anterior. A posição vira
+  `String(index + 1)` para objetivo/assunto/ponto (mesmo caminho do número
+  digitado; no ponto, número único = chave conhecida, sem reclassificar) e o
+  rótulo do nível para o nível (mesmo caminho do reply button do WhatsApp).
+  Sem validação, o texto (rótulo) segue exatamente como digitado.
+- **Gravação única e idempotente.** `markOptionListSelection` grava
+  `disabled`/`selectedId` e não faz nada se a lista já está travada. Usada pela
+  avaliação (`markOptionListAnswered`) e pelo clique nos passos. No passo, roda
+  só no ramo que processa a resposta (depois da supressão e dos ramos de
+  comando/cancelar) e antes do `saveUserMsg`, que é o sinal de reconciliação
+  da web. Texto digitado não grava estado.
+- **Escolha única.** A lista da web é de escolha única nos quatro passos. A
+  combinação de até 2 pontos fica no texto livre (e no número digitado no
+  WhatsApp). Sem seleção múltipla.
+- **Consequência aceita.** Se a geração do ponto falhar depois do clique, a
+  lista já está travada e a nova tentativa é por texto.
+
+---
+
+## Estado da seleção nas listas de opções
+
+Data: 2026-09-30
+
+Contexto: em `choice` e `image_recognition`, os botões da web continuavam
+iguais e clicáveis depois da resposta, sem mostrar a opção escolhida. Ajuste
+só de UX: avaliação, feedback, SM-2 e score não mudam.
+
+Decisões:
+
+- **Estado no próprio `interactive`.** `disabled` e `selectedId` opcionais no
+  jsonb da `Message`, sem coluna nova, sem migração e sem backfill.
+- **Escrita só na avaliação.** `markOptionListAnswered` (`message-service.ts`)
+  roda logo após o `updateQuestion` e antes do `saveUserMsg`. Nenhum outro
+  caminho (comando, fluxo de nova atividade, limite, supressão) toca a
+  mensagem.
+- **Alvo por `question_id`.** Mensagem `assistant` com `isOptionList`, a mais
+  recente sem `disabled` (a pergunta pode ter sido reenviada). Segunda
+  avaliação não acha mensagem livre e não faz nada.
+- **Resolução da opção em código, não no LLM.** `resolveSelectedButtonId`
+  (`src/core/parser.ts`): `buttonId` enviado pela web se existir na mensagem,
+  senão número via `parseNumericSelection`, senão texto normalizado; sem
+  correspondência grava só `disabled`.
+- **Cliente antecipa e reconcilia.** O POST processa em `after()` e não diz
+  se houve avaliação. O sinal é a ordem de escrita: quando o INSERT da
+  mensagem do usuário chega pelo realtime, o estado da lista já é final, então
+  o cliente faz `refreshMessages` e descarta a seleção otimista (servidor
+  vence). Falha no POST reverte na hora. UPDATE de mensagem de bot já
+  conhecida passa a fazer merge do `interactive` por id, sem re-render quando
+  o valor é igual.
+
+---
+
+## Padronização do armazenamento de mídia
+
+Data: 2026-09-29
+
+Contexto: o `image_recognition` estreou o caminho `question-image/<mediaId>.png`.
+As demais mídias seguiam padrões soltos (`feedback/<questionId>_<ts>.ogg`,
+`answer/<questionId>_<ts>.<ext>`, `ocr/<ulid>.<ext>`,
+`charts/activity-completed/<ulid>.png`), e os charts não eram referenciados
+por nenhuma coluna: o pentágono do histórico era achado por prefixo de caminho.
+
+Decisões:
+
+- **Toda mídia nova em `<pasta>/<mediaId>.<ext>`**, via `buildMediaPath`
+  (`src/lib/utils.ts`), com uma constante por pasta em `src/lib/constants.ts`:
+  `FEEDBACK_AUDIO_FOLDER`, `ANSWER_AUDIO_FOLDER`, `OCR_IMAGE_FOLDER`,
+  `QUESTION_IMAGE_FOLDER` e `CHART_FOLDER`. O pentágono e o gauge dividem a
+  pasta `chart`; o que diferencia os dois é a coluna que aponta para cada um.
+- **`mediaId` gerado antes do upload** (`ulid()`) e passado como `id` no
+  `createMedia`, para o nome do arquivo ser o id da Media. No OCR, a rota de
+  upload gera o id e o repassa no `mediaMetadata` até o `saveImageMedia`
+  (`message-service.ts`), que cria a Media depois.
+- **`Activity.chartCompletedMediaId` e `Activity.chartRoundMediaId`**, com FK
+  para `Media` (`onDelete: SetNull`), no mesmo padrão das colunas `*MediaId`
+  da `Question`. Gravadas pelo `chart-service` logo após salvar o chart;
+  regenerar um chart sobrescreve a coluna com o mais recente.
+- **Sem backfill.** Mídias antigas ficam nas pastas antigas.
+  `findClosingSummaryMedia` usa `chartCompletedMediaId` quando existe e mantém
+  o fallback por prefixo `charts/activity-completed/` só para atividades
+  arquivadas antes da coluna.
+- **A limpeza não depende de pasta.** `processImageCleanup` e
+  `processAudioCleanup` filtram por `mediaType`, então pegam as pastas novas e
+  antigas igualmente.
+
+---
+
+## Formato de pergunta `image_recognition`
+
+Data: 2026-09-29
+
+Contexto: a prática estava textual demais. O novo formato mostra uma imagem
+gerada que ilustra o termo e o usuário escolhe a opção que ela representa
+(ver Product-Rules Seção 4).
+
+Decisões:
+
+- **Formato próprio derivado do `choice`, não uma variação dele.** Reaproveita
+  a mecânica (opções em `questionOptions`, embaralhamento em
+  `sanitizeQuestionData`, avaliação binária), mas tem valor próprio no enum
+  `QuestionFormat`, bloco de exemplos próprio
+  (`prompts/examples/image_recognition.md`) e montagem própria em
+  `formatQuestion`.
+- **Opções renderizadas pelo canal.** Choice e image_recognition devolvem só
+  o enunciado em `text` e as opções em `interactive.buttons` com
+  `isOptionList: true`. O WhatsApp (limite de 3 botões e 20 chars) anexa a
+  lista numerada (`formatNumberedOptions`) ao texto ou à legenda da imagem; a
+  web salva só o enunciado e o cliente desenha os botões. A avaliação monta a
+  pergunta com a lista numerada para o LLM mapear respostas como "2".
+- **`imageable` decidido na própria geração on-demand.** A mesma chamada
+  `generateNextQuestion` devolve `imageable` e `questionImageDescription`
+  (campos nullable em `sectionQuestionSchema`, `null` nos demais formatos).
+  Sem chamada extra de classificação antes de gerar.
+- **Descrição da cena + guia de estilo fixo.** A descrição gerada fala só da
+  cena, com o termo no ambiente real onde aparece e em uso quando faz sentido
+  (objeto solto em fundo vazio fica ambíguo); o estilo visual (foto realista,
+  pessoas reais, sem texto) vem de `prompts/question-image.md`, anexado pelo
+  `image.vendor`. Foto em vez de ilustração porque a prática é de uso real, e
+  quanto mais perto do real, mais a imagem ajuda. Sem chamada de visão para
+  validar a imagem gerada depois. A descrição fica em
+  `Question.questionImageDescription` e em `Media.mediaTranscription`, como
+  auditoria do que originou a imagem.
+- **`image.vendor` separado do `llm.vendor`.** Mesmo padrão do `tts.vendor`:
+  entra a descrição, sai o arquivo (`gpt-image-1-mini`, qualidade `low`,
+  landscape 1536x1024 por padrão ou square 1024x1024, JPEG com compressão 80;
+  a composição entra como adendo no fim do prompt e largura/altura vão em
+  `Media.metadata`). Cada chamada é registrada em `llm_logs` (stage
+  `question-image`, sem o base64 no `output`) e em `llm_usage`
+  (`question_image`).
+- **Fallback para outro formato, não para texto da mesma pergunta.**
+  `imageable: false`, falha na geração da pergunta, do vendor, do upload ou do
+  registro de mídia fazem `buildQuestionData` (`activity-cron.service.ts`)
+  sortear outro formato para o mesmo bloco de conteúdo, com
+  `console.warn` do motivo. Rollout por `IMAGE_QUESTION_ROLLOUT_FRACTION`,
+  mesmo padrão de `AUDIO_ROLLOUT_FRACTION`.
+- **Adjacência com `choice` imposta no picker.** `pickNextFormat` sorteia
+  aleatoriamente entre os formatos restantes, então a ordem do array sozinha
+  não impediria a sequência. O picker exclui a família de escolha inteira
+  (`choice` e `image_recognition`) quando o último formato é de escolha. No
+  array, `image_recognition` fica no índice 2, a posição mais distante de
+  `choice` (distância 3 na ordem linear e circular).
+- **Avaliação por LLM, igual ao choice.** O pedido original previa avaliação
+  determinística, mas o choice já é avaliado pelo `generateAnswerEvaluation`,
+  que também gera `feedback_text`, tradução e dica de erro. O status
+  determinístico não economizaria chamada e abriria um caminho novo no
+  `message-service`. O botão da web envia o texto da opção como resposta.
+- **Imagem salva em `question-image/<mediaId>.png`**, primeira mídia na
+  convenção `<pasta>/<mediaId>.<ext>`, depois estendida às demais (ver
+  "Padronização do armazenamento de mídia"). O path é derivado do
+  `questionImageMediaId`, então `formatQuestion` segue puro.
+- **Imagem de pergunta é Media `image` como as demais.** Sem tipo próprio:
+  entra no `processImageCleanup` junto com OCR e charts, cujo TTL passou de
+  30 para 90 dias (`IMAGE_CLEANUP_TTL_DAYS`). `processAudioCleanup` passou a
+  filtrar `mediaType: "audio"`; antes buscava toda mídia de pergunta e teria
+  apagado a imagem junto com o áudio, pelo critério de status da activity.
+
+---
+
 ## Atribuição de origem (UTM) no cadastro web
 
 Data: 2026-09-22

@@ -18,7 +18,7 @@ export function ImageBubble({
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={imageUrl}
-      alt="Chat image"
+      alt={t("image_alt")}
       className="block -mx-3 -mt-2 w-[calc(100%_+_1.5rem)] max-w-none"
     />
   );

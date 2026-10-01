@@ -28,7 +28,7 @@ export default async function ArchivedActivityPage({
   if (!activity || activity.status !== "archived") notFound();
 
   const chartMedia = activity.summary
-    ? await findClosingSummaryMedia(id)
+    ? await findClosingSummaryMedia(activity)
     : null;
   const t = await getTranslations("app.common");
 
@@ -37,7 +37,7 @@ export default async function ArchivedActivityPage({
       activityId={activity.id}
       title={activity.title || t("activity_untitled")}
       summary={activity.summary ?? null}
-      chartImageUrl={chartMedia ? buildMediaUrl(chartMedia.mediaPath) : null}
+      chartImageUrl={chartMedia ? buildMediaUrl(chartMedia.id) : null}
       archivedAtLabel={archivedAtFormatter.format(activity.statusUpdatedAt)}
       archivedAtTime={archivedAtTimeFormatter.format(activity.statusUpdatedAt)}
     />

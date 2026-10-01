@@ -3,14 +3,27 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../../vendors/whatsapp.vendor", () => ({
   sendWhatsAppMessage: vi.fn().mockResolvedValue("wamid_text"),
   sendWhatsAppTemplate: vi.fn().mockResolvedValue("wamid_template"),
-  uploadWhatsAppMedia: vi.fn(),
+  uploadWhatsAppMedia: vi.fn().mockResolvedValue("media_id"),
   sendWhatsAppAudio: vi.fn(),
+  sendWhatsAppImage: vi.fn().mockResolvedValue("wamid_image"),
   sendWhatsAppInteractiveButtons: vi.fn().mockResolvedValue("wamid_interactive"),
 }));
-vi.mock("../../vendors/storage.vendor", () => ({ downloadFile: vi.fn() }));
+vi.mock("../../vendors/storage.vendor", () => ({
+  downloadFile: vi.fn().mockResolvedValue(Buffer.from("png")),
+}));
+vi.mock("../../repo/media.repo", () => ({
+  getMediaById: vi.fn().mockResolvedValue({
+    id: "01JIMAGE",
+    mediaPath: "question-image/01JIMAGE.png",
+    contentType: "image/png",
+  }),
+}));
 vi.mock("../../vendors/tts.vendor", () => ({ TTS_MIME_TYPE: "audio/ogg" }));
 
+import { downloadFile } from "../../vendors/storage.vendor";
 import {
+  sendWhatsAppImage,
+  uploadWhatsAppMedia,
   sendWhatsAppInteractiveButtons,
   sendWhatsAppMessage,
   sendWhatsAppTemplate,
@@ -46,6 +59,73 @@ describe("WhatsAppChannel.sendMessage", () => {
     expect(result).toEqual({ externalId: "wamid_interactive" });
   });
 
+  it("interactive com isOptionList envia o text com lista numerada, sem botões", async () => {
+    const result = await channel.sendMessage("5511999999999", {
+      text: "Which word means happy?",
+      interactive: {
+        body: "Which word means happy?",
+        buttons: [
+          { id: "choice_option_1", label: "glad" },
+          { id: "choice_option_2", label: "tired" },
+        ],
+        isOptionList: true,
+      },
+    });
+    expect(sendWhatsAppMessage).toHaveBeenCalledWith(
+      "5511999999999",
+      "Which word means happy?\n\n1) glad\n2) tired",
+    );
+    expect(sendWhatsAppInteractiveButtons).not.toHaveBeenCalled();
+    expect(result).toEqual({ externalId: "wamid_text" });
+  });
+
+  it("passo de captura com até 3 opções envia botões nativos", async () => {
+    await channel.sendMessage("5511999999999", {
+      text: "Qual nível?\n\nRodapé",
+      interactive: {
+        body: "Qual nível?\n\nRodapé",
+        buttons: [
+          { id: "level_option_1", label: "Básico" },
+          { id: "level_option_2", label: "Avançado" },
+        ],
+        isOptionList: true,
+        isCaptureStep: true,
+      },
+    });
+    expect(sendWhatsAppInteractiveButtons).toHaveBeenCalledWith(
+      "5511999999999",
+      "Qual nível?\n\nRodapé",
+      [
+        { id: "level_option_1", title: "Básico" },
+        { id: "level_option_2", title: "Avançado" },
+      ],
+    );
+    expect(sendWhatsAppMessage).not.toHaveBeenCalled();
+  });
+
+  it("passo de captura com mais de 3 opções numera no texto e envia os atalhos", async () => {
+    await channel.sendMessage("5511999999999", {
+      text: "Objetivo\n\nRodapé",
+      interactive: {
+        body: "Objetivo\n\nRodapé",
+        buttons: ["A", "B", "C", "D"].map((label, i) => ({
+          id: `domain_option_${i + 1}`,
+          label,
+        })),
+        isOptionList: true,
+        isCaptureStep: true,
+      },
+    });
+    expect(sendWhatsAppInteractiveButtons).toHaveBeenCalledWith(
+      "5511999999999",
+      "Objetivo\n\nRodapé\n\n1️⃣ A\n2️⃣ B\n3️⃣ C\n4️⃣ D\n\n_Responda com o número de uma opção._",
+      [
+        { id: "first_option", title: "Primeira opção" },
+        { id: "random", title: "Escolha para mim" },
+      ],
+    );
+  });
+
   it("templateName tem prioridade sobre interactive e text", async () => {
     const result = await channel.sendMessage("5511999999999", {
       text: "texto livre",
@@ -55,9 +135,41 @@ describe("WhatsAppChannel.sendMessage", () => {
     expect(sendWhatsAppTemplate).toHaveBeenCalledWith(
       "5511999999999",
       "nudge_d2",
+      undefined,
+      undefined,
     );
     expect(sendWhatsAppInteractiveButtons).not.toHaveBeenCalled();
     expect(sendWhatsAppMessage).not.toHaveBeenCalled();
     expect(result).toEqual({ externalId: "wamid_template" });
+  });
+
+  it("imageMediaId tem prioridade sobre interactive: imagem com lista numerada na legenda, sem botões", async () => {
+    const result = await channel.sendMessage("5511999999999", {
+      text: "O que a imagem mostra?",
+      imageMediaId: "01JIMAGE",
+      interactive: {
+        body: "O que a imagem mostra?",
+        buttons: [
+          { id: "image_option_1", label: "run" },
+          { id: "image_option_2", label: "sleep" },
+        ],
+        isOptionList: true,
+      },
+    });
+    expect(sendWhatsAppImage).toHaveBeenCalledWith(
+      "5511999999999",
+      "media_id",
+      "O que a imagem mostra?\n\n1) run\n2) sleep",
+    );
+    expect(downloadFile).toHaveBeenCalledWith({
+      filePath: "question-image/01JIMAGE.png",
+    });
+    expect(uploadWhatsAppMedia).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      "image/png",
+    );
+    expect(sendWhatsAppInteractiveButtons).not.toHaveBeenCalled();
+    expect(sendWhatsAppMessage).not.toHaveBeenCalled();
+    expect(result).toEqual({ externalId: "wamid_image" });
   });
 });

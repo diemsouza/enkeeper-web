@@ -3,7 +3,7 @@
 import { ulid } from "ulid";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatThread } from "@/src/components/chat/thread";
 import type { ComposerHandle } from "@/src/components/chat/composer";
 import { mapBroadcastRecord } from "@/src/components/chat/map-messages";
@@ -21,7 +21,12 @@ import { delay } from "@/src/lib/utils";
 
 type MessagesResponse = { messages: Message[]; hasMore: boolean };
 
+type OptimisticSelection = { buttonId: string; userExternalId: string };
+type OptimisticSelections = Record<string, OptimisticSelection>;
+
 const MIN_TYPING_MS = 900;
+// Cobre avaliacao + AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC + geracao de imagem.
+const REPLY_WAIT_TIMEOUT_MS = 45_000;
 const MIN_LOADING_OLDER_MS = 400;
 
 function nowTime(): string {
@@ -46,6 +51,62 @@ function formatFileSize(bytes: number): string {
 
 function sameMessage(a: Message, key: string): boolean {
   return a.id === key || a.externalId === key;
+}
+
+function isSameInteractive(
+  a: Message["interactive"],
+  b: Message["interactive"],
+): boolean {
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+}
+
+function mergeServerInteractive(prev: Message[], server: Message): Message[] {
+  const idx = prev.findIndex((m) => m.id === server.id);
+  if (
+    idx === -1 ||
+    isSameInteractive(prev[idx].interactive, server.interactive)
+  ) {
+    return prev;
+  }
+  const next = [...prev];
+  next[idx] = { ...next[idx], interactive: server.interactive };
+  return next;
+}
+
+// Servidor vence: a selecao local so vale enquanto a mensagem nao veio
+// travada do servidor.
+function applyOptimisticSelections(
+  messages: Message[],
+  selections: OptimisticSelections,
+): Message[] {
+  if (Object.keys(selections).length === 0) return messages;
+  return messages.map((m) => {
+    const selection = selections[m.id];
+    if (!selection || !m.interactive || m.interactive.disabled) return m;
+    return {
+      ...m,
+      interactive: {
+        ...m.interactive,
+        disabled: true,
+        selectedId: selection.buttonId,
+      },
+    };
+  });
+}
+
+function findOpenOptionMessageId(
+  messages: Message[],
+  buttonId: string,
+): string | null {
+  const target = [...messages]
+    .reverse()
+    .find(
+      (m) =>
+        m.interactive?.isOptionList &&
+        !m.interactive.disabled &&
+        m.interactive.buttons.some((b) => b.id === buttonId),
+    );
+  return target?.id ?? null;
 }
 
 export function LiveThreadClient({
@@ -76,6 +137,8 @@ export function LiveThreadClient({
     generic: tChat("file_type_generic"),
   };
   const [messages, setMessages] = useState(initialMessages);
+  const [optimisticSelections, setOptimisticSelections] =
+    useState<OptimisticSelections>({});
   const [starting, setStarting] = useState(needsAutoStart);
   const [waitTimedOut, setWaitTimedOut] = useState(false);
   const [hasMoreOlder, setHasMoreOlder] = useState(initialHasMoreOlder);
@@ -92,13 +155,23 @@ export function LiveThreadClient({
   const replyWaitStartedAtRef = useRef<number | null>(null);
   const pendingFilesRef = useRef<Map<string, File>>(new Map());
 
+  const clearSelectionByUserMessage = useCallback((externalId: string) => {
+    setOptimisticSelections((prev) => {
+      const entry = Object.entries(prev).find(
+        ([, s]) => s.userExternalId === externalId,
+      );
+      if (!entry) return prev;
+      const next = { ...prev };
+      delete next[entry[0]];
+      return next;
+    });
+  }, []);
+
   const setMessageStatus = useCallback(
     (externalId: string, status: MessageStatus) => {
       if (status === "sent") pendingFilesRef.current.delete(externalId);
       setMessages((prev) =>
-        prev.map((m) =>
-          m.externalId === externalId ? { ...m, status } : m,
-        ),
+        prev.map((m) => (m.externalId === externalId ? { ...m, status } : m)),
       );
     },
     [],
@@ -116,6 +189,13 @@ export function LiveThreadClient({
       let changed = false;
 
       const reconciled = prev.map((m) => {
+        if (m.from === "bot" && m.interactive) {
+          const server = body.messages.find((s) => s.id === m.id);
+          if (server && !isSameInteractive(m.interactive, server.interactive)) {
+            changed = true;
+            return { ...m, interactive: server.interactive };
+          }
+        }
         if (m.type === "audio" && !m.translation) {
           const server = body.messages.find((s) => s.id === m.id);
           if (server?.translation) {
@@ -124,9 +204,7 @@ export function LiveThreadClient({
           }
         }
         if (!m.status || m.status === "sent" || !m.externalId) return m;
-        const server = body.messages.find(
-          (s) => s.externalId === m.externalId,
-        );
+        const server = body.messages.find((s) => s.externalId === m.externalId);
         if (!server) return m;
         changed = true;
         return { ...m, ...server, status: "sent" as const };
@@ -165,10 +243,21 @@ export function LiveThreadClient({
         }
         return [...prev, mapped];
       });
+      // O servidor grava o estado da lista de opcoes antes de salvar a
+      // mensagem do usuario: a partir daqui o refresh ja traz o estado final.
+      const hasSelection = Object.values(optimisticSelections).some(
+        (s) => s.userExternalId === key,
+      );
+      if (hasSelection) {
+        void refreshMessages().then(() => clearSelectionByUserMessage(key));
+      }
       return;
     }
 
-    if (messagesRef.current.some((m) => sameMessage(m, key))) return;
+    if (messagesRef.current.some((m) => sameMessage(m, key))) {
+      setMessages((prev) => mergeServerInteractive(prev, mapped));
+      return;
+    }
 
     // Atividade nova e criada de forma assincrona (process-doc, onboarding):
     // o sidebar vem do server layout e so atualiza com refresh.
@@ -259,7 +348,7 @@ export function LiveThreadClient({
       setWaitTimedOut(false);
       return;
     }
-    const timer = setTimeout(() => setWaitTimedOut(true), 10_000);
+    const timer = setTimeout(() => setWaitTimedOut(true), REPLY_WAIT_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [isLastFromUser, lastKey, lastMessage?.status]);
 
@@ -267,7 +356,21 @@ export function LiveThreadClient({
     setupAudioUnlock();
   }, []);
 
-  async function handleSend(text: string) {
+  function selectOption(
+    messageId: string,
+    buttonId: string,
+    userExternalId: string,
+  ): void {
+    setOptimisticSelections((prev) => ({
+      ...prev,
+      [messageId]: { buttonId, userExternalId },
+    }));
+  }
+
+  async function handleSend(
+    text: string,
+    option?: { messageId: string; buttonId: string },
+  ) {
     if (showPendingReview && resolveCommand(text.trim()) === "practice_now") {
       setShowPendingReview(false);
     }
@@ -282,14 +385,22 @@ export function LiveThreadClient({
         time: nowTime(),
         date: new Date().toISOString(),
         status: "sending",
+        buttonId: option?.buttonId,
       },
     ]);
+    if (option) selectOption(option.messageId, option.buttonId, externalId);
     replyWaitStartedAtRef.current = Date.now();
-    const { ok } = await postJson("/api/app/messages", { text, externalId });
+    const { ok } = await postJson("/api/app/messages", {
+      text,
+      externalId,
+      buttonId: option?.buttonId,
+      messageId: option?.messageId,
+    });
     // No mobile o textarea foi desfocado no envio (Composer.handleSend) pra
     // fechar o teclado - refocar aqui reabriria. So no desktop mantem o foco
     // pro usuario continuar digitando sem precisar clicar de novo.
     if (!isMobile) composerRef.current?.focus();
+    if (!ok) clearSelectionByUserMessage(externalId);
     setMessageStatus(externalId, ok ? "sent" : "failed");
   }
 
@@ -322,9 +433,7 @@ export function LiveThreadClient({
   }
 
   async function handleRetrySend(externalId: string) {
-    const target = messagesRef.current.find(
-      (m) => m.externalId === externalId,
-    );
+    const target = messagesRef.current.find((m) => m.externalId === externalId);
     if (!target || target.status !== "failed") return;
     setMessageStatus(externalId, "sending");
     await delay(2);
@@ -344,11 +453,20 @@ export function LiveThreadClient({
       return;
     }
 
+    const optionMessageId = target.buttonId
+      ? findOpenOptionMessageId(messagesRef.current, target.buttonId)
+      : null;
+    if (target.buttonId && optionMessageId) {
+      selectOption(optionMessageId, target.buttonId, externalId);
+    }
     replyWaitStartedAtRef.current = Date.now();
     const { ok } = await postJson("/api/app/messages", {
       text: target.text ?? "",
       externalId,
+      buttonId: target.buttonId,
+      messageId: optionMessageId ?? undefined,
     });
+    if (!ok) clearSelectionByUserMessage(externalId);
     setMessageStatus(externalId, ok ? "sent" : "failed");
   }
 
@@ -356,19 +474,33 @@ export function LiveThreadClient({
     void postJson("/api/app/messages/played", { externalId }).catch(() => {});
   }
 
-  function handleButtonClick(button: FormattedMessageButton) {
+  function handleButtonClick(
+    button: FormattedMessageButton,
+    messageId: string,
+  ) {
     if (button.type === "link" && button.url) {
       window.open(button.url, "_blank", "noopener,noreferrer");
       return;
     }
-    void handleSend(button.label);
+    const target = messagesRef.current.find((m) => m.id === messageId);
+    if (!target?.interactive?.isOptionList) {
+      void handleSend(button.label);
+      return;
+    }
+    if (target.interactive.disabled || optimisticSelections[messageId]) return;
+    void handleSend(button.label, { messageId, buttonId: button.id });
   }
+
+  const displayedMessages = useMemo(
+    () => applyOptimisticSelections(messages, optimisticSelections),
+    [messages, optimisticSelections],
+  );
 
   return (
     <ChatThread
       ref={composerRef}
-      messages={messages}
-      onSend={handleSend}
+      messages={displayedMessages}
+      onSend={(text) => handleSend(text)}
       onSendFile={handleSendFile}
       onRetry={handleRetrySend}
       onAudioPlay={handleAudioPlay}

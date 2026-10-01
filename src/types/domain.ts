@@ -85,5 +85,8 @@ export type IncomingMessage = {
   voiceAudioBuffer?: Buffer;
   voiceAudioMimeType?: string;
   referral?: Record<string, unknown> | null;
+  // Id do botao clicado na web e da mensagem da lista a que ele pertence.
+  buttonId?: string;
+  buttonMessageId?: string;
   receivedAt: Date;
 };

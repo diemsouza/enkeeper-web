@@ -12,7 +12,9 @@ import {
 import { deleteFiles } from "../vendors/storage.vendor";
 import {
   MEDIA_PARENT_TYPE,
+  MEDIA_TYPE,
   AUDIO_CLEANUP_TTL_DAYS,
+  IMAGE_CLEANUP_TTL_DAYS,
   AUDIO_CLEANUP_BATCH_LIMIT,
   AUDIO_CLEANUP_SUBBATCH_SIZE,
 } from "../lib/constants";
@@ -37,6 +39,7 @@ export async function processAudioCleanup(): Promise<AudioCleanupResult> {
   const medias = await findMediaByParentIds(
     MEDIA_PARENT_TYPE.QUESTION,
     questions.map((q) => q.id),
+    MEDIA_TYPE.AUDIO,
   );
 
   let deleted = 0;
@@ -63,12 +66,16 @@ export async function processAudioCleanup(): Promise<AudioCleanupResult> {
 
 export async function processImageCleanup(): Promise<AudioCleanupResult> {
   const threshold = new Date(
-    Date.now() - AUDIO_CLEANUP_TTL_DAYS * 24 * 60 * 60 * 1000,
+    Date.now() - IMAGE_CLEANUP_TTL_DAYS * 24 * 60 * 60 * 1000,
   );
 
   const [totalEligible, medias] = await Promise.all([
-    countMediaEligibleForCleanup("image", threshold),
-    findMediaEligibleForCleanup("image", threshold, AUDIO_CLEANUP_BATCH_LIMIT),
+    countMediaEligibleForCleanup(MEDIA_TYPE.IMAGE, threshold),
+    findMediaEligibleForCleanup(
+      MEDIA_TYPE.IMAGE,
+      threshold,
+      AUDIO_CLEANUP_BATCH_LIMIT,
+    ),
   ]);
 
   let deleted = 0;

@@ -1,8 +1,11 @@
 import { Media, Prisma } from "../lib/prisma";
-import { MediaParentType } from "../lib/constants";
+import { MediaParentType, MediaSource } from "../lib/constants";
 import { prisma } from "../lib/prisma";
 
 export type CreateMediaData = {
+  id?: string;
+  userId: string;
+  source: MediaSource;
   parentId: string;
   parentType: MediaParentType;
   mediaType: string;
@@ -38,14 +41,30 @@ export async function findMediaByParent(
 export async function findMediaByParentIds(
   parentType: MediaParentType,
   parentIds: string[],
+  mediaType: string,
 ): Promise<Media[]> {
   return prisma.media.findMany({
-    where: { parentType, parentId: { in: parentIds }, deletedAt: null },
+    where: {
+      parentType,
+      parentId: { in: parentIds },
+      mediaType,
+      deletedAt: null,
+    },
   });
 }
 
 export async function getMediaById(id: string): Promise<Media | null> {
   return prisma.media.findUnique({ where: { id } });
+}
+
+export async function findUserMediaById(
+  id: string,
+  userId: string,
+): Promise<Pick<Media, "mediaPath"> | null> {
+  return prisma.media.findFirst({
+    where: { id, userId, deletedAt: null },
+    select: { mediaPath: true },
+  });
 }
 
 export async function softDeleteMedia(id: string): Promise<void> {

@@ -1,4 +1,7 @@
-import type { FormattedMessageButton } from "@/src/types/out-message";
+import type {
+  FormattedMessage,
+  FormattedMessageButton,
+} from "@/src/types/out-message";
 
 export type { FormattedMessageButton };
 
@@ -22,5 +25,7 @@ export interface Message {
   translation?: string;
   externalId?: string;
   duration?: string;
-  interactive?: { body: string; buttons: FormattedMessageButton[] } | null;
+  interactive?: FormattedMessage["interactive"] | null;
+  // Id do botao de opcao clicado, guardado para o reenvio da mensagem.
+  buttonId?: string;
 }

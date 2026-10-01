@@ -1,10 +1,8 @@
 import type { Message as PrismaMessage } from "@/src/lib/prisma";
-import type { FormattedMessageButton, Message } from "./types";
+import type { FormattedMessage } from "@/src/types/out-message";
+import type { Message } from "./types";
 
-type StoredInteractive = {
-  body: string;
-  buttons: FormattedMessageButton[];
-} | null;
+type StoredInteractive = FormattedMessage["interactive"] | null;
 
 type NormalizedRow = {
   id: string;

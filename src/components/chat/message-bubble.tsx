@@ -10,6 +10,10 @@ import { TextBubble } from "./text-bubble";
 import type { FormattedMessageButton, Message } from "./types";
 import { VoiceNoteCard } from "./voice-note-card";
 
+// No mobile, bolha do sistema com a mesma largura do card de audio:
+// 260px do player (custom-audio-player) + 24px do px-3 da bolha.
+const BOT_BUBBLE_MOBILE_WIDTH = "w-[284px] max-w-full";
+
 export function MessageBubble({
   message,
   isNew,
@@ -18,14 +22,16 @@ export function MessageBubble({
   onButtonClick,
   zoomDisabled,
   wide,
+  fluidAudio,
 }: {
   message: Message;
   isNew?: boolean;
   onRetry?: (externalId: string) => void;
   onAudioPlay?: (externalId: string) => void;
-  onButtonClick?: (button: FormattedMessageButton) => void;
+  onButtonClick?: (button: FormattedMessageButton, messageId: string) => void;
   zoomDisabled?: boolean;
   wide?: boolean;
+  fluidAudio?: boolean;
 }) {
   const isUser = message.from === "user";
   const [shouldAnimate] = useState(isNew);
@@ -34,7 +40,9 @@ export function MessageBubble({
   const maxWidth = wide
     ? "max-w-[97%] md:max-w-[95%]"
     : "max-w-[85%] md:max-w-[70%]";
-  const imageWidth = wide ? "w-[97%] md:w-[95%]" : "w-[85%] md:w-[70%]";
+  const imageWidth = wide ? "w-[97%] md:w-[420px]" : "w-[85%] md:w-[420px]";
+  const isAudio = message.type === "audio";
+  const hasAudioWidth = !isUser && !isAudio && !wide;
 
   return (
     <div
@@ -50,10 +58,13 @@ export function MessageBubble({
             ? "bg-primary text-primary-foreground rounded-[10px_10px_2px_10px]"
             : "bg-white text-foreground dark:bg-[#252529] rounded-[10px_10px_10px_2px]",
           "px-3 pt-2 pb-1.5 text-[15px] md:text-[14px]",
-          "min-w-[80px]",
-          maxWidth,
+          isAudio && !fluidAudio && "shrink-0",
+          isAudio && fluidAudio && cn("w-full", maxWidth),
+          !isAudio && cn("min-w-[80px]", maxWidth),
           message.type === "image" &&
             cn(imageWidth, maxWidth, "overflow-hidden"),
+          hasAudioWidth && BOT_BUBBLE_MOBILE_WIDTH,
+          hasAudioWidth && message.type !== "image" && "md:w-auto",
         )}
       >
         {message.type === "file" ? (
@@ -65,7 +76,7 @@ export function MessageBubble({
         ) : message.type === "image" ? (
           <ImageBubble
             imageUrl={message.imageUrl!}
-            caption={message.caption}
+            caption={message.interactive?.body ?? message.caption}
             zoomDisabled={zoomDisabled}
           />
         ) : message.type === "audio" ? (
@@ -76,6 +87,7 @@ export function MessageBubble({
             textFallback={message.textFallback}
             translation={message.translation}
             time={message.time}
+            fluid={fluidAudio}
           />
         ) : message.type === "voice" ? (
           <VoiceNoteCard duration={message.duration ?? ""} />
@@ -84,7 +96,9 @@ export function MessageBubble({
         )}
         {message.type !== "audio" && (
           <div className="mt-0.5 flex items-center justify-end gap-1">
-            <p className="text-[10.5px] opacity-55 text-right">{message.time}</p>
+            <p className="text-[10.5px] opacity-55 text-right">
+              {message.time}
+            </p>
             {isUser && message.status === "sending" && (
               <Clock3
                 className="h-3 w-3 opacity-55"
@@ -105,8 +119,8 @@ export function MessageBubble({
         )}
         {message.interactive && (
           <InteractiveButtonList
-            buttons={message.interactive.buttons}
-            onButtonClick={onButtonClick}
+            interactive={message.interactive}
+            onButtonClick={(button) => onButtonClick?.(button, message.id)}
           />
         )}
       </div>

@@ -153,6 +153,7 @@ export function CustomAudioPlayer({
   textFallback,
   translation,
   time,
+  fluid,
 }: {
   audioUrl: string;
   externalId?: string;
@@ -160,6 +161,7 @@ export function CustomAudioPlayer({
   textFallback?: string;
   translation?: string;
   time?: string;
+  fluid?: boolean;
 }) {
   const t = useTranslations("app.chat");
   const tErrors = useTranslations("app.errors");
@@ -476,7 +478,9 @@ export function CustomAudioPlayer({
     duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-1 py-1 min-w-[260px] max-w-[320px]">
+    <div
+      className={`flex flex-col gap-1 py-1 ${fluid ? "w-full" : "w-[260px] md:w-[320px]"}`}
+    >
       <div
         className={`flex items-center gap-3${isError ? " text-destructive" : ""}`}
       >

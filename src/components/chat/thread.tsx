@@ -32,7 +32,7 @@ type ChatThreadProps = {
   onSendFile?: (file: File) => void | Promise<void>;
   onRetry?: (externalId: string) => void;
   onAudioPlay?: (externalId: string) => void;
-  onButtonClick?: (button: FormattedMessageButton) => void;
+  onButtonClick?: (button: FormattedMessageButton, messageId: string) => void;
   composerDisabled?: boolean;
   composerDisabledReason?: string;
   isWaitingForResponse?: boolean;

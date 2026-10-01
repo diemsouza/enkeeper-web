@@ -48,6 +48,15 @@ export function sanitizeText(text: string): string {
   );
 }
 
+// convencao de storage para midias novas: <kind>/<mediaId>.<ext>
+export function buildMediaPath(
+  kind: string,
+  mediaId: string,
+  extension: string,
+): string {
+  return `${kind}/${mediaId}.${extension}`;
+}
+
 export function capitalizeFirst(text: string): string {
   if (!text) return "";
   return text.charAt(0).toUpperCase() + text.slice(1);
