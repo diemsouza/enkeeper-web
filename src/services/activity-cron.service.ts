@@ -26,8 +26,8 @@ import {
   findUsersWithExpiredFlowIntent,
   updateUserPendingIntent,
 } from "../repo/users.repo";
-import { MessageChannel } from "../types/message-channel";
-import { sendAndSaveMessage } from "./message-sender-service";
+import { MessageChannel, TypingTarget } from "../types/message-channel";
+import { sendAndSaveMessage, waitBeforeSend } from "./message-sender-service";
 import {
   formatQuestion,
   formatActivityStart,
@@ -42,7 +42,6 @@ import {
   COMMAND_TIMEOUT_MIN,
   DEFAULT_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
-import { delay } from "../lib/utils";
 import { Activity, Question, QuestionFormat } from "../lib/prisma";
 import { splitContentIntoBlocks } from "../core/pool-size";
 import { FormatCounts, pickNextFormat } from "../core/question-format-picker";
@@ -281,12 +280,22 @@ export async function sendFirstQuestionNow(
   userChannel: { channelUserId: string; id: string },
   today: Date,
   channel: MessageChannel,
+  replyToMessageId?: string,
 ): Promise<boolean> {
   try {
-    const outcome = await generateQuestionIfPoolNotFull(activity);
+    await channel.notifyTyping(activity.userId, { replyToMessageId });
+    const outcome = await generateQuestionIfPoolNotFull(activity, {
+      channel,
+      replyToMessageId,
+    });
     if (outcome.poolExhausted || !outcome.question) return false;
 
-    await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+    await waitBeforeSend(
+      channel,
+      activity.userId,
+      DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+      { replyToMessageId },
+    );
     await sendCadenceQuestion(
       outcome.question,
       activity,
@@ -441,6 +450,7 @@ async function generateValidatedQuestion(
 
 async function buildImageRecognitionQuestion(
   baseParams: QuestionGenBaseParams,
+  typing?: TypingTarget,
 ): Promise<ImageQuestionOutcome> {
   const generated = await generateValidatedQuestion(
     QuestionFormat.image_recognition,
@@ -458,6 +468,12 @@ async function buildImageRecognitionQuestion(
   }
 
   const questionId = ulid();
+  // Texto + imagem pode passar dos 25s do indicador: renova antes da imagem.
+  if (typing) {
+    await typing.channel.notifyTyping(baseParams.userId, {
+      replyToMessageId: typing.replyToMessageId,
+    });
+  }
   const image = await storeQuestionImage({
     questionId,
     description,
@@ -485,17 +501,23 @@ async function buildQuestionData(
   lastFormat: QuestionFormat | null,
   formatCounts: FormatCounts,
   baseParams: QuestionGenBaseParams,
+  typing?: TypingTarget,
 ): Promise<CreateQuestionData | null> {
   const canUseImage = Math.random() < IMAGE_QUESTION_ROLLOUT_FRACTION;
   let format = pickNextFormat(lastFormat, { canUseImage, formatCounts });
 
   if (format === QuestionFormat.image_recognition) {
-    const outcome = await buildImageRecognitionQuestion(baseParams);
+    const outcome = await buildImageRecognitionQuestion(baseParams, typing);
     if (outcome.status === "success") return outcome.data;
     console.warn(
       `[buildQuestionData] image_recognition fallback: ${outcome.reason}`,
     );
     format = pickNextFormat(lastFormat, { canUseImage: false, formatCounts });
+    if (typing) {
+    await typing.channel.notifyTyping(baseParams.userId, {
+      replyToMessageId: typing.replyToMessageId,
+    });
+  }
   }
 
   const validated = await generateValidatedQuestion(format, baseParams);
@@ -508,6 +530,7 @@ export type GenerateOutcome =
 
 export async function generateQuestionIfPoolNotFull(
   activity: Activity,
+  typing?: TypingTarget,
 ): Promise<GenerateOutcome> {
   if (
     activity.questionLimit > 0 &&
@@ -530,14 +553,19 @@ export async function generateQuestionIfPoolNotFull(
     activity.userId,
   );
   const blocks = splitContentIntoBlocks(doc.content);
-  const questionData = await buildQuestionData(lastFormat, formatCounts, {
-    sectionType: "vocabulary",
-    sectionTitle: doc.title ?? "",
-    sectionContent: blocks[activity.questionCount % blocks.length],
-    level: activity.userLevel,
-    userId: activity.userId,
-    docId: activity.docId,
-  });
+  const questionData = await buildQuestionData(
+    lastFormat,
+    formatCounts,
+    {
+      sectionType: "vocabulary",
+      sectionTitle: doc.title ?? "",
+      sectionContent: blocks[activity.questionCount % blocks.length],
+      level: activity.userLevel,
+      userId: activity.userId,
+      docId: activity.docId,
+    },
+    typing,
+  );
 
   if (!questionData) return { poolExhausted: false, question: null };
 
@@ -587,6 +615,7 @@ export async function completeRoundZero(
   intervalMinutes: number,
   channel: MessageChannel,
   to: string,
+  replyToMessageId?: string,
 ): Promise<void> {
   await updateActivity(activityId, userId, {
     roundCompleted: true,
@@ -595,6 +624,7 @@ export async function completeRoundZero(
     lastQuestionId: null,
   });
 
+  await channel.notifyTyping(userId, { replyToMessageId });
   const msg = await buildRoundCompletedSummary(activityId, userId);
 
   await sendAndSaveMessage({

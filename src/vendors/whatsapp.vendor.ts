@@ -128,6 +128,44 @@ export async function sendWhatsAppInteractiveButtons(
   return data.messages?.[0]?.id ?? null;
 }
 
+// Atualizacao de status, nao mensagem: marca a mensagem recebida como lida e
+// mostra o "digitando" ate a proxima resposta ou por 25s, sem custo de conversa.
+export async function sendWhatsAppTypingIndicator(
+  messageId: string,
+): Promise<void> {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[sendWhatsAppTypingIndicator] Skipping typing indicator for ${messageId} in non-production environment`,
+    );
+    return;
+  }
+
+  const token = process.env.WABA_TOKEN;
+  const phoneNumberId = process.env.WABA_PHONE_ID;
+
+  const res = await fetch(
+    `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        status: "read",
+        message_id: messageId,
+        typing_indicator: { type: "text" },
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Meta API error ${res.status}: ${detail}`);
+  }
+}
+
 export async function sendWhatsAppCtaUrl(
   to: string,
   body: string,

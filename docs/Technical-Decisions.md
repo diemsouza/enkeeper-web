@@ -112,6 +112,57 @@ Decisões:
 
 ---
 
+## Indicador de digitando controlado pelo servidor
+
+Data: 2026-10-01
+
+Contexto: o "digitando" da web era deduzido pelo cliente (última mensagem do
+usuário, até 45s, com 900ms segurando a resposta) e sumia assim que o feedback
+chegava, mesmo com a próxima pergunta ainda sendo preparada. Regra de produto
+em Product-Rules Seção 19.
+
+Decisões:
+
+- **Contrato por canal.** `MessageChannel.notifyTyping(userId, { replyToMessageId })`
+  e `notifyTypingStop(userId)`. Web emite `typing:start`/`typing:stop` no tópico
+  `messages-<userId>`; WhatsApp chama a Cloud API com `status: "read"` +
+  `typing_indicator` usando o wamid recebido. Sem wamid (fluxos de fila, cron,
+  onboarding pela web) e no stop, o WhatsApp é no-op. Falha no aviso só loga:
+  é cosmético e não pode derrubar o envio.
+- **Broadcast via REST.** Não há client Supabase no servidor;
+  `realtime.vendor.ts` faz `POST /realtime/v1/api/broadcast` com a service key,
+  `private: true`. As mensagens continuam chegando pelo trigger de INSERT/UPDATE.
+- **Pausa conhecida: `waitBeforeSend`** (`message-sender-service.ts`) substitui
+  todo `delay` entre mensagens sequenciais. Pausa abaixo de
+  `MIN_DELAY_FOR_TYPING_MS` sai em silêncio; acima, espera e acende o indicador
+  nos últimos `TYPING_LEAD_MS`. O padrão foi de 3s para 4s para mostrar o
+  indicador (1.5s em silêncio + 2.5s digitando), cobrindo o intervalo antes do
+  áudio, depois de `praticar` e entre pares que antes saíam colados (dica e
+  próxima pergunta, cancelamento e orientação, nível e objetivo). O onboarding
+  ficou em 2s, de propósito sem indicador.
+- **Duração incerta: chamada direta.** `channel.notifyTyping(...)` na linha
+  antes da operação (avaliação, `generateQuestionIfPoolNotFull`, validação de
+  tema, geração de conteúdo, extração de material, gráfico de conclusão de
+  rodada, resumo de retomada). Sem heartbeat e sem wrapper tipo `withTyping()`.
+  Na geração de pergunta, que pode passar dos 25s com imagem,
+  `generateQuestionIfPoolNotFull` recebe um `TypingTarget` opcional e renova o
+  aviso antes de `storeQuestionImage` e antes do formato de fallback: é aviso
+  por etapa, não timer.
+- **Stop num ponto só.** O `finally` que já envolvia `handleIncomingMessage`
+  chama `notifyTypingStop` quando nada foi enviado. Para saber disso sem flag em
+  cada envio, a função embrulha o canal com `trackChannelSends`, que marca o
+  primeiro `sendMessage`/`sendTemplate` concluído (helpers recebem o mesmo
+  canal, então contam também). Fluxos fora desse handler dependem do TTL.
+- **Cliente reativo.** Liga em `typing:start`; desliga em mensagem nova do bot,
+  `typing:stop` ou TTL de 25s. Eventos da mensagem do usuário e `UPDATE` não
+  desligam: na web a mensagem do usuário é salva depois da avaliação e a seleção
+  da lista gera `UPDATE`, então apagariam o indicador no meio da espera. A trava
+  do composer (`REPLY_WAIT_TIMEOUT_MS`) é independente e ficou como estava.
+- **Sem polling de fallback.** A reconexão do Realtime já busca mensagens de
+  novo a cada `SUBSCRIBED`.
+
+---
+
 ## Estado da seleção nas listas de opções
 
 Data: 2026-09-30

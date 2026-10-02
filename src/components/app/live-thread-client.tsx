@@ -24,9 +24,12 @@ type MessagesResponse = { messages: Message[]; hasMore: boolean };
 type OptimisticSelection = { buttonId: string; userExternalId: string };
 type OptimisticSelections = Record<string, OptimisticSelection>;
 
-const MIN_TYPING_MS = 900;
-// Cobre avaliacao + AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC + geracao de imagem.
+// Trava do composer enquanto espera resposta (nao e o "digitando", que vem
+// do servidor): cobre avaliacao + intervalo pos-feedback + geracao de imagem.
 const REPLY_WAIT_TIMEOUT_MS = 45_000;
+// Failsafe do "digitando": typing:start perdido ou canal caido. Mesmo limite
+// do indicador nativo do WhatsApp.
+const TYPING_TTL_MS = 25_000;
 const MIN_LOADING_OLDER_MS = 400;
 
 function nowTime(): string {
@@ -141,6 +144,8 @@ export function LiveThreadClient({
     useState<OptimisticSelections>({});
   const [starting, setStarting] = useState(needsAutoStart);
   const [waitTimedOut, setWaitTimedOut] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hasMoreOlder, setHasMoreOlder] = useState(initialHasMoreOlder);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [showPendingReview, setShowPendingReview] = useState(
@@ -152,8 +157,26 @@ export function LiveThreadClient({
 
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
-  const replyWaitStartedAtRef = useRef<number | null>(null);
   const pendingFilesRef = useRef<Map<string, File>>(new Map());
+
+  const stopTyping = useCallback(() => {
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = null;
+    setIsTyping(false);
+  }, []);
+
+  const startTyping = useCallback(() => {
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(stopTyping, TYPING_TTL_MS);
+    setIsTyping(true);
+  }, [stopTyping]);
+
+  const handleTyping = useCallback(
+    (isActive: boolean) => (isActive ? startTyping() : stopTyping()),
+    [startTyping, stopTyping],
+  );
+
+  useEffect(() => stopTyping, [stopTyping]);
 
   const clearSelectionByUserMessage = useCallback((externalId: string) => {
     setOptimisticSelections((prev) => {
@@ -220,7 +243,17 @@ export function LiveThreadClient({
     });
 
     if (body.messages.length > 0) setStarting(false);
-  }, []);
+    const known = messagesRef.current;
+    const hasNewBotMessage = body.messages.some(
+      (s) =>
+        s.from === "bot" &&
+        !known.some(
+          (m) =>
+            m.id === s.id || (!!s.externalId && m.externalId === s.externalId),
+        ),
+    );
+    if (hasNewBotMessage) stopTyping();
+  }, [stopTyping]);
 
   const handleRealtimeEvent = (
     record: Record<string, unknown> | undefined,
@@ -268,24 +301,15 @@ export function LiveThreadClient({
       router.refresh();
     }
 
-    const elapsed =
-      replyWaitStartedAtRef.current !== null
-        ? Date.now() - replyWaitStartedAtRef.current
-        : MIN_TYPING_MS;
-    const wait = Math.max(MIN_TYPING_MS - elapsed, 0);
-    const reveal = (): void => {
-      setMessages((prev) =>
-        prev.some((m) => sameMessage(m, key)) ? prev : [...prev, mapped],
-      );
-      replyWaitStartedAtRef.current = null;
-      setStarting(false);
-      // Mensagem de audio de feedback chega via broadcast sem a traducao
-      // (mapBroadcastRecord nao faz join com Question) - a rota /api/app/messages
-      // ja tem, entao um refresh logo em seguida preenche via refreshMessages.
-      if (mapped.type === "audio") void refreshMessages();
-    };
-    if (wait > 0) setTimeout(reveal, wait);
-    else reveal();
+    stopTyping();
+    setMessages((prev) =>
+      prev.some((m) => sameMessage(m, key)) ? prev : [...prev, mapped],
+    );
+    setStarting(false);
+    // Mensagem de audio de feedback chega via broadcast sem a traducao
+    // (mapBroadcastRecord nao faz join com Question) - a rota /api/app/messages
+    // ja tem, entao um refresh logo em seguida preenche via refreshMessages.
+    if (mapped.type === "audio") void refreshMessages();
   };
 
   const loadOlderMessages = useCallback(async () => {
@@ -324,6 +348,7 @@ export function LiveThreadClient({
     handleRealtimeEvent,
     handleReconnect,
     triggerAutoStart,
+    handleTyping,
   );
 
   useEffect(() => {
@@ -340,8 +365,6 @@ export function LiveThreadClient({
   const isSendPending = isLastFromUser && lastMessage?.status === "sending";
   const isWaitingForResponse =
     isLastFromUser && lastMessage?.status !== "failed" && !waitTimedOut;
-  const isTyping =
-    isLastFromUser && lastMessage?.status === "sent" && !waitTimedOut;
 
   useEffect(() => {
     if (!isLastFromUser || lastMessage?.status === "failed") {
@@ -389,7 +412,6 @@ export function LiveThreadClient({
       },
     ]);
     if (option) selectOption(option.messageId, option.buttonId, externalId);
-    replyWaitStartedAtRef.current = Date.now();
     const { ok } = await postJson("/api/app/messages", {
       text,
       externalId,
@@ -423,7 +445,6 @@ export function LiveThreadClient({
         status: "sending",
       },
     ]);
-    replyWaitStartedAtRef.current = Date.now();
     const { ok } = await postForm(
       "/api/app/messages/upload",
       buildUploadForm(mediaType, externalId, file),
@@ -444,7 +465,6 @@ export function LiveThreadClient({
         setMessageStatus(externalId, "failed");
         return;
       }
-      replyWaitStartedAtRef.current = Date.now();
       const { ok } = await postForm(
         "/api/app/messages/upload",
         buildUploadForm(target.mediaType, externalId, file),
@@ -459,7 +479,6 @@ export function LiveThreadClient({
     if (target.buttonId && optionMessageId) {
       selectOption(optionMessageId, target.buttonId, externalId);
     }
-    replyWaitStartedAtRef.current = Date.now();
     const { ok } = await postJson("/api/app/messages", {
       text: target.text ?? "",
       externalId,

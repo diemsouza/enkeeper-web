@@ -53,8 +53,16 @@ export const DOC_BUFFER_DELAY_SEC = 45;
 export const DOC_PENDING_TIMEOUT_MS = 5 * 60 * 1000;
 export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 export const ONBOARDING_MESSAGE_INTERVAL_SEC = 2;
-export const DEFAULT_MESSAGE_INTERVAL_SEC = 3;
+export const DEFAULT_MESSAGE_INTERVAL_SEC = 4;
 export const AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC = 8;
+export const TYPING_LEAD_MS = 2500;
+// Abaixo disso a pausa sai em silencio: evita o indicador piscando.
+export const MIN_DELAY_FOR_TYPING_MS = 4000;
+export const REALTIME_MESSAGES_TOPIC_PREFIX = "messages-";
+export const REALTIME_TYPING_EVENT = {
+  START: "typing:start",
+  STOP: "typing:stop",
+} as const;
 export const ANSWER_EMOJI = {
   right: "✅",
   partial: "⚠️",

@@ -122,34 +122,6 @@ Nenhuma feature hoje consome essa informação para material de upload, é dado 
 
 ---
 
-## 4) Indicador de "digitando" fiel ao que o servidor está fazendo
-
-**Contexto**
-
-Nos testes do chat web respondendo perguntas de `image_recognition`, o "digitando" sumia antes da próxima pergunta chegar e, às vezes, a mensagem só aparecia depois de atualizar a tela. Parte disso foi corrigida no cliente do Realtime (renovação de token, reconexão com recuperação de mensagens), mas o indicador em si continua sendo uma estimativa.
-
-**Problema**
-
-O "digitando" é deduzido pelo cliente: aparece enquanto a última mensagem é do usuário, por até 45s. Ele some assim que o feedback chega, mesmo com a próxima pergunta ainda sendo preparada (intervalo pós-feedback + geração da pergunta + geração da imagem). O usuário fica olhando uma tela parada sem saber se ainda vem algo. E se um broadcast se perder, ele espera uma mensagem que já existe no banco.
-*Exemplo:* usuário responde, recebe o feedback, o indicador some, e a pergunta com imagem só chega 25s depois, sem nenhum sinal nesse intervalo.
-
-**Solução**
-
-O servidor avisa quando começa e termina de preparar uma resposta, e o cliente tem uma rede de segurança para mensagem perdida.
-
-**Como**
-
-Status de "digitando" controlado pelo servidor: evento `typing` (início/fim) no mesmo canal `messages-<userId>`, emitido pelo `chat-compute` e pelos fluxos que mandam várias mensagens com intervalo entre elas. O cliente mostra o indicador enquanto houver `typing` ativo, com TTL local para não ficar preso se o evento de fim se perder.
-*Exemplo:* feedback enviado, servidor emite `typing` início antes do intervalo e da geração da próxima pergunta; o indicador fica visível até a pergunta chegar.
-
-Polling de fallback: enquanto o indicador estiver ativo, o cliente busca as mensagens a cada ~8s (`refreshMessages()`, que já deduplica por `id`/`externalId`). Mensagem perdida no Realtime aparece sozinha, sem F5.
-
-**Objeção**
-
-O polling aumenta a carga em `/api/app/messages` e só vale a pena se as correções do Realtime não resolverem em produção (ainda não confirmado se o problema era só em dev). Um evento de fim perdido deixa o indicador preso, por isso o TTL local é obrigatório.
-
----
-
 ## 5) Imagem só para itens que dá para ilustrar
 
 **Contexto**

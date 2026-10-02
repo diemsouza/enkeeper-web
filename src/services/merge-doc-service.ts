@@ -32,8 +32,8 @@ import {
   MAX_ACTIVITIES_PER_DAY,
   DEFAULT_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
-import { sanitizeText, delay } from "../lib/utils";
-import { sendAndSaveMessage } from "./message-sender-service";
+import { sanitizeText } from "../lib/utils";
+import { sendAndSaveMessage, waitBeforeSend } from "./message-sender-service";
 import { sendFirstQuestionNow } from "./activity-cron.service";
 import { calculatePoolSize } from "../core/pool-size";
 import { DocType } from "../lib/prisma";
@@ -125,6 +125,7 @@ export async function mergeDoc(
       return;
     }
 
+    await channel.notifyTyping(userId);
     const docSectionResult = await generateDocSections({
       rawContent: consolidatedRaw,
       docType,
@@ -231,7 +232,11 @@ export async function mergeDoc(
           message: msg,
         });
         if (summary) {
-          await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+          await waitBeforeSend(
+            channel,
+            userId,
+            DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+          );
           await sendAndSaveMessage({
             channel,
             to: userChannel.channelUserId,

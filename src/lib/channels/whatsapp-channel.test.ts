@@ -7,6 +7,7 @@ vi.mock("../../vendors/whatsapp.vendor", () => ({
   sendWhatsAppAudio: vi.fn(),
   sendWhatsAppImage: vi.fn().mockResolvedValue("wamid_image"),
   sendWhatsAppInteractiveButtons: vi.fn().mockResolvedValue("wamid_interactive"),
+  sendWhatsAppTypingIndicator: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("../../vendors/storage.vendor", () => ({
   downloadFile: vi.fn().mockResolvedValue(Buffer.from("png")),
@@ -27,6 +28,7 @@ import {
   sendWhatsAppInteractiveButtons,
   sendWhatsAppMessage,
   sendWhatsAppTemplate,
+  sendWhatsAppTypingIndicator,
 } from "../../vendors/whatsapp.vendor";
 import { WhatsAppChannel } from "./whatsapp-channel";
 
@@ -171,5 +173,32 @@ describe("WhatsAppChannel.sendMessage", () => {
     expect(sendWhatsAppInteractiveButtons).not.toHaveBeenCalled();
     expect(sendWhatsAppMessage).not.toHaveBeenCalled();
     expect(result).toEqual({ externalId: "wamid_image" });
+  });
+});
+
+describe("WhatsAppChannel.notifyTyping", () => {
+  const channel = new WhatsAppChannel();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("com replyToMessageId envia o indicador ligado à mensagem recebida", async () => {
+    await channel.notifyTyping("user_1", { replyToMessageId: "wamid_in" });
+    expect(sendWhatsAppTypingIndicator).toHaveBeenCalledWith("wamid_in");
+  });
+
+  it("sem replyToMessageId não chama a Cloud API", async () => {
+    await channel.notifyTyping("user_1");
+    expect(sendWhatsAppTypingIndicator).not.toHaveBeenCalled();
+  });
+
+  it("falha na Cloud API não propaga", async () => {
+    vi.mocked(sendWhatsAppTypingIndicator).mockRejectedValueOnce(
+      new Error("boom"),
+    );
+    await expect(
+      channel.notifyTyping("user_1", { replyToMessageId: "wamid_in" }),
+    ).resolves.toBeUndefined();
   });
 });

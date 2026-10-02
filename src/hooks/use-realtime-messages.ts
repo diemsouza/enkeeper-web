@@ -4,6 +4,10 @@ import type {
   REALTIME_SUBSCRIBE_STATES,
 } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/src/lib/supabase-browser";
+import {
+  REALTIME_MESSAGES_TOPIC_PREFIX,
+  REALTIME_TYPING_EVENT,
+} from "@/src/lib/constants";
 
 type BroadcastRow = Record<string, unknown>;
 
@@ -40,6 +44,7 @@ export function useRealtimeMessages(
   onEvent: (record: BroadcastRow | undefined) => void,
   onReconnect: () => void,
   onReady?: () => void,
+  onTyping?: (isActive: boolean) => void,
 ): void {
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
@@ -47,11 +52,13 @@ export function useRealtimeMessages(
   onReconnectRef.current = onReconnect;
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
+  const onTypingRef = useRef(onTyping);
+  onTypingRef.current = onTyping;
 
   useEffect(() => {
     let cancelled = false;
     const supabase = createSupabaseBrowserClient();
-    const topic = `messages-${userId}`;
+    const topic = `${REALTIME_MESSAGES_TOPIC_PREFIX}${userId}`;
     let activeChannel: RealtimeChannel | null = null;
     let connecting: Promise<void> | null = null;
     let retryAttempt = 0;
@@ -132,7 +139,13 @@ export function useRealtimeMessages(
       const channel = supabase
         .channel(topic, { config: { private: true } })
         .on("broadcast", { event: "INSERT" }, handleBroadcast)
-        .on("broadcast", { event: "UPDATE" }, handleBroadcast);
+        .on("broadcast", { event: "UPDATE" }, handleBroadcast)
+        .on("broadcast", { event: REALTIME_TYPING_EVENT.START }, () =>
+          onTypingRef.current?.(true),
+        )
+        .on("broadcast", { event: REALTIME_TYPING_EVENT.STOP }, () =>
+          onTypingRef.current?.(false),
+        );
       activeChannel = channel;
       channel.subscribe((status, err) => handleStatus(channel, status, err));
     }

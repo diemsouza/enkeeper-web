@@ -50,9 +50,8 @@ import {
   computeQuestionScore,
   ScoreMetadata,
 } from "../lib/activity-score";
-import { delay } from "../lib/utils";
 import { MessageChannel } from "../types/message-channel";
-import { sendAndSaveMessage } from "./message-sender-service";
+import { sendAndSaveMessage, waitBeforeSend } from "./message-sender-service";
 
 export async function archiveOrCancelActivity(
   activity: Activity,
@@ -187,6 +186,7 @@ export async function sendResumeSummary(
   ) {
     const leaving = await findActivityById(leavingActivityId, userId);
     if (leaving && leaving.interactionCount > 0) {
+      await channel.notifyTyping(userId);
       const summary = await buildPreviousActivitySummary(userId, {
         activityId: leavingActivityId,
         forceRegenerate: true,
@@ -207,7 +207,9 @@ export async function sendResumeSummary(
     }
   }
 
-  if (summarySent) await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+  if (summarySent) {
+    await waitBeforeSend(channel, userId, DEFAULT_MESSAGE_INTERVAL_SEC * 1000);
+  }
 
   await sendAndSaveMessage({
     channel,
@@ -487,6 +489,7 @@ type MaybeSendActivitySuggestionParams = {
   channel: MessageChannel;
   to: string;
   today: Date;
+  replyToMessageId?: string;
 };
 
 export async function maybeSendActivitySuggestion(
@@ -500,6 +503,7 @@ export async function maybeSendActivitySuggestion(
     channel,
     to,
     today,
+    replyToMessageId,
   } = params;
   if (!isLastAnswerCorrect) return;
   if (!activity.roundCompleted) return;
@@ -508,7 +512,12 @@ export async function maybeSendActivitySuggestion(
   const eligible = await isActivitySuggestionEligible(activity.id);
   if (!eligible) return;
 
-  await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+  await waitBeforeSend(
+    channel,
+    userId,
+    AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
+    { replyToMessageId },
+  );
   const message = formatActivitySuggestion();
   await sendAndSaveMessage({
     channel,

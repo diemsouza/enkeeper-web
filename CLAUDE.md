@@ -241,7 +241,9 @@ await sendAndSaveMessage({ channel, to: userChannel.channelId, userId, userChann
 ```
 `sendAndSaveMessage` envia via `channel.sendMessage`/`sendTemplate`, captura o `externalId` (wamid) retornado pela Cloud API e so entao salva a `Message` ja com esse valor -- envio sempre antes do save, nunca depois. Passar `today` quando a mensagem deve contar para `incrementAgentMessageCount`; omitir quando o fluxo nunca contou (ex: `process-doc-service.ts`, `merge-doc-service.ts`).
 
-`MessageChannel.sendMessage`/`sendTemplate` enviam uma mensagem por chamada (sem array, sem `{ delay }`). Para pausas entre mensagens, usar `delay(segundos)` de `src/lib/utils.ts` explicitamente entre chamadas de `sendAndSaveMessage`.
+`MessageChannel.sendMessage`/`sendTemplate` enviam uma mensagem por chamada (sem array, sem `{ delay }`). Para pausas entre mensagens, usar `waitBeforeSend(channel, userId, ms, { replyToMessageId })` de `src/services/message-sender-service.ts` entre chamadas de `sendAndSaveMessage`, nunca `delay` cru: ele acende o "digitando" nos ultimos `TYPING_LEAD_MS` quando a pausa passa de `MIN_DELAY_FOR_TYPING_MS`.
+
+**Digitando:** antes de chamada de duracao incerta (LLM, geracao de pergunta/imagem, TTS), chamar `await channel.notifyTyping(userId, { replyToMessageId })` direto na linha anterior, sem wrapper nem heartbeat. `replyToMessageId` e o `externalId` da mensagem recebida (wamid no WhatsApp; sem ele o WhatsApp nao mostra nada). Em fluxo com varias etapas lentas, passar `TypingTarget` (`{ channel, replyToMessageId }`) para renovar o aviso antes de cada etapa (ex: `generateQuestionIfPoolNotFull`). Duas mensagens de uma mesma sequencia nunca saem coladas: sempre `waitBeforeSend` entre elas. `notifyTypingStop` so existe no `finally` de `handleIncomingMessage`, via `trackChannelSends`. Regra em Product-Rules Secao 19.
 
 ### Padrao de armazenamento de midia
 

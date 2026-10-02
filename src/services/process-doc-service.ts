@@ -23,8 +23,8 @@ import {
   MAX_ACTIVITIES_PER_DAY,
   DEFAULT_MESSAGE_INTERVAL_SEC,
 } from "../lib/constants";
-import { sanitizeText, delay } from "../lib/utils";
-import { sendAndSaveMessage } from "./message-sender-service";
+import { sanitizeText } from "../lib/utils";
+import { sendAndSaveMessage, waitBeforeSend } from "./message-sender-service";
 import { sendFirstQuestionNow } from "./activity-cron.service";
 import { calculatePoolSize } from "../core/pool-size";
 
@@ -33,6 +33,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
   if (!doc || doc.status !== "pending") return;
 
   try {
+    await channel.notifyTyping(userId);
     const result = await generateDocSections({
       rawContent: doc.rawContent ?? "",
       docType: doc.docType,
@@ -133,7 +134,11 @@ export async function processDoc(docId: string, userId: string, channel: Message
           message: msg,
         });
         if (summary) {
-          await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+          await waitBeforeSend(
+            channel,
+            userId,
+            DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+          );
           await sendAndSaveMessage({
             channel,
             to: userChannel.channelUserId,

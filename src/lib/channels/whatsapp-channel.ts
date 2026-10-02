@@ -3,6 +3,7 @@ import type {
   ChannelSendResult,
   MessageChannel,
   NudgeTemplate,
+  TypingContext,
 } from "../../types/message-channel";
 import {
   sendWhatsAppMessage,
@@ -12,6 +13,7 @@ import {
   sendWhatsAppImage,
   sendWhatsAppInteractiveButtons,
   sendWhatsAppCtaUrl,
+  sendWhatsAppTypingIndicator,
 } from "../../vendors/whatsapp.vendor";
 import { downloadFile } from "../../vendors/storage.vendor";
 import { getMediaById } from "../../repo/media.repo";
@@ -156,4 +158,16 @@ export class WhatsAppChannel implements MessageChannel {
       externalId: await sendWhatsAppTemplate(to, template, bodyParams, buttonUrlParam),
     };
   }
+
+  async notifyTyping(_userId: string, ctx?: TypingContext): Promise<void> {
+    if (!ctx?.replyToMessageId) return;
+    try {
+      await sendWhatsAppTypingIndicator(ctx.replyToMessageId);
+    } catch (err) {
+      console.error("[WhatsAppChannel] typing indicator failed:", err);
+    }
+  }
+
+  // Cloud API nao tem stop: o indicador some na proxima resposta ou em 25s.
+  async notifyTypingStop(_userId: string): Promise<void> {}
 }

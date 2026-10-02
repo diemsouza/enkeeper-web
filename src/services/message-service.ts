@@ -160,8 +160,12 @@ import {
   DOMAINS,
   LEVEL_OPTIONS,
 } from "../lib/constants";
-import { delay, sanitizeText } from "../lib/utils";
-import { sendAndSaveMessage } from "./message-sender-service";
+import { sanitizeText } from "../lib/utils";
+import {
+  sendAndSaveMessage,
+  trackChannelSends,
+  waitBeforeSend,
+} from "./message-sender-service";
 import {
   IncomingMessage,
   MessageIntent,
@@ -204,8 +208,9 @@ const PRACTICE_ANSWER_PASSTHROUGH_INTENTS: MessageIntent[] = [
 
 export async function handleIncomingMessage(
   input: IncomingMessage,
-  channel: MessageChannel,
+  rawChannel: MessageChannel,
 ): Promise<void> {
+  const { channel, hasSent } = trackChannelSends(rawChannel);
   const rawText = (input.text ?? "").trim();
   const { source, sourceData } = classifyUserSource(input.referral, rawText);
   const { user, userChannel } = await findOrCreateUserByChannel(
@@ -322,6 +327,12 @@ export async function handleIncomingMessage(
             message: formatCanceled(),
             today,
           });
+          await waitBeforeSend(
+            channel,
+            user.id,
+            DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+            { replyToMessageId: messageId },
+          );
           await sendAndSaveMessage({
             channel,
             to: userChannel.channelUserId,
@@ -584,6 +595,12 @@ export async function handleIncomingMessage(
         activityCount === 0
           ? formatFirstNewActivityCanceled()
           : formatNewActivityFlowCanceledGuidance();
+      await waitBeforeSend(
+        channel,
+        user.id,
+        DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+        { replyToMessageId: messageId },
+      );
       await sendAndSaveMessage({
         channel,
         to: userChannel.channelUserId,
@@ -624,6 +641,12 @@ export async function handleIncomingMessage(
 
       if (user.level === null) {
         const guidanceReply = formatSetFirstLevelCanceled();
+        await waitBeforeSend(
+          channel,
+          user.id,
+          DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+          { replyToMessageId: messageId },
+        );
         await sendAndSaveMessage({
           channel,
           to: userChannel.channelUserId,
@@ -685,6 +708,12 @@ export async function handleIncomingMessage(
         if (outcome === "captured") {
           const levelFlowData = getIntentData(user);
           if (levelFlowData?.flow === "new_activity") {
+            await waitBeforeSend(
+              channel,
+              user.id,
+              DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+              { replyToMessageId: messageId },
+            );
             await sendDomainQuestion(
               user.id,
               userChannel.id,
@@ -858,6 +887,8 @@ export async function handleIncomingMessage(
           userLevel,
           domain,
           topics,
+          channel,
+          messageId,
         );
 
         await sendAndSaveMessage({
@@ -977,6 +1008,7 @@ export async function handleIncomingMessage(
           domain,
           topic,
           channel,
+          messageId,
         );
 
         if (result.outcome === "done") {
@@ -1101,6 +1133,12 @@ export async function handleIncomingMessage(
             message: formatCanceled(),
             today,
           });
+          await waitBeforeSend(
+            channel,
+            user.id,
+            DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+            { replyToMessageId: messageId },
+          );
           await sendAndSaveMessage({
             channel,
             to: userChannel.channelUserId,
@@ -1362,7 +1400,12 @@ export async function handleIncomingMessage(
             message: pendingReply,
             today,
           });
-          await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+          await waitBeforeSend(
+            channel,
+            user.id,
+            DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+            { replyToMessageId: messageId },
+          );
           const pendingQuestionMsg = formatQuestion(alreadyPending, {
             level: activeActivity.userLevel,
           });
@@ -1392,7 +1435,12 @@ export async function handleIncomingMessage(
           today,
         });
 
-        await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+        await waitBeforeSend(
+          channel,
+          user.id,
+          DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+          { replyToMessageId: messageId },
+        );
         await handleIntensiveNextQuestion(
           activeActivity,
           user.id,
@@ -1401,6 +1449,7 @@ export async function handleIncomingMessage(
           channel,
           userChannel.channelUserId,
           true,
+          messageId,
         );
         await saveUserMsg({
           userId: user.id,
@@ -1501,6 +1550,9 @@ export async function handleIncomingMessage(
                   )
                 : formattedQuestion.text;
 
+              await channel.notifyTyping(user.id, {
+                replyToMessageId: messageId,
+              });
               const evaluation = await generateAnswerEvaluation({
                 question: questionForEvaluation,
                 answerKeys: pendingQuestion.answerKeys,
@@ -1656,7 +1708,12 @@ export async function handleIncomingMessage(
               });
 
               if (feedbackAudioMediaId) {
-                await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+                await waitBeforeSend(
+                  channel,
+                  user.id,
+                  DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+                  { replyToMessageId: messageId },
+                );
                 await sendAndSaveMessage({
                   channel,
                   to: userChannel.channelUserId,
@@ -1681,7 +1738,12 @@ export async function handleIncomingMessage(
                 await updateActivity(activeActivity.id, user.id, {
                   intensiveUntil: null,
                 });
-                await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                await waitBeforeSend(
+                  channel,
+                  user.id,
+                  AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
+                  { replyToMessageId: messageId },
+                );
                 if (tipMsg) {
                   await sendAndSaveMessage({
                     channel,
@@ -1707,8 +1769,14 @@ export async function handleIncomingMessage(
                     activeActivity.intervalMinutes,
                     channel,
                     userChannel.channelUserId,
+                    messageId,
                   );
-                  await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                  await waitBeforeSend(
+                    channel,
+                    user.id,
+                    AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
+                    { replyToMessageId: messageId },
+                  );
                 }
                 await sendAndSaveMessage({
                   channel,
@@ -1728,12 +1796,18 @@ export async function handleIncomingMessage(
                   channel,
                   to: userChannel.channelUserId,
                   today,
+                  replyToMessageId: messageId,
                 });
                 return;
               }
 
               if (isPracticingSessionActive) {
-                await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                await waitBeforeSend(
+                  channel,
+                  user.id,
+                  AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
+                  { replyToMessageId: messageId },
+                );
                 if (tipMsg) {
                   tipSent = true;
                   await sendAndSaveMessage({
@@ -1747,6 +1821,12 @@ export async function handleIncomingMessage(
                     questionId: pendingQuestion.id,
                     today,
                   });
+                  await waitBeforeSend(
+                    channel,
+                    user.id,
+                    DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+                    { replyToMessageId: messageId },
+                  );
                 }
                 const sent = await handleIntensiveNextQuestion(
                   activeActivity,
@@ -1755,13 +1835,20 @@ export async function handleIncomingMessage(
                   today,
                   channel,
                   userChannel.channelUserId,
+                  false,
+                  messageId,
                 );
                 if (sent) return;
               }
 
               if (interactionCount === 1) {
                 const guideMsg = formatGuideAfterFirstFeedback();
-                await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                await waitBeforeSend(
+                  channel,
+                  user.id,
+                  AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
+                  { replyToMessageId: messageId },
+                );
                 if (tipMsg && !tipSent) {
                   await sendAndSaveMessage({
                     channel,
@@ -1774,7 +1861,12 @@ export async function handleIncomingMessage(
                     questionId: pendingQuestion.id,
                     today,
                   });
-                  await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                  await waitBeforeSend(
+                    channel,
+                    user.id,
+                    AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
+                    { replyToMessageId: messageId },
+                  );
                 }
                 await sendAndSaveMessage({
                   channel,
@@ -1790,7 +1882,12 @@ export async function handleIncomingMessage(
               }
 
               if (tipMsg && !tipSent) {
-                await delay(AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC);
+                await waitBeforeSend(
+                  channel,
+                  user.id,
+                  AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
+                  { replyToMessageId: messageId },
+                );
                 await sendAndSaveMessage({
                   channel,
                   to: userChannel.channelUserId,
@@ -1813,6 +1910,7 @@ export async function handleIncomingMessage(
                   channel,
                   to: userChannel.channelUserId,
                   today,
+                  replyToMessageId: messageId,
                 });
               }
 
@@ -1858,6 +1956,9 @@ export async function handleIncomingMessage(
     return;
   } finally {
     await updateUserLastResponse(user.id, messageId);
+    // Processamento que terminou sem enviar nada (erro ou caminho mudo) pode
+    // ter acendido o "digitando": apaga aqui, num ponto so.
+    if (!hasSent()) await channel.notifyTypingStop(user.id);
   }
 }
 
@@ -1869,6 +1970,7 @@ async function handleIntensiveNextQuestion(
   channel: MessageChannel,
   to: string,
   skipRoundComplete = false,
+  replyToMessageId?: string,
 ): Promise<boolean> {
   const {
     id: activityId,
@@ -1893,6 +1995,7 @@ async function handleIntensiveNextQuestion(
         today,
         channel,
         to,
+        replyToMessageId,
       );
       return true;
     }
@@ -1909,11 +2012,16 @@ async function handleIntensiveNextQuestion(
         today,
         channel,
         to,
+        replyToMessageId,
       );
       return true;
     }
 
-    const outcome = await generateQuestionIfPoolNotFull(activity);
+    await channel.notifyTyping(userId, { replyToMessageId });
+    const outcome = await generateQuestionIfPoolNotFull(activity, {
+      channel,
+      replyToMessageId,
+    });
     if (!outcome.poolExhausted) {
       if (outcome.question) {
         await sendIntensiveQuestion(
@@ -1926,6 +2034,7 @@ async function handleIntensiveNextQuestion(
           today,
           channel,
           to,
+          replyToMessageId,
         );
         return true;
       }
@@ -1952,11 +2061,17 @@ async function handleIntensiveNextQuestion(
         intervalMinutes,
         channel,
         to,
+        replyToMessageId,
       );
     }
     const next = await findNextGeneralQuestion(activityId, lastId);
     if (next) {
-      await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+      await waitBeforeSend(
+        channel,
+        userId,
+        DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+        { replyToMessageId },
+      );
       await sendIntensiveQuestion(
         next,
         activity,
@@ -1967,6 +2082,7 @@ async function handleIntensiveNextQuestion(
         today,
         channel,
         to,
+        replyToMessageId,
       );
     }
     return true;
@@ -1984,6 +2100,7 @@ async function handleIntensiveNextQuestion(
       today,
       channel,
       to,
+      replyToMessageId,
     );
     return true;
   }
@@ -2007,6 +2124,7 @@ async function sendIntensiveQuestion(
   today: Date,
   channel: MessageChannel,
   to: string,
+  replyToMessageId?: string,
 ): Promise<void> {
   if (executionCount === 0) {
     const startMsg = formatActivityStart(activity.title);
@@ -2020,7 +2138,12 @@ async function sendIntensiveQuestion(
       intent: "activity_start",
       today,
     });
-    await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+    await waitBeforeSend(
+      channel,
+      userId,
+      DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+      { replyToMessageId },
+    );
   }
 
   const questionText = formatQuestion(question, { level: activity.userLevel });
@@ -2316,7 +2439,13 @@ export async function runOnboardingAndFirstActivityFlow(
   ];
 
   for (let i = 0; i < msgs.length; i++) {
-    if (i > 0) await delay(ONBOARDING_MESSAGE_INTERVAL_SEC);
+    if (i > 0) {
+      await waitBeforeSend(
+        channel,
+        user.id,
+        ONBOARDING_MESSAGE_INTERVAL_SEC * 1000,
+      );
+    }
     await sendAndSaveMessage({
       channel,
       to: userChannel.channelUserId,
@@ -2328,7 +2457,11 @@ export async function runOnboardingAndFirstActivityFlow(
     if (i === 0) await markUserOnboarded(user.id);
   }
 
-  await delay(ONBOARDING_MESSAGE_INTERVAL_SEC);
+  await waitBeforeSend(
+    channel,
+    user.id,
+    ONBOARDING_MESSAGE_INTERVAL_SEC * 1000,
+  );
   await startNewActivityFlow(
     user,
     userChannel.id,

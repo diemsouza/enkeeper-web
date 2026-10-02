@@ -56,11 +56,11 @@ import {
   incrementDailyDocCount,
 } from "../repo/daily-usage.repo";
 import { calculatePoolSize } from "../core/pool-size";
-import { sanitizeText, delay } from "../lib/utils";
+import { sanitizeText } from "../lib/utils";
 import { MessageChannel } from "../types/message-channel";
 import { FocusSuggestion, GeneratedDocMetadata } from "../types/domain";
 import { FormattedMessage } from "../types/out-message";
-import { sendAndSaveMessage } from "./message-sender-service";
+import { sendAndSaveMessage, waitBeforeSend } from "./message-sender-service";
 import { sendFirstQuestionNow } from "./activity-cron.service";
 
 export type DomainCaptureResult =
@@ -124,6 +124,8 @@ export async function processTopicResponse(
   level: Level,
   domain: string,
   topics: string[],
+  channel: MessageChannel,
+  replyToMessageId?: string,
 ): Promise<TopicCaptureResult> {
   const parsed = parseTopicSelectionInput(text, topics);
   if (parsed.type === "cancel" || parsed.type === "invalid") {
@@ -137,6 +139,7 @@ export async function processTopicResponse(
   }
   const resolvedTopic = parsed.type === "known" ? parsed.topic : parsed.text;
 
+  await channel.notifyTyping(userId, { replyToMessageId });
   const validated = await generateTopicValidation({
     level,
     domain: getDomainLabel(domain),
@@ -178,6 +181,7 @@ export async function processFocusResponse(
   domain: string,
   topic: string,
   channel: MessageChannel,
+  replyToMessageId?: string,
 ): Promise<FocusCaptureResult> {
   const parsed = parseFocusSelectionInput(text, focusSuggestions);
   if (parsed.type === "cancel" || parsed.type === "invalid") {
@@ -193,6 +197,7 @@ export async function processFocusResponse(
 
   const subtopicValue = await resolveSubtopic(userId, domain, topic, subtopics);
 
+  await channel.notifyTyping(userId, { replyToMessageId });
   const generated = await generateFocusContent({
     level,
     domain: getDomainLabel(domain),
@@ -248,11 +253,18 @@ export async function processFocusResponse(
     channel,
     doc.metadata as GeneratedDocMetadata | null,
     currentActivity?.id ?? null,
+    replyToMessageId,
   );
 
   const userChannel = await findUserChannelByUserId(userId);
   if (userChannel) {
-    await sendFirstQuestionNow(activity, userChannel, activity.date, channel);
+    await sendFirstQuestionNow(
+      activity,
+      userChannel,
+      activity.date,
+      channel,
+      replyToMessageId,
+    );
   }
 
   return { outcome: "done" };
@@ -338,6 +350,7 @@ async function sendActivityCreatedConfirmation(
   channel: MessageChannel,
   metadata: GeneratedDocMetadata | null,
   previousActivityId: string | null,
+  replyToMessageId?: string,
 ): Promise<void> {
   const activityCount = await incrementDailyActivityCount(userId, date);
   await incrementDailyDocCount(userId, date);
@@ -364,7 +377,9 @@ async function sendActivityCreatedConfirmation(
     message: msg,
   });
   if (summary) {
-    await delay(DEFAULT_MESSAGE_INTERVAL_SEC);
+    await waitBeforeSend(channel, userId, DEFAULT_MESSAGE_INTERVAL_SEC * 1000, {
+      replyToMessageId,
+    });
     await sendAndSaveMessage({
       channel,
       to: userChannel.channelUserId,

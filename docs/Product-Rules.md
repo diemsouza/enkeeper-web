@@ -407,7 +407,7 @@ Sequência fixa de mensagens no primeiro contato. A estrutura, sequência com or
 
 Ao final da sequência fixa, o sistema já inicia automaticamente a captura de nível (se ainda não informado) seguida do fluxo de nova atividade (Seção 15), sem que o usuário precise usar nenhum comando. Upload de material continua disponível a qualquer momento, inclusive durante esse fluxo, e cancela o fluxo automaticamente quando chega (ver Seção 15).
 
-Mensagens da sequência não são enviadas simultaneamente. Existe intervalo deliberado entre uma e outra, simulando envio natural e evitando que o usuário receba um bloco único de texto. O valor exato do intervalo é parâmetro de configuração, não regra de negócio, e pode ser ajustado sem necessidade de atualizar este documento.
+Mensagens da sequência não são enviadas simultaneamente. Existe intervalo deliberado entre uma e outra, simulando envio natural e evitando que o usuário receba um bloco único de texto. O valor exato do intervalo é parâmetro de configuração, não regra de negócio, e pode ser ajustado sem necessidade de atualizar este documento. O indicador de "digitando" entre as mensagens segue a regra da Seção 19: com o intervalo curto atual, a sequência sai sem indicador.
 
 O texto abaixo é exemplo da versão atual, sujeito a revisão de copy sem que isso altere a estrutura:
 
@@ -718,3 +718,21 @@ Nas listas de opções, o `interactive` guarda também o estado da seleção: `d
 - **Clique num passo de captura** (nível, objetivo, assunto, ponto): só quando a web envia o id da mensagem e o id do botão, a mensagem é do usuário, é do sistema com lista, o botão existe nela, a opção bate com a lista atual do passo e a lista ainda não está travada. O clique segue o mesmo caminho da escolha daquela opção da lista. Texto digitado nesses passos não grava estado.
 
 Comandos e respostas barradas (limite, supressão) não alteram a mensagem; a gravação só acontece depois que a mensagem é aceita para processamento. A superfície web antecipa localmente a seleção no clique e volta ao pendente se o envio falhar ou se o servidor não avaliar a mensagem como resposta. Mensagens anteriores a essa regra ficam sem estado (sem backfill).
+
+**Indicador de digitando.** O servidor é a única fonte de quando o "digitando" aparece; o cliente não deduz nada a partir do histórico. Assim como as camadas opcionais acima, cada canal decide como mostrar o aviso:
+
+- **Superfície web**: o indicador acende ao receber o aviso de início do servidor pelo canal em tempo real da conversa.
+- **WhatsApp**: indicador nativo, que só existe ligado a uma mensagem recebida do usuário (e marca essa mensagem como lida). Envios iniciados pelo sistema, sem mensagem do usuário por trás (lembrete, processamento de material em fila, cadência), não mostram indicador nesse canal.
+
+Quando aparece:
+
+- Logo antes de qualquer preparo de duração incerta: avaliação da resposta (incluindo o áudio de feedback que vem junto), geração da próxima pergunta (incluindo a imagem), validação do assunto e geração do conteúdo no fluxo de nova atividade (Seção 15), processamento de material (Seção 14), resumo de conclusão da rodada (Seção 2) e resumo ao retomar uma atividade (Seção 1). Quando o preparo tem várias etapas lentas (pergunta com imagem, e o novo formato quando a imagem falha), o aviso é renovado antes de cada etapa, para o indicador não sumir no meio.
+- Nos segundos finais de uma pausa deliberada entre duas mensagens da mesma sequência (ex: entre o feedback e o áudio, entre a dica e a próxima pergunta, depois de `praticar`, entre um cancelamento e a orientação que vem em seguida). Mensagens de uma mesma sequência nunca saem coladas, sempre com pausa entre elas. Pausas curtas saem em silêncio, como as do onboarding, sem indicador, para ele não piscar na tela. A antecedência e o limiar mínimo da pausa são parâmetros de configuração, como os próprios intervalos, e podem ser ajustados sem atualizar este documento.
+
+Quando some, o que vier primeiro:
+
+- chega a próxima mensagem do sistema;
+- o servidor avisa o fim, o que só acontece quando o processamento de uma mensagem do usuário termina sem enviar nada (erro no meio ou caminho que não responde);
+- 25 segundos sem nenhum sinal, como rede de segurança contra aviso perdido ou canal caído (mesmo limite do indicador nativo do WhatsApp).
+
+Não existe aviso periódico para manter o indicador aceso em preparos longos: passado o limite, ele some e a mensagem aparece quando chegar. Mensagem perdida no canal em tempo real continua coberta pela reconexão com recuperação de mensagens, sem consulta periódica extra.
