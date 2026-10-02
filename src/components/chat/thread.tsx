@@ -292,7 +292,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
               onClick={handleJumpToBottom}
               style={{ bottom: composerHeight + vvOffset + 8 }}
               aria-label={t("scroll_to_bottom_aria")}
-              className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full bg-black text-white shadow-lg dark:bg-white dark:text-black"
+              className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-background/[95%] text-foreground shadow-sm backdrop-blur-sx backdrop-saturate-150"
             >
               <ArrowDown className="h-4 w-4" />
               {hasNewMessage && (

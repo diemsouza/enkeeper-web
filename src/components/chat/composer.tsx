@@ -127,13 +127,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
 
     return (
       <div className="relative">
-        {/* Fundo desfocado do footer, atrás de tudo. Rampa contínua: nasce
-            transparente no topo (se mistura com as mensagens passando por
-            trás) e escurece até o fim, terminando ainda levemente
-            transparente, sem faixa sólida no meio. */}
+        {/* Fundo desfocado do footer, atrás de tudo. Usa a mesma cor do fundo
+            do chat (thread.tsx) para o efeito só aparecer sobre as mensagens
+            que passam por trás, sem mudar as laterais vazias. Rampa contínua:
+            nasce transparente no topo e fica mais opaca até o fim. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-background backdrop-blur-sm"
+          className="pointer-events-none absolute inset-0 -z-10 bg-[#F5F5F7] backdrop-blur-sm dark:bg-[#1C1C1E]"
           style={{
             maskImage: COMPOSER_BACKDROP_MASK,
             WebkitMaskImage: COMPOSER_BACKDROP_MASK,
