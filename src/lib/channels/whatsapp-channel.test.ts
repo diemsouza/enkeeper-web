@@ -19,7 +19,6 @@ vi.mock("../../repo/media.repo", () => ({
     contentType: "image/png",
   }),
 }));
-vi.mock("../../vendors/tts.vendor", () => ({ TTS_MIME_TYPE: "audio/ogg" }));
 
 import { downloadFile } from "../../vendors/storage.vendor";
 import {

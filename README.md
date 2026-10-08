@@ -44,10 +44,10 @@ stripe login
 
 ```bash
 # obter secret de teste
-stripe listen -f http://localhost:3000/api/webhooks/stripe --print-secret
+stripe listen -f http://192.168.15.102:3000/api/webhooks/stripe --print-secret
 
 # executar listening dos eventos
-stripe listen --forward-to http://localhost:3000/api/webhooks/stripe --all-thin
+stripe listen --forward-to http://localhost:3000/api/webhooks/stripe --all-snapshot
 ```
 
 Guarde o Webhook Signing Secret que aparece (whsec\_...) → ponha em .env.local:

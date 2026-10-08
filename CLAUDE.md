@@ -250,7 +250,7 @@ await sendAndSaveMessage({ channel, to: userChannel.channelId, userId, userChann
 Toda midia nova vai em `<pasta>/<mediaId>.<ext>`, com o nome do arquivo igual ao id da `Media`:
 ```typescript
 const mediaId = ulid();
-const mediaPath = buildMediaPath(FEEDBACK_AUDIO_FOLDER, mediaId, "ogg");
+const mediaPath = buildMediaPath(FEEDBACK_AUDIO_FOLDER, mediaId, "mp3");
 await uploadFile({ filePath: mediaPath, file });
 await createMedia({ id: mediaId, userId, source: MEDIA_SOURCE.SYSTEM, mediaPath, parentId, parentType, mediaType, contentType });
 ```

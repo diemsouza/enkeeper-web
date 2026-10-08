@@ -17,7 +17,6 @@ import {
 } from "../../vendors/whatsapp.vendor";
 import { downloadFile } from "../../vendors/storage.vendor";
 import { getMediaById } from "../../repo/media.repo";
-import { TTS_MIME_TYPE } from "../../vendors/tts.vendor";
 import {
   formatCaptureStepOptionsText,
   formatNumberedOptions,
@@ -38,8 +37,8 @@ async function sendAudioPart(
   audioMediaId: string,
 ): Promise<string | null> {
   try {
-    const { buffer } = await downloadMedia(audioMediaId);
-    const mediaId = await uploadWhatsAppMedia(buffer, TTS_MIME_TYPE);
+    const { buffer, contentType } = await downloadMedia(audioMediaId);
+    const mediaId = await uploadWhatsAppMedia(buffer, contentType);
     return await sendWhatsAppAudio(to, mediaId);
   } catch (err) {
     console.error("[WhatsAppChannel] audio delivery failed:", err);

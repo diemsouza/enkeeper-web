@@ -26,7 +26,7 @@ export type SimulatorImageItem = {
 const SIMULATOR_IMAGE_VERSION = 3;
 
 export function simulatorAudioUrl(domainId: DomainId, turn: number): string {
-  return `/audio/simulator/${domainId}-${turn}.ogg`;
+  return `/audio/simulator/${domainId}-${turn}.mp3`;
 }
 
 export function simulatorImageUrl(domainId: DomainId): string {

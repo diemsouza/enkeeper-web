@@ -433,6 +433,10 @@ export function formatDailyPracticeLimitReached(): FormattedMessage {
   };
 }
 
+export function formatReviewUpToDate(): FormattedMessage {
+  return { text: "✅ Revisão em dia. Continue praticando." };
+}
+
 export function formatIntensiveDailyLimitReached(): FormattedMessage {
   return {
     text: "Você usou toda sua prática disponível de hoje, mas amanhã tem mais.",
@@ -849,7 +853,7 @@ export function formatPracticeWaiting(): FormattedMessage {
 
 export function formatGenericError(): FormattedMessage {
   return {
-    text: "Não foi possível processar sua mensagem agora. Tente em instantes.",
+    text: "Houve um problema ao processar sua mensagem. Tente novamente em alguns minutos.",
   };
 }
 

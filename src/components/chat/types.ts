@@ -19,6 +19,7 @@ export interface Message {
   fileSize?: string;
   mediaType?: "image" | "pdf" | "text";
   audioUrl?: string;
+  audioContentType?: string;
   imageUrl?: string;
   caption?: string;
   textFallback?: string;

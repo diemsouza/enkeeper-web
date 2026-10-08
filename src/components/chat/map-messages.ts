@@ -1,4 +1,4 @@
-import type { Message as PrismaMessage } from "@/src/lib/prisma";
+import type { MessageWithMedia } from "@/src/repo/messages.repo";
 import type { FormattedMessage } from "@/src/types/out-message";
 import type { Message } from "./types";
 
@@ -12,6 +12,7 @@ type NormalizedRow = {
   externalId: string | null;
   mediaType: string | null;
   mediaId: string | null;
+  mediaContentType?: string | null;
   metadata: unknown;
   interactive: unknown;
   questionId: string | null;
@@ -122,6 +123,7 @@ function toMessage(
       date,
       type: "audio",
       audioUrl: buildMediaUrl(row.mediaId),
+      audioContentType: row.mediaContentType ?? undefined,
       textFallback: row.content,
       externalId: row.externalId ?? undefined,
       translation,
@@ -140,7 +142,7 @@ function toMessage(
 }
 
 export function mapActivityMessages(
-  raw: PrismaMessage[],
+  raw: MessageWithMedia[],
   labels: FileLabels,
   feedbackTranslations: Record<string, string> = {},
 ): Message[] {
@@ -154,6 +156,7 @@ export function mapActivityMessages(
         externalId: m.externalId,
         mediaType: m.mediaType,
         mediaId: m.mediaId,
+        mediaContentType: m.media?.contentType,
         metadata: m.metadata,
         interactive: m.interactive,
         questionId: m.questionId,

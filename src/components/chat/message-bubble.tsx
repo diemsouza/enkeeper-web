@@ -82,6 +82,7 @@ export function MessageBubble({
         ) : message.type === "audio" ? (
           <CustomAudioPlayer
             audioUrl={message.audioUrl!}
+            audioContentType={message.audioContentType}
             externalId={message.externalId}
             onPlay={onAudioPlay}
             textFallback={message.textFallback}

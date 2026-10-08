@@ -143,6 +143,17 @@ Mensagem enviada ao usuário:
 
 O score aparece também no texto do resumo, como número solto, não só dentro da imagem. A imagem é suprimida (resumo vai só como texto) quando o pool da atividade tem menos de 5 perguntas geradas: pouco dado, o gauge não tem valor de leitura. Falha na geração também degrada para texto puro, nunca atrasa nem bloqueia o texto.
 
+### Revisão em dia
+
+Sinal de que a fila de revisão foi zerada numa sessão. A conclusão da primeira rodada é outro evento e não cobre isso.
+
+- Depois de avaliar uma resposta (certa, errada ou parcial), se a contagem de perguntas elegíveis por SM-2 do usuário (mesma contagem do lembrete diário, `countSm2EligibleQuestionsByUser`) passou de maior que 0 para 0 nessa avaliação, o sistema envia uma mensagem extra.
+- Dispara com qualquer quantidade de elegíveis no início, sem piso mínimo. Não depende de a primeira rodada estar completa nem de sobrar pergunta nova no pool.
+- Texto fixo, sem IA: `✅ Revisão em dia. Continue praticando.`
+- Entra na sequência normal: depois do bloco completo de feedback da resposta que zerou a fila (avaliação, áudio de feedback se houver, dica de erro se houver) e antes da próxima pergunta. Mesma pausa com indicador de digitando entre mensagens da sequência (Seção 19).
+- Vale para a cadência e para a sessão intensiva, igualmente.
+- Quem começa a sessão com zero elegível não recebe a mensagem (sem dívida de revisão).
+
 ### Reexibição de pergunta pendente
 
 Quando o usuário retoma uma atividade, inicia sessão intensiva, ou cai em qualquer fallback estando com uma pergunta já pendente, o sistema reexibe a própria pergunta, não um aviso genérico de que há pergunta pendente. Reaproveita o mesmo mecanismo de envio já usado pela cadência e pela sessão intensiva, então o formato exibido é idêntico ao do primeiro envio.
@@ -231,13 +242,13 @@ Avaliado contra as respostas esperadas geradas na criação da atividade. Tom di
 
 ### 6.1 Áudio no feedback
 
-Feedback pode ser acompanhado de uma versão em áudio, enviada como mensagem separada logo após o feedback em texto. Só o conteúdo de demonstração vai para o áudio, sem a abertura de resultado e sem emoji, informação redundante em áudio, já carregada pela entonação da fala.
+Feedback pode ser acompanhado de uma versão em áudio (MP3, ver Seção 17; a exigência de Ogg/Opus de nota de voz do WhatsApp é legado, pois esse canal não entrega mais áudio de prática), enviada como mensagem separada logo após o feedback em texto. Só o conteúdo de demonstração vai para o áudio, sem a abertura de resultado e sem emoji, informação redundante em áudio, já carregada pela entonação da fala.
 
 Envio de áudio é parcial, não em toda resposta, controlado por uma fração configurável do total. Falha na geração ou envio do áudio nunca atrasa nem impede o feedback em texto, que segue as regras desta seção normalmente, sem nenhuma indicação de erro visível ao usuário.
 
 A frase de demonstração usada no feedback e no áudio (`feedback_text`) e sua tradução em português (`feedback_translation`) são persistidas por pergunta, junto com o resultado de cada avaliação. A tradução não é enviada como mensagem separada em nenhum canal: na superfície web, quando disponível, fica atrás de um toggle oculto por padrão ("Ver tradução") logo abaixo do player de áudio, revelado só depois do áudio terminar de carregar e nunca junto de um erro de carregamento. No WhatsApp não há equivalente.
 
-No WhatsApp, o áudio é enviado como nota de voz reconhecida pelo canal, não como anexo de áudio comum: é essa forma de envio que habilita o webhook de status de reprodução, um áudio enviado como anexo genérico não gera esse evento.
+Legado (o WhatsApp não entrega mais áudio de prática; o áudio novo é MP3 e não vira nota de voz): no WhatsApp, o áudio era enviado como nota de voz reconhecida pelo canal, não como anexo de áudio comum: é essa forma de envio que habilita o webhook de status de reprodução, um áudio enviado como anexo genérico não gera esse evento.
 
 Reprodução do áudio pelo usuário é rastreada, mas a origem do evento depende do canal: no WhatsApp vem do webhook de status da mensagem, na superfície web vem de um evento do próprio player no client. Qualquer que seja a origem, o evento converge para o mesmo registro por pergunta, que alimenta o bônus de prática passiva (Seção 6.3), e é idempotente por pergunta: uma segunda notificação de reprodução da mesma pergunta não duplica o efeito (ver Seção 18).
 
@@ -652,7 +663,7 @@ Comportamento pós-cancelamento depende do contexto. Sem Activity ativa (onboard
 - O sistema orienta ativamente o usuário sobre o que fazer, seja no primeiro contato ou sempre que algo crítico de entendimento acontecer no meio do uso. Silêncio ou resposta genérica em ponto de ambiguidade real é falha de produto, não neutralidade. Onde já aplicado: mensagem que orienta o uso de um comando usa imperativo direto ("Use *praticar* para..."), nunca fraseado condicional ("se quiser", "quando quiser"), porque fraseado condicional convida resposta em linguagem natural que o sistema não reconhece como comando.
 - **O sistema nunca se personifica.** Copy não usa framing de agente em primeira pessoa ("eu vou avaliar seu material", "eu te ajudo", "eu aviso"), nem trata o produto como personagem com vontade própria. Mensagens descrevem o que acontece, não o que "eu" faço. Essa regra já existia em relação a "eu paro", "eu pauso" no contexto de comandos, passa a cobrir qualquer construção de primeira pessoa em qualquer mensagem do sistema, não só as ligadas a comandos.
 - **Verbo padrão para envio de conteúdo é "enviar", não "mandar".** "Mandar" é registro mais informal e não é usado em nenhuma copy do produto. Vale para qualquer mensagem do sistema, onboarding, comandos ou fallback.
-- Emoji só é usado em mensagens formatadas diretamente no código, nunca em texto gerado por LLM (feedback de avaliação, resumo de atividade quando tiver componente gerado, qualquer resposta que passe por geração de texto livre). Dentro das mensagens de código, emoji é estratégico, não decorativo, cada um carrega um significado fixo e reconhecível. Vocabulário atual: 📘 início de atividade ou seção, 📊 resumo numérico, ⚠️ limite ou bloqueio, 🔄 sugestão de troca de atividade. Novo emoji só entra no vocabulário quando resolve ambiguidade real de leitura rápida, não para variar visual ou suavizar tom. Isso não quer dizer que é rigorosamente proibido, só não pode ser usado como identidade de comunicação principal do produto. Marcações como acima são bem vindos quando realmente agregarem uma melhor leitura, também pra evitar só um monte de texto corrido.
+- Emoji só é usado em mensagens formatadas diretamente no código, nunca em texto gerado por LLM (feedback de avaliação, resumo de atividade quando tiver componente gerado, qualquer resposta que passe por geração de texto livre). Dentro das mensagens de código, emoji é estratégico, não decorativo, cada um carrega um significado fixo e reconhecível. Vocabulário atual: 📘 início de atividade ou seção, 📊 resumo numérico, ⚠️ limite ou bloqueio, 🔄 sugestão de troca de atividade, ✅ fechamento positivo de ciclo de revisão. Novo emoji só entra no vocabulário quando resolve ambiguidade real de leitura rápida, não para variar visual ou suavizar tom. Isso não quer dizer que é rigorosamente proibido, só não pode ser usado como identidade de comunicação principal do produto. Marcações como acima são bem vindos quando realmente agregarem uma melhor leitura, também pra evitar só um monte de texto corrido.
 - **Convenção de exibição de comando.** Comando mencionado em qualquer mensagem do sistema aparece em monoespaçado, para garantir contraste visual independente de tema claro ou escuro do canal, o que negrito isolado não garante. Comando de ação espontânea do usuário (`ajuda`, `praticar`, `nova atividade`, `cancelar` fora de fluxo de confirmação) é exibido com prefixo `/`. Comando de confirmação dentro de um estado que o sistema abriu (`sim`, `não`, `cancelar` dentro do fluxo de nova atividade) é exibido sem prefixo. Entrada do usuário aceita o comando com ou sem prefixo, independente de como foi exibido, o prefixo não é sintaxe obrigatória.
 
 ---
@@ -661,7 +672,7 @@ Comportamento pós-cancelamento depende do contexto. Sem Activity ativa (onboard
 
 Nem toda mídia é descartada após uso. PDF e texto em arquivo continuam sendo processados em memória e descartados após extração (Seção 14). As exceções armazenadas:
 
-- **Áudio de feedback**, gerado pelo sistema (Seção 6.1).
+- **Áudio de feedback**, gerado pelo sistema (Seção 6.1). MP3 é o formato padrão de geração; Ogg/Opus existe só como acervo legado, sem geração nova, e expira pela limpeza normal.
 - **Áudio de resposta**: quando o usuário responde uma pergunta pendente por nota de voz, o áudio é armazenado e usado no cálculo da nota da pergunta (Seção 6.3), diferente de uma resposta por texto, que não é retida.
 - **Imagem original de OCR**: a imagem enviada como material é armazenada junto com o texto (ou descrição) extraído dela (Seção 14.1), independente do desfecho ser texto, descrição, bloqueio ou imagem ilegível.
 - **Charts de resumo**: as imagens de pentágono (Seção 1) e gauge (Seção 2) geradas junto dos resumos. Cada atividade referencia os seus: um chart de conclusão (pentágono) e um de rodada (gauge).
@@ -700,7 +711,7 @@ Toda mensagem enviada pelo sistema é representada por um `FormattedMessage`: um
 Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje:
 
 - **WhatsApp**: usa `imagePath` se presente (envia a imagem com o `text` como caption); senão `audioPath` se presente (envia o áudio); senão `templateName` se presente (envia via template aprovado da Meta, necessário fora da janela de 24h); senão `interactive` se presente (envia com botões); senão `text` puro.
-- **Superfície web** (`/app`): usa `imagePath` se presente, renderizando a imagem com o `text` como legenda e permitindo abrir a imagem em tela cheia com zoom ao clicar (pentágono e gauge, Seções 1 e 2); usa `audioPath` decodificando o próprio arquivo Ogg/Opus no client, por decoder próprio, sem depender de suporte nativo do navegador ao codec. O arquivo de áudio é o mesmo canônico servido ao WhatsApp: Ogg/Opus segue como único formato gerado e armazenado (sem mudança no TTS nem no schema, ver Seção 17), sem geração de mídia duplicada por canal, só a decodificação muda por canal.
+- **Superfície web** (`/app`): usa `imagePath` se presente, renderizando a imagem com o `text` como legenda e permitindo abrir a imagem em tela cheia com zoom ao clicar (pentágono e gauge, Seções 1 e 2); usa `audioPath` com `<audio>` nativo do navegador (MP3, formato padrão de geração, ver Seção 17). Ogg/Opus existe só como acervo legado, tocado por decoder próprio no client quando o navegador não o reproduz nativamente. Sem geração de mídia duplicada por canal.
 
 `imagePath` e `interactive` podem vir juntos na mesma mensagem (hoje: pergunta de reconhecimento por imagem, Seção 4, com um botão por opção). A superfície web mostra a imagem, o texto como legenda e as opções como botões. O WhatsApp segue a prioridade acima: envia a imagem com o `text` como legenda e acrescenta as opções numeradas à legenda no envio, sem botões.
 

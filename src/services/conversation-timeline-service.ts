@@ -1,6 +1,5 @@
-import { Message } from "../lib/prisma";
 import { MESSAGES_PAGE_SIZE } from "../lib/constants";
-import { findMessagesPage } from "../repo/messages.repo";
+import { findMessagesPage, type MessageWithMedia } from "../repo/messages.repo";
 import { findCurrentActivityByUser } from "../repo/activities.repo";
 import {
   countSm2EligibleQuestions,
@@ -11,7 +10,7 @@ export async function findMessagesTimelinePage(
   userId: string,
   before?: string,
 ): Promise<{
-  messages: Message[];
+  messages: MessageWithMedia[];
   hasMore: boolean;
   feedbackTranslations: Record<string, string>;
 }> {

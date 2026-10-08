@@ -53,6 +53,7 @@ import {
   formatFeedbackFailed,
   formatPracticeWaiting,
   formatDailyPracticeLimitReached,
+  formatReviewUpToDate,
   formatIntensiveDailyLimitReached,
   formatOnboardingMsg1,
   formatOnboardingMsg2,
@@ -67,6 +68,7 @@ import {
   formatFeedbackToSpeech,
   formatImageBlocked,
   formatImageUnreadable,
+  formatGenericError,
 } from "../core/formatters";
 import {
   saveMessage,
@@ -140,6 +142,7 @@ import {
   findPendingQuestion,
   updateQuestion,
   findSm2EligibleQuestion,
+  countSm2EligibleQuestionsByUser,
 } from "../repo/questions.repo";
 import {
   formatIntensivePendingQuestion,
@@ -1608,6 +1611,9 @@ export async function handleIncomingMessage(
               );
               const isRealRevision =
                 pendingQuestion.attemptCount > 0 && sm2 !== null;
+              const eligibleBefore = await countSm2EligibleQuestionsByUser(
+                user.id,
+              );
               const scoreMetadata = updateScoreMetadata(
                 pendingQuestion,
                 evalStatus,
@@ -1647,6 +1653,19 @@ export async function handleIncomingMessage(
                 metadata: scoreMetadata,
                 score: computeQuestionScore(scoreMetadata),
               });
+              const hasClearedReviewQueue =
+                eligibleBefore > 0 &&
+                (await countSm2EligibleQuestionsByUser(user.id)) === 0;
+              const reviewUpToDateParams = {
+                channel,
+                to: userChannel.channelUserId,
+                userId: user.id,
+                userChannelId: userChannel.id,
+                activityId: activeActivity.id,
+                message: formatReviewUpToDate(),
+                intent: "review_up_to_date",
+                today,
+              };
               // Precisa rodar antes do saveUserMsg: o cliente web reconcilia a
               // selecao otimista quando a mensagem do usuario chega.
               if (
@@ -1757,6 +1776,21 @@ export async function handleIncomingMessage(
                     today,
                   });
                 }
+                if (hasClearedReviewQueue) {
+                  await waitBeforeSend(
+                    channel,
+                    user.id,
+                    DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+                    { replyToMessageId: messageId },
+                  );
+                  await sendAndSaveMessage(reviewUpToDateParams);
+                  await waitBeforeSend(
+                    channel,
+                    user.id,
+                    DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+                    { replyToMessageId: messageId },
+                  );
+                }
                 if (
                   !activeActivity.roundCompleted &&
                   (await isRoundPoolExhausted(activeActivity))
@@ -1828,6 +1862,15 @@ export async function handleIncomingMessage(
                     { replyToMessageId: messageId },
                   );
                 }
+                if (hasClearedReviewQueue) {
+                  await sendAndSaveMessage(reviewUpToDateParams);
+                  await waitBeforeSend(
+                    channel,
+                    user.id,
+                    DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+                    { replyToMessageId: messageId },
+                  );
+                }
                 const sent = await handleIntensiveNextQuestion(
                   activeActivity,
                   user.id,
@@ -1868,6 +1911,15 @@ export async function handleIncomingMessage(
                     { replyToMessageId: messageId },
                   );
                 }
+                if (hasClearedReviewQueue) {
+                  await sendAndSaveMessage(reviewUpToDateParams);
+                  await waitBeforeSend(
+                    channel,
+                    user.id,
+                    AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
+                    { replyToMessageId: messageId },
+                  );
+                }
                 await sendAndSaveMessage({
                   channel,
                   to: userChannel.channelUserId,
@@ -1899,6 +1951,16 @@ export async function handleIncomingMessage(
                   questionId: pendingQuestion.id,
                   today,
                 });
+              }
+
+              if (hasClearedReviewQueue) {
+                await waitBeforeSend(
+                  channel,
+                  user.id,
+                  AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
+                  { replyToMessageId: messageId },
+                );
+                await sendAndSaveMessage(reviewUpToDateParams);
               }
 
               if (!isIntensiveMode) {
@@ -1954,6 +2016,27 @@ export async function handleIncomingMessage(
       today,
     });
     return;
+  } catch (err) {
+    console.error("[handleIncomingMessage] falha ao processar mensagem", {
+      userId: user.id,
+      err,
+    });
+    if (!hasSent()) {
+      try {
+        await sendAndSaveMessage({
+          channel,
+          to: userChannel.channelUserId,
+          userId: user.id,
+          userChannelId: userChannel.id,
+          message: formatGenericError(),
+        });
+      } catch (sendErr) {
+        console.error("[handleIncomingMessage] falha ao enviar erro generico", {
+          userId: user.id,
+          err: sendErr,
+        });
+      }
+    }
   } finally {
     await updateUserLastResponse(user.id, messageId);
     // Processamento que terminou sem enviar nada (erro ou caminho mudo) pode

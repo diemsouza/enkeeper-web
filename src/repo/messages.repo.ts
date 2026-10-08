@@ -39,13 +39,18 @@ export async function findMessagesByActivity(
   });
 }
 
+export type MessageWithMedia = Message & {
+  media: { contentType: string } | null;
+};
+
 export async function findMessagesPage(
   userId: string,
   before: string | undefined,
   limit: number,
-): Promise<Message[]> {
+): Promise<MessageWithMedia[]> {
   return prisma.message.findMany({
     where: { userId },
+    include: { media: { select: { contentType: true } } },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
     ...(before ? { cursor: { id: before }, skip: 1 } : {}),

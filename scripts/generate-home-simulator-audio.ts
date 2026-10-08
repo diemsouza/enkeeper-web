@@ -20,7 +20,7 @@ async function main(): Promise<void> {
 
   for (const item of SIMULATOR_AUDIO_ITEMS) {
     const label = `${item.domainId}-${item.turn}`;
-    const filePath = path.join(outDir, `${label}.ogg`);
+    const filePath = path.join(outDir, `${label}.mp3`);
 
     if (!isForce && (await fileExists(filePath))) {
       console.log(`[${label}] ja existe, pulando`);

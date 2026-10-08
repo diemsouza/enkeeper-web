@@ -9,6 +9,7 @@ import {
   formatNewActivityFlowCanceled,
   formatPracticeWaiting,
   formatQuestion,
+  formatReviewUpToDate,
   formatTopicQuestion,
 } from "./formatters";
 
@@ -176,5 +177,13 @@ describe("formatPracticeWaiting", () => {
     expect(message.interactive?.buttons).toEqual([
       { id: "practice_now", label: "Praticar", type: "reply" },
     ]);
+  });
+});
+
+describe("formatReviewUpToDate", () => {
+  it("devolve o texto fixo de revisão em dia", () => {
+    expect(formatReviewUpToDate().text).toBe(
+      "✅ Revisão em dia. Continue praticando.",
+    );
   });
 });

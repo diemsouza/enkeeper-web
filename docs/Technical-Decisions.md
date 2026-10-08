@@ -6,6 +6,23 @@ topo.
 
 ---
 
+## Áudio TTS em MP3 e player nativo
+
+Data: 2026-10-07
+
+Contexto: o áudio de feedback era gerado em Ogg/Opus por herança do WhatsApp (nota de voz) e do Safari sem suporte nativo, o que forçou um player que decodifica o arquivo via Web Audio API. Esse caminho tem bug conhecido do WebKit: áudio por Web Audio fica distorcido, atrasado ou picotado quando a rota de saída muda para Bluetooth (relato de stuttering no CarPlay sem fio). Além disso, o WhatsApp não entrega mais áudio de prática, então o requisito de Ogg/Opus acabou.
+
+Decisões:
+
+- **MP3 como formato padrão de geração** (`audio/mpeg`, extensão `.mp3`). A escolha original era M4A/AAC, mas a OpenAI só devolve AAC cru (ADTS) e o Google Cloud TTS não tem AAC nem M4A; MP3 é nativo nos dois (`response_format: "mp3"` e `audioEncoding: "MP3"`), sem transcode nem ffmpeg e sem geração dupla.
+- **Player em três arquivos** em `src/components/chat/`: `native-audio-player.tsx` (`<audio>` nativo, dono do tipo `AudioPlayerProps`, waveform determinística pela URL, sem decode de PCM), `ogg-audio-player.tsx` (decoder Ogg/Opus original, intacto, só para o acervo legado) e `custom-audio-player.tsx` (fachada). O Ogg é carregado com `next/dynamic` (`ssr: false`) no escopo do módulo. Nenhum call site mudou.
+- **Escolha na fachada:** a URL do app (`/api/app/media/<id>`) não tem extensão e a mensagem não carrega o content type, então a fachada usa o nativo e cai para `OggAudioPlayer` quando o `<audio>` dispara erro de mídia (ou a URL termina em `.ogg`, caso do simulador antigo).
+- **Sem migração:** Ogg já gravado continua Ogg até o job de limpeza (Seção 17 do Product-Rules). Os áudios fixos da home foram regerados em MP3.
+- **WhatsApp:** `sendAudioPart` passa a enviar o `contentType` da própria `Media`; MP3 não vira nota de voz, aceitável porque o canal não entrega áudio de prática.
+- **Quando remover `ogg-audio-player.tsx`, `ogg-opus-decoder` e o ajuste de `next.config.ts`:** quando nenhuma `Media` de áudio com path `.ogg` for mais referenciada por uma `Activity` ativa (verificar por query antes).
+
+---
+
 ## Lembrete diário e reengajamento unificados
 
 Data: 2026-10-01
