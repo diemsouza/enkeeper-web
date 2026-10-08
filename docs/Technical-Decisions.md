@@ -284,7 +284,7 @@ Decisões:
   `Question.questionImageDescription` e em `Media.mediaTranscription`, como
   auditoria do que originou a imagem.
 - **`image.vendor` separado do `llm.vendor`.** Mesmo padrão do `tts.vendor`:
-  entra a descrição, sai o arquivo (`gpt-image-1-mini`, qualidade `low`,
+  entra a descrição, sai o arquivo (`gpt-image-2.5-flare`, qualidade `low`,
   landscape 1536x1024 por padrão ou square 1024x1024, JPEG com compressão 80;
   a composição entra como adendo no fim do prompt e largura/altura vão em
   `Media.metadata`). Cada chamada é registrada em `llm_logs` (stage
@@ -395,3 +395,17 @@ Decisões:
   (`daily-reminder-cron.service.ts`), sem somar perguntas com `status: "pending"`
   — essa contagem na prática nunca passa de 0 ou 1 por Activity e não faz parte
   da definição de "dívida de revisão" já documentada no produto.
+
+## Pill "Praticar" (`/app`)
+
+- **Fonte única do estado:** `Activity.intensiveUntil`. Já é reiniciado a cada pergunta enviada e setado no `practice_now`, então "dentro da janela de 15 min desde a última pergunta" equivale a `intensiveUntil > now`. Não há campo novo nem uso de `Question.updatedAt`.
+- **Limite diário:** `canPracticeToday(..., true)` em `src/core/practice-pill.ts`, mesmo cálculo do `practice_now`.
+- **Estado compartilhado:** `PracticePillProvider` envolve sidebar, header e página no layout, porque o header fica fora do `LiveThreadClient`. A thread registra `handleSend` como sender, então o clique segue o mesmo caminho do banner (que some sozinho).
+- **Realtime:** reaproveita a única assinatura de `useRealtimeMessages`; mensagem nova ou reconexão chama `GET /api/app/practice-state`.
+
+## Dica em acerto (`EvalTipClass.alternative`)
+
+- **Enum:** `alternative` foi adicionado a `EvalTipClass` (banco) e ao zod de `answerEvaluationSchema`. `none` e `spelling` continuam só no zod, nunca persistidos.
+- **Gate no código, não no prompt:** o prompt de avaliação não sabe o formato. Em `message-service.ts`, o `silent` agora também bloqueia quando `evalStatus === "right"` e não vale `alternative` + formato em `EVAL_TIP_ALTERNATIVE_FORMATS` (`src/lib/constants.ts`: recall, recall_inverted, gap_fill, scenario) + `answerKeys.length > 1`.
+- **Descarte total:** quando silenciada, a dica some inteira (`evalTip` e `evalTipClass` nulos). Antes, com classe `none`/`spelling` só a classe era anulada e o texto ainda seguia.
+- **Sem efeito colateral:** status, nota e SM-2 não leem a dica. Envio e ordem (feedback, áudio, dica) inalterados.

@@ -162,6 +162,7 @@ import {
   MEDIA_SOURCE,
   DOMAINS,
   LEVEL_OPTIONS,
+  EVAL_TIP_ALTERNATIVE_FORMATS,
 } from "../lib/constants";
 import { sanitizeText } from "../lib/utils";
 import {
@@ -1579,17 +1580,25 @@ export async function handleIncomingMessage(
               const feedbackSpeechText = evaluation
                 ? formatFeedbackToSpeech(evaluation)
                 : null;
-              const evalTip = !evaluation?.user_unknown
-                ? evaluation?.eval_tip
-                : null;
+              const canTipOnRight =
+                evaluation?.eval_tip_class === "alternative" &&
+                !!pendingQuestion.questionFormat &&
+                EVAL_TIP_ALTERNATIVE_FORMATS.includes(
+                  pendingQuestion.questionFormat,
+                ) &&
+                pendingQuestion.answerKeys.length > 1;
               const silent =
                 evaluation?.eval_tip_class === "none" ||
-                evaluation?.eval_tip_class === "spelling";
-              // silent já exclui "none" e "spelling"; cast seguro para o enum do banco
-              const tipClass =
-                evalTip && !silent
-                  ? (evaluation?.eval_tip_class as EvalTipClass)
+                evaluation?.eval_tip_class === "spelling" ||
+                (evalStatus === "right" && !canTipOnRight);
+              const evalTip =
+                !evaluation?.user_unknown && !silent
+                  ? evaluation?.eval_tip
                   : null;
+              // silent já exclui "none" e "spelling"; cast seguro para o enum do banco
+              const tipClass = evalTip
+                ? (evaluation?.eval_tip_class as EvalTipClass)
+                : null;
               const tipMsg = evalTip ? formatEvalTip(evalTip) : null;
               let tipSent = false;
               const answerType = input.isVoiceNote ? "audio" : "text";

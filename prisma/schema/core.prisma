@@ -95,6 +95,7 @@ enum EvalTipClass {
     collocation
     literal_idiom
     register
+    alternative
 }
 
 enum Level {

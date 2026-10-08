@@ -252,19 +252,29 @@ Legado (o WhatsApp não entrega mais áudio de prática; o áudio novo é MP3 e 
 
 Reprodução do áudio pelo usuário é rastreada, mas a origem do evento depende do canal: no WhatsApp vem do webhook de status da mensagem, na superfície web vem de um evento do próprio player no client. Qualquer que seja a origem, o evento converge para o mesmo registro por pergunta, que alimenta o bônus de prática passiva (Seção 6.3), e é idempotente por pergunta: uma segunda notificação de reprodução da mesma pergunta não duplica o efeito (ver Seção 18).
 
-### 6.2 Dica de erro (evalTip)
+### 6.2 Dica (evalTip)
 
-Feedback de erro ou parcial pode ser acompanhado de uma dica curta, enviada como mensagem separada logo após o feedback. Diferente do feedback em si, a dica pode apontar a causa específica do erro, mas nunca reformula a resposta certa como explicação nem funciona como definição de dicionário. É a única exceção deliberada às proibições desta seção, restrita ao próprio campo da dica, sem afetar o texto do feedback em si.
+O feedback pode ser acompanhado de uma dica curta, enviada como mensagem separada logo após o feedback (e depois do áudio, quando houver). A dica nunca reformula a resposta certa como explicação nem funciona como definição de dicionário. É a única exceção deliberada às proibições desta seção, restrita ao próprio campo da dica, sem afetar o texto do feedback em si.
 
-A causa do erro é classificada em uma de oito categorias: calque (tradução literal de estrutura), sinônimo próximo incorreto, estrutura (padrão gramatical confundido), colocação (combinação de palavras que não se usa junto em inglês), expressão interpretada ao pé da letra, registro (formal/informal fora de lugar), ortografia, ou sem classificação. Ortografia e sem classificação não geram dica — o campo fica vazio nesses casos, não só no caso de chute sem padrão identificável.
+**Em erro ou parcial**, a dica pode apontar a causa específica do erro. A causa é classificada em uma de oito categorias: calque (tradução literal de estrutura), sinônimo próximo incorreto, estrutura (padrão gramatical confundido), colocação (combinação de palavras que não se usa junto em inglês), expressão interpretada ao pé da letra, registro (formal/informal fora de lugar), ortografia, ou sem classificação. Ortografia e sem classificação não geram dica, o campo fica vazio nesses casos, não só no caso de chute sem padrão identificável.
 
-O texto da dica segue uma marcação própria: negrito para a forma contrastada, itálico para um termo curto em inglês, aspas duplas para uma frase completa em inglês, riscado só para uma forma que não existe em inglês.
+**Em acerto**, a dica pode apresentar uma alternativa válida, com um uso em inglês, quando a pergunta aceita mais de uma resposta e o usuário respondeu com uma delas. É complemento, nunca ressalva sobre a resposta dada. Só vale quando:
+
+- o formato é de resposta digitada (recall, recall invertido, gap fill e cenário), nunca em múltipla escolha ou reconhecimento por imagem, que já têm opções fechadas;
+- a alternativa vem das respostas esperadas da própria pergunta, nunca inventada na avaliação;
+- a alternativa é um termo realmente diferente do que o usuário escreveu e do que aparece no feedback, não só variação de flexão, artigo ou contração.
+
+Sem alternativa assim, o acerto segue sem dica. O objetivo é que a dica em acerto seja pontual, não presença em toda resposta certa.
+
+O prompt de avaliação não conhece o formato nem decide sozinho o envio: o filtro final fica no código. Em acerto, a dica só é enviada se a classe retornada for alternativa, o formato for um dos quatro de resposta digitada e a pergunta tiver mais de uma resposta esperada. Fora disso a dica é descartada, inclusive o texto. A dica em acerto não altera status, nota da pergunta nem agendamento de revisão (SM-2), e a ordem de envio é a mesma: feedback, áudio (se houver) e dica.
+
+O texto da dica segue uma marcação própria: negrito para a forma contrastada, itálico para um termo curto em inglês, aspas duplas para uma frase completa em inglês, riscado só para uma forma que não existe em inglês. Cada dica usa só a marcação que fizer sentido para o caso.
 
 Vale tanto para cadência quanto para sessão intensiva. Em sessão intensiva, a dica não atrasa nem bloqueia o disparo da próxima pergunta, é enviada em sequência imediata.
 
 ### 6.3 Sugestão de troca de atividade
 
-Quando a atividade ativa já atingiu uma nota alta o suficiente, o feedback de uma resposta correta pode vir acompanhado da sugestão de trocar de atividade (🔄, ver vocabulário de emoji), com botão (ou o comando por extenso, dependendo do canal) para iniciar o fluxo de nova atividade. Nunca acompanha feedback de erro ou parcial, para não soar como reação ao erro.
+Quando a atividade ativa já atingiu uma nota alta o suficiente, o feedback de uma resposta correta pode vir acompanhado da sugestão de trocar de atividade (🔄, ver vocabulário de emoji), com botão (ou o comando por extenso, dependendo do canal) para iniciar o fluxo de nova atividade. Nunca acompanha feedback de erro ou parcial, para não soar como reação ao erro. A dica de alternativa em acerto (Seção 6.2) pode ser enviada na mesma resposta, como mensagem separada após o feedback, sem influenciar a nota.
 
 Cada pergunta tem uma nota de 0 a 10, calculada a partir de dois eixos independentes.
 
@@ -374,6 +384,17 @@ Na página de prática (`/app`), um banner fixo aparece entre a lista de mensage
 A contagem e a checagem de sessão ativa são feitas uma única vez, no carregamento inicial da página, sem verificação reativa contínua.
 
 O botão "Praticar" do banner dispara exatamente o comando `praticar` (Seção 9), o mesmo gatilho usado ao digitar o comando. O banner desaparece assim que a sessão intensiva começa, seja pelo botão ou pelo comando digitado, e só reaparece num novo carregamento da página.
+
+### 8.3.1 Pill "Praticar"
+
+Atalho fixo para o comando `praticar` (Seção 9), independente do banner da Seção 8.3, que segue com a lógica própria.
+
+- **Posição:** no mobile, à direita do header; na sidebar, logo abaixo da atividade ativa (inclusive com a sidebar aberta no mobile). Com a sidebar colapsada no desktop, vira um botão só com ícone de play e tooltip "Praticar". Texto fixo, sem variação de copy.
+- **Visibilidade:** só existe com atividade ativa. Sem atividade, não aparece em nenhum lugar.
+- **Estados:** inativa (desabilitada, visual neutro) enquanto a sessão intensiva está dentro da janela de 15 minutos desde a última pergunta enviada (Seção 8.2) ou quando o limite diário foi atingido, até o reset. Ativa em qualquer outro caso, incluindo pergunta pendente expirada e ausência de revisão elegível.
+- **Clique:** dispara exatamente o comando `praticar`, que reexibe a pergunta pendente se houver (Seção 2), senão segue a ordem normal de envio. Fora de `/app`, envia o comando e leva o usuário a `/app`.
+- **Estado inicial:** calculado no servidor, no layout de `/app`, antes de renderizar (sem flash).
+- **Tempo real:** mensagem nova do sistema reconsulta o estado pelo mesmo canal realtime do indicador de digitando (Seção 19); um timer local reativa a pill na expiração da janela, sem depender de evento. O estado também é reconsultado ao voltar para a aba.
 
 ### 8.4 Toast de confirmação em ações do app
 

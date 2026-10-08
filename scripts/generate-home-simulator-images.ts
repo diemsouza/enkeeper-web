@@ -31,7 +31,7 @@ async function main(): Promise<void> {
     const { result } = await requestImage(
       `${item.description}\n\n${QUESTION_IMAGE_STYLE_PROMPT}`,
       {
-        model: "gpt-image-1",
+        model: "gpt-image-2.5-flare",
         quality: "high",
         outputFormat: "webp",
         outputCompression: 75,

@@ -26,7 +26,7 @@ export type ImageCallOutcome = {
   usage: ImageGenerationResponse["usage"];
 };
 
-export const IMAGE_MODEL = "gpt-image-1-mini";
+export const IMAGE_MODEL = "gpt-image-2.5-flare";
 
 export type ImageOrientation = "square" | "landscape";
 

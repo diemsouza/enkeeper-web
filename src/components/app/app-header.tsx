@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { SidebarTrigger } from "@/src/components/ui/sidebar";
+import { PracticePill } from "./practice-pill";
 
 export function AppHeader() {
   const t = useTranslations("common");
@@ -12,6 +13,7 @@ export function AppHeader() {
     >
       <SidebarTrigger />
       <span className="truncate text-sm font-medium">{t("brand")}</span>
+      <PracticePill className="ml-auto mr-2" />
     </header>
   );
 }

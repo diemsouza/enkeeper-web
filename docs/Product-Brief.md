@@ -224,7 +224,7 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Geração de perguntas | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Avaliação de respostas + feedback | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Texto-para-voz (áudio de feedback) | OpenAI (`gpt-4o-mini-tts`, principal) e Google Cloud TTS (fallback), alternável por configuração |
-| Geração de imagem (reconhecimento por imagem) | OpenAI `gpt-image-1-mini`, qualidade baixa, rollout parcial habilitado por configuração |
+| Geração de imagem (reconhecimento por imagem) | OpenAI `gpt-image-2.5-flare`, qualidade baixa, rollout parcial habilitado por configuração |
 | Charts de resumo (pentágono, gauge) | SVG por template rasterizado com `@resvg/resvg-js` (nativo, sem headless browser), fontes Inter e IBM Plex Mono embutidas no bundle |
 | Armazenamento de mídia | Supabase Storage, bucket separado por ambiente, cobre áudio gerado (feedback), áudio de resposta do usuário, a imagem original enviada para OCR, os charts de resumo e as imagens geradas para perguntas de reconhecimento por imagem |
 | Evolução semanal | Modelo médio em batch |
@@ -335,7 +335,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Extração de material simplificada para lista única de vocabulário, sem seções tipadas, reduzindo a complexidade do pipeline de geração e de formatos de pergunta
 - OCR de imagem gera conteúdo de prática a partir de descrição da cena quando não há texto legível (antes era descartada), com tratamento dedicado para conteúdo impróprio (bloqueado) e imagem ilegível
 - Formatação de gap fill e cenário aplicada em código, independente do modelo reproduzir a formatação certa; cenário com variação de fechamento
-- Classificação de dica de erro (evalTip) expandida para 8 categorias, com contrato de formatação de texto
+- Classificação de dica de erro ou complemento de acerto (evalTip) expandida para 8 ou mais categorias, com contrato de formatação de texto; em acerto, dica de alternativa válida (outra resposta esperada com uso em inglês) nos formatos de resposta digitada, filtrada em código
 - Charts visuais nos resumos: pentágono de desempenho na troca de atividade (compara com a atividade anterior) e gauge de score na conclusão da primeira rodada, renderizados por template sem custo de IA
 - Home refeita: hero sem menção a canal específico (WhatsApp deixou de ser citado na copy pública, prática é apresentada como algo que acontece no seu ritmo), demo visual por domínio (dia a dia, educação, viagem, trabalho) com roteiro fixo em shell de desktop e iPhone lado a lado substituindo o simulador antigo de botão real, seções de features, como funciona, para quem é e FAQ reescritas
 - Login automático via link do WhatsApp (Seção 11.2 do Product-Rules) usando shortlink genérico e reutilizável em vez do token cru na URL
@@ -348,7 +348,6 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - [ ] Evolução semanal com % acerto e vocabulário que travou
 - [ ] Gatilhos de upgrade contextuais
 - [ ] Pix manual via suporte
-- [ ] Dica de erro (evalTip) no feedback de resposta
 
 **Testes antes do beta:**
 - [ ] Fundador usando 7 dias sem bug crítico com material real de inglês

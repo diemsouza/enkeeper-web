@@ -16,6 +16,7 @@ import { postJson } from "@/src/lib/api-client";
 import type { Activity, User } from "@/src/lib/prisma";
 import { ActivityListItem } from "./activity-list-item";
 import { NewActivityButton } from "./new-activity-button";
+import { PracticePill } from "./practice-pill";
 import { SidebarFooterMenu } from "./sidebar-footer";
 
 type AppSidebarProps = {
@@ -108,6 +109,7 @@ export function AppSidebar({
               ))}
             </SidebarMenu>
           )}
+          <PracticePill showLabel={showLabel} className="mt-1 w-full" />
         </div>
 
         {showLabel && (

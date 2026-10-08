@@ -1,4 +1,11 @@
-import type { ChannelType, Level } from "./prisma";
+import type { ChannelType, Level, QuestionFormat } from "./prisma";
+
+export const EVAL_TIP_ALTERNATIVE_FORMATS: QuestionFormat[] = [
+  "recall",
+  "recall_inverted",
+  "gap_fill",
+  "scenario",
+];
 
 export const THEME_COLOR_LIGHT = "#ffffff";
 export const THEME_COLOR_DARK = "#0a0a0a";

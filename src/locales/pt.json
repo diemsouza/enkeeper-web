@@ -50,6 +50,9 @@
       "empty": "Nenhuma",
       "new_activity": "Nova atividade"
     },
+    "practice_pill": {
+      "label": "Praticar"
+    },
     "account": {
       "plan_pro": "Pro",
       "plan_subscription_expired": "Assinatura expirada",

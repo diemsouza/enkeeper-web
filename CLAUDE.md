@@ -135,7 +135,7 @@ Funcoes em `src/core/format-loader.ts`:
 
 O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotacao manual do texto da pergunta, so decide qual formato pedir (`pickNextFormat`).
 
-**image_recognition:** a geracao devolve `imageable` e `questionImageDescription`; a imagem sai de `src/vendors/image.vendor.ts` (`gpt-image-1-mini`) via `src/services/question-image-service.ts`, salva em `question-image/<mediaId>.jpg` (JPEG comprimido, landscape 1536x1024 por padrao ou `square` via parametro `orientation`; largura/altura em `Media.metadata`; Media `image`, removida pela limpeza de imagens apos 90 dias). Falha ou `imageable: false` cai para outro formato em `buildQuestionData` (`activity-cron.service.ts`). `formatQuestion` aplica o enunciado e monta `text` + `imageMediaId` + `interactive`. O estilo visual fixo (foto realista) fica em `prompts/question-image.md`, anexado a descricao pelo `image.vendor`, seguido do adendo de composicao da orientacao ("Wide landscape composition, subject centered."); a descricao gerada fala so da cena, com o termo no ambiente real onde aparece.
+**image_recognition:** a geracao devolve `imageable` e `questionImageDescription`; a imagem sai de `src/vendors/image.vendor.ts` (`gpt-image-2.5-flare`) via `src/services/question-image-service.ts`, salva em `question-image/<mediaId>.jpg` (JPEG comprimido, landscape 1536x1024 por padrao ou `square` via parametro `orientation`; largura/altura em `Media.metadata`; Media `image`, removida pela limpeza de imagens apos 90 dias). Falha ou `imageable: false` cai para outro formato em `buildQuestionData` (`activity-cron.service.ts`). `formatQuestion` aplica o enunciado e monta `text` + `imageMediaId` + `interactive`. O estilo visual fixo (foto realista) fica em `prompts/question-image.md`, anexado a descricao pelo `image.vendor`, seguido do adendo de composicao da orientacao ("Wide landscape composition, subject centered."); a descricao gerada fala so da cena, com o termo no ambiente real onde aparece.
 
 **Choice shuffle:** opcoes sao embaralhadas uma vez antes de salvar no banco (`updateQuestion`). **Opcoes por canal:** choice e image_recognition devolvem so a pergunta em `text` e as opcoes em `interactive.buttons` com `isOptionList: true`. O `WhatsAppChannel` anexa a lista numerada via `formatNumberedOptions` (texto ou legenda); a web salva so a pergunta e o cliente renderiza os botoes. `formatNumberedOptions` nao embaralha.
 
@@ -157,13 +157,15 @@ O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotac
 | `extractTextFromImage`    | ocr               | gpt-4o-mini        |
 | `extractTextFromPdf`      | --                | unpdf (sem LLM)    |
 
-Geracao de imagem: `src/vendors/image.vendor.ts` (OpenAI gpt-image-1-mini, stage `question-image` no `LlmLog`).
+Geracao de imagem: `src/vendors/image.vendor.ts` (OpenAI gpt-image-2.5-flare, stage `question-image` no `LlmLog`).
 
 `PROVIDER_STANDARD` alterna entre `"anthropic"` (claude-haiku-4-5) e `"openai"` (gpt-4.1). Mudar a constante no topo do arquivo para trocar.
 
 Transcricao de audio: `src/vendors/whisper.vendor.ts` (OpenAI whisper-1).
 
 Schemas Zod para saidas estruturadas: `src/lib/llm-schemas.ts`.
+
+**evalTip em right:** so e enviada com `eval_tip_class` `alternative`, formato em `EVAL_TIP_ALTERNATIVE_FORMATS` e mais de uma answerKey; o gate fica em `message-service.ts` (o prompt nao conhece o formato). Ver Product-Rules Secao 6.2.
 Textos dos prompts: `prompts/*.md`, exemplos de formato em `prompts/examples/*.md`.
 
 ## LLM logging

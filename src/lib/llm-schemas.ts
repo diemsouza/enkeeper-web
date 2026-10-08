@@ -111,6 +111,7 @@ export const answerEvaluationSchema = z.object({
     "collocation",
     "literal_idiom",
     "register",
+    "alternative",
     "spelling",
     "none",
   ]),

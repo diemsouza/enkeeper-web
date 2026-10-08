@@ -18,6 +18,7 @@ import { useRealtimeMessages } from "@/src/hooks/use-realtime-messages";
 import { useIsMobile } from "@/src/hooks/use-is-mobile";
 import { setupAudioUnlock } from "@/src/lib/audio-unlock";
 import { delay } from "@/src/lib/utils";
+import { usePracticePill } from "./practice-pill-provider";
 
 type MessagesResponse = { messages: Message[]; hasMore: boolean };
 
@@ -132,6 +133,7 @@ export function LiveThreadClient({
   const t = useTranslations("app.onboarding");
   const tChat = useTranslations("app.chat");
   const router = useRouter();
+  const { registerSender, refresh: refreshPracticePill } = usePracticePill();
   const isMobile = useIsMobile();
   const fileLabels = {
     image: tChat("file_type_image"),
@@ -302,6 +304,7 @@ export function LiveThreadClient({
     }
 
     stopTyping();
+    void refreshPracticePill();
     setMessages((prev) =>
       prev.some((m) => sameMessage(m, key)) ? prev : [...prev, mapped],
     );
@@ -336,12 +339,13 @@ export function LiveThreadClient({
 
   const handleReconnect = useCallback(() => {
     void refreshMessages();
+    void refreshPracticePill();
     const pending = messagesRef.current.find(
       (m) => m.from === "user" && m.status === "failed",
     );
     if (pending) void handleRetrySend(pending.externalId ?? pending.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshMessages]);
+  }, [refreshMessages, refreshPracticePill]);
 
   useRealtimeMessages(
     userId,
@@ -509,6 +513,13 @@ export function LiveThreadClient({
     if (target.interactive.disabled || optimisticSelections[messageId]) return;
     void handleSend(button.label, { messageId, buttonId: button.id });
   }
+
+  const handleSendRef = useRef(handleSend);
+  handleSendRef.current = handleSend;
+  useEffect(() => {
+    registerSender((text) => handleSendRef.current(text));
+    return () => registerSender(null);
+  }, [registerSender]);
 
   const displayedMessages = useMemo(
     () => applyOptimisticSelections(messages, optimisticSelections),
