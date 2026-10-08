@@ -154,6 +154,7 @@ export function OggAudioPlayer({
   textFallback,
   translation,
   time,
+  onExport,
   fluid,
 }: AudioPlayerProps) {
   const t = useTranslations("app.chat");
@@ -573,7 +574,11 @@ export function OggAudioPlayer({
             {formatTime(displayTime)}
           </span>
           {time && (
-            <span className="text-[10.5px] opacity-55 whitespace-nowrap">
+            <span
+              className="select-none text-[10.5px] opacity-55 whitespace-nowrap"
+              onDoubleClick={onExport}
+              onContextMenu={onExport}
+            >
               {time}
             </span>
           )}

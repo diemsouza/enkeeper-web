@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type SyntheticEvent,
+} from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown } from "lucide-react";
 import { Spinner } from "@/src/components/ui/spinner";
@@ -13,12 +19,14 @@ export type AudioPlayerProps = {
   translation?: string;
   time?: string;
   fluid?: boolean;
+  onExport?: (event: SyntheticEvent) => void;
 };
 
 type PlayerState = "loading" | "ready" | "playing" | "paused" | "error";
 
 const WAVEFORM_BARS = 40;
 const LOAD_TIMEOUT_MS = 20000;
+const CAN_PLAY_WAIT_MS = 1500;
 
 let activeStopper: (() => void) | null = null;
 
@@ -66,6 +74,21 @@ async function decodeAudio(bytes: ArrayBuffer): Promise<AudioBuffer> {
   return ctx.decodeAudioData(bytes);
 }
 
+// iOS ignora preload e pode nunca disparar canplaythrough sem gesto, entao a
+// espera e limitada para nao deixar o player em loading.
+function waitForCanPlay(audio: HTMLAudioElement): Promise<void> {
+  return new Promise((resolve) => {
+    const done = (): void => {
+      clearTimeout(timer);
+      audio.removeEventListener("canplaythrough", done);
+      resolve();
+    };
+    const timer = setTimeout(done, CAN_PLAY_WAIT_MS);
+    audio.addEventListener("canplaythrough", done);
+    if (audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) done();
+  });
+}
+
 export function NativeAudioPlayer({
   audioUrl,
   externalId,
@@ -73,6 +96,7 @@ export function NativeAudioPlayer({
   textFallback,
   translation,
   time,
+  onExport,
   fluid,
 }: AudioPlayerProps) {
   const t = useTranslations("app.chat");
@@ -146,7 +170,11 @@ export function NativeAudioPlayer({
 
         if (decoded.length === 0) throw new Error("empty decode");
 
+        audio.preload = "auto";
         audio.src = objectUrl;
+        audio.load();
+        await waitForCanPlay(audio);
+        if (cancelled) return;
         setDuration(decoded.duration);
         setWaveform(buildWaveform(decoded.getChannelData(0), WAVEFORM_BARS));
         setState("ready");
@@ -184,7 +212,9 @@ export function NativeAudioPlayer({
     let frame = 0;
     const tick = (): void => {
       const audio = audioRef.current;
-      if (audio) setProgress(Math.min(audio.currentTime, duration));
+      if (audio && audio.currentTime > 0) {
+        setProgress(Math.min(audio.currentTime, duration));
+      }
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -336,7 +366,11 @@ export function NativeAudioPlayer({
             {formatTime(displayTime)}
           </span>
           {time && (
-            <span className="text-[10.5px] opacity-55 whitespace-nowrap">
+            <span
+              className="select-none text-[10.5px] opacity-55 whitespace-nowrap"
+              onDoubleClick={onExport}
+              onContextMenu={onExport}
+            >
               {time}
             </span>
           )}

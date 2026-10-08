@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useRef, useState, type SyntheticEvent } from "react";
 import { AlertCircle, Check, Clock3 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/src/lib/utils";
+import { exportBubbleAsPng } from "@/src/lib/export-bubble";
 import { CustomAudioPlayer } from "./custom-audio-player";
 import { FileCard } from "./file-card";
 import { ImageBubble } from "./image-bubble";
@@ -43,6 +44,13 @@ export function MessageBubble({
   const imageWidth = wide ? "w-[97%] md:w-[420px]" : "w-[85%] md:w-[420px]";
   const isAudio = message.type === "audio";
   const hasAudioWidth = !isUser && !isAudio && !wide;
+  const bubbleRef = useRef<HTMLDivElement>(null);
+
+  async function exportBubble(event: SyntheticEvent): Promise<void> {
+    event.preventDefault();
+    if (!bubbleRef.current) return;
+    await exportBubbleAsPng(bubbleRef.current, message.id);
+  }
 
   return (
     <div
@@ -53,6 +61,7 @@ export function MessageBubble({
       )}
     >
       <div
+        ref={bubbleRef}
         className={cn(
           isUser
             ? "bg-primary text-primary-foreground rounded-[10px_10px_2px_10px]"
@@ -89,6 +98,7 @@ export function MessageBubble({
             translation={message.translation}
             time={message.time}
             fluid={fluidAudio}
+            onExport={exportBubble}
           />
         ) : message.type === "voice" ? (
           <VoiceNoteCard duration={message.duration ?? ""} />
@@ -97,7 +107,11 @@ export function MessageBubble({
         )}
         {message.type !== "audio" && (
           <div className="mt-0.5 flex items-center justify-end gap-1">
-            <p className="text-[10.5px] opacity-55 text-right">
+            <p
+              className="select-none text-[10.5px] opacity-55 text-right"
+              onDoubleClick={exportBubble}
+              onContextMenu={exportBubble}
+            >
               {message.time}
             </p>
             {isUser && message.status === "sending" && (
