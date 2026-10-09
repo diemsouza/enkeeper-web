@@ -21,7 +21,7 @@ validação:
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: a mesma situação da pergunta, dita em EN, com o primeiro termo de answerKeys no lugar do parêntese.
+fórmula: a mesma situação da pergunta, dita em EN, com o termo de right_answer no lugar do parêntese.
 
 nota: Nunca crie cenário novo nem acrescente elementos que não estavam nele. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
 
@@ -63,7 +63,7 @@ validação:
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: a mesma situação da pergunta, dita em EN, com o primeiro termo de answerKeys no lugar do parêntese.
+fórmula: a mesma situação da pergunta, dita em EN, com o termo de right_answer no lugar do parêntese.
 
 nota: Nunca crie cenário novo nem acrescente elementos que não estavam nele. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
 
@@ -105,7 +105,7 @@ validação:
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: a mesma situação da pergunta, dita em EN, com o primeiro termo de answerKeys no lugar do parêntese.
+fórmula: a mesma situação da pergunta, dita em EN, com o termo de right_answer no lugar do parêntese.
 
 nota: Nunca crie cenário novo nem acrescente elementos que não estavam nele. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
 

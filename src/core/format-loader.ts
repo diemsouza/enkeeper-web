@@ -116,7 +116,7 @@ function missingParenthesizedTerm(question: string): boolean {
   return !PARENTHESIZED_TERM_RE.test(question);
 }
 
-function normalizeForMatch(text: string): string {
+export function normalizeForMatch(text: string): string {
   return text
     .toLowerCase()
     .normalize("NFD")

@@ -16,11 +16,13 @@ Alguns formatos são binários e não usam partial. Quando o bloco de exemplos n
 
 Se o termo avaliado tiver mais de um sentido de uso comum, o exemplo de uso no feedback_text corresponde ao sentido correto do termo, aquele contra o qual a resposta foi avaliada, nunca um sentido genérico ou diferente do que fundamentou a avaliação.
 
-right_answer: precisa sempre do mesmo termo usado na frase do feedback_text (mesmo quando o usuário respondeu uma variação aceita em answerKeys), nunca vazio. 
+right_answer: precisa sempre do mesmo termo usado na frase do feedback_text, nunca vazio.
 
-Com mais de uma answerKey válida, use a mais próxima do que o usuário escreveu (menor distância de edição), mesmo em resposta errada ou typo. Só cai na primeira answerKey se a resposta não se aproximar claramente de nenhuma. 
+Em right, right_answer é a forma que o usuário escreveu, só com grafia e maiúsculas normalizadas, esteja ela em answerKeys ou tenha sido aceita por equivalência. A frase de uso confirma o que o usuário disse, nunca troca pela forma esperada.
 
-No recall invertido, a frase do feedback_text usa o termo em EN como exemplo de uso, mas right_answer é o significado em PT esperado como resposta, o primeiro item de answerKeys. No choice, é sempre a palavra ou expressão da opção correta, nunca o número ou a letra do rótulo. No image_recognition, é sempre a palavra ou expressão da opção correta, nunca o número do rótulo.
+Em wrong ou partial, com mais de uma answerKey válida, use a mais próxima do que o usuário escreveu (menor distância de edição), mesmo em typo. Só cai na primeira answerKey se a resposta não se aproximar claramente de nenhuma.
+
+No recall invertido, a frase do feedback_text usa o termo em EN como exemplo de uso, mas right_answer é o significado em PT: em right, a forma em PT que o usuário escreveu; em wrong ou partial, o primeiro item de answerKeys. No choice, é sempre a palavra ou expressão da opção correta, nunca o número ou a letra do rótulo. No image_recognition, é sempre a palavra ou expressão da opção correta, nunca o número do rótulo.
 
 IMPORTANTE:
 Não invente critério.
@@ -64,12 +66,12 @@ Em wrong ou partial, a causa do erro:
 
 Em right:
 
-- alternative: outra answerKey é um termo diferente do que o usuário escreveu e do right_answer, não só variação de flexão, artigo ou contração.
+- alternative: answerKeys contém um termo diferente do que o usuário escreveu, não só variação de flexão, artigo ou contração. Vale quando o usuário respondeu uma das answerKeys e existe outra, e também quando a resposta foi aceita por equivalência e a answerKey esperada é outra forma. A alternativa é a primeira answerKey que atenda a isso.
 - none: sem alternativa assim. Obriga eval_tip vazia.
 
 eval_tip: dica curta em PT, escrita a partir da classe acima, em frase corrida.
 Em wrong ou partial: primeiro o que a forma escrita pelo usuário significa de fato ou o que falta nela, depois onde a forma correta se aplica.
-Em right: apresenta a alternativa com um uso em inglês.
+Em right: apresenta a alternativa escrita exatamente como está em answerKeys, em *negrito*, com um uso em inglês. É complemento da resposta dada, nunca correção nem ressalva.
 
 Os usos em inglês mostram o termo correto em contextos diferentes entre si, ou onde a forma que o usuário escreveu de fato se aplica. Nunca o termo correto acrescido de uma palavra colada nele.
 
@@ -79,7 +81,7 @@ Validação da dica:
 - Descreve, não instrui.
 - Não nomeia a classe no texto.
 - Não repete a frase do feedback_text.
-- Não compara com opção que o usuário não mencionou, exceto a alternativa vinda das answerKeys.
+- Não compara com opção que o usuário não mencionou, exceto a alternativa vinda das answerKeys, citada literalmente.
 - Os usos em inglês nunca contêm o termo correto acrescido de uma única palavra.
 - Marcação permitida: *negrito* nas formas contrastadas, _itálico_ em termo ou expressão curta em inglês, "aspas duplas" em frase completa em inglês (com sujeito e verbo), ~riscado~ apenas na forma exata que não existe em inglês (palavra inventada ou combinação inexistente). Nunca risca palavra que existe com outro significado ou escopo. Na dúvida, não risca. Nenhuma outra marcação.
 - Nunca aplica itálico ou negrito dentro de trecho entre aspas.

@@ -67,7 +67,7 @@ export async function resolveFeedbackAudioMediaId(
     }
 
     const mediaId = ulid();
-    const filePath = buildMediaPath(FEEDBACK_AUDIO_FOLDER, mediaId, "mp3");
+    const filePath = buildMediaPath(FEEDBACK_AUDIO_FOLDER, mediaId, "ogg");
     await uploadFile({
       filePath,
       file: new Blob([new Uint8Array(speech.audio)], { type: speech.mimeType }),

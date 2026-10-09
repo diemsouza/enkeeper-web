@@ -6,20 +6,21 @@ topo.
 
 ---
 
-## Áudio TTS em MP3 e player nativo
+## Áudio TTS em Ogg/Opus e player nativo
 
-Data: 2026-10-07
+Data: 2026-10-09 (substitui a decisão de MP3 de 2026-10-07)
 
-Contexto: o áudio de feedback era gerado em Ogg/Opus por herança do WhatsApp (nota de voz) e do Safari sem suporte nativo, o que forçou um player que decodifica o arquivo via Web Audio API. Esse caminho tem bug conhecido do WebKit: áudio por Web Audio fica distorcido, atrasado ou picotado quando a rota de saída muda para Bluetooth (relato de stuttering no CarPlay sem fio). Além disso, o WhatsApp não entrega mais áudio de prática, então o requisito de Ogg/Opus acabou.
+Contexto: o Ogg/Opus não era nativo no Safari até o iOS/macOS 18.4, o que forçou o `ogg-audio-player.tsx`, que decodifica via Web Audio. Web Audio no iOS respeita a chave de silencioso (daí o `navigator.audioSession.type = "playback"` em `src/lib/audio-unlock.ts`) e tem bug conhecido do WebKit em rota Bluetooth (stuttering no CarPlay). A troca para MP3 tirou o Web Audio, mas o MP3 no player de mídia do iOS trava no início: medido em gravação de tela, o `playing` chega ~460 ms antes do som sair, o `currentTime` extrapola nesse intervalo e depois fica parado até o áudio real alcançar. Acontece também com o MP3 aberto direto numa aba (player nativo do navegador), na home com arquivo estático e no chat, então não é código nosso; é o [WebKit bug 181537](https://bugs.webkit.org/show_bug.cgi?id=181537). O mesmo teste com Ogg/Opus numa aba nativa toca fluido, e o `<audio>` nativo toca com o iPhone no silencioso.
 
 Decisões:
 
-- **MP3 como formato padrão de geração** (`audio/mpeg`, extensão `.mp3`). A escolha original era M4A/AAC, mas a OpenAI só devolve AAC cru (ADTS) e o Google Cloud TTS não tem AAC nem M4A; MP3 é nativo nos dois (`response_format: "mp3"` e `audioEncoding: "MP3"`), sem transcode nem ffmpeg e sem geração dupla.
-- **Player em três arquivos** em `src/components/chat/`: `native-audio-player.tsx` (`<audio>` nativo, dono do tipo `AudioPlayerProps`, waveform determinística pela URL, sem decode de PCM), `ogg-audio-player.tsx` (decoder Ogg/Opus original, intacto, só para o acervo legado) e `custom-audio-player.tsx` (fachada). O Ogg é carregado com `next/dynamic` (`ssr: false`) no escopo do módulo. Nenhum call site mudou.
-- **Escolha na fachada:** a URL do app (`/api/app/media/<id>`) não tem extensão e a mensagem não carrega o content type, então a fachada usa o nativo e cai para `OggAudioPlayer` quando o `<audio>` dispara erro de mídia (ou a URL termina em `.ogg`, caso do simulador antigo).
-- **Sem migração:** Ogg já gravado continua Ogg até o job de limpeza (Seção 17 do Product-Rules). Os áudios fixos da home foram regerados em MP3.
-- **WhatsApp:** `sendAudioPart` passa a enviar o `contentType` da própria `Media`; MP3 não vira nota de voz, aceitável porque o canal não entrega áudio de prática.
-- **Quando remover `ogg-audio-player.tsx`, `ogg-opus-decoder` e o ajuste de `next.config.ts`:** quando nenhuma `Media` de áudio com path `.ogg` for mais referenciada por uma `Activity` ativa (verificar por query antes).
+- **Ogg/Opus como formato de geração** (`audio/ogg`, extensão `.ogg`): OpenAI `response_format: "opus"` e Google `audioEncoding: "OGG_OPUS"`, nativos nos dois, sem transcode. No WhatsApp volta a ser nota de voz.
+- **Ogg toca no `<audio>` nativo** sempre que `canPlayType('audio/ogg; codecs="opus"')` aceita (Safari 18.4+, Chrome, Firefox). Sem Web Audio no caminho, sem unlock de silencioso e sem o problema do CarPlay.
+- **`ogg-audio-player.tsx` só como fallback** para navegador sem Ogg nativo (iOS < 18.4), decidido pela fachada `custom-audio-player.tsx` após montar (`canPlayType`) ou por erro `SRC_NOT_SUPPORTED` do `<audio>` (`onUnsupported`).
+- **Player nativo** (`native-audio-player.tsx`, dono do tipo `AudioPlayerProps`): a barra e o botão seguem o elemento `<audio>`. O rAF pinta o `audio.currentTime` só na variável CSS `--p` (sem setState por frame) e o texto do tempo e o slider seguem o `timeupdate`/`seeked`. Retomar, seek e `ended` são nativos, sem lógica nossa. **Trava inicial aceita:** do segundo play em diante o iOS arranca o `currentTime` na hora, o som só sai ~210 ms depois e o `currentTime` fica parado ~290 ms até o áudio alcançá-lo (medido em gravação de tela; o primeiro play é limpo; acontece também no player nativo do navegador, então não é código nosso nem formato). Uma timeline simulada (relógio próprio ancorado no `playing` com latência medida e correção contra o `currentTime`) foi implementada e **rejeitada**: acabava a trava, mas não ficava fluida nem precisa em retomadas. O player carrega ao entrar na tela (`preload="auto"` + `load()`, `none` fora da tela) e mostra o spinner no lugar do play só até ficar pronto (`canplay`/`loadeddata`, com timeout de 2 s porque o iOS ignora preload sem gesto), nunca no clique. O `OfflineAudioContext` decodifica só para dados (waveform por picos reais e duração real), sem saída de som, um decode por vez, só para player visível e nunca durante reprodução.
+- **Home:** os `.ogg` originais do simulador foram restaurados do git; os `.mp3` saíram.
+- **Sem migração:** MP3 já gravado continua tocando no nativo (com a travada do iOS) até o job de limpeza (Seção 17 do Product-Rules).
+- **Duplo clique no timer do áudio** abre o arquivo numa nova aba (download/compartilhar e teste do player nativo), nos dois players.
 
 ---
 
@@ -406,7 +407,8 @@ Decisões:
 ## Dica em acerto (`EvalTipClass.alternative`)
 
 - **Enum:** `alternative` foi adicionado a `EvalTipClass` (banco) e ao zod de `answerEvaluationSchema`. `none` e `spelling` continuam só no zod, nunca persistidos.
-- **Gate no código, não no prompt:** o prompt de avaliação não sabe o formato. Em `message-service.ts`, o `silent` agora também bloqueia quando `evalStatus === "right"` e não vale `alternative` + formato em `EVAL_TIP_ALTERNATIVE_FORMATS` (`src/lib/constants.ts`: recall, recall_inverted, gap_fill, scenario) + `answerKeys.length > 1`.
+- **Gate no código, não no prompt:** o prompt de avaliação não sabe o formato. Em `message-service.ts`, o `silent` agora também bloqueia quando `evalStatus === "right"` e não vale `alternative` + formato em `EVAL_TIP_ALTERNATIVE_FORMATS` (`src/lib/constants.ts`: recall, recall_inverted, gap_fill, scenario) + `hasAlternativeKeyInTip` (`src/core/eval-tip.ts`): a dica cita, normalizada, uma answerKey diferente da resposta do usuário.
+- **Correção (2026-10-09):** a primeira versão quase nunca disparava. Os exemplos de feedback (`recall`, `gap_fill`, `scenario`) mandavam usar "o primeiro termo de answerKeys", o que vencia a regra do prompt e trocava a forma do usuário pela esperada; a classe `alternative` exigia uma key diferente do usuário **e** do right_answer (um terceiro termo); e o gate `answerKeys.length > 1` cortava acerto por equivalência com uma key só. Agora, em right, `right_answer` e a frase do feedback usam a forma do usuário, as fórmulas citam "o termo de right_answer", e `alternative` vale para qualquer key diferente do que o usuário escreveu, citada literalmente na dica.
 - **Descarte total:** quando silenciada, a dica some inteira (`evalTip` e `evalTipClass` nulos). Antes, com classe `none`/`spelling` só a classe era anulada e o texto ainda seguia.
 - **Sem efeito colateral:** status, nota e SM-2 não leem a dica. Envio e ordem (feedback, áudio, dica) inalterados.
 

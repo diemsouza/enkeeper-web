@@ -131,6 +131,7 @@ import { sendSupportEmail } from "../vendors/email.vendor";
 import { formatDateTime } from "../lib/datetime-utils";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
 import { getFeedbackExamples } from "../core/format-loader";
+import { hasAlternativeKeyInTip } from "../core/eval-tip";
 import { calcSm2 } from "../core/sm2";
 import {
   updateScoreMetadata,
@@ -1586,7 +1587,11 @@ export async function handleIncomingMessage(
                 EVAL_TIP_ALTERNATIVE_FORMATS.includes(
                   pendingQuestion.questionFormat,
                 ) &&
-                pendingQuestion.answerKeys.length > 1;
+                hasAlternativeKeyInTip(
+                  pendingQuestion.answerKeys,
+                  text,
+                  evaluation.eval_tip ?? "",
+                );
               const silent =
                 evaluation?.eval_tip_class === "none" ||
                 evaluation?.eval_tip_class === "spelling" ||

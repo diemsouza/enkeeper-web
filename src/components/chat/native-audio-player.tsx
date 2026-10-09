@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type SyntheticEvent,
 } from "react";
 import { useTranslations } from "next-intl";
@@ -22,13 +23,34 @@ export type AudioPlayerProps = {
   onExport?: (event: SyntheticEvent) => void;
 };
 
-type PlayerState = "loading" | "ready" | "playing" | "paused" | "error";
+type PlayerState = "ready" | "playing" | "paused" | "error";
 
 const WAVEFORM_BARS = 40;
-const LOAD_TIMEOUT_MS = 20000;
-const CAN_PLAY_WAIT_MS = 1500;
+const WAVEFORM_IDLE_HEIGHT = 0.15;
+const DECODE_RETRY_MS = 500;
+const READY_FALLBACK_MS = 2000;
+
+type DecodedAudio = { duration: number; waveform: number[] };
 
 let activeStopper: (() => void) | null = null;
+let playingCount = 0;
+let decodeQueue: Promise<void> = Promise.resolve();
+
+// Um decode por vez e nunca durante reproducao: varios players na conversa
+// disputando rede e CPU com o audio tocado causavam travadas no iOS.
+function enqueueDecode(
+  task: () => Promise<void>,
+  signal: AbortSignal,
+): Promise<void> {
+  const run = async (): Promise<void> => {
+    while (playingCount > 0 && !signal.aborted) {
+      await new Promise((resolve) => setTimeout(resolve, DECODE_RETRY_MS));
+    }
+    if (!signal.aborted) await task();
+  };
+  decodeQueue = decodeQueue.then(run, run);
+  return decodeQueue;
+}
 
 function stopActiveAudio(exceptStopper?: () => void): void {
   if (activeStopper && activeStopper !== exceptStopper) {
@@ -61,7 +83,8 @@ function buildWaveform(samples: Float32Array, bars: number): number[] {
 }
 
 // OfflineAudioContext so decodifica: nao ha saida de som, o que evita o bug do
-// WebKit com Web Audio em rota Bluetooth/CarPlay. O som sai do <audio>.
+// WebKit com Web Audio em rota Bluetooth/CarPlay. O som sai do <audio>. A
+// duracao decodificada e a real, o <audio> pode estimar diferente no Safari.
 async function decodeAudio(bytes: ArrayBuffer): Promise<AudioBuffer> {
   const Ctor =
     window.OfflineAudioContext ||
@@ -74,21 +97,6 @@ async function decodeAudio(bytes: ArrayBuffer): Promise<AudioBuffer> {
   return ctx.decodeAudioData(bytes);
 }
 
-// iOS ignora preload e pode nunca disparar canplaythrough sem gesto, entao a
-// espera e limitada para nao deixar o player em loading.
-function waitForCanPlay(audio: HTMLAudioElement): Promise<void> {
-  return new Promise((resolve) => {
-    const done = (): void => {
-      clearTimeout(timer);
-      audio.removeEventListener("canplaythrough", done);
-      resolve();
-    };
-    const timer = setTimeout(done, CAN_PLAY_WAIT_MS);
-    audio.addEventListener("canplaythrough", done);
-    if (audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) done();
-  });
-}
-
 export function NativeAudioPlayer({
   audioUrl,
   externalId,
@@ -98,138 +106,171 @@ export function NativeAudioPlayer({
   time,
   onExport,
   fluid,
-}: AudioPlayerProps) {
+  onUnsupported,
+}: AudioPlayerProps & { onUnsupported?: () => void }) {
   const t = useTranslations("app.chat");
   const tErrors = useTranslations("app.errors");
-  const [state, setState] = useState<PlayerState>("loading");
-  const [duration, setDuration] = useState(0);
+  const [state, setState] = useState<PlayerState>("ready");
+  const [elementDuration, setElementDuration] = useState(0);
+  const [decoded, setDecoded] = useState<DecodedAudio | null>(null);
+  const [applied, setApplied] = useState<DecodedAudio | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isReady, setIsReady] = useState(false);
   const [showErrorHint, setShowErrorHint] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playFiredRef = useRef(false);
-  const stateRef = useRef<PlayerState>("loading");
-  stateRef.current = state;
+  const waveRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const isCountedPlayingRef = useRef(false);
+  const duration = applied?.duration || elementDuration;
+  const waveform = applied?.waveform ?? [];
+  const durationRef = useRef(0);
+  durationRef.current = duration;
 
-  const [waveform, setWaveform] = useState<number[]>([]);
-
-  const fail = useCallback((reason: string, err?: unknown): void => {
-    console.error(`[NativeAudioPlayer] ${reason}`, err);
-    setState("error");
+  const paintProgress = useCallback((seconds: number): void => {
+    const total = durationRef.current;
+    const fraction = total > 0 ? Math.min(1, seconds / total) : 0;
+    waveRef.current?.style.setProperty("--p", String(fraction));
   }, []);
 
   const interruptPlayback = useCallback(() => {
     audioRef.current?.pause();
-    if (activeStopper === interruptPlayback) {
-      activeStopper = null;
+  }, []);
+
+  const syncDuration = useCallback((): void => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+      setElementDuration(audio.duration);
     }
   }, []);
 
   useEffect(() => {
-    const audio = new Audio();
-    audioRef.current = audio;
+    setState("ready");
+    setIsReady(false);
+    setElementDuration(0);
+    setDecoded(null);
+    setApplied(null);
+    setProgress(0);
+    syncDuration();
+  }, [audioUrl, syncDuration]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setIsVisible(true);
+    });
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
+
+  // Carrega assim que o player aparece, para o clique tocar direto. O iOS
+  // ignora preload sem gesto, entao o load() explicito e o timeout evitam o
+  // botao ficar desabilitado para sempre.
+  useEffect(() => {
+    if (!isVisible) return;
+    audioRef.current?.load();
+    const timer = setTimeout(() => setIsReady(true), READY_FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }, [isVisible, audioUrl]);
+
+  const markPlaying = useCallback((isOn: boolean): void => {
+    if (isOn === isCountedPlayingRef.current) return;
+    isCountedPlayingRef.current = isOn;
+    playingCount += isOn ? 1 : -1;
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
     const controller = new AbortController();
-    let cancelled = false;
-    let timedOut = false;
-    let objectUrl: string | null = null;
-
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-    }, LOAD_TIMEOUT_MS);
-
-    const onPlaying = (): void => setState("playing");
-    const onPause = (): void => {
-      if (audio.ended) return;
-      setProgress(audio.currentTime);
-      setState("paused");
-    };
-    const onEnded = (): void => {
-      if (activeStopper === interruptPlayback) {
-        activeStopper = null;
-      }
-      audio.currentTime = 0;
-      setProgress(0);
-      setState("ready");
-    };
-    audio.addEventListener("playing", onPlaying);
-    audio.addEventListener("pause", onPause);
-    audio.addEventListener("ended", onEnded);
-
-    (async () => {
+    const decode = async (): Promise<void> => {
       try {
         const res = await fetch(audioUrl, { signal: controller.signal });
         if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-        const bytes = await res.arrayBuffer();
-        objectUrl = URL.createObjectURL(
-          new Blob([bytes], { type: res.headers.get("content-type") ?? "" }),
-        );
-        const decoded = await decodeAudio(bytes);
-        if (cancelled) return;
-
-        if (decoded.length === 0) throw new Error("empty decode");
-
-        audio.preload = "auto";
-        audio.src = objectUrl;
-        audio.load();
-        await waitForCanPlay(audio);
-        if (cancelled) return;
-        setDuration(decoded.duration);
-        setWaveform(buildWaveform(decoded.getChannelData(0), WAVEFORM_BARS));
-        setState("ready");
+        const buffer = await decodeAudio(await res.arrayBuffer());
+        if (controller.signal.aborted || buffer.length === 0) return;
+        setDecoded({
+          duration: buffer.duration,
+          waveform: buildWaveform(buffer.getChannelData(0), WAVEFORM_BARS),
+        });
       } catch (err) {
-        if (cancelled) return;
-        if (timedOut) {
-          fail("load timeout");
-          return;
-        }
         if (controller.signal.aborted) return;
-        fail("load failed", err);
-      } finally {
-        clearTimeout(timeout);
+        console.error("[NativeAudioPlayer] decode failed", err);
       }
-    })();
+    };
+    void enqueueDecode(decode, controller.signal);
+    return () => controller.abort();
+  }, [audioUrl, isVisible]);
 
+  useEffect(() => {
+    if (decoded && state !== "playing") setApplied(decoded);
+  }, [decoded, state]);
+
+  useEffect(() => {
+    if (state === "playing") return;
+    paintProgress(progress);
+  }, [state, progress, duration, paintProgress]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
     return () => {
-      cancelled = true;
-      clearTimeout(timeout);
-      controller.abort();
-      audio.pause();
-      audio.removeEventListener("playing", onPlaying);
-      audio.removeEventListener("pause", onPause);
-      audio.removeEventListener("ended", onEnded);
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      markPlaying(false);
+      audio?.pause();
       if (activeStopper === interruptPlayback) {
         activeStopper = null;
       }
-      audioRef.current = null;
     };
-  }, [audioUrl, fail, interruptPlayback]);
+  }, [interruptPlayback, markPlaying]);
+
+  const handleError = useCallback((): void => {
+    const code = audioRef.current?.error?.code;
+    console.error("[NativeAudioPlayer] media error", code);
+    setState("error");
+    if (code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) onUnsupported?.();
+  }, [onUnsupported]);
+
+  const handlePause = useCallback((): void => {
+    markPlaying(false);
+    const audio = audioRef.current;
+    if (!audio || audio.ended) return;
+    setProgress(audio.currentTime);
+    setState("paused");
+  }, [markPlaying]);
+
+  const handleEnded = useCallback((): void => {
+    markPlaying(false);
+    if (activeStopper === interruptPlayback) {
+      activeStopper = null;
+    }
+    setProgress(0);
+    setState("ready");
+  }, [interruptPlayback, markPlaying]);
 
   useEffect(() => {
     if (state !== "playing") return;
     let frame = 0;
     const tick = (): void => {
       const audio = audioRef.current;
-      if (audio && audio.currentTime > 0) {
-        setProgress(Math.min(audio.currentTime, duration));
-      }
+      if (audio) paintProgress(audio.currentTime);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [state, duration]);
+  }, [state, paintProgress]);
 
   const handlePlayPause = useCallback(() => {
     const audio = audioRef.current;
-    if (stateRef.current === "error") {
+    if (state === "error") {
       setShowErrorHint(true);
       return;
     }
-    if (!audio || stateRef.current === "loading") return;
+    if (!audio) return;
 
-    if (stateRef.current === "playing") {
+    if (!audio.paused) {
       audio.pause();
       return;
     }
@@ -241,8 +282,11 @@ export function NativeAudioPlayer({
 
     stopActiveAudio(interruptPlayback);
     activeStopper = interruptPlayback;
-    audio.play().catch((err: unknown) => fail("playback", err));
-  }, [externalId, onPlay, interruptPlayback, fail]);
+    audio.play().catch((err: unknown) => {
+      console.error("[NativeAudioPlayer] playback", err);
+      setState("error");
+    });
+  }, [state, externalId, onPlay, interruptPlayback]);
 
   const handleSeek = useCallback(
     (seconds: number) => {
@@ -254,19 +298,33 @@ export function NativeAudioPlayer({
     [duration],
   );
 
-  const isLoading = state === "loading";
   const isError = state === "error";
-  const filledBars =
-    duration > 0 ? Math.round((progress / duration) * WAVEFORM_BARS) : 0;
   const showElapsed = state === "playing" || state === "paused";
   const displayTime = showElapsed ? progress : duration;
-  const thumbLeft =
-    duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
 
   return (
     <div
+      ref={rootRef}
       className={`flex flex-col gap-1 py-1 ${fluid ? "w-full" : "w-[260px] md:w-[320px]"}`}
     >
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        preload={isVisible ? "auto" : "none"}
+        onLoadedMetadata={syncDuration}
+        onDurationChange={syncDuration}
+        onTimeUpdate={(e) => setProgress(e.currentTarget.currentTime)}
+        onSeeked={(e) => setProgress(e.currentTarget.currentTime)}
+        onCanPlay={() => setIsReady(true)}
+        onLoadedData={() => setIsReady(true)}
+        onPlaying={() => {
+          markPlaying(true);
+          setState("playing");
+        }}
+        onPause={handlePause}
+        onEnded={handleEnded}
+        onError={handleError}
+      />
       <div
         className={`flex items-center gap-3${isError ? " text-destructive" : ""}`}
       >
@@ -274,54 +332,68 @@ export function NativeAudioPlayer({
           type="button"
           onPointerDown={(e) => e.preventDefault()}
           onClick={handlePlayPause}
-          disabled={isLoading}
           aria-label={state === "playing" ? t("pause") : t("play")}
+          disabled={!isReady && !isError}
           className="shrink-0 rounded-full p-1 transition-colors active:bg-foreground/10 disabled:opacity-60"
         >
-          {isLoading ? (
-            <Spinner className="border-current" />
-          ) : state === "playing" ? (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="w-7 h-7 fill-current"
-            >
-              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
-            </svg>
-          ) : (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="w-7 h-7 fill-current"
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          )}
+          <span className="flex h-7 w-7 items-center justify-center">
+            {!isReady && !isError ? (
+              <Spinner className="border-current" />
+            ) : (
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-7 w-7 fill-current"
+              >
+                <path
+                  d={
+                    state === "playing"
+                      ? "M6 5h4v14H6zM14 5h4v14h-4z"
+                      : "M8 5v14l11-7z"
+                  }
+                />
+              </svg>
+            )}
+          </span>
         </button>
 
-        <div className="flex-1 relative h-6 min-w-0">
-          <div className="absolute inset-0 flex items-center gap-[2px] pointer-events-none">
-            {(waveform.length > 0
-              ? waveform
-              : new Array(WAVEFORM_BARS).fill(0.15)
-            ).map((height, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-full bg-current"
-                style={{
-                  height: `${Math.max(3, height * 22)}px`,
-                  opacity: i < filledBars ? 0.85 : 0.3,
-                }}
-              />
-            ))}
-          </div>
+        <div
+          ref={waveRef}
+          className="flex-1 relative h-6 min-w-0"
+          style={{ "--p": 0 } as CSSProperties}
+        >
+          {[0.3, 0.85].map((opacity) => (
+            <div
+              key={opacity}
+              className="absolute inset-0 flex items-center gap-[2px] pointer-events-none"
+              style={
+                opacity === 0.85
+                  ? { clipPath: "inset(0 calc((1 - var(--p)) * 100%) 0 0)" }
+                  : undefined
+              }
+            >
+              {(waveform.length > 0
+                ? waveform
+                : new Array(WAVEFORM_BARS).fill(WAVEFORM_IDLE_HEIGHT)
+              ).map((height, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-full bg-current transition-[height] duration-300"
+                  style={{
+                    height: `${Math.max(3, height * 22)}px`,
+                    opacity,
+                  }}
+                />
+              ))}
+            </div>
+          ))}
           <input
             type="range"
             min={0}
             max={duration || 0}
             step={0.01}
             value={progress}
-            disabled={isLoading || isError || duration === 0}
+            disabled={!isReady || isError || duration === 0}
             onChange={(e) => handleSeek(Number(e.target.value))}
             aria-label={t("audio_position_aria")}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
@@ -329,7 +401,7 @@ export function NativeAudioPlayer({
           {duration > 0 && (
             <div
               className="absolute top-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current shadow pointer-events-none"
-              style={{ left: `${thumbLeft}%` }}
+              style={{ left: "calc(var(--p) * 100%)" }}
             />
           )}
         </div>
@@ -362,7 +434,12 @@ export function NativeAudioPlayer({
       <div className="flex items-center gap-3">
         <div className="w-9 shrink-0" aria-hidden="true" />
         <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
-          <span className="text-[10.5px] opacity-60 tabular-nums">
+          <span
+            className="select-none text-[10.5px] opacity-60 tabular-nums"
+            onDoubleClick={() =>
+              window.open(audioUrl, "_blank", "noopener,noreferrer")
+            }
+          >
             {formatTime(displayTime)}
           </span>
           {time && (
@@ -388,7 +465,7 @@ export function NativeAudioPlayer({
           {tErrors("audio_load_failed")}
         </p>
       )}
-      {translation && !isLoading && !isError && (
+      {translation && !isError && (
         <>
           <div className="mt-1 h-px bg-foreground/10" />
           <button

@@ -22,7 +22,7 @@ validação:
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: se a lacuna era a resposta inteira, o feedback é a própria resposta. Se a lacuna era parcial, é a frase original da pergunta completada com o primeiro termo de answerKeys.
+fórmula: se a lacuna era a resposta inteira, o feedback é a própria resposta. Se a lacuna era parcial, é a frase original da pergunta completada com o termo de right_answer.
 
 nota: Nunca crie frase nova, o feedback vem sempre da frase da pergunta que foi de fato gerada, completada com o termo. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
 
@@ -64,7 +64,7 @@ validação:
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: se a lacuna era a resposta inteira, o feedback é a própria resposta. Se a lacuna era parcial, é a frase original da pergunta completada com o primeiro termo de answerKeys.
+fórmula: se a lacuna era a resposta inteira, o feedback é a própria resposta. Se a lacuna era parcial, é a frase original da pergunta completada com o termo de right_answer.
 
 nota: Nunca crie frase nova, o feedback vem sempre da frase da pergunta que foi de fato gerada, completada com o termo. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
 
@@ -106,7 +106,7 @@ validação:
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: se a lacuna era a resposta inteira, o feedback é a própria resposta. Se a lacuna era parcial, é a frase original da pergunta completada com o primeiro termo de answerKeys.
+fórmula: se a lacuna era a resposta inteira, o feedback é a própria resposta. Se a lacuna era parcial, é a frase original da pergunta completada com o termo de right_answer.
 
 nota: Nunca crie frase nova, o feedback vem sempre da frase da pergunta que foi de fato gerada, completada com o termo. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
 

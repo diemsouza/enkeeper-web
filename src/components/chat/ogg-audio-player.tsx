@@ -570,7 +570,12 @@ export function OggAudioPlayer({
       <div className="flex items-center gap-3">
         <div className="w-9 shrink-0" aria-hidden="true" />
         <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
-          <span className="text-[10.5px] opacity-60 tabular-nums">
+          <span
+            className="select-none text-[10.5px] opacity-60 tabular-nums"
+            onDoubleClick={() =>
+              window.open(audioUrl, "_blank", "noopener,noreferrer")
+            }
+          >
             {formatTime(displayTime)}
           </span>
           {time && (

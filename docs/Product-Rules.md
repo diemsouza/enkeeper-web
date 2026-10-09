@@ -258,15 +258,15 @@ O feedback pode ser acompanhado de uma dica curta, enviada como mensagem separad
 
 **Em erro ou parcial**, a dica pode apontar a causa específica do erro. A causa é classificada em uma de oito categorias: calque (tradução literal de estrutura), sinônimo próximo incorreto, estrutura (padrão gramatical confundido), colocação (combinação de palavras que não se usa junto em inglês), expressão interpretada ao pé da letra, registro (formal/informal fora de lugar), ortografia, ou sem classificação. Ortografia e sem classificação não geram dica, o campo fica vazio nesses casos, não só no caso de chute sem padrão identificável.
 
-**Em acerto**, a dica pode apresentar uma alternativa válida, com um uso em inglês, quando a pergunta aceita mais de uma resposta e o usuário respondeu com uma delas. É complemento, nunca ressalva sobre a resposta dada. Só vale quando:
+**Em acerto**, a frase de uso do feedback usa a forma que o usuário escreveu, nunca a troca pela forma esperada. Quando existe uma resposta esperada diferente dessa forma, a dica a apresenta, com um uso em inglês. Isso cobre dois casos: o usuário respondeu uma das respostas esperadas e a pergunta tem outra, ou a resposta foi aceita por equivalência e a esperada é outra forma. É complemento, nunca ressalva sobre a resposta dada. Só vale quando:
 
 - o formato é de resposta digitada (recall, recall invertido, gap fill e cenário), nunca em múltipla escolha ou reconhecimento por imagem, que já têm opções fechadas;
-- a alternativa vem das respostas esperadas da própria pergunta, nunca inventada na avaliação;
-- a alternativa é um termo realmente diferente do que o usuário escreveu e do que aparece no feedback, não só variação de flexão, artigo ou contração.
+- a alternativa vem das respostas esperadas da própria pergunta, citada literalmente, nunca inventada na avaliação;
+- a alternativa é um termo realmente diferente do que o usuário escreveu, não só variação de flexão, artigo ou contração.
 
 Sem alternativa assim, o acerto segue sem dica. O objetivo é que a dica em acerto seja pontual, não presença em toda resposta certa.
 
-O prompt de avaliação não conhece o formato nem decide sozinho o envio: o filtro final fica no código. Em acerto, a dica só é enviada se a classe retornada for alternativa, o formato for um dos quatro de resposta digitada e a pergunta tiver mais de uma resposta esperada. Fora disso a dica é descartada, inclusive o texto. A dica em acerto não altera status, nota da pergunta nem agendamento de revisão (SM-2), e a ordem de envio é a mesma: feedback, áudio (se houver) e dica.
+O prompt de avaliação não conhece o formato nem decide sozinho o envio: o filtro final fica no código. Em acerto, a dica só é enviada se a classe retornada for alternativa, o formato for um dos quatro de resposta digitada e o texto da dica citar uma resposta esperada diferente da que o usuário escreveu. Fora disso a dica é descartada, inclusive o texto. A dica em acerto não altera status, nota da pergunta nem agendamento de revisão (SM-2), e a ordem de envio é a mesma: feedback, áudio (se houver) e dica.
 
 O texto da dica segue uma marcação própria: negrito para a forma contrastada, itálico para um termo curto em inglês, aspas duplas para uma frase completa em inglês, riscado só para uma forma que não existe em inglês. Cada dica usa só a marcação que fizer sentido para o caso.
 
