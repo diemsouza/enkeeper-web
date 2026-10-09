@@ -20,6 +20,8 @@ export interface Message {
   mediaType?: "image" | "pdf" | "text";
   audioUrl?: string;
   audioContentType?: string;
+  // question: audio do enunciado (caption em cima, sem traducao).
+  audioKind?: "question" | "feedback";
   imageUrl?: string;
   caption?: string;
   textFallback?: string;

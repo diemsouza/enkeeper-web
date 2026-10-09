@@ -88,6 +88,25 @@ export function MessageBubble({
             caption={message.interactive?.body ?? message.caption}
             zoomDisabled={zoomDisabled}
           />
+        ) : message.type === "audio" && message.audioKind === "question" ? (
+          <div className="flex flex-col">
+            {/* Divider e espacamentos espelham o bloco "Ver traducao" do player;
+                w-0 min-w-full: a instrucao quebra na largura do player */}
+            <div className="w-0 min-w-full px-1 pb-2.5 pt-0.5">
+              <TextBubble text={message.caption ?? ""} />
+            </div>
+            <div className="mb-1 h-px bg-foreground/10" />
+            <CustomAudioPlayer
+              audioUrl={message.audioUrl!}
+              audioContentType={message.audioContentType}
+              externalId={message.externalId}
+              onPlay={onAudioPlay}
+              translation={undefined}
+              time={message.time}
+              fluid={fluidAudio}
+              onExport={exportBubble}
+            />
+          </div>
         ) : message.type === "audio" ? (
           <CustomAudioPlayer
             audioUrl={message.audioUrl!}

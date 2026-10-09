@@ -3,6 +3,7 @@ export type GenerateSpeechResult =
   | { status: "error"; reason: string };
 
 export const TTS_MIME_TYPE = "audio/ogg";
+export const TTS_AUDIO_EXTENSION = "ogg";
 
 export async function generateSpeechByOpenAi(
   text: string,

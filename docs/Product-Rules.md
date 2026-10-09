@@ -176,7 +176,7 @@ Conteúdo gerado pelo fluxo de nova atividade (Seção 15) segue o mesmo formato
 
 ## 4. Formatos de pergunta
 
-Seis formatos em uso ativo, todos de vocabulário: hoje todo material vira uma lista de vocabulário (Seção 3), então são os únicos que entram em jogo. O sorteio de formato acontece antes de gerar, o modelo executa, não decide. A única decisão que cabe ao modelo é se o item pode virar reconhecimento por imagem (ver abaixo).
+Oito formatos em uso ativo, todos de vocabulário: hoje todo material vira uma lista de vocabulário (Seção 3), então são os únicos que entram em jogo. O sorteio de formato acontece antes de gerar, o modelo executa, não decide. A única decisão que cabe ao modelo é se o item pode virar reconhecimento por imagem (ver abaixo); nos formatos de escuta, o modelo escreve a frase do áudio.
 
 | Formato | O que faz |
 | ------- | --------- |
@@ -186,6 +186,8 @@ Seis formatos em uso ativo, todos de vocabulário: hoje todo material vira uma l
 | cenário | Situação realista que leva ao uso do termo |
 | múltipla escolha | 2 a 5 opções, embaralhadas antes de salvar |
 | reconhecimento por imagem | Uma imagem ilustra o termo e o usuário escolhe, entre 4 opções embaralhadas antes de salvar, qual termo ela representa |
+| transcrição de áudio | O usuário ouve uma frase em inglês com o termo e escreve exatamente o que ouviu, em inglês |
+| tradução de áudio | O usuário ouve uma frase em inglês com o termo e escreve em português o que ela quer dizer |
 
 O prefixo "Complete:" do gap fill e a pergunta de fechamento do cenário não vêm mais do modelo — são aplicados depois, de forma determinística. Isso elimina falha de formatação (prefixo esquecido, fechamento reformulado ou fora do padrão). O fechamento do cenário hoje sorteia entre 4 variações em português e 4 em inglês, em vez de repetir sempre a mesma frase.
 
@@ -199,6 +201,21 @@ Existe para quebrar o ritmo textual de pergunta, resposta e feedback. A mecânic
 - **Fallback:** se o item não pode virar imagem, ou qualquer etapa falha (geração da pergunta, da imagem ou armazenamento), a pergunta é gerada em outro formato elegível para o mesmo item, sem nenhuma indicação ao usuário. O motivo fica registrado em log.
 - **Enunciado:** aplicado depois, de forma determinística, no mesmo princípio do prefixo do gap fill e do fechamento do cenário. Sorteia entre 3 variações em português no nível básico e 3 em inglês nos níveis intermediário e avançado. Opções numeradas.
 - **Avaliação:** igual à múltipla escolha, binária, aceitando o toque no botão, o número ou o texto da opção. Feedback, áudio de feedback, dica de erro, SM-2 e nota seguem as regras atuais, sem tratamento especial.
+
+### Escuta: transcrição e tradução de áudio
+
+Prática de escuta ativa, para tirar a prática do ritmo só de leitura e escrita. São dois formatos próprios, não um formato com duas saídas: na transcrição o usuário escreve em inglês exatamente o que ouviu; na tradução, escreve em português o que a frase quer dizer. As regras abaixo valem para os dois, salvo indicação.
+
+- **Frase:** uma frase natural em inglês que usa o termo do item, no estilo da frase de demonstração do feedback, nunca uma situação de cenário. No básico, curta (5 a 8 palavras), presente simples, vocabulário elementar, com o termo como única palavra possivelmente difícil. Intermediário e avançado podem ser mais longos e naturais, com contrações e formas fracas da fala. Na transcrição, a resposta esperada é a própria frase. Na tradução, a geração devolve também de 1 a 3 traduções de referência em português da frase inteira, a mais natural primeiro.
+- **Áudio:** gerado no momento em que a pergunta é gerada, uma única vez por pergunta, reaproveitado em toda reexibição e revisão (como a imagem). A frase nunca aparece no texto da mensagem; fica guardada junto do áudio como auditoria (Seção 17).
+- **Sorteio:** entra na rotação balanceada com os demais, atrás de uma fração configurável de rollout própria, separada da fração do áudio de feedback. Os dois formatos de áudio dividem essa fração e nunca saem em sequência, nem um seguido do outro.
+- **Fallback:** qualquer falha (geração da frase, voz, armazenamento) gera a pergunta em outro formato sem mídia para o mesmo item, sem indicação ao usuário. O motivo fica em log.
+- **Enunciado:** aplicado depois, de forma determinística, com 3 variações em português no básico e 3 em inglês nos demais níveis. Na web, a instrução e o player ficam num card só, instrução em cima, sem texto abaixo do player e nunca com "Ver tradução".
+- **Resposta:** sempre digitada. Nota de voz numa pergunta de áudio não é avaliada: volta um aviso curto pedindo a resposta digitada e a pergunta continua pendente.
+- **Avaliação da transcrição:** pelo mesmo fluxo de avaliação dos demais formatos, com regra estrita definida no bloco de exemplos do formato. A comparação ignora só maiúsculas, pontuação, espaços, apóstrofo, contração contra forma expandida (I'm = I am) e número por extenso contra dígito. Qualquer palavra diferente, faltando ou sobrando conta como erro, inclusive erro de digitação e palavra de mesmo som. Certo: nenhuma diferença. Parcial: 1 palavra errada numa frase de 6 ou mais palavras. Errado: o resto. Nota, SM-2 e score seguem as regras atuais.
+- **Avaliação da tradução:** semântica, pelo mesmo fluxo. Vale qualquer tradução em português que dê o mesmo sentido, não literal, sem precisar bater com as traduções de referência; grafia e acentuação em português não contam. Parcial: sentido central certo, mas perdeu ou trocou uma parte relevante (quem, quando, negação, quantidade). Errado: sentido central errado, outra frase ou resposta em inglês. Nota, SM-2 e score seguem as regras atuais.
+- **Feedback:** mesmo padrão nos dois, numa linha só: abertura de sempre, a resposta correta entre aspas e a outra língua em itálico entre parênteses. Na transcrição, a frase em inglês entre aspas, limpa, sem marcação do erro em nenhum status, e a tradução em português entre parênteses. O erro só aparece na dica, quando houver classe de escuta aplicável (Seção 6.2), explicado de forma pontual, nunca como a frase corrigida. Na tradução, a tradução de referência em português entre aspas (a primeira resposta esperada) e a frase em inglês entre parênteses. A montagem é feita em código, a partir da frase de demonstração e da sua tradução, sem depender da formatação do modelo.
+- Nenhum dos dois gera áudio de feedback (seria a mesma frase).
 
 `pergunta aberta` e `pergunta direta` (usadas antes para material de texto corrido e de exercício, respectivamente) ficaram sem uso desde que esses tipos de conteúdo deixaram de existir (Seção 3) — formatos legados, fora do fluxo ativo hoje.
 
@@ -242,13 +259,13 @@ Avaliado contra as respostas esperadas geradas na criação da atividade. Tom di
 
 ### 6.1 Áudio no feedback
 
-Feedback pode ser acompanhado de uma versão em áudio (MP3, ver Seção 17; a exigência de Ogg/Opus de nota de voz do WhatsApp é legado, pois esse canal não entrega mais áudio de prática), enviada como mensagem separada logo após o feedback em texto. Só o conteúdo de demonstração vai para o áudio, sem a abertura de resultado e sem emoji, informação redundante em áudio, já carregada pela entonação da fala.
+Feedback pode ser acompanhado de uma versão em áudio (Ogg/Opus, ver Seção 17), enviada como mensagem separada logo após o feedback em texto. Só o conteúdo de demonstração vai para o áudio, sem a abertura de resultado e sem emoji, informação redundante em áudio, já carregada pela entonação da fala.
 
 Envio de áudio é parcial, não em toda resposta, controlado por uma fração configurável do total. Falha na geração ou envio do áudio nunca atrasa nem impede o feedback em texto, que segue as regras desta seção normalmente, sem nenhuma indicação de erro visível ao usuário.
 
 A frase de demonstração usada no feedback e no áudio (`feedback_text`) e sua tradução em português (`feedback_translation`) são persistidas por pergunta, junto com o resultado de cada avaliação. A tradução não é enviada como mensagem separada em nenhum canal: na superfície web, quando disponível, fica atrás de um toggle oculto por padrão ("Ver tradução") logo abaixo do player de áudio, revelado só depois do áudio terminar de carregar e nunca junto de um erro de carregamento. No WhatsApp não há equivalente.
 
-Legado (o WhatsApp não entrega mais áudio de prática; o áudio novo é MP3 e não vira nota de voz): no WhatsApp, o áudio era enviado como nota de voz reconhecida pelo canal, não como anexo de áudio comum: é essa forma de envio que habilita o webhook de status de reprodução, um áudio enviado como anexo genérico não gera esse evento.
+Legado (o WhatsApp não entrega mais áudio de prática): no WhatsApp, o áudio era enviado como nota de voz reconhecida pelo canal, não como anexo de áudio comum: é essa forma de envio que habilita o webhook de status de reprodução, um áudio enviado como anexo genérico não gera esse evento.
 
 Reprodução do áudio pelo usuário é rastreada, mas a origem do evento depende do canal: no WhatsApp vem do webhook de status da mensagem, na superfície web vem de um evento do próprio player no client. Qualquer que seja a origem, o evento converge para o mesmo registro por pergunta, que alimenta o bônus de prática passiva (Seção 6.3), e é idempotente por pergunta: uma segunda notificação de reprodução da mesma pergunta não duplica o efeito (ver Seção 18).
 
@@ -260,11 +277,15 @@ O feedback pode ser acompanhado de uma dica curta, enviada como mensagem separad
 
 **Em acerto**, a frase de uso do feedback usa a forma que o usuário escreveu, nunca a troca pela forma esperada. Quando existe uma resposta esperada diferente dessa forma, a dica a apresenta, com um uso em inglês. Isso cobre dois casos: o usuário respondeu uma das respostas esperadas e a pergunta tem outra, ou a resposta foi aceita por equivalência e a esperada é outra forma. É complemento, nunca ressalva sobre a resposta dada. Só vale quando:
 
-- o formato é de resposta digitada (recall, recall invertido, gap fill e cenário), nunca em múltipla escolha ou reconhecimento por imagem, que já têm opções fechadas;
+- o formato é de resposta digitada (recall, recall invertido, gap fill e cenário), nunca em múltipla escolha ou reconhecimento por imagem, que já têm opções fechadas, nem nos formatos de escuta (transcrição e tradução de áudio);
 - a alternativa vem das respostas esperadas da própria pergunta, citada literalmente, nunca inventada na avaliação;
 - a alternativa é um termo realmente diferente do que o usuário escreveu, não só variação de flexão, artigo ou contração.
 
-Sem alternativa assim, o acerto segue sem dica. O objetivo é que a dica em acerto seja pontual, não presença em toda resposta certa.
+Sem alternativa assim, o acerto segue sem dica.
+
+**Na transcrição de áudio**, a dica de erro usa só duas classes próprias de escuta: palavra de mesmo som (trocou por outra com o mesmo som, como "their" por "there") e fala ligada (omitiu uma forma fraca como "to", "of", "a", "have", ou não separou palavras que se ligam na fala). As demais classes não se aplicam e ortografia continua sem dica. Sem classe aplicável, sem dica. As classes de escuta não valem para os outros formatos.
+
+**Na tradução de áudio**, valem só as classes que fazem sentido de inglês para português: calque, sinônimo próximo, expressão ao pé da letra, registro e estrutura. Colocação fica de fora, junto com as classes de escuta; ortografia e sem classificação seguem sem dica. O filtro por formato fica no código, como o da dica em acerto. O objetivo é que a dica em acerto seja pontual, não presença em toda resposta certa.
 
 O prompt de avaliação não conhece o formato nem decide sozinho o envio: o filtro final fica no código. Em acerto, a dica só é enviada se a classe retornada for alternativa, o formato for um dos quatro de resposta digitada e o texto da dica citar uma resposta esperada diferente da que o usuário escreveu. Fora disso a dica é descartada, inclusive o texto. A dica em acerto não altera status, nota da pergunta nem agendamento de revisão (SM-2), e a ordem de envio é a mesma: feedback, áudio (se houver) e dica.
 
@@ -286,7 +307,7 @@ Qualidade (único eixo que move a elegibilidade de forma significativa):
 
 Prática passiva (bônus limitado a 2 pontos por pergunta, independente do volume):
 - Revisão espaçada real (dia distinto, mesmo gatilho da Seção 7): +1
-- Áudio de feedback ouvido (evento de reprodução confirmado, ver Seção 18): +1
+- Áudio de feedback ouvido (evento de reprodução confirmado, ver Seção 18): +1. O áudio da pergunta de escuta (Seção 4) não conta: ouvir é parte de responder. Ele também fica fora do eixo Escuta do pentágono.
 
 A nota de cada pergunta é a soma dos dois eixos, com teto de 10.
 A nota da atividade é a média das notas de todas as perguntas, com aprovação em 7.
@@ -693,17 +714,20 @@ Comportamento pós-cancelamento depende do contexto. Sem Activity ativa (onboard
 
 Nem toda mídia é descartada após uso. PDF e texto em arquivo continuam sendo processados em memória e descartados após extração (Seção 14). As exceções armazenadas:
 
-- **Áudio de feedback**, gerado pelo sistema (Seção 6.1). MP3 é o formato padrão de geração; Ogg/Opus existe só como acervo legado, sem geração nova, e expira pela limpeza normal.
+- **Áudio de feedback**, gerado pelo sistema (Seção 6.1). Ogg/Opus é o formato de geração; o MP3 gravado entre 2026-10-07 e 2026-10-09 continua tocando, sem migração.
 - **Áudio de resposta**: quando o usuário responde uma pergunta pendente por nota de voz, o áudio é armazenado e usado no cálculo da nota da pergunta (Seção 6.3), diferente de uma resposta por texto, que não é retida.
 - **Imagem original de OCR**: a imagem enviada como material é armazenada junto com o texto (ou descrição) extraído dela (Seção 14.1), independente do desfecho ser texto, descrição, bloqueio ou imagem ilegível.
 - **Charts de resumo**: as imagens de pentágono (Seção 1) e gauge (Seção 2) geradas junto dos resumos. Cada atividade referencia os seus: um chart de conclusão (pentágono) e um de rodada (gauge).
 - **Imagem de pergunta**: a imagem gerada para o reconhecimento por imagem (Seção 4), guardada com a descrição da cena que a originou.
+- **Áudio de pergunta**: o áudio da frase das perguntas de escuta (Seção 4), Ogg/Opus como o áudio de feedback, guardado com a frase que o originou. Gerado uma única vez por pergunta e reaproveitado sempre que ela volta.
 
-**Organização do armazenamento:** toda mídia nova é salva em `<pasta>/<id da mídia>`, com uma pasta por tipo e o nome do arquivo igual ao identificador do próprio registro de mídia: `feedback-audio` (áudio de feedback), `answer-audio` (áudio de resposta), `ocr-image` (imagem original de OCR), `question-image` (imagem de pergunta) e `chart` (pentágono e gauge). Mídia ligada a uma entidade (pergunta, atividade) é referenciada por ela diretamente, nunca localizada pelo caminho do arquivo. Mídias gravadas antes dessa convenção permanecem nas pastas antigas (`feedback/`, `answer/`, `ocr/`, `charts/...`), sem migração.
+**Organização do armazenamento:** toda mídia nova é salva em `<pasta>/<id da mídia>`, com uma pasta por tipo e o nome do arquivo igual ao identificador do próprio registro de mídia: `feedback-audio` (áudio de feedback), `question-audio` (áudio de pergunta), `answer-audio` (áudio de resposta), `ocr-image` (imagem original de OCR), `question-image` (imagem de pergunta) e `chart` (pentágono e gauge). Mídia ligada a uma entidade (pergunta, atividade) é referenciada por ela diretamente, nunca localizada pelo caminho do arquivo. Mídias gravadas antes dessa convenção permanecem nas pastas antigas (`feedback/`, `answer/`, `ocr/`, `charts/...`), sem migração.
 
 Em todos os casos, o conteúdo de origem (texto do feedback falado, transcrição da resposta em áudio, transcrição ou descrição da imagem, descrição da cena da imagem de pergunta) é guardado junto ao arquivo, servindo de auditoria do que foi de fato produzido ou extraído, e permitindo reenvio em texto sem necessidade de gerar áudio novo, caso necessário no futuro.
 
 O áudio de feedback armazenado é reaproveitado quando a mesma pergunta volta, seja por revisão espaçada (Seção 7) ou por reenvio dentro da sessão intensiva, e a nova avaliação gera a mesma frase de demonstração (`feedback_text`) já persistida para aquela pergunta (Seção 6.1) — nesse caso não gera áudio de novo. Regeneração ocorre quando a frase de demonstração muda entre uma resposta e outra, mesmo pra mesma pergunta, ou quando o áudio original não existe mais no armazenamento.
+
+**Remoção suspensa.** Hoje nenhuma mídia é removida: áudio e imagem passaram a compor as próprias perguntas (imagem do reconhecimento por imagem, áudio das perguntas de escuta, Seção 4) e são reaproveitados na revisão, então apagá-los quebraria perguntas ainda em uso. O processo de remoção continua existindo, mas está inativo por decisão estratégica (ver Technical-Decisions, "Limpeza de mídia pausada"). As regras abaixo ficam como referência para quando for reativado.
 
 Áudio associado a uma pergunta (áudio de feedback, áudio de resposta) é removido do armazenamento (não o registro em si, que permanece como histórico) quando a atividade correspondente está `archived` ou `cancelled` há mais de 30 dias. Atividade `active` nunca tem mídia removida, independente de quanto tempo estiver parada. Imagens (original de OCR, charts de resumo e imagem de pergunta) são removidas após 90 dias, contados a partir do próprio registro de mídia, sem depender de status de activity (o pentágono referencia duas atividades e o gauge é gerado no meio de uma atividade ainda `active`, então amarrar a status de activity seria ambíguo). A remoção roda automaticamente, uma vez por dia, em lotes, sem necessidade de intervenção manual.
 
@@ -717,7 +741,7 @@ Mensagens enviadas pelo sistema guardam o identificador que o canal de envio atr
 
 Cada canal (hoje: WhatsApp e a superfície web) traduz seu próprio formato de evento de status para um conjunto de valores canônico antes de persistir, para que a lógica de negócio nunca dependa do formato específico de um canal. Isso vale igualmente para qualquer canal adicionado no futuro (ver Seção 7 do Product-Brief, arquitetura multicanal).
 
-Reprodução de mídia (ex: áudio de feedback) é um evento à parte, diferente do status de entrega geral da mensagem. Uma mensagem pode estar entregue ou lida sem nunca ter sido reproduzida, são duas informações independentes.
+Reprodução de mídia (ex: áudio de feedback) é um evento à parte, diferente do status de entrega geral da mensagem. A reprodução é registrada para qualquer áudio, mas só a do áudio de feedback alimenta o bônus e o eixo Escuta; a do áudio da pergunta de escuta não. Uma mensagem pode estar entregue ou lida sem nunca ter sido reproduzida, são duas informações independentes.
 
 A origem do evento de reprodução é responsabilidade de cada canal, pelo meio que ele tiver: o WhatsApp reporta pelo webhook de status da mensagem, a superfície web reporta por um evento do player no client enviado a um endpoint próprio autenticado. Todos convergem para o mesmo registro de reproduzido por mensagem e pergunta, que é o que a Seção 6.3 consome. O registro é idempotente: a primeira notificação de reprodução marca o evento e dispara o efeito no bônus de prática passiva, notificações seguintes para a mesma pergunta são ignoradas.
 
@@ -725,16 +749,18 @@ A origem do evento de reprodução é responsabilidade de cada canal, pelo meio 
 
 ## 19. Mensagens formatadas e suporte a canal interativo
 
-Toda mensagem enviada pelo sistema é representada por um `FormattedMessage`: um texto (`text`) sempre presente, e quatro camadas opcionais de apresentação — `audioPath`, `imagePath`, `templateName` e `interactive` (corpo com botões). O `text` é a representação canônica: é o que fica salvo no histórico (`Message.content`) e o que qualquer canal sem suporte às camadas opcionais usa para enviar.
+Toda mensagem enviada pelo sistema é representada por um `FormattedMessage`: um texto (`text`) sempre presente, e quatro camadas opcionais de apresentação: `audioMediaId`, `imageMediaId`, `templateName` e `interactive` (corpo com botões). O `text` é a representação canônica: é o que fica salvo no histórico (`Message.content`) e o que qualquer canal sem suporte às camadas opcionais usa para enviar.
 
-`imagePath` difere do `audioPath`: a imagem e o texto vão juntos, na mesma mensagem, com o `text` como legenda (caption) da imagem, não como mensagem separada. Se a geração da imagem falhar, cai para o `text` puro sem `imagePath` (mesmo princípio do áudio, Seção 6.1).
+`imageMediaId` difere do `audioMediaId`: a imagem e o texto vão juntos, na mesma mensagem, com o `text` como legenda (caption) da imagem, não como mensagem separada. Se a geração da imagem falhar, cai para o `text` puro sem `imageMediaId` (mesmo princípio do áudio, Seção 6.1).
 
 Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje:
 
-- **WhatsApp**: usa `imagePath` se presente (envia a imagem com o `text` como caption); senão `audioPath` se presente (envia o áudio); senão `templateName` se presente (envia via template aprovado da Meta, necessário fora da janela de 24h); senão `interactive` se presente (envia com botões); senão `text` puro.
-- **Superfície web** (`/app`): usa `imagePath` se presente, renderizando a imagem com o `text` como legenda e permitindo abrir a imagem em tela cheia com zoom ao clicar (pentágono e gauge, Seções 1 e 2); usa `audioPath` com `<audio>` nativo do navegador (MP3, formato padrão de geração, ver Seção 17). Ogg/Opus existe só como acervo legado, tocado por decoder próprio no client quando o navegador não o reproduz nativamente. Sem geração de mídia duplicada por canal.
+- **WhatsApp**: usa `imageMediaId` se presente (envia a imagem com o `text` como caption); senão `audioMediaId` se presente (envia o áudio); senão `templateName` se presente (envia via template aprovado da Meta, necessário fora da janela de 24h); senão `interactive` se presente (envia com botões); senão `text` puro.
+- **Superfície web** (`/app`): usa `imageMediaId` se presente, renderizando a imagem com o `text` como legenda e permitindo abrir a imagem em tela cheia com zoom ao clicar (pentágono e gauge, Seções 1 e 2); usa `audioMediaId` com `<audio>` nativo do navegador (Ogg/Opus, ver Seção 17), com decoder próprio no client só quando o navegador não reproduz Ogg nativamente. Sem geração de mídia duplicada por canal.
 
-`imagePath` e `interactive` podem vir juntos na mesma mensagem (hoje: pergunta de reconhecimento por imagem, Seção 4, com um botão por opção). A superfície web mostra a imagem, o texto como legenda e as opções como botões. O WhatsApp segue a prioridade acima: envia a imagem com o `text` como legenda e acrescenta as opções numeradas à legenda no envio, sem botões.
+Na pergunta de escuta (Seção 4), o `text` é só a instrução e o `audioMediaId` é o áudio da pergunta. A web mostra os dois num card só, instrução em cima, um divisor (o mesmo do bloco "Ver tradução" do áudio de feedback) e o player embaixo, sem "Ver tradução" e sem texto abaixo do player. O WhatsApp envia só o áudio (o canal não entrega prática hoje).
+
+`imageMediaId` e `interactive` podem vir juntos na mesma mensagem (hoje: pergunta de reconhecimento por imagem, Seção 4, com um botão por opção). A superfície web mostra a imagem, o texto como legenda e as opções como botões. O WhatsApp segue a prioridade acima: envia a imagem com o `text` como legenda e acrescenta as opções numeradas à legenda no envio, sem botões.
 
 **Listas de opções.** Toda mensagem com lista de opções (`choice`, `image_recognition` e os passos de nível, objetivo, assunto e ponto) segue o mesmo padrão: o `text` leva só o enunciado, neutro de canal, sem opções numeradas nem instrução de responder por número; as opções vivem no `interactive`, que é persistido com a lista completa; cada canal monta a apresentação a partir dele. A web renderiza a lista a partir do `interactive`, inclusive ao recarregar. O WhatsApp pode acrescentar as opções numeradas ao texto no envio, e nos passos de captura decide entre botões nativos (até 3 opções) ou lista numerada com instrução e atalhos (mais de 3, ver Seção 15). O que é salvo no histórico é o `text` canônico, não o texto montado pelo canal.
 

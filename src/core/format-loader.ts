@@ -14,6 +14,8 @@ const VOCABULARY_FORMATS: QuestionFormat[] = [
   QuestionFormat.scenario,
   QuestionFormat.choice,
   QuestionFormat.image_recognition,
+  QuestionFormat.audio_transcription,
+  QuestionFormat.audio_translation,
 ];
 
 const FORMAT_FILES: Record<QuestionFormat, string> = {
@@ -25,6 +27,8 @@ const FORMAT_FILES: Record<QuestionFormat, string> = {
   [QuestionFormat.open_text]: read("open_text.md"),
   [QuestionFormat.open_question]: read("open_question.md"),
   [QuestionFormat.image_recognition]: read("image_recognition.md"),
+  [QuestionFormat.audio_transcription]: read("audio_transcription.md"),
+  [QuestionFormat.audio_translation]: read("audio_translation.md"),
 };
 
 function read(file: string): string {

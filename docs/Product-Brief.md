@@ -76,7 +76,7 @@ O usuário pode informar seu próprio nível, que passa a valer para qualquer at
 
 ### Formatos de pergunta
 
-Todo material vira uma lista de vocabulário, com variação automática entre 6 formatos: gap fill, recall, recall invertido, cenário, múltipla escolha e reconhecimento por imagem.
+Todo material vira uma lista de vocabulário, com variação automática entre 8 formatos: gap fill, recall, recall invertido, cenário, múltipla escolha, reconhecimento por imagem, transcrição de áudio e tradução de áudio (escuta ativa).
 
 ### Repetição espaçada
 
@@ -223,10 +223,10 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Geração de conteúdo por tema (nova atividade) | Claude Haiku 4.5 |
 | Geração de perguntas | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
 | Avaliação de respostas + feedback | GPT-4.1-mini (testando GPT-4.1 e Claude Haiku 4.5) |
-| Texto-para-voz (áudio de feedback) | OpenAI (`gpt-4o-mini-tts`, principal) e Google Cloud TTS (fallback), alternável por configuração |
+| Texto-para-voz (áudio de feedback e áudio da pergunta de escuta) | OpenAI (`gpt-4o-mini-tts`, principal) e Google Cloud TTS (fallback), alternável por configuração |
 | Geração de imagem (reconhecimento por imagem) | OpenAI `gpt-image-2.5-flare`, qualidade baixa, rollout parcial habilitado por configuração |
 | Charts de resumo (pentágono, gauge) | SVG por template rasterizado com `@resvg/resvg-js` (nativo, sem headless browser), fontes Inter e IBM Plex Mono embutidas no bundle |
-| Armazenamento de mídia | Supabase Storage, bucket separado por ambiente, cobre áudio gerado (feedback), áudio de resposta do usuário, a imagem original enviada para OCR, os charts de resumo e as imagens geradas para perguntas de reconhecimento por imagem |
+| Armazenamento de mídia | Supabase Storage, bucket separado por ambiente, cobre áudio gerado (feedback), áudio de resposta do usuário, a imagem original enviada para OCR, os charts de resumo, as imagens geradas para perguntas de reconhecimento por imagem e o áudio das perguntas de escuta |
 | Evolução semanal | Modelo médio em batch |
 | Jobs agendados | Vercel Cron |
 | Pagamento | Stripe Checkout (cartão), cobrança avulsa de 30 dias sem renovação automática; Pix manual via `suporte` como alternativa |
@@ -258,6 +258,8 @@ Taxa de processamento do Stripe por transação ainda não medida nem incluída 
 Custo de texto-para-voz do feedback (rollout parcial, ver Seção 4) ainda não tem medição real em produção. Estimativa inicial, baseada em preço de mercado dos provedores usados, fica bem abaixo dos demais itens da tabela, na casa de centavos por milhares de gerações, e é reduzida ainda mais pelo reuso do áudio já gerado por pergunta (sem regeneração em revisão espaçada). Revisar quando houver volume real desse fluxo, inclusive para decidir se maior frequência de áudio vira benefício de tier superior.
 
 Custo de geração de imagem do reconhecimento por imagem (rollout parcial) ainda não tem medição real em produção. Preço de tabela do modelo em qualidade baixa fica na casa de meio centavo de dólar por imagem, e a imagem é gerada uma única vez por pergunta, reaproveitada em toda reexibição e revisão. Itens sem imagem viável caem para outro formato depois da chamada de geração da pergunta, o que custa uma chamada extra de geração de pergunta nesses casos, sem gerar imagem. Cada geração fica registrada em `llm_logs` e `llm_usage`; revisar quando houver volume real desse fluxo.
+
+Custo do áudio da pergunta de escuta (rollout parcial, fração própria) ainda não tem medição real. É uma geração de texto-para-voz por pergunta, de uma frase curta, reaproveitada em toda reexibição e revisão, e essas perguntas nunca geram áudio de feedback, o que compensa parte do custo. Falha na geração cai para outro formato depois da chamada de geração da pergunta (uma chamada extra de LLM nesses casos).
 
 Geração de conteúdo por tema (nova atividade) ainda não tem custo médio medido em produção, é individual por usuário e por troca de atividade, sem compartilhamento entre usuários. O fluxo passou a usar duas chamadas de LLM por troca (validação do assunto com sugestão de pontos, depois resolução do ponto e geração), em vez de uma. Vale revisar essa tabela quando houver volume real desse fluxo.
 
@@ -320,7 +322,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Schema atualizado com Question, QuestionFormat, llm_logs
 - Motor de prática com loop acerto/erro
 - Sessão ativa (praticar). A cadência automática de perguntas existe, mas está pausada desde que a prática migrou para o app
-- Sistema de formatos granulares de vocabulário (gap_fill, recall, recall_inverted, scenario, choice, image_recognition). open_text e open_question ficaram legados desde a simplificação de material (ver checklist abaixo)
+- Sistema de formatos granulares de vocabulário (gap_fill, recall, recall_inverted, scenario, choice, image_recognition, audio_transcription, audio_translation). open_text e open_question ficaram legados desde a simplificação de material (ver checklist abaixo)
 - Detecção automática de nível do material no upload
 - Múltipla escolha (choice) com opções embaralhadas
 - Logs de LLM com DISABLE_LLM_LOGS
@@ -342,6 +344,8 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Lembrete diário e reengajamento unificados num único fluxo por dias desde a última prática (Product-Rules Seção 12): lembrete de 0 a 6 dias (com ou sem revisão pendente), reengajamento em 7 e 14 dias. Templates sem link, com botão de resposta rápida; o toque recebe a resposta universal do WhatsApp com o link de login automático, que abre no navegador nativo em vez do navegador embutido da Meta
 - Toast de confirmação de sucesso/erro ao salvar preferências no app (ex: lembrete diário), renderizado acima de modais abertos (Product-Rules Seção 8.4)
 - Reconhecimento por imagem (image_recognition): imagem gerada ilustra o termo e o usuário escolhe a opção, com fallback silencioso para outro formato quando o termo não é visualizável, rollout parcial habilitado por configuração
+- Transcrição de áudio (audio_transcription): o usuário ouve uma frase com o termo e escreve o que ouviu, avaliação estrita palavra a palavra, feedback com a frase limpa e a tradução, fallback silencioso para outro formato, rollout parcial com fração própria
+- Tradução de áudio (audio_translation): o usuário ouve uma frase com o termo e escreve em português o que ela quer dizer, avaliação semântica (não literal) e feedback com a frase em inglês e a tradução de referência, mesma fração de rollout da transcrição
 - Persistência da frase de demonstração e da tradução do feedback por pergunta (`feedback_text`/`feedback_translation`), com toggle "Ver tradução" no player de áudio da superfície web e reaproveitamento do áudio quando a frase não muda entre respostas
 
 **Falta:**

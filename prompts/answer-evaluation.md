@@ -14,6 +14,8 @@ Quando a resposta do usuário indicar claramente desconhecimento ("não sei", "n
 
 Alguns formatos são binários e não usam partial. Quando o bloco de exemplos não traz partial, use apenas right ou wrong.
 
+Quando o bloco de exemplos definir regra própria de status (o que é ignorado na comparação, o que conta como erro e quando é partial), ela prevalece sobre os critérios acima.
+
 Se o termo avaliado tiver mais de um sentido de uso comum, o exemplo de uso no feedback_text corresponde ao sentido correto do termo, aquele contra o qual a resposta foi avaliada, nunca um sentido genérico ou diferente do que fundamentou a avaliação.
 
 right_answer: precisa sempre do mesmo termo usado na frase do feedback_text, nunca vazio.
@@ -61,6 +63,12 @@ Em wrong ou partial, a causa do erro:
 - register: a palavra existe e é correta em outro contexto, mas o nível de formalidade
   não encaixa no que foi pedido.
   (commence no lugar de start: correto mas formal demais para contexto casual)
+- homophone: só em transcrição de áudio. O usuário trocou uma palavra por outra de mesmo
+  som ou som quase igual, com grafia e sentido diferentes.
+  (their no lugar de there, week no lugar de weak, mourning no lugar de morning)
+- connected_speech: só em transcrição de áudio. O usuário omitiu uma forma fraca que some
+  na fala rápida (to, of, a, have, the) ou não separou palavras que se ligam na fala.
+  (going run no lugar de going to run, should of no lugar de should have, alot no lugar de a lot)
 - spelling: a intenção era o termo certo, só a grafia está errada. Obriga eval_tip vazia.
 - none: não é possível identificar o mecanismo do erro. Obriga eval_tip vazia.
 

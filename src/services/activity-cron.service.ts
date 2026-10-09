@@ -41,6 +41,7 @@ import {
   DOC_PENDING_TIMEOUT_MS,
   COMMAND_TIMEOUT_MIN,
   DEFAULT_MESSAGE_INTERVAL_SEC,
+  AUDIO_QUESTION_FORMATS,
 } from "../lib/constants";
 import { Activity, Question, QuestionFormat } from "../lib/prisma";
 import { splitContentIntoBlocks } from "../core/pool-size";
@@ -55,11 +56,15 @@ import {
 import { startOfDay } from "date-fns";
 import { ulid } from "ulid";
 import { storeQuestionImage } from "./question-image-service";
+import { storeQuestionAudio } from "./question-audio-service";
 import { buildRoundCompletedSummary } from "./activity-service";
 import { UserIntentMetadata } from "../types/domain";
 
 const IMAGE_QUESTION_ROLLOUT_FRACTION = parseFloat(
   process.env.IMAGE_QUESTION_ROLLOUT_FRACTION ?? "0",
+);
+const AUDIO_QUESTION_ROLLOUT_FRACTION = parseFloat(
+  process.env.AUDIO_QUESTION_ROLLOUT_FRACTION ?? "0",
 );
 
 function isNewActivityFlowIntent(user: { metadata: unknown }): boolean {
@@ -230,6 +235,7 @@ async function sendCadenceQuestion(
     questionOptions: string[];
     termHint: string | null;
     questionImageMediaId: string | null;
+    questionAudioMediaId: string | null;
   },
   activity: Activity,
   userChannel: { channelUserId: string; id: string },
@@ -419,7 +425,7 @@ type QuestionGenBaseParams = Omit<
   "format" | "questionExamples" | "retryContext"
 >;
 
-type ImageQuestionOutcome =
+type MediaQuestionOutcome =
   | { status: "success"; data: CreateQuestionData }
   | { status: "fallback"; reason: string };
 
@@ -451,7 +457,7 @@ async function generateValidatedQuestion(
 async function buildImageRecognitionQuestion(
   baseParams: QuestionGenBaseParams,
   typing?: TypingTarget,
-): Promise<ImageQuestionOutcome> {
+): Promise<MediaQuestionOutcome> {
   const generated = await generateValidatedQuestion(
     QuestionFormat.image_recognition,
     baseParams,
@@ -495,29 +501,100 @@ async function buildImageRecognitionQuestion(
   };
 }
 
-// image_recognition que falha (nao imageable, erro de geracao, vendor ou
-// upload) cai em outro formato para o mesmo item, sem aviso ao usuario.
+async function buildAudioQuestion(
+  format: QuestionFormat,
+  baseParams: QuestionGenBaseParams,
+  typing?: TypingTarget,
+): Promise<MediaQuestionOutcome> {
+  const generated = await generateValidatedQuestion(format, baseParams);
+  if (!generated) {
+    return { status: "fallback", reason: "question_generation_failed" };
+  }
+  const sentence = generated.questionAudioText?.trim();
+  if (!sentence) {
+    return { status: "fallback", reason: "missing_audio_text" };
+  }
+
+  const questionId = ulid();
+  if (typing) {
+    await typing.channel.notifyTyping(baseParams.userId, {
+      replyToMessageId: typing.replyToMessageId,
+    });
+  }
+  const audio = await storeQuestionAudio({
+    questionId,
+    text: sentence,
+    userId: baseParams.userId,
+  });
+  if (audio.status === "error") {
+    return { status: "fallback", reason: audio.reason };
+  }
+
+  const data = sanitizeQuestionData(generated);
+  // A frase fica na Question para avaliacao e feedback; formatQuestion nunca
+  // a coloca no texto da mensagem, so a instrucao. Na transcricao a resposta
+  // e a propria frase; na traducao, as referencias em PT geradas.
+  const answerKeys =
+    format === QuestionFormat.audio_transcription ? [sentence] : data.answerKeys;
+  if (answerKeys.length === 0) {
+    return { status: "fallback", reason: "missing_answer_keys" };
+  }
+  return {
+    status: "success",
+    data: {
+      ...data,
+      id: questionId,
+      question: sentence,
+      answerKeys,
+      questionAudioMediaId: audio.mediaId,
+    },
+  };
+}
+
+function buildMediaQuestion(
+  format: QuestionFormat,
+  baseParams: QuestionGenBaseParams,
+  typing?: TypingTarget,
+): Promise<MediaQuestionOutcome> | null {
+  if (format === QuestionFormat.image_recognition) {
+    return buildImageRecognitionQuestion(baseParams, typing);
+  }
+  if (AUDIO_QUESTION_FORMATS.includes(format)) {
+    return buildAudioQuestion(format, baseParams, typing);
+  }
+  return null;
+}
+
+// Formato de midia que falha (nao imageable, erro de geracao, TTS, vendor ou
+// upload) cai em outro formato sem midia para o mesmo item, sem aviso ao usuario.
 async function buildQuestionData(
   lastFormat: QuestionFormat | null,
   formatCounts: FormatCounts,
   baseParams: QuestionGenBaseParams,
   typing?: TypingTarget,
 ): Promise<CreateQuestionData | null> {
-  const canUseImage = Math.random() < IMAGE_QUESTION_ROLLOUT_FRACTION;
-  let format = pickNextFormat(lastFormat, { canUseImage, formatCounts });
+  let format = pickNextFormat(lastFormat, {
+    canUseImage: Math.random() < IMAGE_QUESTION_ROLLOUT_FRACTION,
+    canUseAudio: Math.random() < AUDIO_QUESTION_ROLLOUT_FRACTION,
+    formatCounts,
+  });
 
-  if (format === QuestionFormat.image_recognition) {
-    const outcome = await buildImageRecognitionQuestion(baseParams, typing);
-    if (outcome.status === "success") return outcome.data;
+  const mediaOutcome = await buildMediaQuestion(format, baseParams, typing);
+  if (mediaOutcome?.status === "success") return mediaOutcome.data;
+  if (mediaOutcome) {
     console.warn(
-      `[buildQuestionData] image_recognition fallback: ${outcome.reason}`,
+      `[buildQuestionData] ${format} fallback: ${mediaOutcome.reason}`,
     );
-    format = pickNextFormat(lastFormat, { canUseImage: false, formatCounts });
-    if (typing) {
-    await typing.channel.notifyTyping(baseParams.userId, {
-      replyToMessageId: typing.replyToMessageId,
+    format = pickNextFormat(lastFormat, {
+      canUseImage: false,
+      canUseAudio: false,
+      formatCounts,
     });
-  }
+    if (typing) {
+      await typing.channel.notifyTyping(baseParams.userId, {
+        replyToMessageId: typing.replyToMessageId,
+      });
+    }
   }
 
   const validated = await generateValidatedQuestion(format, baseParams);

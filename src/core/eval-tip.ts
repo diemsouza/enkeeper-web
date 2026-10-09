@@ -1,3 +1,5 @@
+import { QuestionFormat } from "../lib/prisma";
+import { EVAL_TIP_CLASSES_BY_FORMAT } from "../lib/constants";
 import { normalizeForMatch } from "./format-loader";
 
 function toComparable(text: string): string {
@@ -23,4 +25,12 @@ export function hasAlternativeKeyInTip(
       tip.includes(` ${normalizedKey} `)
     );
   });
+}
+
+export function isEvalTipClassAllowed(
+  format: QuestionFormat | null,
+  tipClass: string | undefined,
+): boolean {
+  if (!format || !tipClass) return true;
+  return EVAL_TIP_CLASSES_BY_FORMAT[format].some((c) => c === tipClass);
 }

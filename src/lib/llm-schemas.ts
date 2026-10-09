@@ -90,6 +90,7 @@ export const sectionQuestionSchema = z.object({
   warning: z.string().nullable(),
   imageable: z.boolean().nullable(),
   questionImageDescription: z.string().nullable(),
+  questionAudioText: z.string().nullable(),
 });
 
 export type SectionQuestionResult = z.infer<typeof sectionQuestionSchema>;
@@ -112,6 +113,8 @@ export const answerEvaluationSchema = z.object({
     "literal_idiom",
     "register",
     "alternative",
+    "homophone",
+    "connected_speech",
     "spelling",
     "none",
   ]),

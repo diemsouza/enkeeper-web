@@ -7,7 +7,26 @@ import {
   processImageCleanup,
 } from "@/src/services/audio-cleanup-cron.service";
 import { deleteExpiredShortLinks } from "@/src/repo/shortlinks.repo";
-import { SHORTLINK_CLEANUP_TTL_DAYS } from "@/src/lib/constants";
+import {
+  MEDIA_CLEANUP_ENABLED,
+  SHORTLINK_CLEANUP_TTL_DAYS,
+} from "@/src/lib/constants";
+
+type MediaCleanupResponse = {
+  audioCleanup: Awaited<ReturnType<typeof processAudioCleanup>> | "paused";
+  imageCleanup: Awaited<ReturnType<typeof processImageCleanup>> | "paused";
+};
+
+async function runMediaCleanup(): Promise<MediaCleanupResponse> {
+  if (!MEDIA_CLEANUP_ENABLED) {
+    return { audioCleanup: "paused", imageCleanup: "paused" };
+  }
+  const [audioCleanup, imageCleanup] = await Promise.all([
+    processAudioCleanup(),
+    processImageCleanup(),
+  ]);
+  return { audioCleanup, imageCleanup };
+}
 
 export async function GET(): Promise<NextResponse> {
   const authHeader = (await headers()).get("authorization");
@@ -19,14 +38,12 @@ export async function GET(): Promise<NextResponse> {
     const shortLinkThreshold = new Date(
       Date.now() - SHORTLINK_CLEANUP_TTL_DAYS * 24 * 60 * 60 * 1000,
     );
-    const [audioResult, imageResult, shortLinkDeleted] = await Promise.all([
-      processAudioCleanup(),
-      processImageCleanup(),
+    const [mediaCleanup, shortLinkDeleted] = await Promise.all([
+      runMediaCleanup(),
       deleteExpiredShortLinks(shortLinkThreshold),
     ]);
     return NextResponse.json({
-      audioCleanup: audioResult,
-      imageCleanup: imageResult,
+      ...mediaCleanup,
       shortLinkCleanup: { deleted: shortLinkDeleted },
     });
   } catch (err) {

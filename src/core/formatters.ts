@@ -2,6 +2,7 @@ import { ActivityStatus, Level, PlanCode, QuestionFormat } from "../lib/prisma";
 import {
   ACTIVITY_SUGGESTION_EMOJI,
   ANSWER_EMOJI,
+  AUDIO_QUESTION_FORMATS,
   DOMAINS,
   INTENSIVE_UNTIL_MIN,
   LEVEL_OPTIONS,
@@ -943,11 +944,11 @@ export function getFeedbackOpening(
 export function formatFeedback(
   feedbackResult: AnswerEvaluationResult,
   level?: Level,
+  options: { format?: QuestionFormat | null } = {},
 ): FormattedMessage {
   const {
     status: evalStatus,
     feedback_text: agentFeedback,
-    feedback_translation: agentFeedbackTranslation,
     right_answer: rightAnswer,
     user_unknown: userUnknown,
   } = feedbackResult;
@@ -955,6 +956,11 @@ export function formatFeedback(
   const feedback = sanitizeText(agentFeedback);
   const emoji = ANSWER_EMOJI[evalStatus];
   const opening = getFeedbackOpening(evalStatus, !!userUnknown, level);
+  const { format } = options;
+
+  if (format && AUDIO_QUESTION_FORMATS.includes(format)) {
+    return formatAudioFeedback(feedbackResult, format, [emoji, opening]);
+  }
 
   const normalizeRightAnswerAndFeedback = (s: string) =>
     s
@@ -977,6 +983,48 @@ export function formatFeedback(
     result.push(feedback.indexOf('"') === -1 ? `"${feedback}"` : feedback);
 
   return { text: result.join(" ") };
+}
+
+function stripWrappingQuotes(text: string): string {
+  return text
+    .trim()
+    .replace(/^["“]+|["”]+$/g, "")
+    .trim();
+}
+
+// Remove o que o usuario escreveu errado (~...~) e os marcadores restantes,
+// caso o modelo ainda marque a correcao.
+function cleanAudioFeedbackText(text: string): string {
+  const unmarked = sanitizeText(text)
+    .replace(/~[^~]*~/g, "")
+    .replace(/[*_~]/g, "")
+    .replace(/\s+([.,!?])/g, "$1")
+    .replace(/\s+/g, " ");
+  return stripWrappingQuotes(unmarked);
+}
+
+// Formatos de audio: abertura + resposta correta entre aspas + a outra lingua
+// em italico entre parenteses, montado aqui para nao depender da formatacao
+// do modelo. Na transcricao a resposta e a frase EN; na traducao, a traducao
+// PT. As duas saem limpas, sem marcacao de diff.
+function formatAudioFeedback(
+  feedbackResult: AnswerEvaluationResult,
+  format: QuestionFormat,
+  prefix: string[],
+): FormattedMessage {
+  const english = cleanAudioFeedbackText(feedbackResult.feedback_text);
+  const portuguese = cleanAudioFeedbackText(
+    feedbackResult.feedback_translation,
+  );
+  const [answer, other] =
+    format === QuestionFormat.audio_translation
+      ? [portuguese, english]
+      : [english, portuguese];
+
+  const parts = prefix.filter(Boolean);
+  if (answer) parts.push(`"${capitalizeFirst(answer)}"`);
+  if (other) parts.push(`(_${capitalizeFirst(other)}_)`);
+  return { text: parts.join(" ") };
 }
 
 export function formatFeedbackToSpeech(
@@ -1052,6 +1100,56 @@ function pickImageRecognitionPrompt(level: Level): string {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+const audioTranscriptionPtPrompts = [
+  "Escreva em inglês o que ouviu.",
+  "Digite em inglês exatamente o que ouviu.",
+  "Transcreva em inglês o que ouviu.",
+];
+
+const audioTranscriptionEnPrompts = [
+  "Type what you hear in English.",
+  "Type exactly what you hear, in English.",
+  "Write down in English what you hear.",
+];
+
+const audioTranslationPtPrompts = [
+  "Traduza para o português o que ouviu.",
+  "Escreva em português o que ouviu.",
+  "O que você ouviu? Responda em português.",
+];
+
+const audioTranslationEnPrompts = [
+  "Translate what you hear into Portuguese.",
+  "Write what you hear in Portuguese.",
+  "What did you hear? Answer in Portuguese.",
+];
+
+function pickAudioQuestionPrompt(format: QuestionFormat, level: Level): string {
+  const prompts =
+    format === QuestionFormat.audio_translation
+      ? { pt: audioTranslationPtPrompts, en: audioTranslationEnPrompts }
+      : { pt: audioTranscriptionPtPrompts, en: audioTranscriptionEnPrompts };
+  const pool = level === Level.basic ? prompts.pt : prompts.en;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// A frase do audio nunca entra no text: a mensagem leva so a instrucao.
+function formatAudioQuestion(
+  format: QuestionFormat,
+  audioMediaId: string | null | undefined,
+  level: Level,
+): FormattedMessage {
+  const prompt = pickAudioQuestionPrompt(format, level);
+  if (!audioMediaId) return { text: prompt };
+  return { text: prompt, audioMediaId };
+}
+
+export function formatAudioQuestionNeedsText(): FormattedMessage {
+  return {
+    text: "Nesta pergunta, a resposta precisa ser digitada. Ouça o áudio de novo e escreva o que entendeu.",
+  };
+}
+
 function buildOptionsInteractive(
   body: string,
   options: string[],
@@ -1087,9 +1185,21 @@ export function formatQuestion(
     questionOptions: string[];
     termHint?: string | null;
     questionImageMediaId?: string | null;
+    questionAudioMediaId?: string | null;
   },
   options: { level: Level },
 ): FormattedMessage {
+  if (
+    question.questionFormat &&
+    AUDIO_QUESTION_FORMATS.includes(question.questionFormat)
+  ) {
+    return formatAudioQuestion(
+      question.questionFormat,
+      question.questionAudioMediaId,
+      options.level,
+    );
+  }
+
   if (question.questionFormat === QuestionFormat.image_recognition) {
     return formatImageRecognitionQuestion(
       question.questionOptions,

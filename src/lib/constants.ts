@@ -1,4 +1,9 @@
-import type { ChannelType, Level, QuestionFormat } from "./prisma";
+import type {
+  ChannelType,
+  EvalTipClass,
+  Level,
+  QuestionFormat,
+} from "./prisma";
 
 export const EVAL_TIP_ALTERNATIVE_FORMATS: QuestionFormat[] = [
   "recall",
@@ -6,6 +11,43 @@ export const EVAL_TIP_ALTERNATIVE_FORMATS: QuestionFormat[] = [
   "gap_fill",
   "scenario",
 ];
+
+export const AUDIO_QUESTION_FORMATS: QuestionFormat[] = [
+  "audio_transcription",
+  "audio_translation",
+];
+
+const TEXT_EVAL_TIP_CLASSES: EvalTipClass[] = [
+  "calque",
+  "near_synonym",
+  "structure",
+  "collocation",
+  "literal_idiom",
+  "register",
+  "alternative",
+];
+
+// Classes de dica que cada formato pode enviar; o prompt de avaliacao nao
+// filtra por formato, o corte fica no codigo.
+export const EVAL_TIP_CLASSES_BY_FORMAT: Record<QuestionFormat, EvalTipClass[]> =
+  {
+    gap_fill: TEXT_EVAL_TIP_CLASSES,
+    recall: TEXT_EVAL_TIP_CLASSES,
+    recall_inverted: TEXT_EVAL_TIP_CLASSES,
+    scenario: TEXT_EVAL_TIP_CLASSES,
+    choice: TEXT_EVAL_TIP_CLASSES,
+    image_recognition: TEXT_EVAL_TIP_CLASSES,
+    open_text: TEXT_EVAL_TIP_CLASSES,
+    open_question: TEXT_EVAL_TIP_CLASSES,
+    audio_transcription: ["homophone", "connected_speech"],
+    audio_translation: [
+      "calque",
+      "near_synonym",
+      "literal_idiom",
+      "register",
+      "structure",
+    ],
+  };
 
 export const THEME_COLOR_LIGHT = "#ffffff";
 export const THEME_COLOR_DARK = "#0a0a0a";
@@ -23,6 +65,10 @@ export const DAILY_PRACTICE_LIMIT = 60;
 export const CADENCE_RESERVE = 24;
 export const INTENSIVE_LIMIT = 60 - 24; // 36
 export const TRIAL_DAYS = 7;
+// Limpeza de midia pausada por decisao estrategica: audio e imagem compoem
+// perguntas e sao reaproveitados na revisao. O processo segue no codigo
+// (audio-cleanup-cron.service.ts), so nao roda ate ser reativado aqui.
+export const MEDIA_CLEANUP_ENABLED = false;
 export const AUDIO_CLEANUP_TTL_DAYS = 30;
 export const IMAGE_CLEANUP_TTL_DAYS = 90;
 export const AUDIO_CLEANUP_BATCH_LIMIT = 50;
@@ -51,6 +97,7 @@ export const MEDIA_TYPE = {
 } as const;
 export const QUESTION_IMAGE_FOLDER = "question-image";
 export const QUESTION_IMAGE_EXTENSION = "jpg";
+export const QUESTION_AUDIO_FOLDER = "question-audio";
 export const FEEDBACK_AUDIO_FOLDER = "feedback-audio";
 export const ANSWER_AUDIO_FOLDER = "answer-audio";
 export const CHART_FOLDER = "chart";

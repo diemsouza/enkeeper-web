@@ -17,6 +17,7 @@ type NormalizedRow = {
   metadata: unknown;
   interactive: unknown;
   questionId: string | null;
+  intent: string | null;
 };
 
 export type FileLabels = {
@@ -117,6 +118,28 @@ function toMessage(
     };
   }
 
+  // Audio da pergunta: a instrucao vai em cima do player e nunca ha traducao
+  // (seria a resposta da pergunta).
+  if (
+    from === "bot" &&
+    row.mediaType === "audio" &&
+    row.mediaId &&
+    row.intent === "practice_question"
+  ) {
+    return {
+      id: row.id,
+      from,
+      time,
+      date,
+      type: "audio",
+      audioKind: "question",
+      audioUrl: buildMediaUrl(row.mediaId),
+      audioContentType: row.mediaContentType ?? undefined,
+      caption: row.content,
+      externalId: row.externalId ?? undefined,
+    };
+  }
+
   if (row.mediaType === "audio" && row.mediaId) {
     const translation = row.questionId
       ? feedbackTranslations[row.questionId]
@@ -165,6 +188,7 @@ export function mapActivityMessages(
         metadata: m.metadata,
         interactive: m.interactive,
         questionId: m.questionId,
+        intent: m.intent,
       },
       labels,
       feedbackTranslations,
@@ -191,6 +215,7 @@ export function mapBroadcastRecord(
       interactive: parseJsonMaybe(record.interactive),
       questionId:
         typeof record.question_id === "string" ? record.question_id : null,
+      intent: typeof record.intent === "string" ? record.intent : null,
     },
     labels,
     {},

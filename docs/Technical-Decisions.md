@@ -6,6 +6,46 @@ topo.
 
 ---
 
+## Formatos de escuta (`audio_transcription`, `audio_translation`)
+
+Data: 2026-10-09
+
+Contexto: a prática era toda de leitura e escrita. O formato novo toca uma frase em inglês com o termo e o usuário escreve o que ouviu (ver Product-Rules Seção 4). Molde de arquitetura: `image_recognition`. `audio_translation` (escrever em PT o sentido da frase) entrou numa segunda entrega, na mesma estrutura: valor próprio no enum, bloco de exemplos próprio e as mesmas peças de geração, apresentação e score.
+
+Decisões:
+
+- **Status decidido pelo LLM, com regra estrita no bloco de exemplos.** O pedido original previa o status em código (normalização, diff por palavra e tolerância a typo de distância 1 "sem virar outra palavra válida"). A tolerância exigia um dicionário de inglês que o projeto não tem. A decisão foi revisada: a transcrição segue o mesmo fluxo de avaliação dos demais formatos, sem normalização nem diff em código, e o LLM é sempre chamado. A regra fica em `prompts/examples/audio_transcription.md`: ignora caixa, pontuação, espaços, apóstrofo, contração e número por extenso contra dígito; qualquer palavra diferente, faltando ou sobrando é erro, inclusive typo e homófono; partial só com 1 erro em frase de 6+ palavras. O bloco tem exemplos de borda (typo, homófono, contração, pontuação, número, palavra faltando). `answer-evaluation.md` ganhou a regra geral "a regra de status do bloco prevalece".
+- **Feedback sem diff.** A primeira versão marcava a correção na frase (`~usuário~ *correto*`, pelo LLM). Foi removida: o feedback da transcrição é a frase limpa e fluida, no mesmo padrão da tradução. O bloco pede `feedback_text` sem marcação em qualquer status, e `cleanAudioFeedbackText` (`formatters.ts`) ainda descarta trecho `~...~` e marcadores caso o modelo marque mesmo assim.
+- **O diff não migrou para a dica.** A dica da transcrição continua restrita a `homophone` e `connected_speech` e explica um erro específico em frase curta, sem reproduzir a frase corrigida nem listar divergências (regra e exemplos no bloco). Erro de digitação é `spelling`, silenciado; sem classe aplicável, sem dica.
+- **Linha de feedback montada em código, igual nos dois formatos.** `formatFeedback` recebe o formato e, nos formatos de áudio, delega a `formatAudioFeedback`: abertura + resposta correta entre aspas + a outra língua em itálico entre parênteses, numa linha só. Transcrição: `"feedback_text" (_feedback_translation_)`; tradução: `"feedback_translation" (_feedback_text_)`. O código tira aspas que o modelo tenha posto e limpa marcação do lado em itálico, então a forma final não depende do modelo. Os blocos de exemplo fixam o conteúdo de `feedback_translation`: na transcrição, a tradução da frase limpa; na tradução, o primeiro item de `answerKeys`, idêntico. O `right_answer` não entra nessa linha.
+- **Frase em `Question.question` e `Media.mediaTranscription`.** A geração devolve `question: ""` e `questionAudioText` (espelho de `questionImageDescription`), então as checagens de vazamento do `validateGeneratedQuestion` passam sem exceção. O código grava a frase em `question` (a avaliação recebe instrução + "Frase do áudio") e força `answerKeys = [frase]`. `formatQuestion` nunca usa `question` nos formatos de áudio: o `text` é só a instrução.
+- **Tradução avaliada pelo sentido, referência exata vinda do código.** O bloco `prompts/examples/audio_translation.md` define a avaliação semântica (qualquer PT com o mesmo sentido; partial quando perde parte relevante). A geração devolve de 1 a 3 referências em PT em `answerKeys` (não forçadas em código, ao contrário da transcrição). O `feedback_text` é a frase em EN e o `feedback_translation` é o primeiro item de `answerKeys`, idêntico (regra do bloco), mostrado como resposta correta no feedback.
+- **Coluna já existente.** `Question.questionAudioMediaId` (FK `Media`, `onDelete: SetNull`) existia desde a tabela `medias`, sem escrita. Foi reaproveitada; a migration só adiciona valores de enum (`QuestionFormat.audio_transcription`, `EvalTipClass.homophone`, `EvalTipClass.connected_speech`).
+- **Ogg/Opus, mesma extensão global.** `storeQuestionAudio` (`question-audio-service.ts`, clone de `storeQuestionImage`) usa `generateSpeech` e grava em `question-audio/<mediaId>.ogg`. A extensão vem de `TTS_AUDIO_EXTENSION` (`tts.vendor.ts`, ao lado de `TTS_MIME_TYPE`), a mesma do feedback; não existe extensão por tipo de áudio.
+- **Áudio da pergunta fora do score e do eixo Escuta.** O `playedAt` é gravado para todo áudio, mas `markMessageAsPlayed` só chama `recordFeedbackAudioPlayed` com `intent === "practice_feedback"`, e `countActivityAudios` filtra o mesmo intent. A separação usa o `Message.intent` que já existia (`practice_question` × `practice_feedback`), sem coluna nova; como o feedback era o único produtor de áudio, os números das atividades antigas não mudam.
+- **"Ver tradução" travado explicitamente.** Na web, `map-messages` reconhece áudio de bot com `intent === "practice_question"` como `audioKind: "question"` e não anexa tradução nem `textFallback`; o `MessageBubble` ainda passa `translation={undefined}` ao player. Sem a trava, a tradução da avaliação (`feedbackTranslations[questionId]`) apareceria no player da pergunta depois da resposta.
+- **Fallback desliga as duas famílias de mídia.** Se imagem ou áudio falham, `buildQuestionData` re-sorteia com `canUseImage: false` e `canUseAudio: false`: no máximo uma tentativa de mídia por pergunta.
+- **Picker com família de áudio.** `AUDIO_QUESTION_FORMATS` (`constants.ts`) é a família; o picker a exclui inteira quando o último formato é de áudio (mesmo esquema do `CHOICE_FAMILY`) e quando o sorteio de `AUDIO_QUESTION_ROLLOUT_FRACTION` não permite. Fração separada da `AUDIO_ROLLOUT_FRACTION` do feedback.
+- **Dica filtrada por formato em código.** `EVAL_TIP_CLASSES_BY_FORMAT` (`constants.ts`) + `isEvalTipClassAllowed` (`core/eval-tip.ts`): a transcrição só envia `homophone` e `connected_speech`; a tradução só `calque`, `near_synonym`, `literal_idiom`, `register` e `structure` (collocation fora); os demais formatos não enviam as duas de escuta. `spelling`/`none` seguem silenciadas e a dica em acerto continua restrita a `EVAL_TIP_ALTERNATIVE_FORMATS`.
+- **Voz não avalia.** Nota de voz numa pergunta de áudio salva a mensagem, envia `formatAudioQuestionNeedsText` e retorna sem avaliar; a pergunta continua pendente. A web não envia voz hoje, mas a trava já existe.
+- **WhatsApp sem mudança.** O canal envia só o áudio quando há `audioMediaId` (a instrução se perde); aceitável porque o canal não entrega prática.
+
+---
+
+## Limpeza de mídia pausada
+
+Data: 2026-10-09
+
+Contexto: a limpeza diária (`/api/cron/audio-cleanup`) apagava áudio de pergunta 30 dias após a atividade ficar `archived`/`cancelled` e imagens 90 dias após a criação. Com o `image_recognition` e os formatos de escuta, a mídia passou a ser a própria pergunta, reaproveitada em revisão e reexibição; apagar o arquivo deixaria a pergunta sem conteúdo.
+
+Decisões:
+
+- **Nenhuma mídia é excluída por enquanto.** `MEDIA_CLEANUP_ENABLED = false` (`src/lib/constants.ts`); com a flag desligada, a rota não chama `processAudioCleanup` nem `processImageCleanup` e responde `"paused"` nos dois campos.
+- **O código continua.** `audio-cleanup-cron.service.ts` e as queries de elegibilidade ficam intactos. O cron segue agendado porque a mesma rota limpa os shortlinks expirados.
+- **Para reativar:** antes de virar a flag, excluir do critério a mídia referenciada por perguntas ainda elegíveis para revisão (`questionAudioMediaId`, `questionImageMediaId`), ou aceitar que a pergunta perca a mídia.
+
+---
+
 ## Áudio TTS em Ogg/Opus e player nativo
 
 Data: 2026-10-09 (substitui a decisão de MP3 de 2026-10-07)

@@ -86,6 +86,8 @@ enum QuestionFormat {
     open_text // gerado a partir de texto corrido
     open_question // pergunta direta com resposta objetiva
     image_recognition // imagem gerada ilustra o termo, escolhe a opção que a imagem representa
+    audio_transcription // ouve uma frase em inglês e escreve exatamente o que ouviu
+    audio_translation // ouve uma frase em inglês e escreve em português o que ela quer dizer
 }
 
 enum EvalTipClass {
@@ -96,6 +98,8 @@ enum EvalTipClass {
     literal_idiom
     register
     alternative
+    homophone
+    connected_speech
 }
 
 enum Level {

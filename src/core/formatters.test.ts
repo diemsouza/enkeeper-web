@@ -4,6 +4,7 @@ import {
   formatActivitySuggestion,
   formatCaptureStepOptionsText,
   formatDomainQuestion,
+  formatFeedback,
   formatFocusQuestion,
   formatLevelQuestion,
   formatNewActivityFlowCanceled,
@@ -184,6 +185,89 @@ describe("formatReviewUpToDate", () => {
   it("devolve o texto fixo de revisão em dia", () => {
     expect(formatReviewUpToDate().text).toBe(
       "✅ Revisão em dia. Continue praticando.",
+    );
+  });
+});
+
+describe("formatQuestion audio_transcription", () => {
+  const sentence = "I need a warm blanket tonight.";
+  const question = {
+    question: sentence,
+    questionFormat: QuestionFormat.audio_transcription,
+    questionOptions: [],
+    questionAudioMediaId: "media_1",
+  };
+
+  it("text leva só a instrução, nunca a frase do áudio", () => {
+    const message = formatQuestion(question, { level: Level.basic });
+    expect(message.text).not.toContain(sentence);
+    expect(message.text.length).toBeGreaterThan(0);
+    expect(message.audioMediaId).toBe("media_1");
+    expect(message.interactive).toBeUndefined();
+  });
+
+  it("instrução em inglês fora do básico", () => {
+    const message = formatQuestion(question, { level: Level.advanced });
+    expect(message.text).toMatch(/hear/);
+  });
+});
+
+describe("formatFeedback audio_transcription", () => {
+  it("frase EN limpa entre aspas e tradução em itálico entre parênteses", () => {
+    const message = formatFeedback(
+      {
+        status: "partial",
+        feedback_text: '"I get up ~erly~ *early* every day."',
+        feedback_translation: "Eu levanto cedo todo dia.",
+        right_answer: "I get up early every day.",
+        user_unknown: false,
+        eval_tip_class: "spelling",
+        eval_tip: null,
+      },
+      Level.basic,
+      { format: QuestionFormat.audio_transcription },
+    );
+    expect(message.text).toMatch(
+      / "I get up early every day\." \(_Eu levanto cedo todo dia\._\)$/,
+    );
+    expect(message.text).not.toContain("\n");
+  });
+});
+
+describe("audio_translation", () => {
+  const sentence = "I get up early every day.";
+
+  it("text leva só a instrução, nunca a frase do áudio", () => {
+    const message = formatQuestion(
+      {
+        question: sentence,
+        questionFormat: QuestionFormat.audio_translation,
+        questionOptions: [],
+        questionAudioMediaId: "media_2",
+      },
+      { level: Level.basic },
+    );
+    expect(message.text).not.toContain(sentence);
+    expect(message.text).toMatch(/português/);
+    expect(message.audioMediaId).toBe("media_2");
+  });
+
+  it("tradução PT entre aspas e frase EN em itálico entre parênteses", () => {
+    const message = formatFeedback(
+      {
+        status: "right",
+        feedback_text: sentence,
+        feedback_translation: "Eu levanto cedo todo dia.",
+        right_answer: "Eu levanto cedo todo dia.",
+        user_unknown: false,
+        eval_tip_class: "none",
+        eval_tip: null,
+      },
+      Level.basic,
+      { format: QuestionFormat.audio_translation },
+    );
+    expect(message.text).toMatch(
+      / "Eu levanto cedo todo dia\." \(_I get up early every day\._\)$/,
     );
   });
 });

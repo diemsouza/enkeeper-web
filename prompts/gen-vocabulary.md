@@ -32,7 +32,8 @@ Retorne APENAS UM JSON válido (objeto único). Sem markdown, sem cercas de cód
   "meaning": "",
   "warning": "",
   "imageable": null,
-  "questionImageDescription": null
+  "questionImageDescription": null,
+  "questionAudioText": null
 }
 
 Regras do JSON:
@@ -47,6 +48,7 @@ Regras do JSON:
 - warning: string curta em português descrevendo a inconsistência. Omita o campo quando não houver inconsistência.
 - imageable: só no formato image_recognition, true ou false conforme o critério do bloco de exemplos. Nos demais formatos, null.
 - questionImageDescription: só no formato image_recognition com imageable true, descrição da cena em inglês conforme o bloco de exemplos. Nos demais casos, null.
+- questionAudioText: só nos formatos de áudio (audio_transcription, audio_translation), a frase em inglês que será lida em voz alta, conforme o bloco de exemplos. Nos demais formatos, null.
 
 Formato desta pergunta: {format}
 Nível do inglês: {level}

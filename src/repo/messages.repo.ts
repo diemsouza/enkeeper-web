@@ -146,6 +146,7 @@ export async function countActivityAudios(
     activityId,
     role: "assistant" as MessageRole,
     mediaType: "audio",
+    intent: "practice_feedback",
   };
   const [sent, played] = await Promise.all([
     prisma.message.count({ where: base }),

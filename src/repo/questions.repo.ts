@@ -24,6 +24,7 @@ export type CreateQuestionData = {
   model?: string;
   questionImageMediaId?: string;
   questionImageDescription?: string;
+  questionAudioMediaId?: string;
 };
 
 export async function createQuestions(
@@ -47,6 +48,7 @@ export async function createQuestions(
       sourceContent: q.sourceContent,
       questionImageMediaId: q.questionImageMediaId,
       questionImageDescription: q.questionImageDescription,
+      questionAudioMediaId: q.questionAudioMediaId,
     })),
   });
 }

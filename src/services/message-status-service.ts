@@ -18,7 +18,14 @@ export async function markMessageAsPlayed(
     message.id,
     opts?.timestamp ?? new Date(),
   );
-  if (wasPlayed && message.questionId && message.mediaType === "audio") {
+  // So o audio de feedback conta para o bonus de pratica passiva; o audio da
+  // pergunta e o enunciado, ouvir faz parte de responder.
+  if (
+    wasPlayed &&
+    message.questionId &&
+    message.mediaType === "audio" &&
+    message.intent === "practice_feedback"
+  ) {
     await recordFeedbackAudioPlayed(message.questionId);
   }
 }

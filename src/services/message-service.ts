@@ -51,6 +51,7 @@ import {
   formatNoActiveActivity,
   formatNoPendingAction,
   formatFeedbackFailed,
+  formatAudioQuestionNeedsText,
   formatPracticeWaiting,
   formatDailyPracticeLimitReached,
   formatReviewUpToDate,
@@ -131,7 +132,10 @@ import { sendSupportEmail } from "../vendors/email.vendor";
 import { formatDateTime } from "../lib/datetime-utils";
 import { generateAnswerEvaluation } from "../vendors/llm.vendor";
 import { getFeedbackExamples } from "../core/format-loader";
-import { hasAlternativeKeyInTip } from "../core/eval-tip";
+import {
+  hasAlternativeKeyInTip,
+  isEvalTipClassAllowed,
+} from "../core/eval-tip";
 import { calcSm2 } from "../core/sm2";
 import {
   updateScoreMetadata,
@@ -164,6 +168,7 @@ import {
   DOMAINS,
   LEVEL_OPTIONS,
   EVAL_TIP_ALTERNATIVE_FORMATS,
+  AUDIO_QUESTION_FORMATS,
 } from "../lib/constants";
 import { sanitizeText } from "../lib/utils";
 import {
@@ -1530,6 +1535,35 @@ export async function handleIncomingMessage(
               activeActivity.id,
             );
             if (pendingQuestion) {
+              const isAudioQuestion =
+                !!pendingQuestion.questionFormat &&
+                AUDIO_QUESTION_FORMATS.includes(pendingQuestion.questionFormat);
+              // Nos formatos de audio a resposta e escrita: nota de voz nao avalia
+              // e a pergunta continua pendente.
+              if (isAudioQuestion && input.isVoiceNote) {
+                await saveUserMsg({
+                  userId: user.id,
+                  userChannelId: userChannel.id,
+                  content: text,
+                  intent: "free_text",
+                  input,
+                  today,
+                  activityId: activeActivity.id,
+                });
+                await sendAndSaveMessage({
+                  channel,
+                  to: userChannel.channelUserId,
+                  userId: user.id,
+                  userChannelId: userChannel.id,
+                  activityId: activeActivity.id,
+                  message: formatAudioQuestionNeedsText(),
+                  intent: "audio_answer_needs_text",
+                  questionId: pendingQuestion.id,
+                  today,
+                });
+                return;
+              }
+
               const questionFormats = [
                 pendingQuestion.questionFormat,
               ] as QuestionFormat[];
@@ -1553,7 +1587,9 @@ export async function handleIncomingMessage(
                     formattedQuestion.text,
                     pendingQuestion.questionOptions,
                   )
-                : formattedQuestion.text;
+                : isAudioQuestion
+                  ? `${formattedQuestion.text}\nFrase do áudio: ${pendingQuestion.question}`
+                  : formattedQuestion.text;
 
               await channel.notifyTyping(user.id, {
                 replyToMessageId: messageId,
@@ -1573,11 +1609,15 @@ export async function handleIncomingMessage(
               });
               const evalStatus = evaluation?.status ?? "wrong";
               const feedback = evaluation
-                ? formatFeedback(evaluation, activeActivity.userLevel)
+                ? formatFeedback(evaluation, activeActivity.userLevel, {
+                    format: pendingQuestion.questionFormat,
+                  })
                 : formatFeedbackFailed();
-              const feedbackAudioMediaId = evaluation
-                ? await resolveFeedbackAudioMediaId(evaluation, pendingQuestion)
-                : null;
+              // Formatos de audio nao geram audio de feedback: seria a mesma frase.
+              const feedbackAudioMediaId =
+                evaluation && !isAudioQuestion
+                  ? await resolveFeedbackAudioMediaId(evaluation, pendingQuestion)
+                  : null;
               const feedbackSpeechText = evaluation
                 ? formatFeedbackToSpeech(evaluation)
                 : null;
@@ -1595,6 +1635,10 @@ export async function handleIncomingMessage(
               const silent =
                 evaluation?.eval_tip_class === "none" ||
                 evaluation?.eval_tip_class === "spelling" ||
+                !isEvalTipClassAllowed(
+                  pendingQuestion.questionFormat,
+                  evaluation?.eval_tip_class,
+                ) ||
                 (evalStatus === "right" && !canTipOnRight);
               const evalTip =
                 !evaluation?.user_unknown && !silent
@@ -2212,6 +2256,7 @@ async function sendIntensiveQuestion(
     questionOptions: string[];
     termHint?: string | null;
     questionImageMediaId?: string | null;
+    questionAudioMediaId?: string | null;
   },
   activity: Activity,
   userId: string,

@@ -11,19 +11,26 @@ function pickMany(
   lastFormat: QuestionFormat,
   canUseImage: boolean,
   formatCounts: FormatCounts = {},
+  canUseAudio = false,
 ): Set<QuestionFormat> {
   const picked = new Set<QuestionFormat>();
   for (let i = 0; i < RUNS; i++) {
-    picked.add(pickNextFormat(lastFormat, { canUseImage, formatCounts }));
+    picked.add(
+      pickNextFormat(lastFormat, { canUseImage, canUseAudio, formatCounts }),
+    );
   }
   return picked;
 }
 
 describe("pickNextFormat", () => {
   it("primeira pergunta é sempre gap_fill", () => {
-    expect(pickNextFormat(null, { canUseImage: true, formatCounts: {} })).toBe(
-      QuestionFormat.gap_fill,
-    );
+    expect(
+      pickNextFormat(null, {
+        canUseImage: true,
+        canUseAudio: true,
+        formatCounts: {},
+      }),
+    ).toBe(QuestionFormat.gap_fill);
   });
 
   it("nunca sorteia choice depois de image_recognition", () => {
@@ -94,5 +101,38 @@ describe("pickNextFormat", () => {
       choice: 3,
     });
     expect(picked).toEqual(new Set([QuestionFormat.scenario]));
+  });
+
+  it("nunca sorteia dois formatos de áudio em sequência", () => {
+    for (const last of [
+      QuestionFormat.audio_transcription,
+      QuestionFormat.audio_translation,
+    ]) {
+      const picked = pickMany(last, true, {}, true);
+      expect(picked.has(QuestionFormat.audio_transcription)).toBe(false);
+      expect(picked.has(QuestionFormat.audio_translation)).toBe(false);
+      expect(picked.has(QuestionFormat.choice)).toBe(true);
+    }
+  });
+
+  it("sem rollout de áudio, nunca sorteia formato de áudio", () => {
+    const picked = pickMany(QuestionFormat.gap_fill, true, {}, false);
+    expect(picked.has(QuestionFormat.audio_transcription)).toBe(false);
+    expect(picked.has(QuestionFormat.audio_translation)).toBe(false);
+  });
+
+  it("com rollout de áudio, formatos de áudio atrasados têm prioridade", () => {
+    const picked = pickMany(
+      QuestionFormat.recall,
+      false,
+      { gap_fill: 2, recall: 2, recall_inverted: 2, scenario: 2, choice: 2 },
+      true,
+    );
+    expect(picked).toEqual(
+      new Set([
+        QuestionFormat.audio_transcription,
+        QuestionFormat.audio_translation,
+      ]),
+    );
   });
 });

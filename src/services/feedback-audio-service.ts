@@ -2,7 +2,7 @@ import { parseBuffer } from "music-metadata";
 import { ulid } from "ulid";
 import { Question } from "../lib/prisma";
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
-import { generateSpeech } from "../vendors/tts.vendor";
+import { generateSpeech, TTS_AUDIO_EXTENSION } from "../vendors/tts.vendor";
 import { uploadFile } from "../vendors/storage.vendor";
 import { updateQuestion } from "../repo/questions.repo";
 import { createMedia, getMediaById } from "../repo/media.repo";
@@ -18,7 +18,7 @@ const AUDIO_ROLLOUT_FRACTION = parseFloat(
   process.env.AUDIO_ROLLOUT_FRACTION ?? "0",
 );
 
-async function readAudioDuration(
+export async function readAudioDuration(
   audio: Buffer,
   mimeType: string,
 ): Promise<number | null> {
@@ -67,7 +67,11 @@ export async function resolveFeedbackAudioMediaId(
     }
 
     const mediaId = ulid();
-    const filePath = buildMediaPath(FEEDBACK_AUDIO_FOLDER, mediaId, "ogg");
+    const filePath = buildMediaPath(
+      FEEDBACK_AUDIO_FOLDER,
+      mediaId,
+      TTS_AUDIO_EXTENSION,
+    );
     await uploadFile({
       filePath,
       file: new Blob([new Uint8Array(speech.audio)], { type: speech.mimeType }),
