@@ -1,3 +1,4 @@
+import { MEDIA_INLINE_PARAM } from "@/src/lib/constants";
 import type { MessageWithMedia } from "@/src/repo/messages.repo";
 import type { FormattedMessage } from "@/src/types/out-message";
 import type { Message } from "./types";
@@ -38,8 +39,12 @@ function parsePgTimestamp(value: string): Date {
   return new Date(hasTimezone ? value : `${value}Z`);
 }
 
-export function buildMediaUrl(mediaId: string): string {
-  return `/api/app/media/${mediaId}`;
+export function buildMediaUrl(
+  mediaId: string,
+  options: { inline?: boolean } = {},
+): string {
+  const query = options.inline ? `?${MEDIA_INLINE_PARAM}=1` : "";
+  return `/api/app/media/${mediaId}${query}`;
 }
 
 function mediaTypeLabel(mediaType: string, labels: FileLabels): string {

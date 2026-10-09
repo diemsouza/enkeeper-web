@@ -60,10 +60,10 @@ export async function getMediaById(id: string): Promise<Media | null> {
 export async function findUserMediaById(
   id: string,
   userId: string,
-): Promise<Pick<Media, "mediaPath"> | null> {
+): Promise<Pick<Media, "mediaPath" | "contentType"> | null> {
   return prisma.media.findFirst({
     where: { id, userId, deletedAt: null },
-    select: { mediaPath: true },
+    select: { mediaPath: true, contentType: true },
   });
 }
 

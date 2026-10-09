@@ -409,3 +409,11 @@ Decisões:
 - **Gate no código, não no prompt:** o prompt de avaliação não sabe o formato. Em `message-service.ts`, o `silent` agora também bloqueia quando `evalStatus === "right"` e não vale `alternative` + formato em `EVAL_TIP_ALTERNATIVE_FORMATS` (`src/lib/constants.ts`: recall, recall_inverted, gap_fill, scenario) + `answerKeys.length > 1`.
 - **Descarte total:** quando silenciada, a dica some inteira (`evalTip` e `evalTipClass` nulos). Antes, com classe `none`/`spelling` só a classe era anulada e o texto ainda seguia.
 - **Sem efeito colateral:** status, nota e SM-2 não leem a dica. Envio e ordem (feedback, áudio, dica) inalterados.
+
+## Exportar bolha do chat como PNG
+
+- **Gatilho:** duplo clique ou botão de exportar na bolha (`message-bubble.tsx`), que chama `exportBubbleAsPng` (`src/lib/export-bubble.ts`), baseado em `html-to-image`.
+- **Clone off-screen:** a bolha viva nunca é alterada. O export clona o nó, posiciona fora da tela (`position: fixed; left: -10000px`, sem `visibility: hidden`, que a lib copiaria e deixaria a imagem invisível) e renderiza o clone.
+- **Imagem via `?inline=1`:** `/api/app/media/<id>` responde 302 para uma signed URL do Supabase (cross-origin), e o fetch interno do `html-to-image` falha em silêncio. No clone, o `src` das imagens ganha `MEDIA_INLINE_PARAM` (`buildMediaUrl(id, { inline: true })`) e a rota devolve os bytes via `downloadFile`, na mesma origem. Sem o parâmetro o comportamento é o redirect.
+- **Fonte:** o Figtree (`next/font`) tem nome e URL hasheados; o embed automático falha. `getFontEmbedCSS(clone)` é passado como `fontEmbedCSS`.
+- **Renderização dupla:** quando há `img`, o `toPng` roda uma vez de aquecimento (descartada). Na primeira renderização o data URL da imagem ainda não foi decodificado dentro do SVG e sai em branco.
