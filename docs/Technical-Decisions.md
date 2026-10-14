@@ -83,7 +83,7 @@ Decisões:
   (`daily-reminder-cron.service.ts`, mesmo slot de 30 min no `timezone` +
   `dailyReminderTime` do usuário) calcula `daysSince(lastInteractionAt ??
   createdAt)` da Activity ativa e decide em `pickEngagementReminder`
-  (`src/core/engagement-reminder.ts`): 0 a 6 dias, `daily_reminder_revision` ou
+  (`src/core/engagement-reminder.ts`): 0 a 6 dias, `daily_reminder_revision_v2` ou
   `daily_reminder_v2` conforme `countSm2EligibleQuestionsByUser`, só com
   `dailyReminderEnabled`; 7 e 14 `nudge_days` (param = dias), ignorando o toggle;
   resto nada. Por isso o filtro `daily_reminder_enabled = true` saiu do SQL de
@@ -459,3 +459,30 @@ Decisões:
 - **Imagem via `?inline=1`:** `/api/app/media/<id>` responde 302 para uma signed URL do Supabase (cross-origin), e o fetch interno do `html-to-image` falha em silêncio. No clone, o `src` das imagens ganha `MEDIA_INLINE_PARAM` (`buildMediaUrl(id, { inline: true })`) e a rota devolve os bytes via `downloadFile`, na mesma origem. Sem o parâmetro o comportamento é o redirect.
 - **Fonte:** o Figtree (`next/font`) tem nome e URL hasheados; o embed automático falha. `getFontEmbedCSS(clone)` é passado como `fontEmbedCSS`.
 - **Renderização dupla:** quando há `img`, o `toPng` roda uma vez de aquecimento (descartada). Na primeira renderização o data URL da imagem ainda não foi decodificado dentro do SVG e sai em branco.
+
+## Assinatura recorrente (`subscriptions`)
+
+- **Acesso × pagamento:** `User` é o dono do acesso (`planCode`, `planStatus`, `planExpiresAt`) e a única fonte lida por `canPractice`. A tabela `subscriptions` (model `Subscription`, 1:N com `User`) é dona do pagamento e nunca é consultada para liberar ou bloquear. Cortesia e acesso manual são gravados direto no `User`.
+- **Uma linha por assinatura:** cancelar e assinar de novo gera outra assinatura na Stripe, logo outra linha. A assinatura atual é a mais recente (`findLatestSubscriptionByUser`, índice `[userId, createdAt]`). Período pago por fora vira linha cadastrada manualmente, sem `paymentSubscriptionId`.
+- **Colunas sem fornecedor:**
+  - `paymentProvider` e `paymentMethod` são texto livre, não enum. O provider é `stripe` ou qualquer valor para pagamento recebido por fora. O método é `card_credit` ou `card_debit` (a partir de `card.funding`), ou o `type` do método; por fora, `pix`, por exemplo.
+  - `amount` é inteiro em centavos e `currency` é texto, com padrão `BRL`. O valor é gravado no checkout (`amount_total`) e atualizado no `invoice.paid` com `amount_paid`.
+- **Webhook:**
+  - O tratamento fica em `src/services/stripe-webhook-service.ts`; a route só despacha.
+  - `checkout.session.completed` e `invoice.paid` fazem upsert por `paymentSubscriptionId`, a partir de `stripe.subscriptions.retrieve` com `default_payment_method`, porque a ordem de chegada dos dois não é garantida.
+  - O `userId` vem de `subscription.metadata.userId`, gravado via `subscription_data.metadata` no checkout. `currentPeriodEnd` sai de `items.data[0].current_period_end` (campo de item na API atual).
+  - `invoice.payment_failed` só atualiza o `status` da linha.
+  - `customer.subscription.updated` grava `status` e `cancelAtPeriodEnd` (coluna booleana, padrão `false`). A marcação é `cancel_at_period_end || cancel_at !== null` (`isCancelScheduled`), porque versões novas do Portal podem programar o fim por `cancel_at`. Reativar pelo Portal desfaz a marcação no mesmo evento. Não toca no `User`. O evento entra no `stripe listen --events` do README.
+- **Idempotência por valor:** `invoice.paid` só atualiza o `User` quando o `planExpiresAt` muda ou o plano não está Pro ativo. Reenvio do mesmo evento encontra o valor já gravado e não faz nada, sem tabela de eventos.
+- **Mensagem só na primeira cobrança:** `formatSubscriptionConfirmed` sai só com `invoice.billing_reason === "subscription_create"`. `subscription_cycle` (renovação) e `subscription_update` (troca de plano pelo portal) atualizam o acesso sem mensagem.
+- **Cancelamento:** `customer.subscription.deleted` grava `canceledAt` e `status`.
+  - Fim de período (programado pelo Portal): não toca no `User`; o acesso segue até o `planExpiresAt` já pago.
+  - Imediato (forçado pelo painel): detectado por `ended_at < items.data[0].current_period_end` (`isEndedBeforePeriodEnd`). `resolveAccessAfterEarlyCancel(createdAt, endedAt, now)` (`src/core/subscription.ts`): ainda no trial (`now < createdAt + TRIAL_DAYS`), `planExpiresAt = createdAt + TRIAL_DAYS`; trial encerrado, `planExpiresAt = ended_at` e o acesso expira na hora. A regra é aplicada sempre, sem comparar com o `planExpiresAt` anterior. `planCode` e `planStatus` não mudam: quem cancela no trial continua `pro` até a data.
+- **Página de planos como entrada única:** o item "Assinatura" do menu aparece para todo usuário logado e sempre leva a `/app/plans`, nunca ao Portal direto. Os estados da página saem de `resolveOpenSubscriptionInterval` (Stripe aberta: "Plano atual" + Portal; com `cancelAtPeriodEnd`, a linha de renovação vira "Assinatura cancelada. Acesso até {data}", data por `formatRelativeDay`, "hoje"/"amanhã"/dd/mm/aaaa no fuso do usuário) e de `planCode === "pro" && canPractice` com assinatura mais recente que não é Stripe, ou nenhuma (aviso de acesso ativo até a data, com renovação pelo suporte). Exigir provedor não Stripe evita mostrar o aviso a quem cancelou o cartão durante o trial e ficou `pro` até o fim do teste. O Portal é gerado no clique por `GET /api/app/billing/portal`, porque a sessão expira rápido.
+- **Trava contra duplicidade:** `getOrCreateCheckoutUrl` checa `hasOpenStripeSubscription` antes de tudo e, com assinatura Stripe aberta, devolve a URL do Portal em vez de criar sessão. Sem assinatura aberta, reaproveita o customer da assinatura Stripe mais recente. `User.checkoutData` guarda `interval` junto da URL, e o cache só vale para o mesmo plano.
+- **Link do bloqueio:** `resolveBlockedPaymentLink` aponta para o Portal com assinatura Stripe aberta e para `/app/plans` nos demais casos. O texto do bloqueio depende de `planCode` (`formatPlanExpired`).
+- **Mesma aba e retorno por ambiente:**
+  - Botão de link no chat cujo origin é o `NEXT_PUBLIC_APP_URL` (`isAppUrl`, `src/lib/utils.ts`) navega na própria aba e sem ícone externo; os demais abrem em nova aba. Comparar com a env, e não com `window.location`, mantém o render igual no servidor e no cliente.
+  - `success_url` (`/app?payment=success`, `PAYMENT_SUCCESS_PARAM`, que mostra um toast e limpa o parâmetro), `cancel_url` (`/app/plans`) e `return_url` do Portal (`/app/plans`) são montados a partir de `NEXT_PUBLIC_APP_URL`, então cada ambiente volta para o próprio domínio.
+  - `/payment` segue no ar para links de checkout antigos ainda em cache.
+- **Env:** `STRIPE_PRICE_MONTHLY` e `STRIPE_PRICE_YEARLY` (Prices recorrentes) substituem `STRIPE_PRICE_ID`, que era o Price avulso e não é reaproveitado.

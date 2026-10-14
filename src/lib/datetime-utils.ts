@@ -93,3 +93,23 @@ export function shouldShowDateSeparator(
   if (!previousIso) return !isToday(current);
   return !isSameDay(current, new Date(previousIso));
 }
+
+export function formatDateInTimeZone(date: Date, timeZone: string): string {
+  return date.toLocaleDateString("pt-BR", { timeZone });
+}
+
+function toDayKey(date: Date, timeZone: string): string {
+  return date.toLocaleDateString("en-CA", { timeZone });
+}
+
+export function formatRelativeDay(
+  date: Date,
+  now: Date,
+  timeZone: string,
+): string {
+  const dayKey = toDayKey(date, timeZone);
+  if (dayKey === toDayKey(now, timeZone)) return "hoje";
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  if (dayKey === toDayKey(tomorrow, timeZone)) return "amanhã";
+  return formatDateInTimeZone(date, timeZone);
+}

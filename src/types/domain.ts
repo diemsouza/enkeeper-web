@@ -1,4 +1,4 @@
-import { DomainId } from "../lib/constants";
+import { DomainId, SubscriptionInterval } from "../lib/constants";
 
 export type PlanCode = "trial" | "pro";
 export type ChannelType = "whatsapp" | "web";
@@ -53,7 +53,11 @@ export type UserIntentMetadata = {
   intent_data: NewActivityIntentData;
 };
 
-export type CheckoutData = { url: string; expiresAt: string };
+export type CheckoutData = {
+  url: string;
+  expiresAt: string;
+  interval: SubscriptionInterval;
+};
 
 export type UserSignedLinkMetadata = {
   signedLinkToken: string;

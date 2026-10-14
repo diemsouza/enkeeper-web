@@ -95,7 +95,7 @@ import {
   processFocusResponse,
 } from "./new-activity-flow-service";
 import { findOrCreateUserByChannel } from "./user-service";
-import { getOrCreateCheckoutUrl } from "./stripe-checkout-service";
+import { resolveBlockedPaymentLink } from "./stripe-checkout-service";
 import {
   createDoc,
   findDocById,
@@ -471,8 +471,8 @@ export async function handleIncomingMessage(
         input,
         today,
       });
-      const checkoutUrl = await getOrCreateCheckoutUrl(user.id);
-      const expiredReply = formatPlanExpired(user.planCode, checkoutUrl);
+      const paymentUrl = await resolveBlockedPaymentLink(user.id);
+      const expiredReply = formatPlanExpired(user.planCode, paymentUrl);
       await sendAndSaveMessage({
         channel,
         to: userChannel.channelUserId,

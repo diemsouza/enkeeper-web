@@ -76,10 +76,35 @@ model User {
     notifications Notification[]
     questions     Question[]
     medias        Media[]
+    subscriptions Subscription[]
 
     @@index([pendingIntent, pendingIntentAt])
     @@index([dailyReminderEnabled, dailyReminderTime])
     @@map("users")
+}
+
+// pagamento; o acesso continua no User (planCode, planStatus, planExpiresAt)
+model Subscription {
+    id                    String    @id @default(ulid()) @map("id")
+    userId                String    @map("user_id")
+    paymentProvider       String    @map("payment_provider") // stripe ou origem do pagamento recebido por fora
+    paymentMethod         String?   @map("payment_method") // ex: card_credit, card_debit, pix
+    paymentCustomerId     String?   @map("payment_customer_id")
+    paymentSubscriptionId String?   @unique @map("payment_subscription_id")
+    interval              String    @map("interval") // monthly | yearly
+    amount                Int       @map("amount") // centavos
+    currency              String    @default("BRL") @map("currency")
+    status                String    @map("status")
+    currentPeriodEnd      DateTime? @map("current_period_end")
+    cancelAtPeriodEnd     Boolean   @default(false) @map("cancel_at_period_end")
+    canceledAt            DateTime? @map("canceled_at")
+    createdAt             DateTime  @default(now()) @map("created_at")
+    updatedAt             DateTime  @updatedAt @map("updated_at")
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId, createdAt])
+    @@map("subscriptions")
 }
 
 model DailyUsage {

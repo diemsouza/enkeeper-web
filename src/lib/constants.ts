@@ -65,6 +65,19 @@ export const DAILY_PRACTICE_LIMIT = 60;
 export const CADENCE_RESERVE = 24;
 export const INTENSIVE_LIMIT = 60 - 24; // 36
 export const TRIAL_DAYS = 7;
+export const PAYMENT_PROVIDER = {
+  STRIPE: "stripe",
+} as const;
+export const SUBSCRIPTION_INTERVAL = {
+  MONTHLY: "monthly",
+  YEARLY: "yearly",
+} as const;
+export type SubscriptionInterval =
+  (typeof SUBSCRIPTION_INTERVAL)[keyof typeof SUBSCRIPTION_INTERVAL];
+export const SUBSCRIPTION_STATUS_CANCELED = "canceled";
+export const PLANS_PATH = "/app/plans";
+export const BILLING_PORTAL_PATH = "/api/app/billing/portal";
+export const PAYMENT_SUCCESS_PARAM = "payment";
 // Limpeza de midia pausada por decisao estrategica: audio e imagem compoem
 // perguntas e sao reaproveitados na revisao. O processo segue no codigo
 // (audio-cleanup-cron.service.ts), so nao roda ate ser reativado aqui.

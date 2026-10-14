@@ -17,6 +17,7 @@ export type {
   OtpCode,
   Notification,
   ShortLink,
+  Subscription,
 } from "../../prisma/generated/client";
 
 export {

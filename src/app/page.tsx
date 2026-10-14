@@ -32,13 +32,24 @@ export default async function Home() {
             description:
               "Pratique inglês com IA, todo dia, no seu ritmo, sobre o que você quiser.",
             url: "https://fluizer.com",
-            offers: {
-              "@type": "Offer",
-              price: "21.90",
-              priceCurrency: "BRL",
-              availability: "https://schema.org/InStock",
-              category: "Subscription",
-            },
+            offers: [
+              {
+                "@type": "Offer",
+                name: "Anual",
+                price: "262.80",
+                priceCurrency: "BRL",
+                availability: "https://schema.org/InStock",
+                category: "Subscription",
+              },
+              {
+                "@type": "Offer",
+                name: "Mensal",
+                price: "29.90",
+                priceCurrency: "BRL",
+                availability: "https://schema.org/InStock",
+                category: "Subscription",
+              },
+            ],
           }),
         }}
       />

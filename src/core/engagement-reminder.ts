@@ -1,10 +1,10 @@
 export type EngagementReminder =
-  | "daily_reminder_revision"
+  | "daily_reminder_revision_v2"
   | "daily_reminder_v2"
   | "nudge_days";
 
 export const ENGAGEMENT_REMINDERS: EngagementReminder[] = [
-  "daily_reminder_revision",
+  "daily_reminder_revision_v2",
   "daily_reminder_v2",
   "nudge_days",
 ];
@@ -31,5 +31,5 @@ export function pickEngagementReminder(params: {
   const { daysInactive, isReminderEnabled, eligibleCount } = params;
   if (NUDGE_DAYS.includes(daysInactive)) return "nudge_days";
   if (!isReminderEnabled || !isDailyReminderWindow(daysInactive)) return null;
-  return eligibleCount > 0 ? "daily_reminder_revision" : "daily_reminder_v2";
+  return eligibleCount > 0 ? "daily_reminder_revision_v2" : "daily_reminder_v2";
 }

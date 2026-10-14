@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import { cn } from "@/src/lib/utils";
+import { cn, isAppUrl } from "@/src/lib/utils";
 import type { FormattedMessage } from "@/src/types/out-message";
 import type { FormattedMessageButton } from "./types";
 
@@ -26,15 +26,16 @@ export function InteractiveButtonList({
           i > 0 && "border-t border-black/10 dark:border-white/10",
         );
         if (button.type === "link" && button.url) {
+          const isInternal = isAppUrl(button.url);
           return (
             <a
               key={button.id}
               href={button.url}
-              target="_blank"
-              rel="noopener noreferrer"
+              target={isInternal ? undefined : "_blank"}
+              rel={isInternal ? undefined : "noopener noreferrer"}
               className={rowClassName}
             >
-              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+              {!isInternal && <ExternalLink className="w-3.5 h-3.5 shrink-0" />}
               {button.label}
             </a>
           );

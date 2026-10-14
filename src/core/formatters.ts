@@ -7,8 +7,11 @@ import {
   INTENSIVE_UNTIL_MIN,
   LEVEL_OPTIONS,
   MAX_DOC_ITEMS_PER_DOC,
+  SUBSCRIPTION_INTERVAL,
+  SubscriptionInterval,
   TRIAL_DAYS,
 } from "../lib/constants";
+import { formatDateInTimeZone } from "../lib/datetime-utils";
 import {
   capitalizeFirst,
   formatScore,
@@ -58,26 +61,30 @@ export function formatNoActivity(): FormattedMessage {
 
 export function formatPlanExpired(
   planCode: PlanCode,
-  checkoutUrl: string,
+  paymentUrl: string,
 ): FormattedMessage {
   const title =
     planCode === "trial"
       ? "⏳ *Seu período de teste encerrou.*"
       : "🔒 *Seu acesso encerrou.*";
 
-  const text = `Continue praticando por mais 30 dias por R$21,90. Acesse o link abaixo para pagar ou use ${formatCommand("support")} para qualquer dúvida ou dificuldade.`;
-  const body = `Continue praticando por mais 30 dias por R$21,90. Use ${formatCommand("support")} para qualquer dúvida ou dificuldade.`;
+  const lead =
+    planCode === "trial"
+      ? "Escolha um plano para continuar praticando."
+      : "Atualize seu pagamento ou escolha um plano para continuar praticando.";
+  const text = `${lead} Acesse o link abaixo ou use ${formatCommand("support")} para qualquer dúvida ou dificuldade.`;
+  const body = `${lead} Use ${formatCommand("support")} para qualquer dúvida ou dificuldade.`;
 
   return {
-    text: [title, "", text, "", checkoutUrl].join("\n"),
+    text: [title, "", text, "", paymentUrl].join("\n"),
     interactive: {
       body: [title, "", body].join("\n"),
       buttons: [
         {
           id: "checkout",
-          label: "Pagar agora",
+          label: "Continuar",
           type: "link",
-          url: checkoutUrl,
+          url: paymentUrl,
         },
       ],
     },
@@ -91,14 +98,23 @@ export function formatWhatsAppRedirect(link: string): FormattedMessage {
   return { text: [text, "", link].join("\n") };
 }
 
-export function formatPaymentConfirmed(): FormattedMessage {
+const SUBSCRIPTION_INTERVAL_LABEL: Record<SubscriptionInterval, string> = {
+  [SUBSCRIPTION_INTERVAL.MONTHLY]: "mensal",
+  [SUBSCRIPTION_INTERVAL.YEARLY]: "anual",
+};
+
+export function formatSubscriptionConfirmed(
+  interval: SubscriptionInterval,
+  renewsAt: Date,
+  timezone: string,
+): FormattedMessage {
   return {
     text: [
-      "✅ *Pagamento confirmado.*",
+      "✅ *Assinatura confirmada.*",
       "",
-      "Seu acesso está liberado pelos próximos 30 dias.",
+      `Seu plano ${SUBSCRIPTION_INTERVAL_LABEL[interval]} está ativo e renova automaticamente em ${formatDateInTimeZone(renewsAt, timezone)}.`,
       "",
-      `Sempre que precisar, use ${formatCommand("help")} para listar os comandos disponíveis e ${formatCommand("support")} para fala com a gente.`,
+      `Sempre que precisar, use ${formatCommand("help")} para listar os comandos disponíveis e ${formatCommand("support")} para falar com a gente.`,
       "",
       "Boa prática.",
     ].join("\n"),
@@ -788,7 +804,7 @@ const ENGAGEMENT_REMINDER_TEXT: Record<
   EngagementReminder,
   (params: EngagementReminderParams) => string
 > = {
-  daily_reminder_revision: ({ eligibleCount }) =>
+  daily_reminder_revision_v2: ({ eligibleCount }) =>
     `Lembrete: você tem perguntas para revisar.\n\nPendentes: ${eligibleCount}\n\nToque abaixo para acessar sua prática.`,
   daily_reminder_v2: () =>
     "Lembrete: sua atividade de prática em inglês está disponível.\n\nToque abaixo para acessar.",
@@ -800,7 +816,7 @@ const ENGAGEMENT_REMINDER_PARAMS: Record<
   EngagementReminder,
   (params: EngagementReminderParams) => string[]
 > = {
-  daily_reminder_revision: ({ eligibleCount }) => [String(eligibleCount)],
+  daily_reminder_revision_v2: ({ eligibleCount }) => [String(eligibleCount)],
   daily_reminder_v2: () => [],
   nudge_days: ({ daysInactive }) => [String(daysInactive)],
 };

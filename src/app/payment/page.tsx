@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/src/components/ui/button";
+import { PLANS_PATH } from "@/src/lib/constants";
 
 export const metadata: Metadata = {
   title: "Fluizer | Pagamento",
@@ -22,17 +23,19 @@ export default async function PaymentPage({
   }
 
   const t = await getTranslations("payment");
-  const { title, message, cta } =
+  const { title, message, cta, href } =
     status === "success"
       ? {
           title: t("success.title"),
           message: t("success.message"),
           cta: t("success.cta"),
+          href: "/app",
         }
       : {
           title: t("canceled.title"),
           message: t("canceled.message"),
           cta: t("canceled.cta"),
+          href: PLANS_PATH,
         };
 
   return (
@@ -46,7 +49,7 @@ export default async function PaymentPage({
         <h1 className="text-2xl font-bold tracking-tight mb-2">{title}</h1>
         <p className="text-[15px] text-muted-foreground mb-8">{message}</p>
         <Button asChild>
-          <Link href="/app">{cta}</Link>
+          <Link href={href}>{cta}</Link>
         </Button>
       </div>
     </div>

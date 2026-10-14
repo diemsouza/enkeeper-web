@@ -130,6 +130,14 @@ export function safeParseOrigin(input?: string | null): string {
   }
 }
 
+export function isAppUrl(url: string): boolean {
+  const urlOrigin = safeParseOrigin(url);
+  return (
+    urlOrigin !== "" &&
+    urlOrigin === safeParseOrigin(process.env.NEXT_PUBLIC_APP_URL)
+  );
+}
+
 export function isAllowedDomain(
   originUrl: string,
   allowedDomains: string[],

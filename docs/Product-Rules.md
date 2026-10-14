@@ -501,19 +501,52 @@ Dois planos: Trial e Pro. Sem tier gratuito permanente.
 | Trial padrão | 7 dias | Produto completo |
 | Trial por campanha sazonal | 30 dias | Produto completo |
 | Cortesia permanente | Sem expiração | Produto completo |
-| Pro | 30 dias renovável | Produto completo |
+| Pro Mensal | 1 mês, renova automaticamente | Produto completo |
+| Pro Anual | 1 ano, renova automaticamente | Produto completo |
 
 Após expirar o acesso, trial ou Pro: conta bloqueada até converter. Sem degradação gradual, o produto inteiro ou nada.
 
-A regra de acesso é simples: plano ativo com data de expiração no futuro. Independe do tipo de plano.
+A regra de acesso é simples: plano ativo com data de expiração no futuro. Independe do tipo de plano e de como o período foi pago. Acesso cortesia ou manual é concedido direto no usuário (plano e data de expiração), sem precisar de assinatura.
 
 ### 11.1 Cobrança e liberação automática
 
-Ao bloquear o acesso, o sistema gera um link de pagamento individual para aquele usuário e envia junto da mensagem de bloqueio. Enquanto esse link ainda estiver dentro do prazo de validade, novas tentativas de uso durante o bloqueio reaproveitam o mesmo link em vez de gerar um novo a cada mensagem.
+Cobrança é assinatura recorrente no cartão, em dois planos:
 
-Cobrança é avulsa: R$21,90 liberam 30 dias de acesso, sem assinatura nem renovação automática no cartão. Ao fim dos 30 dias o acesso expira normalmente, e a próxima interação bloqueada gera um novo link, repetindo o ciclo.
+- **Mensal:** R$29,90 por mês.
+- **Anual:** R$262,80 por ano, exibido como R$21,90/mês (economia de R$96 no ano). É o plano selecionado por padrão.
 
-Pagamento confirmado libera o acesso automaticamente, sem intervenção manual: o plano passa a Pro, ativo, por mais 30 dias a partir da confirmação, e o usuário recebe uma mensagem de confirmação pelo WhatsApp. Pix continua disponível como alternativa, por atendimento manual via `suporte`.
+O trial de 7 dias continua sem cartão. Ao assinar, a primeira cobrança acontece na hora, sem período de teste adicional.
+
+**Acesso fora da assinatura:** cortesia e pagamento recebido por fora (Pix pelo `suporte`, por exemplo) são registrados direto no usuário (plano e data de expiração), sem depender de assinatura no cartão. O pagamento por fora também fica registrado no histórico de pagamentos do usuário.
+
+**Confirmação e renovação:** cada cobrança confirmada (a primeira e cada renovação) deixa o acesso Pro, ativo, até o fim do período pago. A mensagem de confirmação sai só na primeira cobrança da assinatura: "Assinatura confirmada", com o plano (mensal ou anual) e a data da próxima renovação. Renovações atualizam o acesso em silêncio. Evento repetido do mesmo pagamento não gera nova confirmação.
+
+**Falha de pagamento:** nenhum bloqueio imediato. A Stripe faz novas tentativas de cobrança e avisa o usuário por e-mail. Se todas falharem, o período pago acaba e o acesso expira pela regra geral.
+
+**Cancelamento:**
+- Pelo usuário: em "Assinatura" (menu da conta no app), que abre a página de planos; com assinatura no cartão ativa, o botão "Gerenciar ou alterar plano" leva ao portal de pagamento, onde também troca o cartão e muda de plano. Acesso pago por fora é cancelado pelo `suporte`.
+- Cancelamento programado (pelo portal, no fim do período), contratado durante ou depois do trial: a assinatura fica marcada como cancelada no fim do período, e a marcação é desfeita se o usuário reativar pelo portal. O acesso segue até o fim do período pago, sem mudar a data de expiração.
+- Cancelamento imediato (forçado pelo painel da Stripe, em geral junto com reembolso):
+  - Ainda no trial (menos dias desde o cadastro do que os dias de trial configurados): o acesso passa a valer até a data de cadastro mais os dias de trial.
+  - Trial já encerrado: o acesso passa a valer até o momento exato do cancelamento e expira na hora.
+
+**Mensagem de bloqueio:** o texto depende da situação, com o mesmo botão "Continuar" e a mesma orientação de `suporte`:
+- Fim do trial: "Escolha um plano para continuar praticando."
+- Plano pago expirado ou com pagamento falho: "Atualize seu pagamento ou escolha um plano para continuar praticando."
+
+**Link do bloqueio:** depende da assinatura mais recente:
+- Assinatura no cartão, ainda não cancelada: portal de pagamento, para trocar o cartão e quitar a fatura pendente.
+- Qualquer outro caso (sem assinatura, cancelada ou paga por fora): página de planos; o botão abre o pagamento do plano escolhido. O link de pagamento de cada plano é reaproveitado enquanto estiver válido.
+
+**Página de planos (app):** acessível a qualquer usuário logado pelo item "Assinatura" do menu, em qualquer situação. O título "Escolha seu plano" abre a página, sem linha de topo no card. Conforme a situação:
+- Trial ou sem plano: os planos para assinar, com o alternador Anual / Mensal.
+- Assinatura no cartão ativa: alternador travado no plano atual, botão principal desativado como "Plano atual" e o botão "Gerenciar ou alterar plano", que abre o portal. Um novo pagamento nunca é aberto nesse caso, mesmo se a tela for contornada: o pedido devolve o portal.
+- Assinatura no cartão com cancelamento programado: mesmo estado de assinante, trocando "Renova automaticamente. Cancele quando quiser." por "Assinatura cancelada. Acesso até {data}.", com data relativa: "hoje", "amanhã" ou dd/mm/aaaa.
+- Acesso ativo por pagamento fora da Stripe ou cortesia (sem assinatura no cartão): aviso "Seu acesso está ativo até {data}. Para renovar ou cancelar, envie /suporte no chat." acima dos planos, que continuam disponíveis para assinar no cartão.
+
+**Navegação:** links do próprio app (página de planos e portal) abrem na mesma aba, inclusive o botão da mensagem de bloqueio. Ao concluir o pagamento, o usuário volta ao app com um aviso de pagamento confirmado; ao sair do portal, volta para a página de planos.
+
+**Reembolso:** integral em até 7 dias após cada pagamento, pelo `suporte`.
 
 ### 11.2 Login automático via link do WhatsApp
 
@@ -697,7 +730,7 @@ Comportamento pós-cancelamento depende do contexto. Sem Activity ativa (onboard
 
 - Produto focado em inglês. A arquitetura suporta expansão para outros idiomas e matérias, mas expansão só após validação e churn controlado.
 - Janela de 24h do WhatsApp é regra de ouro. Mais de 85% das mensagens devem ser enviadas dentro dela.
-- A prática acontece na superfície web própria (`/app`), não dentro do chat do WhatsApp (Seção 19). WhatsApp segue como canal de aquisição, autenticação (código e login automático, Seções 10 e 11.2) e notificação — onboarding, lembrete diário e reengajamento (Seção 12) e confirmação de pagamento (Seção 11.1) — levando o usuário de volta ao app, não como superfície de prática em si.
+- A prática acontece na superfície web própria (`/app`), não dentro do chat do WhatsApp (Seção 19). WhatsApp segue como canal de aquisição, autenticação (código e login automático, Seções 10 e 11.2) e notificação — onboarding, lembrete diário e reengajamento (Seção 12) e confirmação da assinatura na primeira cobrança (Seção 11.1) — levando o usuário de volta ao app, não como superfície de prática em si.
 - Nenhuma mensagem do sistema deve terminar com pergunta quando a resposta esperada é a de uma pergunta de prática pendente.
 - Copy pode mencionar "IA" como qualificador funcional (o que o produto faz), nunca como identidade declarada em primeira pessoa ("eu sou uma IA", "sou um bot"). "Bot" e "agente" seguem fora de uso em qualquer copy. Personificação em primeira pessoa continua proibida independente de menção à IA, essa é regra separada e já coberta acima. Uso hoje: mensagem 2 do onboarding, bio Instagram, bio WhatsApp Business, texto do hero e SEO da home.
 - Posicionamento de complemento, não compete com professor, trabalha com ele. Isso vale igualmente para o fluxo de nova atividade (Seção 15): nenhuma copy sugere módulo, nível desbloqueado ou etapa concluída, mesmo quando o conteúdo é gerado pelo sistema em vez de trazido pelo usuário.
@@ -766,9 +799,9 @@ Na pergunta de escuta (Seção 4), o `text` é só a instrução e o `audioMedia
 
 Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais depois, sem quebrar nada que já existe (ver Seção 7 do Product-Brief, arquitetura multicanal).
 
-Dentro de `interactive`, um botão pode ser de dois tipos: ação (resposta rápida nativa do canal, ex: "Nova atividade") ou link (abre uma URL externa, ex: link de pagamento do bloqueio de acesso, Seção 11.1). Mensagem com botão de link sempre inclui a mesma URL também no `text` puro, como fallback para quem recebe só a camada canônica.
+Dentro de `interactive`, um botão pode ser de dois tipos: ação (resposta rápida nativa do canal, ex: "Nova atividade") ou link (abre uma URL, ex: link do bloqueio de acesso para a página de planos ou o portal de pagamento, Seção 11.1). Link do próprio app navega na mesma aba; link externo abre em nova aba. Mensagem com botão de link sempre inclui a mesma URL também no `text` puro, como fallback para quem recebe só a camada canônica.
 
-`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário, não só o texto equivalente. O `interactive` em produção cobre hoje cinco casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade"; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre o checkout no WhatsApp e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; os passos de nível (Seção 5, também pelo comando `nivel`), objetivo, assunto e ponto do fluxo de nova atividade (Seção 15), com um botão por opção; e as perguntas `choice` e de reconhecimento por imagem (Seção 4), com um botão por opção.
+`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário, não só o texto equivalente. O `interactive` em produção cobre hoje cinco casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade"; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre a página de planos ou o portal de pagamento e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; os passos de nível (Seção 5, também pelo comando `nivel`), objetivo, assunto e ponto do fluxo de nova atividade (Seção 15), com um botão por opção; e as perguntas `choice` e de reconhecimento por imagem (Seção 4), com um botão por opção.
 
 Nas listas de opções, o `interactive` guarda também o estado da seleção: `disabled` (todas as opções travadas) e `selectedId` (id da opção escolhida, destacada). Ausentes, a lista está pendente. Dois caminhos gravam:
 

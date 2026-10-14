@@ -149,4 +149,39 @@ O sorteio de formato só oferece imagem quando o item da vez é ilustrável.
 
 Falta decidir onde guardar a marca por item, já que o conteúdo é texto corrido com um item por bloco. Material já processado não tem a marca (sem backfill, vale só para material novo ou reprocessado). O critério passa a viver em dois prompts (extração e exemplo de formato) e pode divergir.
 
+---
+
+## 6) Canal de suporte dentro do app
+
+**Contexto**
+
+O suporte hoje é acionado pelo comando `/suporte` enviado no próprio chat de prática. Com a assinatura recorrente, ele passou a ser também o caminho para renovar ou cancelar acesso pago fora da Stripe (Pix, cortesia), indicado na página de planos.
+
+**Problema**
+
+O pedido de suporte se mistura com a conversa de prática, fica solto no histórico e não tem um lugar próprio para o usuário descrever o problema e acompanhar a resposta.
+*Exemplo:* o usuário envia `/suporte` no meio de uma rodada de perguntas para cancelar um acesso pago por Pix; a resposta chega horas depois, entre perguntas e feedbacks, e ele não sabe se o pedido foi recebido.
+
+**Solução**
+
+Uma janela própria no app para o usuário enviar uma mensagem ao suporte, separada do chat de prática.
+
+**Como**
+
+Onde a janela fica acessível: um ponto de entrada fixo, sem depender de comando digitado.
+*Exemplo:* item "Suporte" no menu da conta e um link na página de planos para quem tem acesso pago por fora.
+
+O que o usuário envia: texto livre e, se fizer sentido, um anexo para mostrar o problema.
+*Exemplo:* "Paguei por Pix e quero cancelar", com o comprovante anexado.
+
+Como a mensagem chega ao suporte: um destino único e rastreável, com o contexto do usuário junto (plano, data de expiração, última assinatura).
+*Exemplo:* o pedido entra numa fila de atendimento já mostrando que o acesso é pago por fora e vence em 12/11.
+
+Como a resposta volta ao usuário: dentro da mesma janela, com aviso de resposta nova, sem passar pelo chat de prática.
+*Exemplo:* o usuário abre o app, vê um indicador no item "Suporte" e lê a resposta no histórico daquele pedido.
+
+**Objeção**
+
+Durante a transição, `/suporte` no chat e a janela própria convivem, e os pedidos podem se dividir entre os dois canais. Também exige uma rotina de atendimento para responder dentro do app, que hoje não existe.
+
 senão viram fonte de verdade errada para prompts futuros de Claude Code.

@@ -48,6 +48,7 @@ export default async function AppLayout({
   const scopedMessages = {
     common: messages.common,
     app: messages.app,
+    pricing: messages.pricing,
   };
 
   return (

@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarPlus, LogOut, User as UserIcon } from "lucide-react";
+import {
+  CalendarPlus,
+  CreditCard,
+  LogOut,
+  User as UserIcon,
+} from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { TAnyEnv } from "@/src/i18n/types";
@@ -24,9 +30,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { SidebarFooter } from "@/src/components/ui/sidebar";
-import { canPractice } from "@/src/core/access";
+import { SidebarFooter, useSidebar } from "@/src/components/ui/sidebar";
+import { canPractice, getDaysUntil } from "@/src/core/access";
 import { postJson } from "@/src/lib/api-client";
+import { PLANS_PATH } from "@/src/lib/constants";
 import type { User } from "@/src/lib/prisma";
 import { AddToCalendarModal } from "./add-to-calendar-modal";
 import { ThemeMenuItems } from "./theme-menu";
@@ -35,11 +42,7 @@ function planLabel(user: User, t: TAnyEnv): string {
   if (user.planCode === "pro") {
     return canPractice(user) ? t("plan_pro") : t("plan_subscription_expired");
   }
-  const daysLeft = user.planExpiresAt
-    ? Math.ceil(
-        (user.planExpiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000),
-      )
-    : 0;
+  const daysLeft = getDaysUntil(user.planExpiresAt, new Date());
   return daysLeft > 0
     ? t("plan_trial_days_left", { days: daysLeft })
     : t("plan_trial_expired");
@@ -58,6 +61,7 @@ export function SidebarFooterMenu({
   const initial = user.name?.trim()?.[0]?.toUpperCase();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const { setOpenMobile } = useSidebar();
 
   async function handleLogout() {
     await postJson("/api/auth/logout", {});
@@ -95,6 +99,16 @@ export function SidebarFooterMenu({
           >
             <CalendarPlus className="h-4 w-4" />
             {t("add_to_calendar")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            asChild
+            onSelect={() => setOpenMobile(false)}
+            className="gap-2"
+          >
+            <Link href={PLANS_PATH}>
+              <CreditCard className="h-4 w-4" />
+              {t("subscription")}
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

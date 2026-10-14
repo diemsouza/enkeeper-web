@@ -66,6 +66,7 @@
       "theme_dark": "Escuro",
       "theme_system": "Sistema",
       "add_to_calendar": "Lembrete",
+      "subscription": "Assinatura",
       "add_to_calendar_modal_title": "Lembrete de prática",
       "add_to_calendar_time_label": "Horário",
       "add_to_calendar_google_button": "Google Calendar",
@@ -129,7 +130,7 @@
       "headline": "Pratique inglês com IA, todo dia, no seu ritmo, sobre o que você quiser.",
       "subphrases": {
         "0": "Seu inglês evolui todo dia, não só na hora da aula.",
-        "1": "Teste grátis por 7 dias. R$21,90/mês para continuar.",
+        "1": "Teste grátis por 7 dias. A partir de R$21,90/mês no plano anual.",
         "2": "O que você pratica todo dia é o que não some depois."
       },
       "cta": "Comece grátis",
@@ -242,18 +243,7 @@
     },
     "pricing": {
       "block_title": "Pratique no seu ritmo",
-      "block_subtitle": "Testar de graça por {days} dias. Se fizer sentido, continue.",
-      "price": "R$21,90",
-      "price_suffix": "/mês",
-      "price_note": "Ideal para manter a consistência todos os dias",
-      "benefits": {
-        "0": "Prática todo dia, no seu ritmo, sobre o que você quiser praticar",
-        "1": "Repetição espaçada automática, sem montar deck nem lembrar de revisar",
-        "2": "Feedback direto na hora, com áudio pra treinar o listening",
-        "3": "Resumo de progresso a qualquer momento",
-        "4": "Aceita seu próprio material quando quiser, foto, PDF ou texto",
-        "5": "Teste sem cartão de crédito"
-      },
+      "block_subtitle": "Menos de R$1 por dia para manter seu inglês ativo, no plano anual.",
       "cta": "Comece grátis"
     },
     "faq": {
@@ -273,7 +263,7 @@
         },
         "after-trial": {
           "question": "O que acontece depois dos 7 dias grátis?",
-          "answer": "O acesso expira. Pra continuar, você assina por R$21,90/mês, com renovação automática, cancelável quando quiser. Sem assinatura, o histórico fica guardado e a prática só recomeça quando você decidir continuar."
+          "answer": "O acesso expira. Para continuar, escolha o plano anual, R$21,90/mês cobrado R$262,80 por ano, ou o mensal, R$29,90/mês. Os dois renovam automaticamente e podem ser cancelados quando você quiser. Sem assinatura, o histórico fica guardado e a prática só recomeça quando você decidir continuar."
         },
         "message-frequency": {
           "question": "Preciso ficar entrando o dia todo?",
@@ -281,7 +271,7 @@
         },
         "cancel-anytime": {
           "question": "Dá pra cancelar quando quiser?",
-          "answer": "Sim. É uma assinatura mensal que renova automaticamente a cada 30 dias, mas você pode cancelar quando quiser. Ao cancelar, o acesso continua até o fim do período já pago."
+          "answer": "Sim. Na assinatura pelo cartão, cancele você mesmo em \"Assinatura\", no menu da sua conta. Acesso pago por outro meio é cancelado pelo suporte, com o comando /suporte no chat. Ao cancelar, o acesso continua até o fim do período já pago."
         }
       },
       "cta_text": "Ainda com dúvida? Teste {days} dias grátis.",
@@ -293,6 +283,38 @@
       "terms": "Termos de Uso"
     }
   },
+  "pricing": {
+    "home_trial_note": "Teste {days} dias sem cartão",
+    "toggle": {
+      "yearly": "Anual",
+      "monthly": "Mensal"
+    },
+    "price_suffix": "/mês",
+    "yearly": {
+      "price": "R$21,90",
+      "billed": "Cobrado R$262,80 por ano",
+      "savings": "Você economiza R$96"
+    },
+    "monthly": {
+      "price": "R$29,90"
+    },
+    "renew_note": "Renova automaticamente. Cancele quando quiser.",
+    "benefits": {
+      "0": "Prática todo dia, no seu ritmo, sobre o que você quiser praticar",
+      "1": "Repetição espaçada automática, sem montar deck nem lembrar de revisar",
+      "2": "Feedback direto na hora, a cada resposta",
+      "3": "Aceita seu próprio material quando quiser, foto, PDF ou texto"
+    },
+    "plans_title": "Escolha seu plano",
+    "plans_subtitle": "Continue praticando todo dia, no seu ritmo.",
+    "subscribe_cta": "Assinar",
+    "current_plan": "Plano atual",
+    "manage_plan": "Gerenciar ou alterar plano",
+    "checkout_error": "Não foi possível abrir o pagamento. Tente de novo.",
+    "payment_confirmed": "Pagamento confirmado. Seu acesso está liberado.",
+    "manual_access_note": "Seu acesso está ativo até {date}. Para renovar ou cancelar, envie /suporte no chat.",
+    "canceled_note": "Assinatura cancelada. Acesso até {date}."
+  },
   "payment": {
     "success": {
       "title": "Pagamento confirmado",
@@ -301,8 +323,8 @@
     },
     "canceled": {
       "title": "Pagamento cancelado",
-      "message": "Seu link continua válido. Volte quando quiser para concluir.",
-      "cta": "Voltar"
+      "message": "Nenhuma cobrança foi feita. Escolha um plano quando quiser.",
+      "cta": "Ver planos"
     }
   }
 }

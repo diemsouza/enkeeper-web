@@ -47,7 +47,8 @@ stripe login
 stripe listen -f http://192.168.15.102:3000/api/webhooks/stripe --print-secret
 
 # executar listening dos eventos
-stripe listen --forward-to http://localhost:3000/api/webhooks/stripe --all-snapshot
+stripe listen --forward-to http://localhost:3000/api/webhooks/stripe \
+  --events checkout.session.completed,invoice.paid,invoice.payment_failed,customer.subscription.updated,customer.subscription.deleted
 ```
 
 Guarde o Webhook Signing Secret que aparece (whsec\_...) → ponha em .env.local:

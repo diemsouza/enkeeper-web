@@ -108,6 +108,7 @@ Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.servic
 | Model          | Proposito                                                                             |
 | -------------- | --------------------------------------------------------------------------------------|
 | `User`         | Conta; `planCode`, `planStatus`, `planExpiresAt`, `locale`, `currency`                |
+| `Subscription` | Pagamento (1:N com User, mais recente = atual); nunca lido para liberar acesso, que fica no `User` |
 | `UserChannel`  | Canal conectado (whatsapp); `channelUserId`, `phoneNumber`                            |
 | `Doc`          | Material enviado; `rawContent`, `content`, `docType`, `level`, `status`               |
 | `Section`      | Nao usado hoje (schema legado de quando material era dividido por tipo, ver Product-Rules.md Secao 3) |

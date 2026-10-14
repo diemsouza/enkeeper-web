@@ -17,7 +17,7 @@ import { getJson, postForm, postJson } from "@/src/lib/api-client";
 import { useRealtimeMessages } from "@/src/hooks/use-realtime-messages";
 import { useIsMobile } from "@/src/hooks/use-is-mobile";
 import { setupAudioUnlock } from "@/src/lib/audio-unlock";
-import { delay } from "@/src/lib/utils";
+import { delay, isAppUrl } from "@/src/lib/utils";
 import { usePracticePill } from "./practice-pill-provider";
 
 type MessagesResponse = { messages: Message[]; hasMore: boolean };
@@ -502,6 +502,10 @@ export function LiveThreadClient({
     messageId: string,
   ) {
     if (button.type === "link" && button.url) {
+      if (isAppUrl(button.url)) {
+        window.location.assign(button.url);
+        return;
+      }
       window.open(button.url, "_blank", "noopener,noreferrer");
       return;
     }

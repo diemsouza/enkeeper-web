@@ -8,3 +8,10 @@ export function canPractice(user: {
   if (user.planExpiresAt && user.planExpiresAt < new Date()) return false
   return true
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+export function getDaysUntil(date: Date | null, now: Date): number {
+  if (!date) return 0
+  return Math.ceil((date.getTime() - now.getTime()) / DAY_MS)
+}

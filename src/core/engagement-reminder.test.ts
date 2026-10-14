@@ -24,7 +24,7 @@ describe("pickEngagementReminder", () => {
 
   it("de 0 a 6 dias envia lembrete conforme revisão elegível", () => {
     for (let day = 0; day <= 6; day++) {
-      expect(pick(day, true, 3)).toBe("daily_reminder_revision");
+      expect(pick(day, true, 3)).toBe("daily_reminder_revision_v2");
       expect(pick(day, true, 0)).toBe("daily_reminder_v2");
     }
   });

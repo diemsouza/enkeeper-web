@@ -49,10 +49,22 @@ export default function TermsPage() {
             campanhas e parcerias. Não há renovação automática do trial.
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
-            <strong>Pro:</strong> plano pago com cobrança mensal recorrente. O
-            valor vigente é informado no momento da contratação. A cobrança é
-            mensal e independe do nível de interação ou engajamento do usuário
-            no período.
+            <strong>Pro:</strong> plano pago por assinatura recorrente no
+            cartão, com cobrança mensal ou anual conforme o plano escolhido. O
+            valor vigente é informado no momento da contratação. A assinatura
+            renova automaticamente ao fim de cada período e a cobrança independe
+            do nível de interação ou engajamento do usuário no período.
+          </p>
+          <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
+            <strong>Cancelamento:</strong> a assinatura no cartão pode ser
+            cancelada a qualquer momento em &quot;Assinatura&quot;, no menu da
+            conta; acesso pago por outro meio é cancelado pelo suporte. Após o
+            cancelamento, o acesso continua até o fim do período já pago e não
+            há nova cobrança.
+          </p>
+          <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
+            <strong>Reembolso:</strong> reembolso integral em até 7 dias após
+            cada pagamento, solicitado pelo suporte.
           </p>
         </section>
 
@@ -67,7 +79,7 @@ export default function TermsPage() {
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             Para upgrade ao plano Pro, podem ser solicitadas informações
-            adicionais para identificação e processamento da cobrança mensal.
+            adicionais para identificação e processamento da cobrança.
           </p>
           <p className="text-[15px] leading-relaxed text-foreground/80 mb-4">
             Após expiração do trial sem conversão para o plano Pro, a conta é

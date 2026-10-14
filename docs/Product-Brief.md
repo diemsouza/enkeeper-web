@@ -192,7 +192,7 @@ Não é teaser - é o produto inteiro por tempo limitado. Quem sente o valor no 
 - Campanha sazonal: 30 dias
 - Beta testers / cortesia permanente: sem expiração (planExpiresAt = 2099-12-31)
 
-### Pro - R$21,90 a cada 30 dias
+### Pro - Mensal R$29,90 ou Anual R$262,80 (R$21,90/mês)
 
 - Troca de atividade diária com até 3 materiais cada
 - Prática diária com repetição espaçada
@@ -201,11 +201,13 @@ Não é teaser - é o produto inteiro por tempo limitado. Quem sente o valor no 
 - Texto, imagem, PDF
 - Histórico permanente
 
-Cobrança avulsa, não é assinatura recorrente. Pagamento via Stripe Checkout (cartão), com link gerado automaticamente e enviado pelo WhatsApp sempre que o acesso expira - o usuário paga, o acesso é liberado na hora, e o ciclo se repete a cada 30 dias sem cobrança automática no cartão. Pix continua disponível como alternativa, via atendimento manual (`suporte`).
+Assinatura recorrente no cartão via Stripe Checkout, com renovação automática e cobrança imediata ao assinar (o trial de 7 dias continua sem cartão). O anual é o padrão na página de preço (economia de R$96 no ano). A cobrança recorrente tira do usuário a decisão de recomprar todo mês, que derrubava a retenção por esquecimento no modelo avulso anterior.
 
-### Plano anual
-
-Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
+- Confirmação pelo chat só na primeira cobrança; renovações atualizam o acesso em silêncio.
+- Falha de cartão é tratada pelas novas tentativas da Stripe, sem bloqueio imediato.
+- Cancelamento pelo próprio usuário em "Assinatura", no menu da conta, com acesso até o fim do período pago. Cancelamento imediato (com reembolso) devolve só o que restava do trial.
+- Cortesia e pagamento por fora (Pix via `suporte`) são registrados direto no usuário, sem assinatura no cartão.
+- Reembolso integral em até 7 dias após cada pagamento.
 
 ---
 
@@ -229,7 +231,7 @@ Adiado. Reavaliar com 500+ pagantes ativos e churn mensal abaixo de 8%.
 | Armazenamento de mídia | Supabase Storage, bucket separado por ambiente, cobre áudio gerado (feedback), áudio de resposta do usuário, a imagem original enviada para OCR, os charts de resumo, as imagens geradas para perguntas de reconhecimento por imagem e o áudio das perguntas de escuta |
 | Evolução semanal | Modelo médio em batch |
 | Jobs agendados | Vercel Cron |
-| Pagamento | Stripe Checkout (cartão), cobrança avulsa de 30 dias sem renovação automática; Pix manual via `suporte` como alternativa |
+| Pagamento | Stripe Checkout e Portal do Cliente (cartão), assinatura recorrente mensal ou anual com renovação automática; Pix manual via `suporte` como alternativa, registrado direto no usuário |
 | Número virtual | BRDID - (11) 5306-9000 |
 
 Arquitetura multicanal: cada canal de envio (hoje WhatsApp e a superfície web `/app`) implementa sua própria interface de envio e decide sozinho se suporta camadas extras de apresentação (botão interativo, template, áudio) além do texto puro, que é sempre a representação canônica salva no histórico. O indicador de "digitando" segue o mesmo princípio: o servidor avisa quando está preparando uma resposta e cada canal mostra do seu jeito (evento em tempo real na web, indicador nativo no WhatsApp), em vez de o cliente adivinhar pelo histórico. Um canal novo pode nascer só com suporte a texto. Detalhe do contrato em `docs/Product-Rules.md`, Seção 19.
@@ -269,7 +271,7 @@ Geração de conteúdo por tema (nova atividade) ainda não tem custo médio med
 
 **Meta de independência:** R$25.000 líquido/mês.
 
-Com R$21,90/mês e custo médio R$5,30, margem bruta de R$14,60/usuário.
+Com R$21,90/mês (plano anual; o mensal é R$29,90) e custo médio R$5,30, margem bruta de R$14,60/usuário no anual, antes da taxa da Stripe.
 
 | Marco | Pagantes | MRR bruto | Líquido estimado | O que habilita |
 | ----- | -------- | --------- | ---------------- | -------------- |
@@ -333,7 +335,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Áudio no feedback de resposta (TTS), rollout parcial habilitado por configuração
 - Onboarding atualizado para refletir o fluxo de nova atividade como caminho principal
 - Site com copy atualizada, refletindo os dois caminhos de entrada (material ou tema) na home, publicado
-- Cobrança de acesso Pro via Stripe Checkout, pagamento avulso de 30 dias sem renovação automática, com liberação automática do plano após confirmação de pagamento
+- Cobrança de acesso Pro por assinatura recorrente no cartão (Stripe), planos Mensal R$29,90 e Anual R$262,80, renovação automática, liberação do plano a cada cobrança confirmada, confirmação pelo chat só na primeira cobrança, página de planos por situação (item "Assinatura" no menu) com acesso ao portal da Stripe (cancelar, trocar cartão, mudar de plano), trava contra assinatura duplicada e recálculo do acesso no cancelamento imediato
 - Extração de material simplificada para lista única de vocabulário, sem seções tipadas, reduzindo a complexidade do pipeline de geração e de formatos de pergunta
 - OCR de imagem gera conteúdo de prática a partir de descrição da cena quando não há texto legível (antes era descartada), com tratamento dedicado para conteúdo impróprio (bloqueado) e imagem ilegível
 - Formatação de gap fill e cenário aplicada em código, independente do modelo reproduzir a formatação certa; cenário com variação de fechamento

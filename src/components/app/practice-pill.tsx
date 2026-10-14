@@ -31,13 +31,10 @@ export function PracticePill({
         disabled={!isActive}
         tooltip={t("label")}
         aria-label={t("label")}
-        className={
-          isActive
-            ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground hover:opacity-90"
-            : "cursor-not-allowed bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground"
-        }
       >
-        <Play className="h-5 w-5 shrink-0" />
+        <Play
+          className={cn("h-5 w-5 shrink-0", isActive && "text-primary")}
+        />
       </SidebarMenuButton>
     );
   }
