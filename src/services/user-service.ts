@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import {
   ChannelType as PrismaChannelType,
   Prisma,
@@ -51,20 +52,22 @@ export async function findOrCreateUserByChannel(
   );
 
   if (isNew) {
-    await sendSupportEmail({
-      subject: "Novo usuário",
-      title: "Novo usuário cadastrado",
-      fields: [
-        { label: "ID", value: user.id },
-        { label: "Nome", value: name ?? "Não identificado" },
-        {
-          label: "Telefone",
-          value: `+${(channelUserPhone ?? channelUserId).replace("+", "")}`,
-        },
-        { label: "Canal", value: channelType },
-        { label: "Origem", value: source ?? "-" },
-      ],
-    });
+    after(() =>
+      sendSupportEmail({
+        subject: "Novo usuário",
+        title: "Novo usuário cadastrado",
+        fields: [
+          { label: "ID", value: user.id },
+          { label: "Nome", value: name ?? "Não identificado" },
+          {
+            label: "Telefone",
+            value: `+${(channelUserPhone ?? channelUserId).replace("+", "")}`,
+          },
+          { label: "Canal", value: channelType },
+          { label: "Origem", value: source ?? "-" },
+        ],
+      }),
+    );
   }
   return { user, userChannel, isNew };
 }

@@ -19,7 +19,9 @@ function readCookie(res: Response) {
     .getSetCookie()
     .find((c) => c.startsWith(`${ATTRIBUTION_COOKIE_NAME}=`));
   if (!raw) return null;
-  const value = decodeURIComponent(raw.split(";")[0].split("=").slice(1).join("="));
+  const value = decodeURIComponent(
+    raw.split(";")[0].split("=").slice(1).join("="),
+  );
   return { raw, attribution: parseAttributionCookie(value) };
 }
 
@@ -51,21 +53,42 @@ describe("middleware attribution", () => {
     expect(location.pathname).toBe("/login");
     expect(location.searchParams.get("utm_source")).toBe("google");
     expect(location.searchParams.get("gclid")).toBe("TESTE123");
-    expect(location.searchParams.get("redirect_to")).toContain("utm_source=google");
+    expect(location.searchParams.get("redirect_to")).toContain(
+      "utm_source=google",
+    );
     expect(readCookie(res)?.attribution?.gclid).toBe("TESTE123");
   });
 
-  it("never overwrites an existing first-touch cookie", async () => {
-    const first = await middleware(request(`/?${GOOGLE_QUERY}`));
+  function cookieHeader(res: Response): string {
     const stored = encodeURIComponent(
-      JSON.stringify(readCookie(first)?.attribution),
+      JSON.stringify(readCookie(res)?.attribution),
     );
+    return `${ATTRIBUTION_COOKIE_NAME}=${stored}`;
+  }
+
+  it("overwrites an existing cookie when the request carries new campaign params", async () => {
+    const first = await middleware(request(`/?${GOOGLE_QUERY}`));
     const second = await middleware(
-      request(
-        "/?utm_source=meta&utm_medium=cpc",
-        `${ATTRIBUTION_COOKIE_NAME}=${stored}`,
-      ),
+      request("/?utm_source=meta&utm_medium=cpc", cookieHeader(first)),
     );
+    expect(readCookie(second)?.attribution).toMatchObject({
+      utmSource: "meta",
+      utmMedium: "cpc",
+      gclid: null,
+    });
+  });
+
+  it("replaces an empty cookie when a later visit carries utm", async () => {
+    const empty = await middleware(request("/"));
+    const res = await middleware(
+      request(`/?${GOOGLE_QUERY}`, cookieHeader(empty)),
+    );
+    expect(readCookie(res)?.attribution?.utmSource).toBe("google");
+  });
+
+  it("keeps the last campaign when a later visit has no params", async () => {
+    const first = await middleware(request(`/?${GOOGLE_QUERY}`));
+    const second = await middleware(request("/login", cookieHeader(first)));
     expect(readCookie(second)).toBeNull();
   });
 });

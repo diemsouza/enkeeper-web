@@ -12,10 +12,18 @@ import {
   ATTRIBUTION_COOKIE_MAX_AGE_DAYS,
   ATTRIBUTION_COOKIE_NAME,
 } from "./lib/constants";
-import { CAMPAIGN_PARAM_KEYS, getUtmParams } from "./lib/utm-utils";
+import {
+  CAMPAIGN_PARAM_KEYS,
+  getUtmParams,
+  hasCampaignParams,
+} from "./lib/utm-utils";
 
+// Last-touch: params de campanha na URL sempre substituem o cookie; sem eles,
+// o cookie existente e preservado.
 function captureAttribution(req: NextRequest, res: NextResponse): void {
-  if (req.cookies.get(ATTRIBUTION_COOKIE_NAME)) return;
+  const utmParams = getUtmParams(req.nextUrl.toString());
+  if (!hasCampaignParams(utmParams) && req.cookies.get(ATTRIBUTION_COOKIE_NAME))
+    return;
 
   const {
     utmSource,
@@ -25,7 +33,7 @@ function captureAttribution(req: NextRequest, res: NextResponse): void {
     utmTerm,
     gclid,
     fbclid,
-  } = getUtmParams(req.nextUrl.toString());
+  } = utmParams;
   const cookie = buildAttributionCookie(
     {
       utmSource,

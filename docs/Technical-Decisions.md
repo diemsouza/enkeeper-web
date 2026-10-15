@@ -379,10 +379,11 @@ havia nenhuma captura de UTM/referrer em lugar nenhum do app.
 
 Decisões:
 
-- **First-touch, cookie de 90 dias (`fz_attribution`).** A primeira origem
-  que trouxe a pessoa é a que conta; o middleware (`src/middleware.ts`) só
-  grava o cookie se ele ainda não existir, em qualquer rota, inclusive nas respostas de
-  redirect. O cookie não é apagado depois de gravado o cadastro,
+- **Last-touch, cookie de 90 dias (`fz_attribution`).** A última campanha
+  que trouxe a pessoa é a que conta; o middleware (`src/middleware.ts`)
+  grava o cookie sempre que a URL traz `utm_*`/`gclid`/`fbclid` (substituindo
+  o anterior) e, sem esses params, só grava se o cookie ainda não existir.
+  Vale em qualquer rota, inclusive nas respostas de redirect. O cookie não é apagado depois de gravado o cadastro,
   fica disponível pra eventos futuros (ex: primeira assinatura paga).
 - **Taxonomia de `source`:** `meta_ads`, `google_ads`, `direct`,
   `organic_search`, `referral`, ou o valor literal de `utm_source` quando
@@ -499,8 +500,9 @@ Data: 2026-10-15
   `firstSeenAt` ficam só no cookie. Contas anteriores a esta data têm o
   formato antigo (camelCase, cookie inteiro): consultas por canal devem
   tratar os dois.
-- O cookie é só primeiro toque e nunca é sobrescrito: quem visita sem UTM e
-  volta depois por anúncio fica `direct` no banco.
+- O cookie é último toque: visita sem UTM nunca apaga uma campanha já
+  gravada, e uma visita com UTM substitui o cookie anterior (inclusive um
+  cookie vazio de visita direta).
 - O redirect `/app` -> `/login` repete `utm_*`, `gclid` e `fbclid` na raiz da
   URL do `/login`, para a tag do GA4 atribuir a sessão.
 - `purchase` só dispara depois de o servidor consultar a sessão da Stripe

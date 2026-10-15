@@ -51,3 +51,6 @@ export const getUtmParams = (url?: string | null): UtmParams => {
     fbclid: getValue(["fbclid"]),
   };
 };
+
+export const hasCampaignParams = (params: UtmParams): boolean =>
+  Object.values(params).some((value) => value != null && value !== "");

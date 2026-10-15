@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import handlebars from "handlebars";
 
+const EMAIL_TIMEOUT_MS = 5000;
+
 interface SendMailProps {
   to: string;
   subject: string;
@@ -21,10 +23,19 @@ export const sendEmail = async ({
     console.error("[sendEmail] SMTP_URL missing or invalid (expected smtp://user:pass@host:port)");
     return false;
   }
+  const from = process.env.EMAIL_FROM;
+  if (!from) {
+    console.error("[sendEmail] EMAIL_FROM not set");
+    return false;
+  }
   try {
-    const transporter = nodemailer.createTransport(smtpUrl);
+    const transporter = nodemailer.createTransport(smtpUrl, {
+      connectionTimeout: EMAIL_TIMEOUT_MS,
+      greetingTimeout: EMAIL_TIMEOUT_MS,
+      socketTimeout: EMAIL_TIMEOUT_MS,
+    });
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from,
       to,
       subject,
       html,
