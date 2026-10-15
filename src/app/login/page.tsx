@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Nav from "@/src/components/home/nav";
 import { Spinner } from "@/src/components/ui/spinner";
@@ -42,7 +41,6 @@ type RequestResult =
   | { ok: false; message: string };
 
 export default function LoginPage() {
-  const router = useRouter();
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phoneDigits, setPhoneDigits] = useState("");
   const [requestedAt, setRequestedAt] = useState(0);
@@ -66,12 +64,12 @@ export default function LoginPage() {
         const target = new URLSearchParams(window.location.search).get(
           "redirect_to",
         );
-        router.replace(sanitizeRedirectPath(target));
+        window.location.replace(sanitizeRedirectPath(target));
         return;
       }
       setCheckingWaToken(false);
     })();
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     const pending = readOtpRequest();
@@ -142,7 +140,7 @@ export default function LoginPage() {
     const target = new URLSearchParams(window.location.search).get(
       "redirect_to",
     );
-    router.replace(sanitizeRedirectPath(target));
+    window.location.replace(sanitizeRedirectPath(target));
   }
 
   function changeNumber() {
