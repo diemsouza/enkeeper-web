@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { setAnalyticsUserId } from "@/src/lib/analytics";
+import { setUserId } from "@/src/lib/analytics";
 
 export function AnalyticsIdentify({ userId }: { userId: string }) {
   useEffect(() => {
-    setAnalyticsUserId(userId);
+    setUserId(userId);
   }, [userId]);
 
   return null;

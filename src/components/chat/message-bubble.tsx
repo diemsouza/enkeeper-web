@@ -85,6 +85,7 @@ export function MessageBubble({
         ) : message.type === "image" ? (
           <ImageBubble
             imageUrl={message.imageUrl!}
+            alt={message.imageAlt}
             caption={message.interactive?.body ?? message.caption}
             zoomDisabled={zoomDisabled}
           />

@@ -8,6 +8,16 @@ export interface UtmParams {
   fbclid?: string | null;
 }
 
+export const CAMPAIGN_PARAM_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "gclid",
+  "fbclid",
+] as const;
+
 export const getUtmParams = (url?: string | null): UtmParams => {
   if (!url) return {};
 

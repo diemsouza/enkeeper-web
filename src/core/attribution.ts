@@ -23,6 +23,29 @@ type BuildAttributionCookieParams = {
   landingPath: string;
 };
 
+export const ATTRIBUTION_VALUE_MAX_LENGTH = 200;
+
+export type AttributionSourceData = {
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  gclid: string | null;
+  fbclid: string | null;
+};
+
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/g;
+
+export function sanitizeAttributionValue(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const clean = value
+    .replace(CONTROL_CHARS, "")
+    .trim()
+    .slice(0, ATTRIBUTION_VALUE_MAX_LENGTH);
+  return clean === "" ? null : clean;
+}
+
 const PAID_MEDIUM_VALUES = ["cpc", "ppc", "paid", "paid-social", "ads"];
 
 const SEARCH_ENGINE_REFERRER_HOSTS = [
@@ -39,15 +62,15 @@ export function buildAttributionCookie(
   now: Date,
 ): AttributionCookie {
   return {
-    utmSource: params.utmSource ?? null,
-    utmMedium: params.utmMedium ?? null,
-    utmCampaign: params.utmCampaign ?? null,
-    utmContent: params.utmContent ?? null,
-    utmTerm: params.utmTerm ?? null,
-    gclid: params.gclid ?? null,
-    fbclid: params.fbclid ?? null,
-    referrer: params.referrer ?? null,
-    landingPath: params.landingPath,
+    utmSource: sanitizeAttributionValue(params.utmSource),
+    utmMedium: sanitizeAttributionValue(params.utmMedium),
+    utmCampaign: sanitizeAttributionValue(params.utmCampaign),
+    utmContent: sanitizeAttributionValue(params.utmContent),
+    utmTerm: sanitizeAttributionValue(params.utmTerm),
+    gclid: sanitizeAttributionValue(params.gclid),
+    fbclid: sanitizeAttributionValue(params.fbclid),
+    referrer: sanitizeAttributionValue(params.referrer),
+    landingPath: sanitizeAttributionValue(params.landingPath) ?? "/",
     firstSeenAt: now.toISOString(),
   };
 }
@@ -59,7 +82,10 @@ export function parseAttributionCookie(
   try {
     const parsed = JSON.parse(raw);
     if (typeof parsed !== "object" || parsed === null) return null;
-    return parsed as AttributionCookie;
+    return buildAttributionCookie(
+      { ...parsed, landingPath: parsed.landingPath ?? "/" },
+      new Date(parsed.firstSeenAt ?? Date.now()),
+    );
   } catch {
     return null;
   }
@@ -79,6 +105,20 @@ export function hasAttributionSignal(
     attribution.fbclid,
     attribution.referrer,
   ].some((value) => value != null);
+}
+
+export function buildSourceData(
+  attribution: AttributionCookie,
+): AttributionSourceData {
+  return {
+    utm_source: attribution.utmSource,
+    utm_medium: attribution.utmMedium,
+    utm_campaign: attribution.utmCampaign,
+    utm_content: attribution.utmContent,
+    utm_term: attribution.utmTerm,
+    gclid: attribution.gclid,
+    fbclid: attribution.fbclid,
+  };
 }
 
 function isPaidMedium(medium: string | null): boolean {

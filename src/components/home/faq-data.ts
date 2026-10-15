@@ -1,9 +1,15 @@
 export const FAQ_IDS = [
+  "what-is",
   "how-it-works",
-  "does-it-replace-classes",
+  "vs-generic-ai",
+  "english-level",
+  "spaced-repetition",
   "any-content-works",
-  "after-trial",
+  "skills",
+  "platform",
   "message-frequency",
+  "does-it-replace-classes",
+  "after-trial",
   "cancel-anytime",
 ] as const;
 

@@ -12,13 +12,20 @@ import {
   ATTRIBUTION_COOKIE_MAX_AGE_DAYS,
   ATTRIBUTION_COOKIE_NAME,
 } from "./lib/constants";
-import { getUtmParams } from "./lib/utm-utils";
+import { CAMPAIGN_PARAM_KEYS, getUtmParams } from "./lib/utm-utils";
 
 function captureAttribution(req: NextRequest, res: NextResponse): void {
   if (req.cookies.get(ATTRIBUTION_COOKIE_NAME)) return;
 
-  const { utmSource, utmMedium, utmCampaign, utmContent, utmTerm, gclid, fbclid } =
-    getUtmParams(req.nextUrl.toString());
+  const {
+    utmSource,
+    utmMedium,
+    utmCampaign,
+    utmContent,
+    utmTerm,
+    gclid,
+    fbclid,
+  } = getUtmParams(req.nextUrl.toString());
   const cookie = buildAttributionCookie(
     {
       utmSource,
@@ -41,6 +48,15 @@ function captureAttribution(req: NextRequest, res: NextResponse): void {
     path: "/",
     maxAge: ATTRIBUTION_COOKIE_MAX_AGE_DAYS * 24 * 60 * 60,
   });
+}
+
+// O GA4 le a campanha da URL da pagina: sem repassar para a raiz, o redirect
+// /app -> /login deixa os params so dentro de redirect_to e a sessao perde a origem.
+function forwardCampaignParams(source: URLSearchParams, target: URL): void {
+  for (const key of CAMPAIGN_PARAM_KEYS) {
+    const value = source.get(key);
+    if (value) target.searchParams.set(key, value);
+  }
 }
 
 export async function middleware(req: NextRequest) {
@@ -71,7 +87,10 @@ export async function middleware(req: NextRequest) {
       pathname + (cleanSearch ? `?${cleanSearch}` : ""),
     );
     if (waToken) url.searchParams.set("wa_token", waToken);
-    return NextResponse.redirect(url);
+    forwardCampaignParams(req.nextUrl.searchParams, url);
+    const redirect = NextResponse.redirect(url);
+    captureAttribution(req, redirect);
+    return redirect;
   }
 
   const hasWaToken = req.nextUrl.searchParams.has("wa_token");
@@ -94,6 +113,8 @@ export async function middleware(req: NextRequest) {
     res = NextResponse.next();
   }
 
+  captureAttribution(req, res);
+
   if (session && shouldRefreshSession(session.issuedAt)) {
     const fresh = await signSessionToken({ userId: session.userId });
     res.cookies.set(SESSION_COOKIE_NAME, fresh, buildSessionCookieOptions());
@@ -103,5 +124,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt).*)",
+  ],
 };

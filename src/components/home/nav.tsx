@@ -24,7 +24,10 @@ export default function Nav() {
         scrolled && "glass-effect border-b border-border/40",
       )}
     >
-      <Link href="/" className="font-bold tracking-tight text-lg select-none">
+      <Link
+        href="/"
+        className="font-semibold tracking-tight text-lg select-none"
+      >
         {t("brand")}
         <span className="text-primary">.</span>
       </Link>

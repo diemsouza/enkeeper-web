@@ -6,7 +6,12 @@ import { Button } from "@/src/components/ui/button";
 import { PricingCard } from "@/src/components/shared/pricing-card";
 import { useToast } from "@/src/hooks/use-toast";
 import { postJson } from "@/src/lib/api-client";
-import { BILLING_PORTAL_PATH, SubscriptionInterval } from "@/src/lib/constants";
+import { CHECKOUT_PLAN_BY_INTERVAL, track } from "@/src/lib/analytics";
+import {
+  BILLING_PORTAL_PATH,
+  SUBSCRIPTION_PRICE_BRL,
+  SubscriptionInterval,
+} from "@/src/lib/constants";
 
 const CTA_CLASS_NAME = "w-full rounded-full h-12 font-semibold text-base";
 
@@ -38,6 +43,11 @@ export function PlansCheckout({
 
   async function handleSubscribe(interval: SubscriptionInterval) {
     setLoading(true);
+    track("begin_checkout", {
+      plan: CHECKOUT_PLAN_BY_INTERVAL[interval],
+      value: SUBSCRIPTION_PRICE_BRL[interval],
+      currency: "BRL",
+    });
     const { ok, body } = await postJson<{ url?: string }>(
       "/api/app/billing/checkout",
       { interval },

@@ -4,7 +4,6 @@ import Footer from "@/src/components/home/footer";
 
 export const metadata: Metadata = {
   title: "Fluizer | Política de Privacidade",
-  robots: "noindex",
 };
 
 export default function PrivacyPage() {

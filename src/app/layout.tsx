@@ -7,7 +7,11 @@ import Script from "next/script";
 import QueryProvider from "@/src/components/QueryProvider";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { THEME_COLOR_DARK, THEME_COLOR_LIGHT } from "@/src/lib/constants";
+import {
+  SITE_URL,
+  THEME_COLOR_DARK,
+  THEME_COLOR_LIGHT,
+} from "@/src/lib/constants";
 import ClientToaster from "../components/shared/client-toaster";
 import { ThemeColorSync } from "../components/shared/ThemeColorSync";
 
@@ -35,17 +39,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = t("title");
   const description = t("description");
   const ogImage = t("ogImage");
+  const ogImageAlt = t("ogImageAlt");
 
   return {
-    metadataBase: new URL(
-      process.env.NEXT_PUBLIC_APP_URL ?? "https://fluizer.com",
-    ),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL),
     title,
     description,
     keywords: t("keywords"),
     robots: "index, follow",
     alternates: {
-      canonical: "https://fluizer.com",
+      canonical: SITE_URL,
     },
     appleWebApp: {
       capable: true,
@@ -54,17 +57,17 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      url: "https://fluizer.com",
+      url: SITE_URL,
       siteName: "Fluizer",
-      images: [{ url: ogImage }],
+      images: [{ url: ogImage, width: 1200, height: 1200, alt: ogImageAlt }],
       locale: "pt_BR",
       type: "website",
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title,
       description,
-      images: [ogImage],
+      images: [{ url: ogImage, alt: ogImageAlt }],
     },
   };
 }

@@ -29,25 +29,27 @@ const TEXT_EVAL_TIP_CLASSES: EvalTipClass[] = [
 
 // Classes de dica que cada formato pode enviar; o prompt de avaliacao nao
 // filtra por formato, o corte fica no codigo.
-export const EVAL_TIP_CLASSES_BY_FORMAT: Record<QuestionFormat, EvalTipClass[]> =
-  {
-    gap_fill: TEXT_EVAL_TIP_CLASSES,
-    recall: TEXT_EVAL_TIP_CLASSES,
-    recall_inverted: TEXT_EVAL_TIP_CLASSES,
-    scenario: TEXT_EVAL_TIP_CLASSES,
-    choice: TEXT_EVAL_TIP_CLASSES,
-    image_recognition: TEXT_EVAL_TIP_CLASSES,
-    open_text: TEXT_EVAL_TIP_CLASSES,
-    open_question: TEXT_EVAL_TIP_CLASSES,
-    audio_transcription: ["homophone", "connected_speech"],
-    audio_translation: [
-      "calque",
-      "near_synonym",
-      "literal_idiom",
-      "register",
-      "structure",
-    ],
-  };
+export const EVAL_TIP_CLASSES_BY_FORMAT: Record<
+  QuestionFormat,
+  EvalTipClass[]
+> = {
+  gap_fill: TEXT_EVAL_TIP_CLASSES,
+  recall: TEXT_EVAL_TIP_CLASSES,
+  recall_inverted: TEXT_EVAL_TIP_CLASSES,
+  scenario: TEXT_EVAL_TIP_CLASSES,
+  choice: TEXT_EVAL_TIP_CLASSES,
+  image_recognition: TEXT_EVAL_TIP_CLASSES,
+  open_text: TEXT_EVAL_TIP_CLASSES,
+  open_question: TEXT_EVAL_TIP_CLASSES,
+  audio_transcription: ["homophone", "connected_speech"],
+  audio_translation: [
+    "calque",
+    "near_synonym",
+    "literal_idiom",
+    "register",
+    "structure",
+  ],
+};
 
 export const THEME_COLOR_LIGHT = "#ffffff";
 export const THEME_COLOR_DARK = "#0a0a0a";
@@ -65,6 +67,7 @@ export const DAILY_PRACTICE_LIMIT = 60;
 export const CADENCE_RESERVE = 24;
 export const INTENSIVE_LIMIT = 60 - 24; // 36
 export const TRIAL_DAYS = 7;
+export const SITE_URL = "https://fluizer.com";
 export const PAYMENT_PROVIDER = {
   STRIPE: "stripe",
 } as const;
@@ -78,6 +81,11 @@ export const SUBSCRIPTION_STATUS_CANCELED = "canceled";
 export const PLANS_PATH = "/app/plans";
 export const BILLING_PORTAL_PATH = "/api/app/billing/portal";
 export const PAYMENT_SUCCESS_PARAM = "payment";
+export const PAYMENT_SESSION_PARAM = "session_id";
+export const SUBSCRIPTION_PRICE_BRL: Record<SubscriptionInterval, number> = {
+  monthly: 29.9,
+  yearly: 262.8,
+};
 // Limpeza de midia pausada por decisao estrategica: audio e imagem compoem
 // perguntas e sao reaproveitados na revisao. O processo segue no codigo
 // (audio-cleanup-cron.service.ts), so nao roda ate ser reativado aqui.

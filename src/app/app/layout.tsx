@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { startOfDay } from "date-fns";
 import { NextIntlClientProvider } from "next-intl";
@@ -15,6 +16,10 @@ import {
 } from "@/src/repo/activities.repo";
 import { PracticePillProvider } from "@/src/components/app/practice-pill-provider";
 import { getTodayUsage } from "@/src/repo/daily-usage.repo";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export const viewport = {
   width: "device-width",

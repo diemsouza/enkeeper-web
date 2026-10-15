@@ -14,11 +14,18 @@ import { TRIAL_DAYS } from "../lib/constants";
 import { sendSupportEmail } from "../vendors/email.vendor";
 import {
   AttributionCookie,
+  buildSourceData,
   hasAttributionSignal,
   resolveSource,
 } from "../core/attribution";
 
 type UserWithChannels = User & { channels: UserChannel[] };
+
+type UserChannelLookup = {
+  user: UserWithChannels;
+  userChannel: UserChannel;
+  isNew: boolean;
+};
 
 export async function findOrCreateUserByChannel(
   channelType: ChannelType,
@@ -29,7 +36,7 @@ export async function findOrCreateUserByChannel(
   source?: string | null,
   sourceData?: Record<string, unknown> | null,
   timezone?: string,
-): Promise<{ user: UserWithChannels; userChannel: UserChannel }> {
+): Promise<UserChannelLookup> {
   const prismaChannelType = channelType as PrismaChannelType;
   const planExpiresAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
   const { user, userChannel, isNew } = await findOrCreateUserChannel(
@@ -59,7 +66,7 @@ export async function findOrCreateUserByChannel(
       ],
     });
   }
-  return { user, userChannel };
+  return { user, userChannel, isNew };
 }
 
 // Login web por telefone: reconhece usuário legado de outro canal (hoje só
@@ -69,18 +76,18 @@ export async function resolveWebLoginByPhone(
   phone: string,
   timezone?: string,
   attribution?: AttributionCookie | null,
-): Promise<{ user: UserWithChannels; userChannel: UserChannel }> {
+): Promise<UserChannelLookup> {
   const existingWeb = await findUserChannelByPhone(phone, {
     channelType: "web",
   });
-  if (existingWeb) return existingWeb;
+  if (existingWeb) return { ...existingWeb, isNew: false };
 
   const otherType = await findUserChannelByPhone(phone, {
     channelTypeNot: "web",
   });
   if (otherType) {
     const userChannel = await upsertWebUserChannel(otherType.user.id, phone);
-    return { user: otherType.user, userChannel };
+    return { user: otherType.user, userChannel, isNew: false };
   }
 
   return findOrCreateUserByChannel(
@@ -90,7 +97,9 @@ export async function resolveWebLoginByPhone(
     undefined,
     undefined,
     resolveSource(attribution ?? null),
-    hasAttributionSignal(attribution ?? null) ? attribution : null,
+    attribution && hasAttributionSignal(attribution)
+      ? buildSourceData(attribution)
+      : null,
     timezone,
   );
 }

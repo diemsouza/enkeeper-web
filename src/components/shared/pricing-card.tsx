@@ -8,6 +8,7 @@ import {
   SUBSCRIPTION_INTERVAL,
   SubscriptionInterval,
 } from "@/src/lib/constants";
+import { getPricingDisplay } from "@/src/lib/pricing-display";
 
 const BENEFIT_COUNT = 4;
 
@@ -23,6 +24,7 @@ export function PricingCard({
   renderCta: (interval: SubscriptionInterval) => ReactNode;
 }) {
   const t = useTranslations("pricing");
+  const pricing = getPricingDisplay();
   const [interval, setInterval] = useState<SubscriptionInterval>(
     lockedInterval ?? SUBSCRIPTION_INTERVAL.YEARLY,
   );
@@ -39,20 +41,30 @@ export function PricingCard({
         onChange={setInterval}
       />
 
-      <p className="mb-1">
-        <span className="text-5xl font-bold">{t(`${interval}.price`)}</span>{" "}
+      <div hidden={interval !== SUBSCRIPTION_INTERVAL.YEARLY}>
+        <p className="mb-1">
+          <span className="text-5xl font-bold">
+            {t("yearly.price", pricing)}
+          </span>{" "}
+          <span className="text-sm text-muted-foreground">
+            {t("price_suffix")}
+          </span>
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t("yearly.billed", pricing)}
+        </p>
+        <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          {t("yearly.savings", pricing)}
+        </span>
+      </div>
+      <p hidden={interval !== SUBSCRIPTION_INTERVAL.MONTHLY} className="mb-1">
+        <span className="text-5xl font-bold">
+          {t("monthly.price", pricing)}
+        </span>{" "}
         <span className="text-sm text-muted-foreground">
           {t("price_suffix")}
         </span>
       </p>
-      {interval === SUBSCRIPTION_INTERVAL.YEARLY && (
-        <>
-          <p className="text-sm text-muted-foreground">{t("yearly.billed")}</p>
-          <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            {t("yearly.savings")}
-          </span>
-        </>
-      )}
       <p className="mt-2 text-sm text-muted-foreground mb-8">
         {renewNote ?? t("renew_note")}
       </p>

@@ -10,6 +10,7 @@ import { postJson } from "@/src/lib/api-client";
 import { OTP_EXPIRATION_MIN } from "@/src/core/otp";
 import { clearOtpRequest, readOtpRequest, saveOtpRequest } from "./otp-session";
 import { sanitizeRedirectPath } from "@/src/core/auth-routes";
+import { setUserId, track } from "@/src/lib/analytics";
 
 type OtpErrorBody = {
   error?: string;
@@ -34,6 +35,8 @@ function messageFor(body: OtpErrorBody): string {
   );
 }
 
+type VerifyOtpBody = OtpErrorBody & { isNew?: boolean; userId?: string };
+
 type RequestResult =
   | { ok: true; requestedAt: number }
   | { ok: false; message: string };
@@ -53,11 +56,13 @@ export default function LoginPage() {
     if (!waToken) return;
     setCheckingWaToken(true);
     (async () => {
-      const { ok, body } = await postJson<{ ok: boolean }>(
+      const { ok, body } = await postJson<{ ok: boolean; userId?: string }>(
         "/api/auth/wa-login",
         { waToken },
       );
       if (ok && body.ok) {
+        if (body.userId) setUserId(body.userId);
+        track("login", { method: "whatsapp" });
         const target = new URLSearchParams(window.location.search).get(
           "redirect_to",
         );
@@ -120,7 +125,7 @@ export default function LoginPage() {
   async function verifyCode(code: string) {
     setLoading(true);
     setCodeError(null);
-    const { ok, body } = await postJson<OtpErrorBody>("/api/auth/otp/verify", {
+    const { ok, body } = await postJson<VerifyOtpBody>("/api/auth/otp/verify", {
       phone: phoneDigits,
       code,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -132,6 +137,8 @@ export default function LoginPage() {
       return;
     }
     clearOtpRequest();
+    if (body.userId) setUserId(body.userId);
+    track(body.isNew ? "sign_up" : "login", { method: "phone" });
     const target = new URLSearchParams(window.location.search).get(
       "redirect_to",
     );

@@ -3,6 +3,6 @@ export {};
 declare global {
   interface Window {
     gtag: (...args: any[]) => void;
-    dataLayer: Record<string, any>;
+    dataLayer: Record<string, unknown>[];
   }
 }

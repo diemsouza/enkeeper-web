@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
+import { useTranslations } from "next-intl";
 import { MessageBubble } from "@/src/components/chat/message-bubble";
 import { Composer } from "@/src/components/chat/composer";
 import type { Message } from "@/src/components/chat/types";
@@ -29,6 +30,7 @@ export const SimulatorThreadPanel = forwardRef<
   { messages, summary, pentagon, onScroll, size = "default" },
   ref,
 ) {
+  const t = useTranslations("home.simulator");
   const compact = size === "compact";
 
   const content = (
@@ -62,6 +64,7 @@ export const SimulatorThreadPanel = forwardRef<
                 time: summary.time,
                 type: "image",
                 imageUrl: pentagonImageUrl(pentagon.input),
+                imageAlt: t("summary_chart_alt"),
                 caption: summary.text,
               }}
             />

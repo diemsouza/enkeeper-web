@@ -19,9 +19,10 @@
     },
     "seo": {
       "title": "Fluizer | Pratique inglês com IA, todo dia, no seu ritmo",
-      "description": "Prática diária de inglês com IA. Pratique sobre o que você quiser, no seu ritmo, todo dia.",
+      "description": "Fluizer é um app de prática diária de inglês com IA e repetição espaçada. Pratique sobre o conteúdo que você escolher, no seu ritmo, todo dia.",
       "keywords": "prática de inglês com IA, vocabulário inglês, estudar inglês online, repetição espaçada inglês, prática contínua, Fluizer",
-      "ogImage": "/images/logo.png"
+      "ogImage": "/images/fluizer.png",
+      "ogImageAlt": "Fluizer"
     },
     "paging_back": "Voltar",
     "paging_next": "Próximo",
@@ -130,7 +131,7 @@
       "headline": "Pratique inglês com IA, todo dia, no seu ritmo, sobre o que você quiser.",
       "subphrases": {
         "0": "Seu inglês evolui todo dia, não só na hora da aula.",
-        "1": "Teste grátis por 7 dias. A partir de R$21,90/mês no plano anual.",
+        "1": "Teste grátis por {days} dias. A partir de R${yearlyPerMonth}/mês no plano anual.",
         "2": "O que você pratica todo dia é o que não some depois."
       },
       "cta": "Comece grátis",
@@ -141,7 +142,8 @@
     },
     "simulator": {
       "differentiation_line": "Diferente de um assistente genérico, ele guarda o que você errou, traz de volta na hora certa pra fixar, e fecha cada atividade com um resumo do que evoluiu.",
-      "cta": "Quero praticar"
+      "cta": "Quero praticar",
+      "summary_chart_alt": "Gráfico de pentágono com a pontuação do dia nas cinco habilidades de inglês."
     },
     "waitlist_microcopy": "Garanta sua vaga · Comece grátis",
     "waitlist": {
@@ -163,27 +165,33 @@
       "blocks": {
         "0": {
           "title": "Pratique o que faz sentido pro seu momento.",
-          "description": "Não ter material em mãos não pode ser motivo pra não praticar. Você conta o que faz sentido pro seu momento, trabalho, viagem, aula, o que for, e a prática começa na hora, sem precisar montar nada antes."
+          "description": "Não ter material em mãos não pode ser motivo pra não praticar. Você conta o que faz sentido pro seu momento, trabalho, viagem, aula, o que for, e a prática começa na hora, sem precisar montar nada antes.",
+          "image_alt": "Pessoa de costas em uma trilha de montanha, olhando um vale com picos e nuvens."
         },
         "1": {
           "title": "As perguntas chegam no seu ritmo.",
-          "description": "A prática fica pronta assim que você entra, sem hora marcada nem sessão de estudo formal. Você responde no seu tempo, e quando erra, entende o porquê na hora, não só que errou."
+          "description": "A prática fica pronta assim que você entra, sem hora marcada nem sessão de estudo formal. Você responde no seu tempo, e quando erra, entende o porquê na hora, não só que errou.",
+          "image_alt": "Caderno de planejamento aberto com metas do mês, ao lado de uma xícara de café."
         },
         "2": {
           "title": "Mais perguntas, na hora que você decidir.",
-          "description": "em hora que bate vontade de praticar mais de uma vez seguida. Um comando muda o ritmo: as perguntas passam a chegar em sequência, no fôlego que você quiser dar."
+          "description": "Tem hora que bate vontade de praticar mais de uma vez seguida. Um comando muda o ritmo: as perguntas passam a chegar em sequência, no fôlego que você quiser dar.",
+          "image_alt": "Ampulheta de vidro com a areia caindo sobre um fundo escuro."
         },
         "3": {
           "title": "Ouça e repita. Treine o listening também.",
-          "description": "Ler e escrever não é a mesma coisa que entender e falar. O feedback pode chegar em áudio, você escuta a pronúncia certa e repete, treinando o ouvido e a fala no mesmo lugar onde já pratica o resto."
+          "description": "Ler e escrever não é a mesma coisa que entender e falar. O feedback pode chegar em áudio, você escuta a pronúncia certa e repete, treinando o ouvido e a fala no mesmo lugar onde já pratica o resto.",
+          "image_alt": "Fones de ouvido prateados sobre uma superfície preta."
         },
         "4": {
           "title": "Também aceita material pronto.",
-          "description": "Já tem material da aula? Não precisa escolher entre um ou outro. Envie foto, PDF ou texto quando quiser, e as perguntas saem exatamente daquele conteúdo."
+          "description": "Já tem material da aula? Não precisa escolher entre um ou outro. Envie foto, PDF ou texto quando quiser, e as perguntas saem exatamente daquele conteúdo.",
+          "image_alt": "Livros e cadernos abertos sobre uma mesa, com uma estante ao fundo."
         },
         "5": {
           "title": "Nunca é só decorar a mesma pergunta.",
-          "description": "As perguntas mudam de formato: completar frase, aplicar num cenário, escolher a opção certa. O que muda é a forma de treinar o mesmo termo, não o termo repetido do jeito idêntico."
+          "description": "As perguntas mudam de formato: completar frase, aplicar num cenário, escolher a opção certa. O que muda é a forma de treinar o mesmo termo, não o termo repetido do jeito idêntico.",
+          "image_alt": "Mulher sorrindo, de fones de ouvido, olhando para o celular."
         }
       }
     },
@@ -249,25 +257,49 @@
     "faq": {
       "title": "Perguntas frequentes",
       "items": {
+        "what-is": {
+          "question": "O que é o Fluizer?",
+          "answer": "O Fluizer é um web app de prática diária de inglês com IA e repetição espaçada. Você escolhe o tema ou envia seu material, responde perguntas curtas no seu ritmo e o sistema traz de volta o que você errou até fixar."
+        },
         "how-it-works": {
           "question": "Como funciona na prática?",
-          "answer": "Você envia o que quer praticar, um material ou só o tema, e recebe perguntas sobre aquilo ao longo do dia. Você responde no seu ritmo e recebe feedback na hora."
+          "answer": "Você escolhe um objetivo e um tema, como trabalho, viagem ou dia a dia, e a prática começa na hora. Cada pergunta recebe feedback imediato com a explicação do erro, a frase em contexto e o áudio da pronúncia. No fim de cada atividade, você recebe um resumo do que evoluiu."
+        },
+        "vs-generic-ai": {
+          "question": "Qual a diferença para praticar com uma IA de chat comum?",
+          "answer": "Uma IA de chat comum responde o que você pergunta, mas não acompanha sua evolução. O Fluizer guarda cada resposta, identifica o que travou e traz de volta no momento certo, antes de você esquecer. Você não precisa montar prompt, plano de estudo nem lembrar de revisar."
+        },
+        "english-level": {
+          "question": "Serve para qual nível de inglês?",
+          "answer": "O Fluizer serve do iniciante ao avançado. Quem está começando do zero aproveita melhor se já estiver fazendo algum curso ou estudando sozinho, porque o Fluizer é prática e reforço, não uma aula do zero. Você define o tema e o foco, e as perguntas acompanham o seu momento."
+        },
+        "spaced-repetition": {
+          "question": "O que é repetição espaçada e por que ajuda?",
+          "answer": "Repetição espaçada é uma técnica de memorização em que cada termo volta a aparecer em intervalos cada vez maiores, sempre perto do ponto em que você esqueceria. No Fluizer, o algoritmo decide esses intervalos sozinho com base nos seus acertos e erros, então você revisa só o que precisa."
+        },
+        "any-content-works": {
+          "question": "Posso praticar com o meu próprio material?",
+          "answer": "Sim. Além de praticar por tema, você pode enviar material de aula, foto, PDF ou texto quando quiser, e as perguntas saem exatamente daquele conteúdo. É útil para preparar uma reunião, uma prova ou revisar o que viu na aula."
+        },
+        "skills": {
+          "question": "Quais habilidades dá pra praticar?",
+          "answer": "No Fluizer você pratica vocabulário, escrita, leitura, listening e pronúncia. As perguntas variam entre completar frase, aplicar em cenário, múltipla escolha, interpretação de imagem, tradução e transcrição. Todo feedback vem com áudio da frase em inglês, o que permite treinar shadowing, ouvindo e repetindo junto."
+        },
+        "platform": {
+          "question": "Preciso instalar alguma coisa?",
+          "answer": "Não. O Fluizer funciona direto no navegador, no celular ou no computador, em fluizer.com/app. O acesso é feito com o seu número de telefone."
+        },
+        "message-frequency": {
+          "question": "Quanto tempo por dia preciso praticar?",
+          "answer": "Não tem tempo mínimo: dá pra praticar alguns minutos ou ir fundo e usar 30 a 40 minutos por dia, dependendo do seu ritmo e de como você estuda, por exemplo fazendo shadowing com os áudios. A prática fica pronta quando você entrar, e todo o histórico fica salvo pra revisar em outro horário."
         },
         "does-it-replace-classes": {
           "question": "Isso substitui aula de inglês?",
-          "answer": "Não. A prática aqui é reforço diário do que você já está aprendendo, seja em aula, sozinho ou em qualquer outro lugar. Ela existe pra o que você aprende não sumir entre uma sessão e outra."
-        },
-        "any-content-works": {
-          "question": "Funciona com qualquer conteúdo que eu mandar?",
-          "answer": "Sim. Pode ser material de aula, um assunto que você quer praticar ou até um PDF, foto ou texto solto. As perguntas saem exatamente daquele conteúdo."
+          "answer": "Não. O Fluizer é reforço diário do que você já está aprendendo, seja em aula, sozinho ou em qualquer outro lugar. Ele existe para o que você aprende não sumir entre uma sessão e outra."
         },
         "after-trial": {
-          "question": "O que acontece depois dos 7 dias grátis?",
-          "answer": "O acesso expira. Para continuar, escolha o plano anual, R$21,90/mês cobrado R$262,80 por ano, ou o mensal, R$29,90/mês. Os dois renovam automaticamente e podem ser cancelados quando você quiser. Sem assinatura, o histórico fica guardado e a prática só recomeça quando você decidir continuar."
-        },
-        "message-frequency": {
-          "question": "Preciso ficar entrando o dia todo?",
-          "answer": "Não. A prática fica pronta quando você entrar, no seu tempo. Se quiser praticar mais de uma vez seguida, um comando muda o ritmo e as perguntas chegam em sequência, no fôlego que você quiser dar."
+          "question": "Quanto custa o Fluizer e o que acontece depois dos 7 dias grátis?",
+          "answer": "O Fluizer tem {days} dias grátis sem cartão. Depois, o plano anual sai R${yearlyPerMonth} por mês, cobrado R${yearly} por ano, e o mensal custa R${monthly} por mês. Os dois renovam automaticamente e podem ser cancelados quando você quiser. Sem assinatura, o histórico fica guardado e a prática recomeça quando você decidir continuar."
         },
         "cancel-anytime": {
           "question": "Dá pra cancelar quando quiser?",
@@ -291,12 +323,12 @@
     },
     "price_suffix": "/mês",
     "yearly": {
-      "price": "R$21,90",
-      "billed": "Cobrado R$262,80 por ano",
-      "savings": "Você economiza R$96"
+      "price": "R${yearlyPerMonth}",
+      "billed": "Cobrado R${yearly} por ano",
+      "savings": "Você economiza R${savings}"
     },
     "monthly": {
-      "price": "R$29,90"
+      "price": "R${monthly}"
     },
     "renew_note": "Renova automaticamente. Cancele quando quiser.",
     "benefits": {

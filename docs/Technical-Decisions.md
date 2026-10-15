@@ -379,10 +379,10 @@ havia nenhuma captura de UTM/referrer em lugar nenhum do app.
 
 Decisões:
 
-- **First-touch, cookie de 30 dias (`fz_attribution`).** A primeira origem
+- **First-touch, cookie de 90 dias (`fz_attribution`).** A primeira origem
   que trouxe a pessoa é a que conta; o middleware (`src/middleware.ts`) só
-  grava o cookie se ele ainda não existir, em qualquer página pública fora de
-  `/app` e `/login`. O cookie não é apagado depois de gravado o cadastro,
+  grava o cookie se ele ainda não existir, em qualquer rota, inclusive nas respostas de
+  redirect. O cookie não é apagado depois de gravado o cadastro,
   fica disponível pra eventos futuros (ex: primeira assinatura paga).
 - **Taxonomia de `source`:** `meta_ads`, `google_ads`, `direct`,
   `organic_search`, `referral`, ou o valor literal de `utm_source` quando
@@ -401,9 +401,10 @@ Decisões:
 - **Identificação de usuário no GA4 via `dataLayer.push`, não `gtag.js`.**
   Não existe `gtag.js` carregado no app, só o container GTM. Em vez de
   carregar um `gtag.js` novo em paralelo (risco de contagem duplicada),
-  `setAnalyticsUserId` (`src/lib/analytics.ts`) empurra
-  `{ event: "set_user_id", user_id }` no `dataLayer`, seguindo o mesmo padrão
-  do `logEvent` já existente. A configuração do lado do GTM/GA4 (variável de
+  `setUserId` (`src/lib/analytics.ts`) empurra `{ user_id }` (sem `event`) no
+  `dataLayer`, e os eventos de funil (`sign_up`, `login`, `begin_checkout`,
+  `purchase`) saem por `track()`, tipado por mapa de eventos GA4, sem dado
+  pessoal. A configuração do lado do GTM/GA4 (variável de
   Data Layer + campo User-ID na tag de configuração, recurso User-ID
   habilitado na propriedade) é feita no console, fora deste repo.
 
@@ -486,3 +487,21 @@ Decisões:
   - `success_url` (`/app?payment=success`, `PAYMENT_SUCCESS_PARAM`, que mostra um toast e limpa o parâmetro), `cancel_url` (`/app/plans`) e `return_url` do Portal (`/app/plans`) são montados a partir de `NEXT_PUBLIC_APP_URL`, então cada ambiente volta para o próprio domínio.
   - `/payment` segue no ar para links de checkout antigos ainda em cache.
 - **Env:** `STRIPE_PRICE_MONTHLY` e `STRIPE_PRICE_YEARLY` (Prices recorrentes) substituem `STRIPE_PRICE_ID`, que era o Price avulso e não é reaproveitado.
+
+## Origem no cadastro: `sourceData` em snake_case
+
+Data: 2026-10-15
+
+- `User.source` segue `resolveSource` (`meta_ads`, `google_ads`, `utm_source`
+  cru, `direct`, `organic_search`, `referral`). `User.sourceData` passou a
+  guardar só `{ utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+  gclid, fbclid }` (`buildSourceData`); `referrer`, `landingPath` e
+  `firstSeenAt` ficam só no cookie. Contas anteriores a esta data têm o
+  formato antigo (camelCase, cookie inteiro): consultas por canal devem
+  tratar os dois.
+- O cookie é só primeiro toque e nunca é sobrescrito: quem visita sem UTM e
+  volta depois por anúncio fica `direct` no banco.
+- O redirect `/app` -> `/login` repete `utm_*`, `gclid` e `fbclid` na raiz da
+  URL do `/login`, para a tag do GA4 atribuir a sessão.
+- `purchase` só dispara depois de o servidor consultar a sessão da Stripe
+  (`findPaidPurchase`): paga, do usuário logado, em BRL.

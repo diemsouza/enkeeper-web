@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { Target } from "lucide-react";
 import { HomeCTA } from "@/src/components/home/home-cta";
 import { cn } from "@/src/lib/utils";
+import { TRIAL_DAYS } from "@/src/lib/constants";
+import { getPricingDisplay } from "@/src/lib/pricing-display";
 
 const SUBPHRASE_COUNT = 3;
 const CROSSFADE_INTERVAL_MS = 10000;
@@ -40,6 +42,7 @@ function useCrossfadeIndex(
 
 export default function Hero() {
   const t = useTranslations("home");
+  const pricing = getPricingDisplay();
   const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -72,7 +75,7 @@ export default function Hero() {
             subVisible ? "opacity-100" : "opacity-0",
           )}
         >
-          {t(`hero.subphrases.${subIndex}`)}
+          {t(`hero.subphrases.${subIndex}`, { ...pricing, days: TRIAL_DAYS })}
         </p>
       </div>
 

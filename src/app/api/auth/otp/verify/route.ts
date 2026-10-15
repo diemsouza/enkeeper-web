@@ -27,9 +27,14 @@ export async function POST(request: Request): Promise<Response> {
       cookieStore.get(ATTRIBUTION_COOKIE_NAME)?.value,
     );
 
-    const { user } = await verifyOtp(phone, code, timezone, attribution);
+    const { user, isNew } = await verifyOtp(
+      phone,
+      code,
+      timezone,
+      attribution,
+    );
     await setSessionCookie(user.id);
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, isNew, userId: user.id });
   } catch (error: unknown) {
     if (error instanceof ZodError) {
       return Response.json(

@@ -65,6 +65,7 @@ type TurnSpec = {
   question: string;
   options?: string[];
   imageDescription?: string;
+  imageAlt?: string;
   userAnswer: string;
   userTime: string;
   status: "right" | "partial" | "wrong";
@@ -109,6 +110,7 @@ function buildQuestionMessage(spec: TurnSpec): Message {
     ...base,
     type: "image",
     imageUrl: simulatorImageUrl(spec.domainId),
+    imageAlt: spec.imageAlt,
     interactive,
   };
 }
@@ -241,6 +243,8 @@ const workResult = buildRoteiro(
       options: ["paycheck", "stapler", "handshake", "elevator"],
       imageDescription:
         "Two business people shaking hands in a bright modern office, seen from the side at waist height, both smiling.",
+      imageAlt:
+        "Duas pessoas em um escritório moderno apertando as mãos e sorrindo.",
       userAnswer: "handshake",
       userTime: "09:12",
       status: "right",
@@ -323,6 +327,8 @@ const travelResult = buildRoteiro(
       options: ["boarding gate", "customs desk", "baggage carousel", "taxi stand"],
       imageDescription:
         "Several suitcases moving on a baggage carousel in an airport arrivals hall, no people in focus.",
+      imageAlt:
+        "Malas passando na esteira de bagagens de um aeroporto.",
       userAnswer: "baggage carousel",
       userTime: "10:13",
       status: "right",
@@ -405,6 +411,8 @@ const educationResult = buildRoteiro(
       options: ["enrollment", "internship", "graduation", "tuition"],
       imageDescription:
         "A group of university graduates in black caps and gowns throwing their caps in the air outdoors on a sunny day.",
+      imageAlt:
+        "Formandos de beca jogando os capelos para o alto ao ar livre.",
       userAnswer: "graduation",
       userTime: "10:07",
       status: "right",
@@ -487,6 +495,8 @@ const dailyLifeResult = buildRoteiro(
       options: ["dishes", "lawn", "laundry", "trash"],
       imageDescription:
         "A wicker basket full of freshly washed, neatly folded clothes and towels on a bed with white sheets.",
+      imageAlt:
+        "Cesta de vime com roupas e toalhas dobradas sobre uma cama.",
       userAnswer: "laundry",
       userTime: "11:03",
       status: "right",

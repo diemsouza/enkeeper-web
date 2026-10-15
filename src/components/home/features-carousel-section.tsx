@@ -62,7 +62,7 @@ export default function FeaturesCarouselSection() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={`/images/features/${i}.jpg`}
-                        alt={t(`blocks.${i}.title`)}
+                        alt={t(`blocks.${i}.image_alt`)}
                         className="w-full h-full object-cover"
                       />
                     </div>

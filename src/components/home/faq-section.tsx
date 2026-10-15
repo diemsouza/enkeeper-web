@@ -10,9 +10,11 @@ import {
 import { FAQ_IDS } from "@/src/components/home/faq-data";
 import { HomeCTA } from "./home-cta";
 import { TRIAL_DAYS } from "@/src/lib/constants";
+import { getPricingDisplay } from "@/src/lib/pricing-display";
 
 export default function FaqSection() {
   const t = useTranslations("home.faq");
+  const pricing = getPricingDisplay();
 
   return (
     <section className="section-light py-[120px] px-6 md:py-[80px]">
@@ -27,8 +29,10 @@ export default function FaqSection() {
               <AccordionTrigger className="text-left text-[17px] text-muted-foreground hover:text-foreground hover:no-underline data-[state=open]:text-foreground">
                 {t(`items.${id}.question`)}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground leading-relaxed text-[16px]">
-                {t(`items.${id}.answer`)}
+              <AccordionContent
+                forceMount
+                className="text-muted-foreground leading-relaxed text-[16px]">
+                {t(`items.${id}.answer`, { ...pricing, days: TRIAL_DAYS })}
               </AccordionContent>
             </AccordionItem>
           ))}

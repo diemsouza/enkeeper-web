@@ -23,6 +23,7 @@ export interface Message {
   // question: audio do enunciado (caption em cima, sem traducao).
   audioKind?: "question" | "feedback";
   imageUrl?: string;
+  imageAlt?: string;
   caption?: string;
   textFallback?: string;
   translation?: string;

@@ -1,3 +1,4 @@
+import Stripe from "stripe";
 import { stripe } from "../vendors/stripe.vendor";
 import { findUserById, updateUserCheckoutData } from "../repo/users.repo";
 import {
@@ -11,6 +12,7 @@ import {
 import {
   BILLING_PORTAL_PATH,
   PAYMENT_PROVIDER,
+  PAYMENT_SESSION_PARAM,
   PAYMENT_SUCCESS_PARAM,
   PLANS_PATH,
   SUBSCRIPTION_INTERVAL,
@@ -19,6 +21,7 @@ import {
 import { CheckoutData } from "../types/domain";
 
 const CHECKOUT_EXPIRES_SECONDS = 86400;
+const CHECKOUT_SESSION_ID_PATTERN = /^cs_[A-Za-z0-9_]{10,200}$/;
 
 function resolvePriceId(interval: SubscriptionInterval): string {
   const priceId =
@@ -89,7 +92,7 @@ export async function getOrCreateCheckoutUrl(
     mode: "subscription",
     subscription_data: { metadata: { userId } },
     expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_EXPIRES_SECONDS,
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app?${PAYMENT_SUCCESS_PARAM}=success`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app?${PAYMENT_SUCCESS_PARAM}=success&${PAYMENT_SESSION_PARAM}={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}${PLANS_PATH}`,
   });
 
@@ -107,6 +110,49 @@ export async function getOrCreateCheckoutUrl(
   });
 
   return session.url;
+}
+
+export type PaidPurchase = {
+  transactionId: string;
+  value: number;
+  interval: SubscriptionInterval;
+};
+
+// O query param do retorno nao prova pagamento: a sessao e consultada na Stripe
+// e precisa pertencer ao usuario logado e estar paga.
+export async function findPaidPurchase(
+  userId: string,
+  sessionId: string,
+): Promise<PaidPurchase | null> {
+  if (!CHECKOUT_SESSION_ID_PATTERN.test(sessionId)) return null;
+
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["line_items"],
+    });
+  } catch (err) {
+    if (err instanceof Stripe.errors.StripeInvalidRequestError) return null;
+    throw err;
+  }
+
+  const isPaid =
+    session.payment_status === "paid" &&
+    session.client_reference_id === userId &&
+    session.currency === "brl" &&
+    session.amount_total !== null;
+  if (!isPaid) return null;
+
+  const priceId = session.line_items?.data[0]?.price?.id;
+  const interval =
+    priceId === process.env.STRIPE_PRICE_YEARLY
+      ? SUBSCRIPTION_INTERVAL.YEARLY
+      : SUBSCRIPTION_INTERVAL.MONTHLY;
+  return {
+    transactionId: session.id,
+    value: (session.amount_total ?? 0) / 100,
+    interval,
+  };
 }
 
 export async function createBillingPortalUrl(

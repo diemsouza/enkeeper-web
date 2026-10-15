@@ -19,7 +19,7 @@ export async function POST(request: Request): Promise<Response> {
     if (!user) return Response.json({ ok: false });
 
     await setSessionCookie(user.id);
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, userId: user.id });
   } catch (error: unknown) {
     if (error instanceof ZodError) return Response.json({ ok: false });
     console.error("[post/api/auth/wa-login]", error);

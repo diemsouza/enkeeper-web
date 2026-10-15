@@ -255,7 +255,19 @@ Custo variável por usuário Pro ativo:
 
 **Margem bruta:** 68–78%.
 
-Taxa de processamento do Stripe por transação ainda não medida nem incluída na tabela acima. Revisar quando houver volume real de cobranças.
+### Taxas da Stripe
+
+Medidas em produção em outubro de 2026, a partir de cobranças reais:
+
+- **Processamento de cartão:** 3,99% + R$0,39 por cobrança (R$1,26 sobre R$21,90 e R$1,58 sobre R$29,90).
+- **Stripe Billing:** 0,7% sobre o volume das assinaturas, cobrado à parte e não descontado em cada pagamento. Confirmar no saldo da Stripe após as primeiras cobranças recorrentes.
+
+| Plano | Valor | Processamento | Billing (0,7%) | Líquido | Taxa total |
+| ----- | ----- | ------------- | -------------- | ------- | ---------- |
+| Mensal | R$29,90 | R$1,58 | R$0,21 | ~R$28,11 | ~6,0% |
+| Anual | R$262,80 | R$10,88 | R$1,84 | ~R$250,08 (~R$20,84/mês) | ~4,8% |
+
+O anual tem taxa proporcional menor porque a parte fixa de R$0,39 incide uma vez por ano, não doze. O imposto do Simples (sobre o valor bruto) e o custo variável da tabela acima ainda saem desse líquido.
 
 Custo de texto-para-voz do feedback (rollout parcial, ver Seção 4) ainda não tem medição real em produção. Estimativa inicial, baseada em preço de mercado dos provedores usados, fica bem abaixo dos demais itens da tabela, na casa de centavos por milhares de gerações, e é reduzida ainda mais pelo reuso do áudio já gerado por pergunta (sem regeneração em revisão espaçada). Revisar quando houver volume real desse fluxo, inclusive para decidir se maior frequência de áudio vira benefício de tier superior.
 
@@ -271,24 +283,44 @@ Geração de conteúdo por tema (nova atividade) ainda não tem custo médio med
 
 **Meta de independência:** R$25.000 líquido/mês.
 
-Com R$21,90/mês (plano anual; o mensal é R$29,90) e custo médio R$5,30, margem bruta de R$14,60/usuário no anual, antes da taxa da Stripe.
+Projeção deliberadamente conservadora, revisada em outubro de 2026 com os preços e as taxas reais.
 
-| Marco | Pagantes | MRR bruto | Líquido estimado | O que habilita |
-| ----- | -------- | --------- | ---------------- | -------------- |
-| Validação | 300 | R$5.970 | ~R$3.700 | Prova produto, mantém CLT |
-| Transição | 1.000 | R$19.900 | ~R$12.500 | Reduz CLT |
-| **Independência** | **1.800** | **R$35.820** | **~R$22.500** | **Sai do emprego** |
-| Conforto | 3.000 | R$59.700 | ~R$37.500 | Reinveste em time/marketing |
+### Premissas por pagante
 
-Conversão estimada: 8–12% trial → Pro.
-Base necessária: 15.000–22.000 trials.
+| Premissa | Valor | Por que é conservador |
+| -------- | ----- | --------------------- |
+| Mix de planos | 60% anual, 40% mensal | O anual é o padrão da página e rende menos por mês |
+| Receita bruta média | R$25,10/mês | 0,6 × R$21,90 + 0,4 × R$29,90 |
+| Líquido depois da Stripe | R$23,75/mês | Taxas reais da Seção 10, incluindo Billing |
+| Custo variável | R$6,30/mês | Teto da faixa da Seção 10, não a média |
+| Imposto do Simples | ~8% do bruto (R$2,01/mês) | Acima da alíquota inicial, já prevendo a subida de faixa |
+| **Resultado por pagante** | **~R$15,40/mês** | |
+
+O resultado é o líquido da empresa, antes de pró-labore, contador, infraestrutura fixa e anúncios.
+
+### Marcos
+
+| Marco | Pagantes | MRR bruto | Resultado da empresa | O que habilita |
+| ----- | -------- | --------- | -------------------- | -------------- |
+| Validação | 300 | R$7.530 | ~R$4.600 | Prova produto, mantém emprego |
+| Transição | 1.000 | R$25.100 | ~R$15.400 | Reduz dependência do emprego |
+| **Independência** | **1.700** | **R$42.670** | **~R$26.200** | **Sai do emprego** |
+| Conforto | 3.000 | R$75.300 | ~R$46.300 | Reinveste em time/marketing |
+
+### Conversão e reposição
+
+- Conversão trial → Pro: 5–8% (conservador; a referência anterior era 8–12%).
+- Base acumulada para chegar a 1.700 pagantes: ~21.000–34.000 trials, sem contar churn.
+- Churn assumido no mensal: ~8% ao mês. Com 40% da base no mensal, manter 1.700 pagantes exige repor ~55 pagantes por mês só para não cair. O anual concentra a perda no mês da renovação.
 
 ### Timeline conservadora
 
-- Meses 1–3: 30–50 usuários (validação técnica e qualidade conversacional)
-- Meses 3–6: 200–400 pagantes
-- Meses 6–12: 800–1.500 pagantes (orgânico + tráfego pago leve)
-- Meses 12–18: 1.800–3.000 pagantes (independência)
+Ponto de partida em outubro de 2026: nenhum pagante além do founder.
+
+- Meses 1–3: 0–20 pagantes (primeiros usuários de fora, funil medido, teste pago pequeno)
+- Meses 3–6: 50–150 pagantes
+- Meses 6–12: 300–600 pagantes (orgânico, professores parceiros e tráfego pago leve)
+- Meses 12–24: 1.000–1.700 pagantes (independência no fim da faixa)
 
 ---
 
@@ -336,6 +368,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Onboarding atualizado para refletir o fluxo de nova atividade como caminho principal
 - Site com copy atualizada, refletindo os dois caminhos de entrada (material ou tema) na home, publicado
 - Cobrança de acesso Pro por assinatura recorrente no cartão (Stripe), planos Mensal R$29,90 e Anual R$262,80, renovação automática, liberação do plano a cada cobrança confirmada, confirmação pelo chat só na primeira cobrança, página de planos por situação (item "Assinatura" no menu) com acesso ao portal da Stripe (cancelar, trocar cartão, mudar de plano), trava contra assinatura duplicada e recálculo do acesso no cancelamento imediato
+- Taxas reais da Stripe medidas em produção e registradas na Seção 10
 - Extração de material simplificada para lista única de vocabulário, sem seções tipadas, reduzindo a complexidade do pipeline de geração e de formatos de pergunta
 - OCR de imagem gera conteúdo de prática a partir de descrição da cena quando não há texto legível (antes era descartada), com tratamento dedicado para conteúdo impróprio (bloqueado) e imagem ilegível
 - Formatação de gap fill e cenário aplicada em código, independente do modelo reproduzir a formatação certa; cenário com variação de fechamento
@@ -375,7 +408,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 3. **Custo de WhatsApp.** Se janela 24h cair abaixo de 80%, custos disparam. Monitorar semanalmente.
 4. **Dependência da Meta.** Mitigado por arquitetura multicanal.
 5. **Concorrente no mesmo eixo.** Histórico de acerto/erro acumulado com repetição espaçada personalizada é a defesa - vantagem do incumbente.
-6. **Conversão abaixo do projetado.** Se cair para 5%, meta sobe para ~3.000 pagantes.
+6. **Conversão abaixo do projetado.** A projeção já assume 5–8%; abaixo de 5%, a base de trials necessária passa de 34.000 e o prazo da Seção 11 deixa de valer.
 
 ---
 
@@ -387,4 +420,4 @@ Entra focado em inglês. Posicionamento de complemento - não compete com profes
 
 Founder é usuário ativo do produto. Esse é o case e o conteúdo.
 
-Meta de 1.800 pagantes em 12–18 meses para R$22.500 líquido/mês.
+Meta conservadora de 1.700 pagantes em 18–24 meses para ~R$26.000 de resultado mensal da empresa.

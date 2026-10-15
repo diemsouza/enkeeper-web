@@ -2,9 +2,13 @@ import { getTranslations } from "next-intl/server";
 import { mapActivityMessages } from "@/src/components/chat/map-messages";
 import { LiveThreadClient } from "@/src/components/app/live-thread-client";
 import { PaymentSuccessToast } from "@/src/components/app/payment-success-toast";
-import { PAYMENT_SUCCESS_PARAM } from "@/src/lib/constants";
+import {
+  PAYMENT_SESSION_PARAM,
+  PAYMENT_SUCCESS_PARAM,
+} from "@/src/lib/constants";
 import { requireAuth } from "@/src/lib/auth/current-user";
 import { findCurrentActivityByUser } from "@/src/repo/activities.repo";
+import { findPaidPurchase } from "@/src/services/stripe-checkout-service";
 import {
   findMessagesTimelinePage,
   findPendingReviewBanner,
@@ -16,8 +20,13 @@ export default async function AppPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const user = await requireAuth();
-  const isPaymentSuccess =
-    (await searchParams)[PAYMENT_SUCCESS_PARAM] === "success";
+  const params = await searchParams;
+  const isPaymentSuccess = params[PAYMENT_SUCCESS_PARAM] === "success";
+  const sessionId = params[PAYMENT_SESSION_PARAM];
+  const purchase =
+    isPaymentSuccess && sessionId
+      ? await findPaidPurchase(user.id, sessionId)
+      : null;
   const [
     { messages, hasMore, feedbackTranslations },
     pendingReviewBanner,
@@ -41,7 +50,7 @@ export default async function AppPage({
 
   return (
     <>
-      {isPaymentSuccess && <PaymentSuccessToast />}
+      {isPaymentSuccess && <PaymentSuccessToast purchase={purchase} />}
       <LiveThreadClient
         userId={user.id}
         currentActivityId={currentActivity?.id ?? null}

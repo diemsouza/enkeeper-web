@@ -6,10 +6,12 @@ import { WhatsAppText } from "@/src/components/shared/whatsapp-text";
 
 export function ImageBubble({
   imageUrl,
+  alt,
   caption,
   zoomDisabled = false,
 }: {
   imageUrl: string;
+  alt?: string;
   caption?: string;
   zoomDisabled?: boolean;
 }) {
@@ -18,7 +20,7 @@ export function ImageBubble({
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={imageUrl}
-      alt={t("image_alt")}
+      alt={alt ?? t("image_alt")}
       className="block -mx-3 -mt-2 w-[calc(100%_+_1.5rem)] max-w-none"
     />
   );
