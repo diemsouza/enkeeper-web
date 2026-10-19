@@ -6,6 +6,39 @@ topo.
 
 ---
 
+## Composer do `/app` no celular: foco no play e crescimento até 4 linhas
+
+Data: 2026-10-19
+
+Contexto: nas perguntas de escuta o usuário ouve o áudio várias vezes enquanto escreve. Tocar no play fechava o teclado, e o composer mostrava só uma linha.
+
+- **Foco:** `useKeepComposerFocus` (`src/hooks/use-keep-composer-focus.ts`), usado pelo `NativeAudioPlayer` e pelo `OggAudioPlayer`. O iOS move o foco no `mousedown` sintetizado depois do toque, e o `preventDefault` só no `pointerdown`, que já existia, não bastava. Play e pause cancelam `pointerdown` e `mousedown`. A barra cancela só o `mousedown` vindo de toque, porque no mouse é ele que inicia o arraste. Se o foco sair mesmo assim, `restoreFocus` devolve o foco ao textarea que estava focado, chamado **depois** do `handlePlayPause`. O `unlockAudioContext()`/`audio.play()` continua síncrono e em primeiro lugar no `click` (regra do `AudioContext.resume()` no gesto).
+- **Altura:** `useLayoutEffect` sobre o texto mede o `scrollHeight` e limita a `line-height × 4 + padding` lidos do `getComputedStyle`. Passando disso, `overflow-y: auto`. Não usamos `field-sizing: content` porque não existe em iOS antigo. A linha de botões passou para `items-end`, para clipe e enviar ficarem na base. A lista não fica atrás do composer porque o `thread.tsx` já observa a altura dele (`ResizeObserver`), aplica no `paddingBottom` e rola até o fim quando a conversa já estava no fim.
+
+## Rolagem do simulador da home no toque
+
+Data: 2026-10-19
+
+Contexto: no celular, quem descia a home rápido e parava com o simulador no meio da tela passava a rolar o simulador (rolagem própria, 620px de altura) em vez da página e ficava preso vendo metade dele.
+
+- `useInnerScrollGate` (`src/components/home/simulator/use-inner-scroll-gate.ts`) observa o shell com `IntersectionObserver`. A rolagem interna só liga com o shell 90% visível ou cobrindo 90% da altura visível; o segundo caso cobre telas menores que o shell, onde os 90% visíveis nunca chegam. Fora isso o painel fica com `overflow-y: hidden` e o toque rola a página.
+- Só vale para `pointer: coarse`. No mouse a rolagem interna fica sempre ligada, como antes.
+- Nas bordas, o encadeamento nativo de rolagem (sem `overscroll-behavior: contain`) devolve o gesto para a página. Botões e áudio não são afetados: muda só o `overflow`.
+
+## Telefone no login: `libphonenumber-js` e código do país
+
+Data: 2026-10-19
+
+Contexto: a máscara própria do `/login` tratava o `55` de um número internacional (autofill do Chrome com `autocomplete="tel"`, número copiado de contato) como DDD e cortava o último dígito. O botão desabilitado dependia de um estado que podia ficar defasado do valor do campo.
+
+- **Biblioteca:** `libphonenumber-js` direto, não o `react-phone-number-input`. No modo nacional, o componente dele lê o número colado como nacional e repetiria o bug com `+55…` e `5511…`. A lib dá o parse e a formatação; o visual é o `Input` do projeto (`src/components/shared/phone-input.tsx`). Bandeiras com `country-flag-icons`: a do Brasil estática e as demais em `import()` por país, para não carregar as 260 no login.
+- **Um ponto só para o país:** `src/core/phone.ts` (cliente e servidor). O código do país vem dos metadados da lib. O padrão é `DEFAULT_PHONE_COUNTRY` (`constants.ts`), usado só quando o número chega sem código de país. Nenhum outro arquivo tem `55` fixo.
+- **Formato gravado inalterado:** `normalizePhoneToWaId` devolve só dígitos, com o código do país (`5511987654321`), igual ao `wa_id`. O cliente envia E.164 (`toE164`); o servidor normaliza de novo.
+- **Nono dígito:** não há regra própria; o número fica como veio. O `isValid()` da lib recusaria celular brasileiro sem o 9, que era aceito. `PHONE_NATIONAL_LENGTH_OVERRIDES` mantém o Brasil em 10 ou 11 dígitos nacionais; os outros países usam `isValid()`. O `isPossible()` não serve, porque aceita 8 ou 9 dígitos sem DDD.
+- **Nacional antes do internacional:** sem `+`, o número é lido primeiro como nacional do país selecionado (DDD 55 existe). Só se não fechar, e se começar com o código desse país, ele é relido como internacional.
+- **Webhook:** o `wa_id` sempre tem código do país e é normalizado como `+wa_id`. Para o Brasil o resultado é o mesmo. Um `wa_id` estrangeiro de 11 dígitos deixou de virar `55…`.
+- **Validação no envio:** lê o valor do DOM (`inputRef`), não o estado, para cobrir autofill que não passa pelo `onChange`.
+
 ## Formatos de escuta (`audio_transcription`, `audio_translation`)
 
 Data: 2026-10-09

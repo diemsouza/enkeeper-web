@@ -10,6 +10,7 @@ import { DesktopShell } from "./desktop-shell";
 import { IphoneShell } from "./iphone-shell";
 import { SimulatorThreadPanel } from "./simulator-thread-panel";
 import { useSyncedScroll } from "./use-synced-scroll";
+import { useInnerScrollGate } from "./use-inner-scroll-gate";
 
 export default function Simulator() {
   const t = useTranslations("home.simulator");
@@ -17,6 +18,8 @@ export default function Simulator() {
   const roteiro = SIMULATOR_ROTEIROS[activeDomain];
   const { primaryRef, secondaryRef, onPrimaryScroll, onSecondaryScroll } =
     useSyncedScroll();
+  const { targetRef: shellRef, isScrollEnabled } =
+    useInnerScrollGate<HTMLDivElement>();
 
   const summary = { text: roteiro.summaryText, time: roteiro.summaryTime };
   const pentagon = { input: roteiro.pentagon, time: roteiro.summaryTime };
@@ -26,7 +29,7 @@ export default function Simulator() {
       <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
         <DomainSelector active={activeDomain} onChange={setActiveDomain} />
 
-        <div className="relative w-full max-w-4xl mx-auto">
+        <div ref={shellRef} className="relative w-full max-w-4xl mx-auto">
           <DesktopShell>
             <SimulatorThreadPanel
               ref={primaryRef}
@@ -34,6 +37,7 @@ export default function Simulator() {
               summary={summary}
               pentagon={pentagon}
               onScroll={onPrimaryScroll}
+              isScrollEnabled={isScrollEnabled}
             />
           </DesktopShell>
           <IphoneShell>

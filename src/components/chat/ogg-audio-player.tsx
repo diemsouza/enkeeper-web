@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown } from "lucide-react";
 import { Spinner } from "@/src/components/ui/spinner";
+import { useKeepComposerFocus } from "@/src/hooks/use-keep-composer-focus";
 import type { AudioPlayerProps } from "@/src/components/chat/native-audio-player";
 
 type PlayerState = "loading" | "ready" | "playing" | "paused" | "error";
@@ -158,6 +159,7 @@ export function OggAudioPlayer({
   fluid,
 }: AudioPlayerProps) {
   const t = useTranslations("app.chat");
+  const { buttonProps, sliderProps, restoreFocus } = useKeepComposerFocus();
   const tErrors = useTranslations("app.errors");
   const [state, setState] = useState<PlayerState>("loading");
   const [duration, setDuration] = useState(0);
@@ -480,8 +482,11 @@ export function OggAudioPlayer({
       >
         <button
           type="button"
-          onPointerDown={(e) => e.preventDefault()}
-          onClick={handlePlayPause}
+          {...buttonProps}
+          onClick={() => {
+            handlePlayPause();
+            restoreFocus();
+          }}
           disabled={isLoading}
           aria-label={state === "playing" ? t("pause") : t("play")}
           className="shrink-0 rounded-full p-1 transition-colors active:bg-foreground/10 disabled:opacity-60"
@@ -530,7 +535,9 @@ export function OggAudioPlayer({
             step={0.01}
             value={progress}
             disabled={isLoading || isError || duration === 0}
+            {...sliderProps}
             onChange={(e) => handleSeek(Number(e.target.value))}
+            onClick={restoreFocus}
             aria-label={t("audio_position_aria")}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
           />

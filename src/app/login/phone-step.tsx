@@ -1,64 +1,84 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import type { CountryCode } from "libphonenumber-js";
 import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { formatBrPhoneMask, isBrPhoneComplete } from "@/src/lib/utils";
+import { PhoneInput } from "@/src/components/shared/phone-input";
+import { toE164 } from "@/src/core/phone";
+import { DEFAULT_PHONE_COUNTRY } from "@/src/lib/constants";
 
 type PhoneStepProps = {
-  onSubmit: (digits: string) => void;
+  onSubmit: (phone: string) => void;
   loading: boolean;
   error: string | null;
 };
 
 export function PhoneStep({ onSubmit, loading, error }: PhoneStepProps) {
+  const t = useTranslations("login");
   const [display, setDisplay] = useState("");
+  const [country, setCountry] = useState<CountryCode>(DEFAULT_PHONE_COUNTRY);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  const digits = display.replace(/\D/g, "");
-  const isValid = isBrPhoneComplete(display);
+  function handleValueChange(value: string) {
+    setDisplay(value);
+    setValidationError(null);
+  }
 
+  // Le o valor do DOM, nao o estado: autofill pode preencher o campo sem
+  // passar pelo onChange em alguns navegadores.
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isValid || loading) return;
-    onSubmit(digits);
+    if (loading) return;
+    const phone = toE164(inputRef.current?.value ?? display, country);
+    if (!phone) {
+      setValidationError(t("phone_invalid"));
+      return;
+    }
+    onSubmit(phone);
   }
+
+  const visibleError = validationError ?? error;
 
   return (
     <form
       onSubmit={handleSubmit}
+      noValidate
       className="flex w-full max-w-sm flex-col gap-4"
     >
       <div className="flex flex-col gap-1.5">
         <label htmlFor="phone" className="text-sm font-medium text-foreground">
-          Número do WhatsApp
+          {t("phone_label")}
         </label>
-        <Input
+        <PhoneInput
           ref={inputRef}
           id="phone"
-          inputMode="numeric"
-          autoComplete="tel"
-          placeholder="(11) 99999-9999"
+          name="phone"
           value={display}
-          onChange={(e) => setDisplay(formatBrPhoneMask(e.target.value))}
-          className="h-12 text-base"
+          onValueChange={handleValueChange}
+          country={country}
+          onCountryChange={setCountry}
+          aria-invalid={visibleError ? true : undefined}
+          aria-describedby="phone-hint"
         />
-        <p className="text-sm text-muted-foreground">
-          Receba o código de acesso direto no seu WhatsApp.
+        <p id="phone-hint" className="text-sm text-muted-foreground">
+          {t("phone_hint")}
         </p>
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button
-        type="submit"
-        disabled={!isValid || loading}
-        className="h-12 text-base"
-      >
-        {loading ? "Enviando..." : "Continuar"}
+      {visibleError && (
+        <p className="text-sm text-destructive">{visibleError}</p>
+      )}
+      <Button type="submit" disabled={loading} className="h-12 text-base">
+        {loading ? t("sending") : t("send_code")}
       </Button>
+      <p className="text-sm text-muted-foreground">
+        {t("phone_usage_note")}
+      </p>
     </form>
   );
 }

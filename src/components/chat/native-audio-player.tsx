@@ -11,6 +11,7 @@ import {
 import { useTranslations } from "next-intl";
 import { ChevronDown } from "lucide-react";
 import { Spinner } from "@/src/components/ui/spinner";
+import { useKeepComposerFocus } from "@/src/hooks/use-keep-composer-focus";
 
 export type AudioPlayerProps = {
   audioUrl: string;
@@ -109,6 +110,7 @@ export function NativeAudioPlayer({
   onUnsupported,
 }: AudioPlayerProps & { onUnsupported?: () => void }) {
   const t = useTranslations("app.chat");
+  const { buttonProps, sliderProps, restoreFocus } = useKeepComposerFocus();
   const tErrors = useTranslations("app.errors");
   const [state, setState] = useState<PlayerState>("ready");
   const [elementDuration, setElementDuration] = useState(0);
@@ -330,8 +332,11 @@ export function NativeAudioPlayer({
       >
         <button
           type="button"
-          onPointerDown={(e) => e.preventDefault()}
-          onClick={handlePlayPause}
+          {...buttonProps}
+          onClick={() => {
+            handlePlayPause();
+            restoreFocus();
+          }}
           aria-label={state === "playing" ? t("pause") : t("play")}
           disabled={!isReady && !isError}
           className="shrink-0 rounded-full p-1 transition-colors active:bg-foreground/10 disabled:opacity-60"
@@ -394,7 +399,9 @@ export function NativeAudioPlayer({
             step={0.01}
             value={progress}
             disabled={!isReady || isError || duration === 0}
+            {...sliderProps}
             onChange={(e) => handleSeek(Number(e.target.value))}
+            onClick={restoreFocus}
             aria-label={t("audio_position_aria")}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
           />

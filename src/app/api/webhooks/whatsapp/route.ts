@@ -99,7 +99,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       // lembrete/nudge, gera só essa resposta redirecionando pro app web, sem
       // gravar em Message. Mensagem de sessão abre no navegador nativo, ao
       // contrário de link em template (Product-Rules §12).
-      const normalizedPhone = wa_id ? normalizePhoneToWaId(wa_id) : null;
+      const normalizedPhone = wa_id ? normalizePhoneToWaId(`+${wa_id}`) : null;
       const link = await resolveWhatsAppAccessLink(normalizedPhone);
       await channel.sendMessage(channelId, formatWhatsAppRedirect(link));
     } catch (err) {

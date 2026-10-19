@@ -564,6 +564,18 @@ silenciosamente. O mecanismo de shortlink é genérico, reutilizável por qualqu
 outro caso que precise de link curto com expiração (ex: link de pagamento,
 indicação), não é exclusivo do login por WhatsApp.
 
+### 11.3 Login por telefone
+
+O acesso ao app começa pelo número do WhatsApp em `/login`, que recebe o código de acesso.
+
+- **País:** qualquer país, com o Brasil já selecionado. Sem detecção automática. O seletor fica à esquerda, dentro do campo (bandeira e código do país).
+- **Formatos aceitos:** digitado, colado ou por preenchimento automático, com ou sem código do país (`+55`, `55`, `0055`), com ou sem o `0` de tronco (`011`), com espaços, traços, pontos, parênteses e os caracteres invisíveis que vêm ao copiar de um contato. Número colado com o código de outro país troca o seletor para esse país.
+- **Brasil:** aceita 10 ou 11 dígitos com DDD (fixo, celular com ou sem o nono dígito), sem alterar o nono dígito. Sem o `+`, um `55` no início só é lido como código do país quando o número não fecha como nacional, já que DDD 55 existe.
+- **Outros países:** aceita o número válido pelo plano de numeração do país.
+- **Botão "Continuar":** sempre clicável. Número incompleto ou inválido mostra "Digite o número com DDD." abaixo do campo.
+- **Mesma conta:** o número é gravado num único formato (código do país e número, só dígitos). O mesmo número digitado de qualquer forma cai sempre na mesma conta.
+- **Textos:** abaixo do campo, "Receba o código de acesso direto no seu WhatsApp."; abaixo do botão, "Seu número será usado para acesso e envio de lembrete diário."
+
 ---
 
 ## 12. Lembrete diário e reengajamento
@@ -792,6 +804,8 @@ Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje
 - **Superfície web** (`/app`): usa `imageMediaId` se presente, renderizando a imagem com o `text` como legenda e permitindo abrir a imagem em tela cheia com zoom ao clicar (pentágono e gauge, Seções 1 e 2); usa `audioMediaId` com `<audio>` nativo do navegador (Ogg/Opus, ver Seção 17), com decoder próprio no client só quando o navegador não reproduz Ogg nativamente. Sem geração de mídia duplicada por canal.
 
 Na pergunta de escuta (Seção 4), o `text` é só a instrução e o `audioMediaId` é o áudio da pergunta. A web mostra os dois num card só, instrução em cima, um divisor (o mesmo do bloco "Ver tradução" do áudio de feedback) e o player embaixo, sem "Ver tradução" e sem texto abaixo do player. O WhatsApp envia só o áudio (o canal não entrega prática hoje).
+
+**Composer da web.** Tocar no play, no pause ou na barra de progresso de um áudio não tira o foco do campo de resposta: com o teclado aberto, ele continua aberto, para o usuário ouvir a pergunta quantas vezes quiser enquanto escreve. Tocar em qualquer outro lugar fecha o teclado. O campo cresce com o texto até 4 linhas e, passando disso, rola por dentro; depois do envio volta a uma linha. A última mensagem da conversa fica sempre visível acima dele.
 
 `imageMediaId` e `interactive` podem vir juntos na mesma mensagem (hoje: pergunta de reconhecimento por imagem, Seção 4, com um botão por opção). A superfície web mostra a imagem, o texto como legenda e as opções como botões. O WhatsApp segue a prioridade acima: envia a imagem com o `text` como legenda e acrescenta as opções numeradas à legenda no envio, sem botões.
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import { DOMAINS, type DomainId } from "@/src/lib/constants";
@@ -15,6 +16,7 @@ const SCROLL_EDGE_TOLERANCE_PX = 1;
 const SCROLL_STEP_PX = 160;
 
 export function DomainSelector({ active, onChange }: DomainSelectorProps) {
+  const t = useTranslations("home.simulator");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -74,7 +76,7 @@ export function DomainSelector({ active, onChange }: DomainSelectorProps) {
               behavior: "smooth",
             })
           }
-          aria-label="Rolar para a esquerda"
+          aria-label={t("scroll_left_aria")}
           className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full"
         >
           <ChevronLeft className="h-4 w-4" strokeWidth={2} />
@@ -91,7 +93,7 @@ export function DomainSelector({ active, onChange }: DomainSelectorProps) {
               behavior: "smooth",
             })
           }
-          aria-label="Rolar para a direita"
+          aria-label={t("scroll_right_aria")}
           className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full"
         >
           <ChevronRight className="h-4 w-4" strokeWidth={2} />

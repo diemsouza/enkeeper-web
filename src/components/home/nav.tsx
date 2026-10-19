@@ -6,7 +6,9 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export default function Nav() {
+type NavProps = { hasLoginLink?: boolean };
+
+export default function Nav({ hasLoginLink = true }: NavProps) {
   const t = useTranslations("common");
   const tHome = useTranslations("home.nav");
   const [scrolled, setScrolled] = useState(false);
@@ -34,12 +36,14 @@ export default function Nav() {
 
       <div className="flex items-center gap-4">
         <ThemeSwitcher />
-        <Link
-          href="/app"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {tHome("login")}
-        </Link>
+        {hasLoginLink && (
+          <Link
+            href="/app"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {tHome("login")}
+          </Link>
+        )}
       </div>
     </nav>
   );

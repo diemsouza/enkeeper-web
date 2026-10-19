@@ -4,6 +4,7 @@ import type {
   Level,
   QuestionFormat,
 } from "./prisma";
+import type { CountryCode } from "libphonenumber-js";
 
 export const EVAL_TIP_ALTERNATIVE_FORMATS: QuestionFormat[] = [
   "recall",
@@ -394,3 +395,19 @@ export const SITE_MESSAGE_PATTERNS: string[] = [SITE_WHATSAPP_MESSAGE];
 
 export const ATTRIBUTION_COOKIE_NAME = "fz_attribution";
 export const ATTRIBUTION_COOKIE_MAX_AGE_DAYS = 30;
+
+export const DEFAULT_PHONE_COUNTRY: CountryCode = "BR";
+
+// Celular sem o nono digito e fixo continuam aceitos (10 ou 11 digitos com
+// DDD), como antes da libphonenumber; o isValid() dela recusaria o primeiro.
+export const PHONE_NATIONAL_LENGTH_OVERRIDES: Partial<
+  Record<CountryCode, number[]>
+> = { BR: [10, 11] };
+
+// Tamanhos aceitos so pelo override acima que a libphonenumber nao formata:
+// celular de 10 digitos comecando com 9 sai cru do formatNational().
+export const PHONE_NATIONAL_FORMAT_OVERRIDES: Partial<
+  Record<CountryCode, Record<number, { pattern: RegExp; format: string }>>
+> = {
+  BR: { 10: { pattern: /^(\d{2})(\d{4})(\d{4})$/, format: "($1) $2-$3" } },
+};

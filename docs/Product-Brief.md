@@ -383,6 +383,8 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Tradução de áudio (audio_translation): o usuário ouve uma frase com o termo e escreve em português o que ela quer dizer, avaliação semântica (não literal) e feedback com a frase em inglês e a tradução de referência, mesma fração de rollout da transcrição
 - Persistência da frase de demonstração e da tradução do feedback por pergunta (`feedback_text`/`feedback_translation`), com toggle "Ver tradução" no player de áudio da superfície web e reaproveitamento do áudio quando a frase não muda entre respostas
 
+- Login por telefone aceita número colado ou preenchido automaticamente em qualquer formato, de qualquer país (Brasil como padrão), com o botão sempre ativo e erro claro abaixo do campo (Product-Rules Seção 11.3)
+
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou
 - [ ] Gatilhos de upgrade contextuais

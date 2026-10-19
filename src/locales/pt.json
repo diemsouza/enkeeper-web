@@ -32,7 +32,10 @@
     "currency": "BRL",
     "currency_symbol": "R$",
     "locale": "pt-BR",
-    "datetime_format": "dd/MM/yyyy HH:mm"
+    "datetime_format": "dd/MM/yyyy HH:mm",
+    "phone_input": {
+      "country_aria": "País"
+    }
   },
   "app": {
     "common": {
@@ -143,7 +146,9 @@
     "simulator": {
       "differentiation_line": "Diferente de um assistente genérico, ele guarda o que você errou, traz de volta na hora certa pra fixar, e fecha cada atividade com um resumo do que evoluiu.",
       "cta": "Quero praticar",
-      "summary_chart_alt": "Gráfico de pentágono com a pontuação do dia nas cinco habilidades de inglês."
+      "summary_chart_alt": "Gráfico de pentágono com a pontuação do dia nas cinco habilidades de inglês.",
+      "scroll_left_aria": "Rolar para a esquerda",
+      "scroll_right_aria": "Rolar para a direita"
     },
     "waitlist_microcopy": "Garanta sua vaga · Comece grátis",
     "waitlist": {
@@ -312,7 +317,8 @@
     "footer": {
       "copyright": "Copyright © 2026 Fluizer. Todos os direitos reservados.",
       "privacy": "Política de Privacidade",
-      "terms": "Termos de Uso"
+      "terms": "Termos de Uso",
+      "company": "{brand} por Head Souza Serviços Digitais LTDA - CNPJ 49.481.141/0001-62"
     }
   },
   "pricing": {
@@ -357,6 +363,33 @@
       "title": "Pagamento cancelado",
       "message": "Nenhuma cobrança foi feita. Escolha um plano quando quiser.",
       "cta": "Ver planos"
+    }
+  },
+  "login": {
+    "title_new": "Comece agora",
+    "subtitle_new": "7 dias grátis, sem cartão de crédito.",
+    "title_returning": "Entrar",
+    "subtitle_returning": "Pratique todo dia, no seu ritmo.",
+    "code_title": "Confirme seu número",
+    "loading": "Carregando...",
+    "phone_label": "Número do WhatsApp",
+    "phone_hint": "Receba o código de acesso direto no seu WhatsApp.",
+    "phone_invalid": "Digite o número com DDD.",
+    "phone_usage_note": "Seu número é usado para o acesso e os lembretes da sua prática diária.",
+    "send_code": "Enviar código de acesso",
+    "sending": "Enviando código...",
+    "code_sent_to": "Digite o código de 6 dígitos enviado por WhatsApp para",
+    "verifying": "Verificando código...",
+    "change_number": "Trocar número",
+    "resend": "Reenviar código",
+    "resend_in": "Reenviar em {seconds}s",
+    "errors": {
+      "OTP_INVALID": "Código inválido.",
+      "OTP_EXPIRED": "Código expirado. Peça um novo.",
+      "OTP_ATTEMPTS_EXCEEDED": "Muitas tentativas. Peça um novo código.",
+      "OTP_COOLDOWN": "Aguarde antes de pedir outro código.",
+      "INVALID_PHONE": "Número de telefone inválido.",
+      "generic": "Algo deu errado, tenta de novo."
     }
   }
 }

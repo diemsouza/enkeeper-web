@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { isProtectedPath, sanitizeRedirectPath } from "./core/auth-routes";
 import { buildAttributionCookie } from "./core/attribution";
 import {
-  buildSessionCookieOptions,
+  LAST_ACCESS_COOKIE_NAME,
+  shouldUpdateLastAccess,
+} from "./core/last-access";
+import {
   SESSION_COOKIE_NAME,
   shouldRefreshSession,
-  signSessionToken,
   verifySessionToken,
 } from "./core/session-token";
+import { writeSessionCookies } from "./lib/auth/session-cookie-writer";
 import {
   ATTRIBUTION_COOKIE_MAX_AGE_DAYS,
   ATTRIBUTION_COOKIE_NAME,
@@ -123,9 +126,15 @@ export async function middleware(req: NextRequest) {
 
   captureAttribution(req, res);
 
-  if (session && shouldRefreshSession(session.issuedAt)) {
-    const fresh = await signSessionToken({ userId: session.userId });
-    res.cookies.set(SESSION_COOKIE_NAME, fresh, buildSessionCookieOptions());
+  const lastAccess = req.cookies.get(LAST_ACCESS_COOKIE_NAME)?.value;
+  // Sessoes anteriores ao fz_last_access ganham o cookie no proximo acesso,
+  // sem esperar a renovacao do token.
+  if (
+    session &&
+    (shouldRefreshSession(session.issuedAt) ||
+      shouldUpdateLastAccess(lastAccess))
+  ) {
+    await writeSessionCookies(res.cookies, session.userId, lastAccess);
   }
 
   return res;

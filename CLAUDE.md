@@ -12,6 +12,12 @@ Fontes de verdade:
 
 Stack: Next.js 15 App Router, Prisma 7, Supabase/PostgreSQL, TypeScript strict, Vercel.
 
+## Regras de git
+
+- Nunca fazer `git commit` nem `git push`, nem quando a tarefa pedir commits separados. O dev revisa e commita tudo.
+- Deixar todas as mudancas no working tree, sem stage, para o dev comparar no VS Code. Arquivo novo fica untracked.
+- Quando a tarefa tiver partes independentes, listar no resumo final quais arquivos sao de cada parte, para o dev montar os commits.
+
 ## Regras de banco de dados
 
 - Nunca acessar o banco diretamente (psql, db execute, SQL raw)
@@ -249,6 +255,10 @@ await sendAndSaveMessage({ channel, to: userChannel.channelId, userId, userChann
 `MessageChannel.sendMessage`/`sendTemplate` enviam uma mensagem por chamada (sem array, sem `{ delay }`). Para pausas entre mensagens, usar `waitBeforeSend(channel, userId, ms, { replyToMessageId })` de `src/services/message-sender-service.ts` entre chamadas de `sendAndSaveMessage`, nunca `delay` cru: ele acende o "digitando" nos ultimos `TYPING_LEAD_MS` quando a pausa passa de `MIN_DELAY_FOR_TYPING_MS`.
 
 **Digitando:** antes de chamada de duracao incerta (LLM, geracao de pergunta/imagem, TTS), chamar `await channel.notifyTyping(userId, { replyToMessageId })` direto na linha anterior, sem wrapper nem heartbeat. `replyToMessageId` e o `externalId` da mensagem recebida (wamid no WhatsApp; sem ele o WhatsApp nao mostra nada). Em fluxo com varias etapas lentas, passar `TypingTarget` (`{ channel, replyToMessageId }`) para renovar o aviso antes de cada etapa (ex: `generateQuestionIfPoolNotFull`). Duas mensagens de uma mesma sequencia nunca saem coladas: sempre `waitBeforeSend` entre elas. `notifyTypingStop` so existe no `finally` de `handleIncomingMessage`, via `trackChannelSends`. Regra em Product-Rules Secao 19.
+
+### Padrao de telefone
+
+Todo parse, validacao e formatacao de telefone passa por `src/core/phone.ts` (`libphonenumber-js`): `normalizePhoneToWaId` (formato do banco, so digitos com codigo do pais, igual ao `wa_id`), `toE164`, `formatPhoneForInput` e `formatPhoneForDisplay`. Nunca escrever `55`/`+55` fixo; o pais padrao e `DEFAULT_PHONE_COUNTRY` (`constants.ts`), usado so quando o numero chega sem codigo de pais. Campo de telefone na UI: `PhoneInput` (`src/components/shared/phone-input.tsx`). Regra de produto em Product-Rules Secao 11.3.
 
 ### Padrao de armazenamento de midia
 

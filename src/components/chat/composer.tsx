@@ -7,6 +7,7 @@ import {
   KeyboardEvent,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -14,6 +15,8 @@ import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import { type Command, searchAutoCompleteCommands } from "@/src/lib/commands";
 import { capitalizeFirst } from "@/src/lib/utils";
+
+const COMPOSER_MAX_ROWS = 4;
 
 const COMPOSER_BACKDROP_MASK =
   "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.85) 100%)";
@@ -56,6 +59,25 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
       activeIndex,
       Math.max(commandMatches.length - 1, 0),
     );
+
+    useLayoutEffect(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      const style = getComputedStyle(textarea);
+      const maxHeight =
+        parseFloat(style.lineHeight) * COMPOSER_MAX_ROWS +
+        parseFloat(style.paddingTop) +
+        parseFloat(style.paddingBottom) +
+        parseFloat(style.borderTopWidth) +
+        parseFloat(style.borderBottomWidth);
+      textarea.style.height = "auto";
+      const contentHeight =
+        textarea.scrollHeight +
+        parseFloat(style.borderTopWidth) +
+        parseFloat(style.borderBottomWidth);
+      textarea.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+      textarea.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
+    }, [text]);
 
     useEffect(() => {
       setActiveIndex(0);
@@ -180,7 +202,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                 </ul>
               </div>
             )}
-            <div className="pointer-events-auto flex w-full items-center gap-1.5 rounded-3xl border border-border bg-background/70 backdrop-blur-xl backdrop-saturate-150 px-1.5 py-1 shadow-sm">
+            <div className="pointer-events-auto flex w-full items-end gap-1.5 rounded-3xl border border-border bg-background/70 backdrop-blur-xl backdrop-saturate-150 px-1.5 py-1 shadow-sm">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -211,7 +233,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                     ? (disabledReason ?? t("placeholder_archived"))
                     : t("placeholder_default")
                 }
-                className="max-h-40 min-h-9 flex-1 resize-none rounded-2xl border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="min-h-9 flex-1 resize-none rounded-2xl border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <Button
                 type="button"

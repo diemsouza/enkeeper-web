@@ -2,6 +2,7 @@
 
 import { forwardRef } from "react";
 import { useTranslations } from "next-intl";
+import { cn } from "@/src/lib/utils";
 import { MessageBubble } from "@/src/components/chat/message-bubble";
 import { Composer } from "@/src/components/chat/composer";
 import type { Message } from "@/src/components/chat/types";
@@ -15,6 +16,7 @@ type SimulatorThreadPanelProps = {
   summary: { text: string; time: string };
   pentagon: { input: PentagonChartInput; time: string };
   onScroll: () => void;
+  isScrollEnabled?: boolean;
   size?: "default" | "compact";
 };
 
@@ -27,7 +29,14 @@ export const SimulatorThreadPanel = forwardRef<
   HTMLDivElement,
   SimulatorThreadPanelProps
 >(function SimulatorThreadPanel(
-  { messages, summary, pentagon, onScroll, size = "default" },
+  {
+    messages,
+    summary,
+    pentagon,
+    onScroll,
+    isScrollEnabled = true,
+    size = "default",
+  },
   ref,
 ) {
   const t = useTranslations("home.simulator");
@@ -43,7 +52,10 @@ export const SimulatorThreadPanel = forwardRef<
         <div
           ref={ref}
           onScroll={onScroll}
-          className="relative z-10 flex h-full flex-col gap-1.5 overflow-y-auto p-4"
+          className={cn(
+            "relative z-10 flex h-full flex-col gap-1.5 p-4",
+            isScrollEnabled ? "overflow-y-auto" : "overflow-y-hidden",
+          )}
         >
           <div className="mx-auto flex w-full max-w-md flex-col gap-3 pb-4">
             {messages.map((message) => (

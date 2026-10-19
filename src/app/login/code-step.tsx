@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/src/components/ui/input-otp";
 import { otpResendCooldownRemainingSec } from "@/src/core/otp";
-import { cn, formatBrPhoneMask } from "@/src/lib/utils";
+import { cn } from "@/src/lib/utils";
+import { formatPhoneForDisplay } from "@/src/core/phone";
 import { Spinner } from "@/src/components/ui/spinner";
 
 type CodeStepProps = {
-  phoneDigits: string;
+  phone: string;
   requestedAt: number;
   loading: boolean;
   error: string | null;
@@ -25,7 +27,7 @@ function remainingCooldown(requestedAt: number): number {
 }
 
 export function CodeStep({
-  phoneDigits,
+  phone,
   requestedAt,
   loading,
   error,
@@ -33,6 +35,7 @@ export function CodeStep({
   onResend,
   onChangeNumber,
 }: CodeStepProps) {
+  const t = useTranslations("login");
   const [code, setCode] = useState("");
   const [remaining, setRemaining] = useState(() =>
     remainingCooldown(requestedAt),
@@ -60,9 +63,9 @@ export function CodeStep({
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-4">
       <p className="text-center text-sm text-muted-foreground">
-        Digite o código de 6 dígitos enviado por WhatsApp para{" "}
+        {t("code_sent_to")}{" "}
         <span className="font-medium text-foreground sm:block">
-          {formatBrPhoneMask(phoneDigits)}
+          {formatPhoneForDisplay(phone)}
         </span>
       </p>
       <InputOTP
@@ -87,7 +90,7 @@ export function CodeStep({
       {loading && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Spinner size="sm" className="border-primary" />
-          Verificando código...
+          {t("verifying")}
         </div>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
@@ -97,7 +100,7 @@ export function CodeStep({
           onClick={onChangeNumber}
           className="h-11 px-2 text-muted-foreground underline underline-offset-2"
         >
-          Trocar número
+          {t("change_number")}
         </button>
         <button
           type="button"
@@ -105,7 +108,9 @@ export function CodeStep({
           disabled={remaining > 0}
           className="h-11 px-2 text-muted-foreground underline underline-offset-2 disabled:no-underline disabled:opacity-50"
         >
-          {remaining > 0 ? `Reenviar em ${remaining}s` : "Reenviar código"}
+          {remaining > 0
+            ? t("resend_in", { seconds: remaining })
+            : t("resend")}
         </button>
       </div>
     </div>
