@@ -4,8 +4,8 @@ import Nav from "./nav";
 import Hero from "./hero";
 import Simulator from "./simulator/simulator";
 import FloatingCta from "./floating-cta";
-import FeaturesCarouselSection from "./features-carousel-section";
 import HowItWorksSection from "./how-it-works-section";
+import FeaturesSection from "./features-section";
 import WhoFor from "./who-for";
 import Pricing from "./pricing";
 import FaqSection from "./faq-section";
@@ -18,8 +18,8 @@ export default function HomePage() {
       <Hero />
       <Simulator />
       <FloatingCta />
-      <FeaturesCarouselSection />
       <HowItWorksSection />
+      <FeaturesSection />
       <WhoFor />
       <Pricing />
       <FaqSection />

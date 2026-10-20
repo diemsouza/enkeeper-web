@@ -25,7 +25,10 @@ export default function Simulator() {
   const pentagon = { input: roteiro.pentagon, time: roteiro.summaryTime };
 
   return (
-    <section className="section-light px-6 pb-24 overflow-x-hidden">
+    <section
+      id="simulator"
+      className="section-light px-6 pb-24 overflow-x-hidden"
+    >
       <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
         <DomainSelector active={activeDomain} onChange={setActiveDomain} />
 
@@ -53,9 +56,7 @@ export default function Simulator() {
         </div>
 
         <div className="max-w-xl text-center flex flex-col items-center gap-4 pt-10 md:pt-16">
-          <p className="text-muted-foreground">
-            {t("differentiation_line")}
-          </p>
+          <p className="text-muted-foreground">{t("differentiation_line")}</p>
           <HomeCTA
             waLabel={t("cta")}
             buttonClassName="rounded-full px-8 h-11 font-semibold gap-2 text-sm"

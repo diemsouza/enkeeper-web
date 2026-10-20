@@ -17,7 +17,7 @@ export default function FaqSection() {
   const pricing = getPricingDisplay();
 
   return (
-    <section className="section-light py-[120px] px-6 md:py-[80px]">
+    <section id="faq" className="section-light py-[120px] px-6 md:py-[80px]">
       <div className="max-w-2xl mx-auto">
         <h2 className="text-[28px] sm:text-[34px] md:text-[38px] font-normal leading-tight text-center mb-10">
           {t("title")}
@@ -31,7 +31,8 @@ export default function FaqSection() {
               </AccordionTrigger>
               <AccordionContent
                 forceMount
-                className="text-muted-foreground leading-relaxed text-[16px]">
+                className="text-muted-foreground leading-relaxed text-[16px]"
+              >
                 {t(`items.${id}.answer`, { ...pricing, days: TRIAL_DAYS })}
               </AccordionContent>
             </AccordionItem>

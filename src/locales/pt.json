@@ -130,7 +130,7 @@
   },
   "home": {
     "hero": {
-      "badge": "Prática ativa para alcançar o inglês que você precisa.",
+      "badge": "Inglês para usar de verdade.",
       "headline": "Pratique inglês com IA, todo dia, no seu ritmo, sobre o que você quiser.",
       "subphrases": {
         "0": "Seu inglês evolui todo dia, não só na hora da aula.",
@@ -164,7 +164,7 @@
         "close": "Fechar"
       }
     },
-    "features_carousel": {
+    "how_it_works": {
       "title": "Na prática.",
       "subtitle": "Material ou tema, você escolhe. A prática fica sempre pronta pra você.",
       "blocks": {
@@ -200,7 +200,7 @@
         }
       }
     },
-    "how": {
+    "features": {
       "badge": "Como funciona na prática",
       "title": "Tudo o que você precisa para destravar o seu inglês.",
       "cards": {

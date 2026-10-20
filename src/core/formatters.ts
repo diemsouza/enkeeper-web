@@ -1116,29 +1116,13 @@ function pickImageRecognitionPrompt(level: Level): string {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-const audioTranscriptionPtPrompts = [
-  "Escreva em inglês o que ouviu.",
-  "Digite em inglês exatamente o que ouviu.",
-  "Transcreva em inglês o que ouviu.",
-];
+const audioTranscriptionPtPrompts = ["Transcreva o áudio em inglês."];
 
-const audioTranscriptionEnPrompts = [
-  "Type what you hear in English.",
-  "Type exactly what you hear, in English.",
-  "Write down in English what you hear.",
-];
+const audioTranscriptionEnPrompts = ["Transcribe the audio in English."];
 
-const audioTranslationPtPrompts = [
-  "Traduza para o português o que ouviu.",
-  "Escreva em português o que ouviu.",
-  "O que você ouviu? Responda em português.",
-];
+const audioTranslationPtPrompts = ["Traduza o áudio para o português."];
 
-const audioTranslationEnPrompts = [
-  "Translate what you hear into Portuguese.",
-  "Write what you hear in Portuguese.",
-  "What did you hear? Answer in Portuguese.",
-];
+const audioTranslationEnPrompts = ["Translate the audio into Portuguese."];
 
 function pickAudioQuestionPrompt(format: QuestionFormat, level: Level): string {
   const prompts =

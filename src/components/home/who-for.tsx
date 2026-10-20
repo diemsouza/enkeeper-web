@@ -3,7 +3,13 @@
 import { cn } from "@/src/lib/utils";
 import { useInView } from "@/src/hooks/use-in-view";
 import { useTranslations } from "next-intl";
-import { Briefcase, Calendar, MessageSquare, Brain, Paperclip } from "lucide-react";
+import {
+  Briefcase,
+  Calendar,
+  MessageSquare,
+  Brain,
+  Paperclip,
+} from "lucide-react";
 import React from "react";
 
 const CARD_COUNT = 4;
@@ -16,6 +22,7 @@ export default function WhoFor() {
 
   return (
     <section
+      id="who-its-for"
       ref={ref as React.RefObject<HTMLDivElement>}
       className="section-light py-[120px] px-6 md:py-[80px]"
     >
@@ -61,7 +68,9 @@ export default function WhoFor() {
           ))}
 
           <div
-            style={{ transitionDelay: visible ? `${CARD_COUNT * 100}ms` : "0ms" }}
+            style={{
+              transitionDelay: visible ? `${CARD_COUNT * 100}ms` : "0ms",
+            }}
             className={cn(
               "sm:col-span-2 rounded-2xl border border-border bg-white dark:bg-[#2C2C2E] p-7",
               "shadow-sm hover:shadow-md hover:-translate-y-0.5",

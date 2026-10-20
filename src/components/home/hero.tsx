@@ -58,14 +58,17 @@ export default function Hero() {
   );
 
   return (
-    <section className="section-light relative flex flex-col items-center justify-center pt-28 pb-24 px-6 gap-y-4">
+    <section
+      id="hero"
+      className="section-light relative flex flex-col items-center justify-center pt-24 pb-16 md:pt-28 md:pb-24 px-6 gap-y-4"
+    >
       <div className="max-w-3xl w-full flex flex-col items-center gap-y-4">
         <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm text-muted-foreground">
           <Target className="w-4 h-4 text-primary" aria-hidden="true" />
           {t("hero.badge")}
         </span>
 
-        <h1 className="text-4xl md:text-5xl font-normal leading-[1.15] text-center py-6">
+        <h1 className="text-[28px] md:text-5xl font-normal leading-[1.15] text-center py-4 md:py-6">
           {t("hero.headline")}
         </h1>
 
