@@ -245,6 +245,11 @@ Se nenhum nível for identificado (nem do usuário, nem do material), assume bá
 
 Avaliado contra as respostas esperadas geradas na criação da atividade. Tom direto, sem rodeios.
 
+**Aceitação por origem do conteúdo** (formatos de resposta livre):
+- Atividade gerada pelo sistema a partir de um tema (Seção 15): as respostas esperadas são a preferida, não a única. Vale como certo qualquer termo que um falante nativo usaria naturalmente na frase, com o mesmo sentido pedido (ex: "get results" quando o esperado era "achieve results"). O termo precisa carregar a ideia pedida, não basta caber na frase sem erro. Motivo: o conteúdo foi escrito pela IA, o usuário não tem como saber qual dos sinônimos naturais ela escolheu, e marcar erro numa resposta correta em inglês ensina errado.
+- Material enviado pelo usuário: só as respostas esperadas e suas variações de grafia, flexão, artigo e contração. Outro termo, mesmo correto em inglês, é erro. Motivo: o usuário está estudando aquele material, e o termo do material é o que ele precisa fixar.
+- Formatos de escolha entre opções (múltipla escolha, reconhecimento por imagem) seguem exatos em qualquer origem: só a opção correta vale.
+
 **Abertura por resultado:**
 - Certo: "Boa!", "Correto!", "Exato!" ou "Perfeito!"
 - Errado: "Errado!", "Infelizmente não!", "Ops, errado!" ou "Hmmm, errou!"
@@ -287,7 +292,7 @@ Sem alternativa assim, o acerto segue sem dica.
 
 **Na tradução de áudio**, valem só as classes que fazem sentido de inglês para português: calque, sinônimo próximo, expressão ao pé da letra, registro e estrutura. Colocação fica de fora, junto com as classes de escuta; ortografia e sem classificação seguem sem dica. O filtro por formato fica no código, como o da dica em acerto. O objetivo é que a dica em acerto seja pontual, não presença em toda resposta certa.
 
-O prompt de avaliação não conhece o formato nem decide sozinho o envio: o filtro final fica no código. Em acerto, a dica só é enviada se a classe retornada for alternativa, o formato for um dos quatro de resposta digitada e o texto da dica citar uma resposta esperada diferente da que o usuário escreveu. Fora disso a dica é descartada, inclusive o texto. A dica em acerto não altera status, nota da pergunta nem agendamento de revisão (SM-2), e a ordem de envio é a mesma: feedback, áudio (se houver) e dica.
+O prompt de avaliação não conhece o formato nem decide sozinho o envio: o filtro final fica no código. Em acerto, a dica só é enviada se a classe retornada for alternativa, o formato for um dos quatro de resposta digitada e o texto da dica citar uma resposta esperada diferente da que o usuário escreveu. Fora disso a dica é descartada, inclusive o texto. A dica em acerto não altera status nem nota da pergunta, e a ordem de envio é a mesma: feedback, áudio (se houver) e dica. O acerto com termo fora das respostas esperadas tem efeito próprio no agendamento de revisão, descrito na Seção 7, independente de a dica ser enviada.
 
 O texto da dica segue uma marcação própria: negrito para a forma contrastada, itálico para um termo curto em inglês, aspas duplas para uma frase completa em inglês, riscado só para uma forma que não existe em inglês. Cada dica usa só a marcação que fizer sentido para o caso.
 
@@ -295,7 +300,7 @@ Vale tanto para cadência quanto para sessão intensiva. Em sessão intensiva, a
 
 ### 6.3 Sugestão de troca de atividade
 
-Quando a atividade ativa já atingiu uma nota alta o suficiente, o feedback de uma resposta correta pode vir acompanhado da sugestão de trocar de atividade (🔄, ver vocabulário de emoji), com botão (ou o comando por extenso, dependendo do canal) para iniciar o fluxo de nova atividade. Nunca acompanha feedback de erro ou parcial, para não soar como reação ao erro. A dica de alternativa em acerto (Seção 6.2) pode ser enviada na mesma resposta, como mensagem separada após o feedback, sem influenciar a nota.
+Quando a atividade ativa já atingiu uma nota alta o suficiente, o feedback de uma resposta correta pode vir acompanhado da sugestão de trocar de atividade (🔄, ver vocabulário de emoji), com botão (ou o comando por extenso, dependendo do canal) para iniciar o fluxo de nova atividade. O fecho da mensagem depende do modo: no modo intensivo, sugere apenas aguardar a próxima pergunta; fora dele, como não há mais pergunta por cadência, sugere continuar praticando e traz também o botão Praticar, abaixo de Nova atividade. Se algo impedir a prática (limite do dia, conta expirada etc.), o Praticar segue o fluxo normal e recebe a resposta de bloqueio de sempre. Nunca acompanha feedback de erro ou parcial, para não soar como reação ao erro. A dica de alternativa em acerto (Seção 6.2) pode ser enviada na mesma resposta, como mensagem separada após o feedback, sem influenciar a nota.
 
 Cada pergunta tem uma nota de 0 a 10, calculada a partir de dois eixos independentes.
 
@@ -346,6 +351,8 @@ Controla quando cada pergunta volta como revisão prioritária. Não controla o 
 - Acertou: próxima revisão em `intervalo_anterior * fator_de_facilidade`, máximo 3 dias
 
 O fator de facilidade começa em 2.5, sobe com acertos (+0.1) e cai com erros (-0.2) ou parciais (-0.15). Mínimo de 1.3.
+
+**Acerto com alternativa:** quando a resposta foi aceita como certa por equivalência, com um termo fora das respostas esperadas (Seção 6), o fator de facilidade não muda (+0) e o intervalo avança normalmente. Motivo: a pergunta existe para fixar o termo esperado. Se a alternativa valesse como acerto pleno, o fator subiria e a pergunta se afastaria sem o usuário ter usado o termo-alvo. Assim ela continua avançando, só não acelera. Quem responde uma das respostas esperadas, mesmo havendo outra, conta como acerto pleno.
 
 **Quando o SM-2 recalcula:**
 
@@ -815,7 +822,7 @@ Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais
 
 Dentro de `interactive`, um botão pode ser de dois tipos: ação (resposta rápida nativa do canal, ex: "Nova atividade") ou link (abre uma URL, ex: link do bloqueio de acesso para a página de planos ou o portal de pagamento, Seção 11.1). Link do próprio app navega na mesma aba; link externo abre em nova aba. Mensagem com botão de link sempre inclui a mesma URL também no `text` puro, como fallback para quem recebe só a camada canônica.
 
-`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário, não só o texto equivalente. O `interactive` em produção cobre hoje cinco casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade"; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre a página de planos ou o portal de pagamento e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; os passos de nível (Seção 5, também pelo comando `nivel`), objetivo, assunto e ponto do fluxo de nova atividade (Seção 15), com um botão por opção; e as perguntas `choice` e de reconhecimento por imagem (Seção 4), com um botão por opção.
+`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário, não só o texto equivalente. O `interactive` em produção cobre hoje cinco casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade" e, fora do modo intensivo, "Praticar"; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre a página de planos ou o portal de pagamento e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; os passos de nível (Seção 5, também pelo comando `nivel`), objetivo, assunto e ponto do fluxo de nova atividade (Seção 15), com um botão por opção; e as perguntas `choice` e de reconhecimento por imagem (Seção 4), com um botão por opção.
 
 Nas listas de opções, o `interactive` guarda também o estado da seleção: `disabled` (todas as opções travadas) e `selectedId` (id da opção escolhida, destacada). Ausentes, a lista está pendente. Dois caminhos gravam:
 

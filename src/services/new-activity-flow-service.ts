@@ -249,6 +249,7 @@ export async function processFocusResponse(
 
   await sendActivityCreatedConfirmation(
     userId,
+    activity.id,
     activity.date,
     channel,
     doc.metadata as GeneratedDocMetadata | null,
@@ -346,6 +347,7 @@ async function createActivityForDoc(
 
 async function sendActivityCreatedConfirmation(
   userId: string,
+  activityId: string,
   date: Date,
   channel: MessageChannel,
   metadata: GeneratedDocMetadata | null,
@@ -374,6 +376,7 @@ async function sendActivityCreatedConfirmation(
     to: userChannel.channelUserId,
     userId,
     userChannelId: userChannel.id,
+    activityId,
     message: msg,
   });
   if (summary) {
@@ -385,6 +388,7 @@ async function sendActivityCreatedConfirmation(
       to: userChannel.channelUserId,
       userId,
       userChannelId: userChannel.id,
+      activityId,
       message: summary,
     });
   }

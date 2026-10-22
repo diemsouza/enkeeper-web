@@ -3,6 +3,7 @@ export function calcSm2(
   currentInterval: number,
   currentNextRevisionAt: Date | null,
   status: "right" | "partial" | "wrong",
+  isAlternativeAnswer: boolean,
 ): { easeFactor: number; interval: number; nextRevisionAt: Date } | null {
   const now = new Date();
 
@@ -11,8 +12,10 @@ export function calcSm2(
   }
 
   let easeFactor = currentEaseFactor;
+  // Acerto com termo fora das answerKeys equivale ao q=4 do SM-2 classico:
+  // o card avanca sem acelerar, porque o usuario nao usou o termo-alvo.
   if (status === "right") {
-    easeFactor = currentEaseFactor + 0.1;
+    easeFactor = currentEaseFactor + (isAlternativeAnswer ? 0 : 0.1);
   } else if (status === "partial") {
     easeFactor = currentEaseFactor - 0.15;
   } else {

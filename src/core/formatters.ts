@@ -21,7 +21,10 @@ import {
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { COMMANDS, formatCommand, isAutoCompletable } from "../lib/commands";
 import { shuffle } from "lodash";
-import type { FormattedMessage } from "../types/out-message";
+import type {
+  FormattedMessage,
+  FormattedMessageButton,
+} from "../types/out-message";
 import type { GeneratedDocMetadata } from "../types/domain";
 import type { EngagementReminder } from "./engagement-reminder";
 
@@ -654,11 +657,23 @@ function getCoverageClause(responses: number, questionCount: number): string {
   return `Ficaram ${missing} perguntas sem resposta.`;
 }
 
-export function formatActivitySuggestion(): FormattedMessage {
+export function formatActivitySuggestion({
+  isIntensiveMode,
+}: {
+  isIntensiveMode: boolean;
+}): FormattedMessage {
+  const closing = isIntensiveMode
+    ? "ou apenas aguarde a próxima pergunta."
+    : "ou continue praticando.";
+  const buttons: FormattedMessageButton[] = [
+    { id: "new_activity_suggestion", label: "Nova atividade" },
+  ];
+  if (!isIntensiveMode)
+    buttons.push({ id: "practice_now", label: "Praticar", type: "reply" });
   const text = [
     `${ACTIVITY_SUGGESTION_EMOJI} *Sugestão de nova atividade*`,
     "",
-    `Você já domina boa parte do que esse material trouxe. Use ${formatCommand("new_activity")}, envie um material novo, ou apenas aguarde a próxima pergunta.`,
+    `Você já domina boa parte do que esse material trouxe. Use ${formatCommand("new_activity")}, envie um material novo, ${closing}`,
   ].join("\n");
   return {
     text,
@@ -666,9 +681,9 @@ export function formatActivitySuggestion(): FormattedMessage {
       body: [
         `${ACTIVITY_SUGGESTION_EMOJI} *Sugestão de nova atividade*`,
         "",
-        "Você já domina boa parte do que esse material trouxe. Clique em *Nova atividade*, envie um material novo, ou apenas aguarde a próxima pergunta.",
+        `Você já domina boa parte do que esse material trouxe. Clique em *Nova atividade*, envie um material novo, ${closing}`,
       ].join("\n"),
-      buttons: [{ id: "new_activity_suggestion", label: "Nova atividade" }],
+      buttons,
     },
   };
 }

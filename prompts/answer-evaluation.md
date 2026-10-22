@@ -4,11 +4,18 @@
 ## Rules
 Avalie a resposta do usuário e classifique como right, partial ou wrong.
 
+Origem da pergunta: {content_origin}
+
 Critérios para o status:
 
 - right: correta ou equivalente. Ignore maiúsculas, acentos, pontuação e contrações. A equivalência semântica vale em resposta livre. Quando o bloco de exemplos definir correspondência exata (formatos de escolha entre opções), só a opção correta é aceita, sinônimos não passam.
 - partial: ideia certa mas incompleta ou imprecisa. Inclui grafia muito próxima quando é claramente o mesmo termo com erro de digitação, como letra duplicada, trocada de posição, faltando ou inserida a mais ("bellow" por "below", "recieve" por "receive"). Diferença de acentuação nunca gera partial, cai direto em right pela normalização acima. Palavras diferentes com grafia parecida são wrong, mesmo que relacionadas, incluindo quando uma é a outra mais um sufixo que muda o significado (ex: "shelve" no lugar de "shelf" é wrong; "brief" no lugar de "briefing" é wrong, mesmo sendo a mesma raiz).
 - wrong: errada ou em branco.
+
+Regra de origem, válida para formatos de resposta livre (não se aplica a formatos de escolha entre opções):
+
+- Quando a origem for generated, as answerKeys são a resposta preferida, não a única. Aceite como right qualquer resposta que um falante nativo usaria naturalmente naquela frase, expressando o mesmo sentido da dica em português. O termo precisa carregar a ideia pedida, não basta ser genérico o suficiente para caber na frase sem erro.
+- Quando a origem for upload (conteúdo enviado pelo usuário), aceite apenas as answerKeys e suas variações de grafia, flexão, artigo e contração. Outro termo, mesmo correto em inglês, é wrong.
 
 Quando a resposta do usuário indicar claramente desconhecimento ("não sei", "não lembro", "esqueci", "sem ideia" ou equivalente), o status é wrong e user_unknown é true.
 
@@ -49,6 +56,7 @@ Em wrong ou partial, a causa do erro:
 - near_synonym: a palavra existe e tem sentido próximo, mas o escopo de uso não cobre 
   esse contexto. Não é erro de tradução, é escolha errada dentro do inglês.
   (say vs tell, borrow vs lend, hear vs listen)
+  Na origem generated, se o termo cabe naturalmente na frase com o sentido pedido, não é near_synonym: o status é right e a classe é alternative.
 - structure: a palavra ou ideia está certa, mas falta um elemento gramatical para a 
   frase funcionar em inglês. Quando esse elemento é obrigatório em inglês mas não 
   marcado no português (posse, artigo, preposição), a eval_tip nomeia a regra da língua 
@@ -74,7 +82,7 @@ Em wrong ou partial, a causa do erro:
 
 Em right:
 
-- alternative: answerKeys contém um termo diferente do que o usuário escreveu, não só variação de flexão, artigo ou contração. Vale quando o usuário respondeu uma das answerKeys e existe outra, e também quando a resposta foi aceita por equivalência e a answerKey esperada é outra forma. A alternativa é a primeira answerKey que atenda a isso.
+- alternative: answerKeys contém um termo diferente do que o usuário escreveu, não só variação de flexão, artigo ou contração. Vale quando o usuário respondeu uma das answerKeys e existe outra, e também quando a resposta foi aceita por equivalência (incluindo pela regra de origem generated) e a answerKey esperada é outra forma. A alternativa é a primeira answerKey que atenda a isso.
 - none: sem alternativa assim. Obriga eval_tip vazia.
 
 eval_tip: dica curta em PT, escrita a partir da classe acima, em frase corrida.

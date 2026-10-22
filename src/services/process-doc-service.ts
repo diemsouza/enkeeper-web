@@ -3,6 +3,7 @@ import { formatInvalidContentMessage } from "../core/validate-content";
 import {
   createActivity,
   findCurrentActivityByUser,
+  findLastActiveActivityByUser,
 } from "../repo/activities.repo";
 import {
   archiveOrCancelActivity,
@@ -31,6 +32,7 @@ import { calculatePoolSize } from "../core/pool-size";
 export async function processDoc(docId: string, userId: string, channel: MessageChannel): Promise<void> {
   const doc = await findDocById(docId, userId);
   if (!doc || doc.status !== "pending") return;
+  const activeActivity = await findLastActiveActivityByUser(userId);
 
   try {
     await channel.notifyTyping(userId);
@@ -52,6 +54,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: msg,
           intent: "system_error",
         });
@@ -69,6 +72,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: msg,
           intent: "system_error",
         });
@@ -131,6 +135,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
+          activityId: activity.id,
           message: msg,
         });
         if (summary) {
@@ -144,6 +149,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
             to: userChannel.channelUserId,
             userId,
             userChannelId: userChannel.id,
+            activityId: activity.id,
             message: summary,
           });
         }
@@ -159,6 +165,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
+          activityId: activity.id,
           message: msg,
           intent: "system_error",
         });
@@ -178,6 +185,7 @@ export async function processDoc(docId: string, userId: string, channel: Message
         to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: msg,
         intent: "system_error",
       });

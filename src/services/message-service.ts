@@ -104,7 +104,7 @@ import {
 } from "../repo/docs.repo";
 import { createDocItem, countValidDocItemsByDoc } from "../repo/doc-items.repo";
 import {
-  findLastActivityByUser,
+  findLastActiveActivityByUser,
   findCurrentActivityByUser,
   findActivitiesForList,
   updateActivity,
@@ -120,7 +120,6 @@ import {
   getTodayActivityCount,
   getTodayUsage,
   incrementUserMessageCount,
-  incrementAgentMessageCount,
   incrementDailyPracticeCount,
 } from "../repo/daily-usage.repo";
 import {
@@ -134,6 +133,7 @@ import { generateAnswerEvaluation } from "../vendors/llm.vendor";
 import { getFeedbackExamples } from "../core/format-loader";
 import {
   hasAlternativeKeyInTip,
+  isAnswerInKeys,
   isEvalTipClassAllowed,
 } from "../core/eval-tip";
 import { calcSm2 } from "../core/sm2";
@@ -232,6 +232,7 @@ export async function handleIncomingMessage(
     source,
     sourceData,
   );
+  const activeActivity = await findLastActiveActivityByUser(user.id);
 
   const text = input.text ?? "";
   const today = startOfDay(new Date());
@@ -246,6 +247,7 @@ export async function handleIncomingMessage(
     await saveMessage({
       userId: user.id,
       userChannelId: userChannel.id,
+      activityId: activeActivity?.id,
       role: "user",
       content: rawText,
       intent: "ignored",
@@ -268,6 +270,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: { text: reply },
         today,
       });
@@ -284,6 +287,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: { text: reply },
         today,
       });
@@ -296,7 +300,6 @@ export async function handleIncomingMessage(
     }
 
     // ─── Verificação de acesso ────────────────────────────────────────────────
-    const activeActivity = await findLastActivityByUser(user.id);
     const isIntensiveMode = Boolean(
       activeActivity?.intensiveUntil &&
       activeActivity.intensiveUntil > new Date(),
@@ -324,6 +327,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "cancel",
             input,
@@ -334,6 +338,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: formatCanceled(),
             today,
           });
@@ -348,6 +353,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: formatSupportCanceledGuidance(),
             today,
           });
@@ -358,6 +364,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "free_text",
           input,
@@ -369,6 +376,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: supportReply,
           today,
         });
@@ -381,6 +389,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "list_commands",
           input,
@@ -392,6 +401,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: cmdReply,
           today,
         });
@@ -402,6 +412,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "list_activities",
           input,
@@ -414,6 +425,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: activitiesReply,
           today,
         });
@@ -425,6 +437,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "support",
           input,
@@ -436,6 +449,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: supportPrompt,
           today,
         });
@@ -446,6 +460,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "cancel",
           input,
@@ -457,6 +472,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: cancelReply,
           today,
         });
@@ -466,6 +482,7 @@ export async function handleIncomingMessage(
       await saveUserMsg({
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         content: text,
         intent: "free_text",
         input,
@@ -478,6 +495,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: expiredReply,
         today,
       });
@@ -490,6 +508,7 @@ export async function handleIncomingMessage(
       await saveUserMsg({
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         content: text,
         intent: "free_text",
         input,
@@ -500,6 +519,7 @@ export async function handleIncomingMessage(
         userChannel,
         today,
         channel,
+        activeActivity?.id,
       );
       return;
     }
@@ -518,6 +538,7 @@ export async function handleIncomingMessage(
       await saveUserMsg({
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         content: String(input.mediaMetadata.statusMessage ?? ""),
         intent,
         input,
@@ -532,6 +553,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: reply,
         today,
       });
@@ -562,6 +584,7 @@ export async function handleIncomingMessage(
         input,
         channel,
         userChannel.channelUserId,
+        activeActivity,
       );
       return;
     }
@@ -578,6 +601,7 @@ export async function handleIncomingMessage(
       await saveUserMsg({
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         content: text,
         intent: "cancel",
         input,
@@ -591,6 +615,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: flowCancelledReply,
         today,
       });
@@ -616,6 +641,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: guidanceReply,
         today,
       });
@@ -630,6 +656,7 @@ export async function handleIncomingMessage(
       await saveUserMsg({
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         content: text,
         intent: "cancel",
         input,
@@ -645,6 +672,7 @@ export async function handleIncomingMessage(
         to: userChannel.channelUserId,
         userId: user.id,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: cancelledReply,
         today,
       });
@@ -662,6 +690,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: guidanceReply,
           today,
         });
@@ -680,6 +709,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "waiting_set_level",
             input,
@@ -691,6 +721,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: levelMsg,
             today,
           });
@@ -711,6 +742,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message,
           today,
         });
@@ -730,10 +762,12 @@ export async function handleIncomingMessage(
               today,
               channel,
               userChannel.channelUserId,
+              activeActivity?.id,
             );
             await saveUserMsg({
               userId: user.id,
               userChannelId: userChannel.id,
+              activityId: activeActivity?.id,
               content: text,
               intent: "waiting_set_activity_domain",
               input,
@@ -746,6 +780,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "free_text",
             input,
@@ -763,6 +798,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: levelIntent,
           input,
@@ -786,6 +822,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: result.message,
           today,
         });
@@ -795,6 +832,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "cancel",
             input,
@@ -806,6 +844,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "waiting_set_activity_domain",
             input,
@@ -827,6 +866,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "waiting_set_activity_topic",
           input,
@@ -848,6 +888,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "free_text",
             input,
@@ -859,6 +900,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: errReply,
             today,
           });
@@ -870,6 +912,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "waiting_set_activity_topic",
             input,
@@ -880,6 +923,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: formatTopicQuestion(topics),
             today,
           });
@@ -906,6 +950,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: result.message,
           today,
         });
@@ -914,6 +959,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "waiting_set_activity_topic",
             input,
@@ -937,6 +983,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "waiting_set_activity_focus",
           input,
@@ -966,6 +1013,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "free_text",
             input,
@@ -977,6 +1025,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: errReply,
             today,
           });
@@ -988,6 +1037,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "waiting_set_activity_focus",
             input,
@@ -998,6 +1048,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: formatFocusQuestion(focusSuggestions),
             today,
           });
@@ -1025,6 +1076,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "free_text",
             input,
@@ -1038,12 +1090,14 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: result.message,
           today,
         });
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "waiting_set_activity_focus",
           input,
@@ -1061,6 +1115,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "free_text",
             input,
@@ -1071,6 +1126,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: noPendingReply,
             today,
           });
@@ -1080,6 +1136,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "confirm",
             input,
@@ -1099,6 +1156,7 @@ export async function handleIncomingMessage(
             channel,
             userChannel.channelUserId,
             lastUserMessage.id,
+            activeActivity?.id,
           );
           return;
         }
@@ -1106,6 +1164,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "cancel",
           input,
@@ -1117,6 +1176,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: reply,
           today,
         });
@@ -1130,6 +1190,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             content: text,
             intent: "cancel",
             input,
@@ -1140,6 +1201,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: formatCanceled(),
             today,
           });
@@ -1154,6 +1216,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: formatSupportCanceledGuidance(),
             today,
           });
@@ -1165,6 +1228,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "free_text",
           input,
@@ -1176,6 +1240,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: reply,
           today,
         });
@@ -1223,6 +1288,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: "waiting_set_level",
           input,
@@ -1234,6 +1300,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: levelMsg,
           today,
         });
@@ -1247,10 +1314,12 @@ export async function handleIncomingMessage(
           today,
           channel,
           userChannel.channelUserId,
+          activeActivity?.id,
         );
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           content: text,
           intent: nextIntent,
           input,
@@ -1312,12 +1381,14 @@ export async function handleIncomingMessage(
           intent: "resume_activity",
           input,
           today,
+          activityId: target.id,
         });
         await sendAndSaveMessage({
           channel,
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: target.id,
           message: formatResumeSuccess(target.title),
           today,
         });
@@ -1358,6 +1429,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity.id,
             content: text,
             intent: "practice_now",
             input,
@@ -1368,6 +1440,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity.id,
             message: limitMsg,
             today,
           });
@@ -1393,6 +1466,7 @@ export async function handleIncomingMessage(
           await saveUserMsg({
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity.id,
             content: text,
             intent: "practice_now",
             input,
@@ -1407,6 +1481,7 @@ export async function handleIncomingMessage(
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity.id,
             message: pendingReply,
             today,
           });
@@ -1441,6 +1516,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity.id,
           message: replyActivation,
           today,
         });
@@ -1464,6 +1540,7 @@ export async function handleIncomingMessage(
         await saveUserMsg({
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity.id,
           content: text,
           intent: "practice_now",
           input,
@@ -1479,7 +1556,7 @@ export async function handleIncomingMessage(
           break;
         }
 
-        await updateActivity(activeActivity!.id, user.id, {
+        await updateActivity(activeActivity.id, user.id, {
           intensiveUntil: null,
         });
         const pendingQuestion = await findPendingQuestion(activeActivity.id);
@@ -1601,6 +1678,7 @@ export async function handleIncomingMessage(
                 attemptCount: pendingQuestion.attemptCount,
                 docContent: practiceDoc.content ?? "",
                 feedbackExamples: feedbackExamples,
+                contentOrigin: practiceDoc.source,
                 questionFormat: pendingQuestion.questionFormat ?? "",
                 level: activeActivity.userLevel,
                 userId: user.id,
@@ -1616,7 +1694,10 @@ export async function handleIncomingMessage(
               // Formatos de audio nao geram audio de feedback: seria a mesma frase.
               const feedbackAudioMediaId =
                 evaluation && !isAudioQuestion
-                  ? await resolveFeedbackAudioMediaId(evaluation, pendingQuestion)
+                  ? await resolveFeedbackAudioMediaId(
+                      evaluation,
+                      pendingQuestion,
+                    )
                   : null;
               const feedbackSpeechText = evaluation
                 ? formatFeedbackToSpeech(evaluation)
@@ -1661,11 +1742,15 @@ export async function handleIncomingMessage(
               }
               const isWrongOrPartial =
                 evalStatus === "wrong" || evalStatus === "partial";
+              const isAlternativeAnswer =
+                evaluation?.eval_tip_class === "alternative" &&
+                !isAnswerInKeys(pendingQuestion.answerKeys, text);
               const sm2 = calcSm2(
                 pendingQuestion.easeFactor,
                 pendingQuestion.interval,
                 pendingQuestion.nextRevisionAt,
                 evalStatus,
+                isAlternativeAnswer,
               );
               const isRealRevision =
                 pendingQuestion.attemptCount > 0 && sm2 !== null;
@@ -1885,6 +1970,7 @@ export async function handleIncomingMessage(
                   userId: user.id,
                   userChannelId: userChannel.id,
                   isLastAnswerCorrect: evalStatus === "right",
+                  isIntensiveMode: Boolean(isPracticingSessionActive),
                   channel,
                   to: userChannel.channelUserId,
                   today,
@@ -2027,6 +2113,7 @@ export async function handleIncomingMessage(
                   userId: user.id,
                   userChannelId: userChannel.id,
                   isLastAnswerCorrect: evalStatus === "right",
+                  isIntensiveMode: Boolean(isPracticingSessionActive),
                   channel,
                   to: userChannel.channelUserId,
                   today,
@@ -2060,6 +2147,7 @@ export async function handleIncomingMessage(
     await saveUserMsg({
       userId: user.id,
       userChannelId: userChannel.id,
+      activityId: activeActivity?.id,
       content: text,
       intent: messageIntent,
       input,
@@ -2070,6 +2158,7 @@ export async function handleIncomingMessage(
       to: userChannel.channelUserId,
       userId: user.id,
       userChannelId: userChannel.id,
+      activityId: activeActivity?.id,
       message: reply,
       today,
     });
@@ -2086,6 +2175,7 @@ export async function handleIncomingMessage(
           to: userChannel.channelUserId,
           userId: user.id,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: formatGenericError(),
         });
       } catch (sendErr) {
@@ -2280,12 +2370,9 @@ async function sendIntensiveQuestion(
       intent: "activity_start",
       today,
     });
-    await waitBeforeSend(
-      channel,
-      userId,
-      DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
-      { replyToMessageId },
-    );
+    await waitBeforeSend(channel, userId, DEFAULT_MESSAGE_INTERVAL_SEC * 1000, {
+      replyToMessageId,
+    });
   }
 
   const questionText = formatQuestion(question, { level: activity.userLevel });
@@ -2510,6 +2597,7 @@ async function sendDomainQuestion(
   today: Date,
   channel: MessageChannel,
   to: string,
+  activityId?: string,
 ): Promise<void> {
   const domainData: NewActivityIntentData = { flow: "new_activity" };
   await updateUserPendingIntent(
@@ -2523,6 +2611,7 @@ async function sendDomainQuestion(
     to,
     userId,
     userChannelId,
+    activityId,
     message: domainMsg,
     today,
   });
@@ -2534,6 +2623,7 @@ export async function startNewActivityFlow(
   today: Date,
   channel: MessageChannel,
   to: string,
+  activityId?: string,
 ): Promise<{ nextIntent: MessageIntent }> {
   if (!user.level) {
     const levelFlowData: NewActivityIntentData = { flow: "new_activity" };
@@ -2544,12 +2634,20 @@ export async function startNewActivityFlow(
       to,
       userId: user.id,
       userChannelId,
+      activityId,
       message: levelMsg,
       today,
     });
     return { nextIntent: "waiting_set_level" };
   }
-  await sendDomainQuestion(user.id, userChannelId, today, channel, to);
+  await sendDomainQuestion(
+    user.id,
+    userChannelId,
+    today,
+    channel,
+    to,
+    activityId,
+  );
   return { nextIntent: "waiting_set_activity_domain" };
 }
 
@@ -2562,6 +2660,7 @@ export async function runOnboardingAndFirstActivityFlow(
   },
   today: Date,
   channel: MessageChannel,
+  activityId?: string,
 ): Promise<void> {
   try {
     if (userChannel.channelUserPhone) {
@@ -2593,6 +2692,7 @@ export async function runOnboardingAndFirstActivityFlow(
       to: userChannel.channelUserId,
       userId: user.id,
       userChannelId: userChannel.id,
+      activityId,
       message: msgs[i],
       today,
     });
@@ -2610,6 +2710,7 @@ export async function runOnboardingAndFirstActivityFlow(
     today,
     channel,
     userChannel.channelUserId,
+    activityId,
   );
 }
 
@@ -2654,6 +2755,7 @@ async function createPendingBuffer(
   channel: MessageChannel,
   to: string,
   messageId?: string,
+  activityId?: string,
 ): Promise<void> {
   const doc = await createDoc({
     userId,
@@ -2675,6 +2777,7 @@ async function createPendingBuffer(
     to,
     userId,
     userChannelId,
+    activityId,
     message: reply,
     today,
   });
@@ -2692,6 +2795,7 @@ async function handleDocUpload(
   >,
   channel: MessageChannel,
   to: string,
+  activeActivity: Activity | null,
 ): Promise<void> {
   const pendingDoc = await findPendingDocByUser(userId);
   if (pendingDoc) {
@@ -2700,6 +2804,7 @@ async function handleDocUpload(
       await saveUserMsg({
         userId,
         userChannelId,
+        activityId: activeActivity?.id,
         content: rawContent,
         intent: "free_text",
         input,
@@ -2711,6 +2816,7 @@ async function handleDocUpload(
         to,
         userId,
         userChannelId,
+        activityId: activeActivity?.id,
         message: reply,
         today,
       });
@@ -2720,6 +2826,7 @@ async function handleDocUpload(
     const savedMsg = await saveMessage({
       userId,
       userChannelId,
+      activityId: activeActivity?.id,
       role: "user",
       content: rawContent,
       intent: "free_text",
@@ -2737,6 +2844,7 @@ async function handleDocUpload(
         to,
         userId,
         userChannelId,
+        activityId: activeActivity?.id,
         message: { text: itemValidation.error },
         today,
       });
@@ -2757,6 +2865,7 @@ async function handleDocUpload(
       to,
       userId,
       userChannelId,
+      activityId: activeActivity?.id,
       message: reply,
       today,
     });
@@ -2768,6 +2877,7 @@ async function handleDocUpload(
     await saveUserMsg({
       userId,
       userChannelId,
+      activityId: activeActivity?.id,
       content: rawContent,
       intent: "free_text",
       input,
@@ -2779,6 +2889,7 @@ async function handleDocUpload(
       to,
       userId,
       userChannelId,
+      activityId: activeActivity?.id,
       message: reply,
       today,
     });
@@ -2790,6 +2901,7 @@ async function handleDocUpload(
     await saveUserMsg({
       userId,
       userChannelId,
+      activityId: activeActivity?.id,
       content: rawContent,
       intent: "free_text",
       input,
@@ -2800,18 +2912,19 @@ async function handleDocUpload(
       to,
       userId,
       userChannelId,
+      activityId: activeActivity?.id,
       message: { text: itemValidation.error },
       today,
     });
     return;
   }
 
-  const activeActivity = await findLastActivityByUser(userId);
   if (activeActivity) {
     await updateUserPendingIntent(userId, "waiting_doc_replace");
     await saveUserMsg({
       userId,
       userChannelId,
+      activityId: activeActivity.id,
       content: rawContent,
       intent: "waiting_doc_replace",
       input,
@@ -2826,6 +2939,7 @@ async function handleDocUpload(
       to,
       userId,
       userChannelId,
+      activityId: activeActivity.id,
       message: reply,
       today,
     });

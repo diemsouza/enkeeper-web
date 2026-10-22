@@ -30,7 +30,13 @@ import {
   TOPIC_VALIDATION_PROMPT,
   OCR_DOCUMENT_PROMPT,
 } from "../lib/prompts";
-import { AiProvider, Level, QuestionFormat, SectionType } from "../lib/prisma";
+import {
+  AiProvider,
+  DocSource,
+  Level,
+  QuestionFormat,
+  SectionType,
+} from "../lib/prisma";
 import { FocusSuggestion } from "../types/domain";
 import { FocusSelectionInput } from "../core/parser";
 import { getFocusEnumPromptText } from "../core/focus";
@@ -530,6 +536,7 @@ export async function generateAnswerEvaluation(params: {
   attemptCount: number;
   docContent: string;
   feedbackExamples: string;
+  contentOrigin: DocSource;
   questionFormat: string;
   level: Level;
   userId: string;
@@ -543,6 +550,7 @@ export async function generateAnswerEvaluation(params: {
     attemptCount,
     docContent,
     feedbackExamples,
+    contentOrigin,
     questionFormat,
     level,
     userId,
@@ -556,10 +564,9 @@ export async function generateAnswerEvaluation(params: {
   let logError: string | null = null;
   const startTime = Date.now();
 
-  const systemPrompt = ANSWER_EVALUATION_PROMPT.replace(
-    "{voice}",
-    VOICE_PROMPT,
-  ).replace("{feedback_examples}", feedbackExamples);
+  const systemPrompt = ANSWER_EVALUATION_PROMPT.replace("{voice}", VOICE_PROMPT)
+    .replace("{content_origin}", contentOrigin)
+    .replace("{feedback_examples}", feedbackExamples);
 
   let userPrompt = `Pergunta: {question}
 Formato: {question_format}

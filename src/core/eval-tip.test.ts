@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { QuestionFormat } from "../lib/prisma";
-import { isEvalTipClassAllowed } from "./eval-tip";
+import { isAnswerInKeys, isEvalTipClassAllowed } from "./eval-tip";
 
 // lib/prisma instancia o PrismaClient no import; os testes so precisam dos enums
 vi.mock("../lib/prisma", async () => import("../../prisma/generated/enums"));
@@ -31,5 +31,16 @@ describe("isEvalTipClassAllowed audio_translation", () => {
     expect(isEvalTipClassAllowed(format, "collocation")).toBe(false);
     expect(isEvalTipClassAllowed(format, "homophone")).toBe(false);
     expect(isEvalTipClassAllowed(format, "alternative")).toBe(false);
+  });
+});
+
+describe("isAnswerInKeys", () => {
+  it("reconhece a key ignorando caixa, acento e pontuação", () => {
+    expect(isAnswerInKeys(["achieve results"], "Achieve results!")).toBe(true);
+    expect(isAnswerInKeys(["café"], "cafe")).toBe(true);
+  });
+
+  it("resposta aceita por equivalência fica fora das keys", () => {
+    expect(isAnswerInKeys(["achieve results"], "get results")).toBe(false);
   });
 });

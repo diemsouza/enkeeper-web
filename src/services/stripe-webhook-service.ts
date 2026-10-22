@@ -22,6 +22,7 @@ import { formatSubscriptionConfirmed } from "../core/formatters";
 import { PAYMENT_PROVIDER, SubscriptionInterval } from "../lib/constants";
 import { resolveChannel } from "../lib/channels/resolve-channel";
 import { sendAndSaveMessage } from "./message-sender-service";
+import { findLastActiveActivityByUser } from "../repo/activities.repo";
 
 function resolveId(ref: string | { id: string } | null): string | null {
   if (!ref) return null;
@@ -103,11 +104,13 @@ async function sendSubscriptionConfirmed(
     return;
   }
 
+  const activeActivity = await findLastActiveActivityByUser(userId);
   await sendAndSaveMessage({
     channel: resolveChannel(),
     to: userChannel.channelUserId,
     userId,
     userChannelId: userChannel.id,
+    activityId: activeActivity?.id,
     message: formatSubscriptionConfirmed(interval, renewsAt, timezone),
     intent: "payment_confirmed",
   });

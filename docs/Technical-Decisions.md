@@ -485,7 +485,14 @@ Decisões:
 - **Gate no código, não no prompt:** o prompt de avaliação não sabe o formato. Em `message-service.ts`, o `silent` agora também bloqueia quando `evalStatus === "right"` e não vale `alternative` + formato em `EVAL_TIP_ALTERNATIVE_FORMATS` (`src/lib/constants.ts`: recall, recall_inverted, gap_fill, scenario) + `hasAlternativeKeyInTip` (`src/core/eval-tip.ts`): a dica cita, normalizada, uma answerKey diferente da resposta do usuário.
 - **Correção (2026-10-09):** a primeira versão quase nunca disparava. Os exemplos de feedback (`recall`, `gap_fill`, `scenario`) mandavam usar "o primeiro termo de answerKeys", o que vencia a regra do prompt e trocava a forma do usuário pela esperada; a classe `alternative` exigia uma key diferente do usuário **e** do right_answer (um terceiro termo); e o gate `answerKeys.length > 1` cortava acerto por equivalência com uma key só. Agora, em right, `right_answer` e a frase do feedback usam a forma do usuário, as fórmulas citam "o termo de right_answer", e `alternative` vale para qualquer key diferente do que o usuário escreveu, citada literalmente na dica.
 - **Descarte total:** quando silenciada, a dica some inteira (`evalTip` e `evalTipClass` nulos). Antes, com classe `none`/`spelling` só a classe era anulada e o texto ainda seguia.
-- **Sem efeito colateral:** status, nota e SM-2 não leem a dica. Envio e ordem (feedback, áudio, dica) inalterados.
+- **Sem efeito no status nem na nota:** status e score da pergunta não leem a dica. Envio e ordem (feedback, áudio, dica) inalterados.
+- **Efeito no SM-2 (2026-10-22):** acerto com `eval_tip_class` `alternative` e resposta fora das answerKeys (`isAnswerInKeys`, `src/core/eval-tip.ts`, mesma normalização do `hasAlternativeKeyInTip`) passa `isAlternativeAnswer` ao `calcSm2`, que mantém o fator de facilidade (delta 0, equivalente ao q=4 do SM-2 clássico; acerto normal é +0.1, o q=5) e calcula o intervalo normalmente. Usa a classe crua da avaliação, não o gate de envio da dica: vale também em formatos onde a dica é silenciada. Quem respondeu uma das answerKeys, mesmo havendo outra, segue com +0.1. A comparação não cobre flexão; o prompt já não devolve `alternative` para variação de flexão.
+
+## Origem da pergunta na avaliação (`{content_origin}`)
+
+- **Fonte:** `Doc.source` (`DocSource`: `upload` | `generated`), lido do `practiceDoc` que `message-service.ts` já carrega antes da avaliação. Sem campo novo nem query extra.
+- **Valor cru do enum:** `generateAnswerEvaluation` recebe `contentOrigin: DocSource` e substitui `{content_origin}` direto, sem mapear para outro vocabulário. O prompt usa os mesmos nomes do banco (`generated`, `upload`), então valor novo no enum chega sem mudança de código.
+- **Sem origem desconhecida:** a coluna é `NOT NULL DEFAULT 'upload'` e entrou na mesma migration (`20260721150709_gen_content_data`) que criou o fluxo de conteúdo gerado; docs anteriores são de fato upload. O parâmetro é obrigatório, então o placeholder nunca chega literal ao modelo.
 
 ## Exportar bolha do chat como PNG
 

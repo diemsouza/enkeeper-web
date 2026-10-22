@@ -27,6 +27,14 @@ export function hasAlternativeKeyInTip(
   });
 }
 
+export function isAnswerInKeys(
+  answerKeys: string[],
+  userAnswer: string,
+): boolean {
+  const answer = toComparable(userAnswer);
+  return answerKeys.some((key) => toComparable(key) === answer);
+}
+
 export function isEvalTipClassAllowed(
   format: QuestionFormat | null,
   tipClass: string | undefined,

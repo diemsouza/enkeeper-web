@@ -80,10 +80,24 @@ describe("formatNewActivityFlowCanceled", () => {
 });
 
 describe("formatActivitySuggestion", () => {
-  it("menciona o comando por extenso no text e traz botão no interactive", () => {
-    const message = formatActivitySuggestion();
+  it("fora do intensivo sugere continuar praticando e traz botão Praticar", () => {
+    const message = formatActivitySuggestion({ isIntensiveMode: false });
     expect(message.text).toContain("🔄");
     expect(message.text).toContain("`/nova atividade`");
+    expect(message.text).toContain("ou continue praticando.");
+    expect(message.text).not.toContain("aguarde");
+    expect(message.interactive?.buttons).toEqual([
+      { id: "new_activity_suggestion", label: "Nova atividade" },
+      { id: "practice_now", label: "Praticar", type: "reply" },
+    ]);
+  });
+
+  it("no intensivo sugere aguardar a próxima pergunta, sem botão Praticar", () => {
+    const message = formatActivitySuggestion({ isIntensiveMode: true });
+    expect(message.text).toContain("ou apenas aguarde a próxima pergunta.");
+    expect(message.interactive?.body).toContain(
+      "ou apenas aguarde a próxima pergunta.",
+    );
     expect(message.interactive?.buttons).toEqual([
       { id: "new_activity_suggestion", label: "Nova atividade" },
     ]);

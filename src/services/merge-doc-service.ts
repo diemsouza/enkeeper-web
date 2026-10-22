@@ -7,6 +7,7 @@ import {
 import {
   createActivity,
   findCurrentActivityByUser,
+  findLastActiveActivityByUser,
 } from "../repo/activities.repo";
 import {
   archiveOrCancelActivity,
@@ -54,6 +55,7 @@ export async function mergeDoc(
   if (!lastItem || lastItem.id !== latestDocItemId) {
     return;
   }
+  const activeActivity = await findLastActiveActivityByUser(userId);
 
   const validItems = allItems.filter((item) => !item.error);
   if (validItems.length === 0) {
@@ -67,6 +69,7 @@ export async function mergeDoc(
         to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: msg,
         intent: "system_error",
       });
@@ -94,6 +97,7 @@ export async function mergeDoc(
         to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: msg,
         intent: "waiting_set_level",
       });
@@ -118,6 +122,7 @@ export async function mergeDoc(
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: msg,
           intent: "system_error",
         });
@@ -147,6 +152,7 @@ export async function mergeDoc(
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: msg,
           intent: "system_error",
         });
@@ -167,6 +173,7 @@ export async function mergeDoc(
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
+          activityId: activeActivity?.id,
           message: msg,
           intent: "system_error",
         });
@@ -229,6 +236,7 @@ export async function mergeDoc(
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
+          activityId: activity.id,
           message: msg,
         });
         if (summary) {
@@ -242,6 +250,7 @@ export async function mergeDoc(
             to: userChannel.channelUserId,
             userId,
             userChannelId: userChannel.id,
+            activityId: activity.id,
             message: summary,
           });
         }
@@ -260,6 +269,7 @@ export async function mergeDoc(
           to: userChannel.channelUserId,
           userId,
           userChannelId: userChannel.id,
+          activityId: activity.id,
           message: msg,
           intent: "system_error",
         });
@@ -279,6 +289,7 @@ export async function mergeDoc(
         to: userChannel.channelUserId,
         userId,
         userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
         message: msg,
         intent: "system_error",
       });

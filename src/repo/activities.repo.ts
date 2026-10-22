@@ -73,7 +73,7 @@ export async function countAllActivitiesByUser(
   });
 }
 
-export async function findLastActivityByUser(
+export async function findLastActiveActivityByUser(
   userId: string,
 ): Promise<Activity | null> {
   const result = await prisma.activity.findFirst({

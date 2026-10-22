@@ -1,5 +1,6 @@
 import {
   findEligibleActivities,
+  findLastActiveActivityByUser,
   updateActivity,
 } from "../repo/activities.repo";
 import {
@@ -128,6 +129,7 @@ export async function processActivityCron(
               to: userChannel.channelUserId,
               userId: activity.userId,
               userChannelId: userChannel.id,
+              activityId: activity.id,
               message: { text: msg },
               intent: "system_error",
               today: startOfDay(new Date()),
@@ -160,6 +162,7 @@ export async function processActivityCron(
               to: userChannel.channelUserId,
               userId: activity.userId,
               userChannelId: userChannel.id,
+              activityId: activity.id,
               message: { text: msg },
               intent: "system_error",
               today: startOfDay(new Date()),
@@ -348,11 +351,13 @@ export async function processExpiredFlowIntents(
         const userChannel = await findUserChannelByUserId(user.id);
         if (userChannel) {
           const msg = formatNewActivityFlowExpired();
+          const activeActivity = await findLastActiveActivityByUser(user.id);
           await sendAndSaveMessage({
             channel,
             to: userChannel.channelUserId,
             userId: user.id,
             userChannelId: userChannel.id,
+            activityId: activeActivity?.id,
             message: msg,
             today: startOfDay(new Date()),
           });

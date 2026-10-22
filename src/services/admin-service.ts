@@ -3,7 +3,10 @@ import { formatCanceled } from "../core/formatters";
 import { User, UserChannel } from "../lib/prisma";
 import { AdminSendMessageIntentData } from "../types/domain";
 import { MessageChannel } from "../types/message-channel";
-import { countAllActivitiesByUser } from "../repo/activities.repo";
+import {
+  countAllActivitiesByUser,
+  findLastActiveActivityByUser,
+} from "../repo/activities.repo";
 import { saveMessage } from "../repo/messages.repo";
 import {
   findUserByIdentifier,
@@ -86,9 +89,13 @@ export async function handleAdminPendingSendMessage(
     const result = await channel.sendMessage(data.targetChannelUserId, {
       text,
     });
+    const activeActivity = await findLastActiveActivityByUser(
+      data.targetUserId,
+    );
     await saveMessage({
       userId: data.targetUserId,
       userChannelId: data.targetUserChannelId,
+      activityId: activeActivity?.id,
       role: "assistant",
       content: text,
       intent: "admin_message",
@@ -123,9 +130,11 @@ async function sendAdminTemplate(
       target.userChannel.channelUserId,
       templateName,
     );
+    const activeActivity = await findLastActiveActivityByUser(target.user.id);
     await saveMessage({
       userId: target.user.id,
       userChannelId: target.userChannel.id,
+      activityId: activeActivity?.id,
       role: "assistant",
       content: templateName,
       intent: "admin_template",

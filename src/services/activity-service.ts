@@ -100,6 +100,7 @@ export async function resumeActivityFromWeb(
     to,
     userId,
     userChannelId,
+    activityId: target.id,
     message: formatResumeSuccess(target.title),
     today: startOfDay(new Date()),
   });
@@ -486,6 +487,7 @@ type MaybeSendActivitySuggestionParams = {
   userId: string;
   userChannelId: string;
   isLastAnswerCorrect: boolean;
+  isIntensiveMode: boolean;
   channel: MessageChannel;
   to: string;
   today: Date;
@@ -500,6 +502,7 @@ export async function maybeSendActivitySuggestion(
     userId,
     userChannelId,
     isLastAnswerCorrect,
+    isIntensiveMode,
     channel,
     to,
     today,
@@ -518,7 +521,7 @@ export async function maybeSendActivitySuggestion(
     AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
     { replyToMessageId },
   );
-  const message = formatActivitySuggestion();
+  const message = formatActivitySuggestion({ isIntensiveMode });
   await sendAndSaveMessage({
     channel,
     to,

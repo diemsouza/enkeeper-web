@@ -175,6 +175,8 @@ Transcricao de audio: `src/vendors/whisper.vendor.ts` (OpenAI whisper-1).
 Schemas Zod para saidas estruturadas: `src/lib/llm-schemas.ts`.
 
 **evalTip em right:** o feedback usa a forma que o usuario escreveu (`right_answer`); a dica so e enviada com `eval_tip_class` `alternative`, formato em `EVAL_TIP_ALTERNATIVE_FORMATS` e `hasAlternativeKeyInTip` (`src/core/eval-tip.ts`: a dica cita uma answerKey diferente da resposta); o gate fica em `message-service.ts` (o prompt nao conhece o formato). Classes permitidas por formato: `EVAL_TIP_CLASSES_BY_FORMAT` + `isEvalTipClassAllowed` (transcricao so `homophone`/`connected_speech`; traducao `calque`/`near_synonym`/`literal_idiom`/`register`/`structure`). Ver Product-Rules Secao 6.2.
+**SM-2 em acerto com alternativa:** `eval_tip_class` `alternative` + resposta fora das answerKeys (`isAnswerInKeys`) passa `isAlternativeAnswer` ao `calcSm2` (`src/core/sm2.ts`): fator de facilidade fica igual (equivalente ao q=4) em vez de +0.1. Ver Product-Rules Secao 7.
+**Origem na avaliacao:** `{content_origin}` recebe `Doc.source` cru (`generated` | `upload`); generated aceita equivalente natural, upload so answerKeys. Ver Product-Rules Secao 6.
 Textos dos prompts: `prompts/*.md`, exemplos de formato em `prompts/examples/*.md`.
 
 ## LLM logging
