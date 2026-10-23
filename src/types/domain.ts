@@ -91,8 +91,8 @@ export type IncomingMessage = {
   mediaId?: string;
   mediaMetadata?: Record<string, string | number | null>;
   isVoiceNote?: boolean;
-  voiceAudioBuffer?: Buffer;
-  voiceAudioMimeType?: string;
+  // Id pre-gerado da mensagem quando a Media (audio) e criada antes dela.
+  messageId?: string;
   referral?: Record<string, unknown> | null;
   // Id do botao clicado na web e da mensagem da lista a que ele pertence.
   buttonId?: string;

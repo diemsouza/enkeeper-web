@@ -18,6 +18,7 @@ import { useRealtimeMessages } from "@/src/hooks/use-realtime-messages";
 import { useIsMobile } from "@/src/hooks/use-is-mobile";
 import { setupAudioUnlock } from "@/src/lib/audio-unlock";
 import { delay, isAppUrl } from "@/src/lib/utils";
+import { buildVoiceNoteFile } from "@/src/lib/voice-recording";
 import { usePracticePill } from "./practice-pill-provider";
 
 type MessagesResponse = { messages: Message[]; hasMore: boolean };
@@ -55,6 +56,20 @@ function formatFileSize(bytes: number): string {
 
 function sameMessage(a: Message, key: string): boolean {
   return a.id === key || a.externalId === key;
+}
+
+// O broadcast nao traz o content-type da midia: o audio enviado pelo usuario
+// segue tocando pelo blob local, sem baixar de novo.
+function mergeServerMessage(local: Message, server: Message): Message {
+  const keepsLocalAudio = local.audioUrl?.startsWith("blob:") ?? false;
+  return {
+    ...local,
+    ...server,
+    status: "sent",
+    ...(keepsLocalAudio
+      ? { audioUrl: local.audioUrl, audioContentType: local.audioContentType }
+      : {}),
+  };
 }
 
 function isSameInteractive(
@@ -160,6 +175,7 @@ export function LiveThreadClient({
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const pendingFilesRef = useRef<Map<string, File>>(new Map());
+  const blobUrlsRef = useRef<string[]>([]);
 
   const stopTyping = useCallback(() => {
     if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
@@ -179,6 +195,11 @@ export function LiveThreadClient({
   );
 
   useEffect(() => stopTyping, [stopTyping]);
+
+  useEffect(() => {
+    const blobUrls = blobUrlsRef.current;
+    return () => blobUrls.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
 
   const clearSelectionByUserMessage = useCallback((externalId: string) => {
     setOptimisticSelections((prev) => {
@@ -228,11 +249,22 @@ export function LiveThreadClient({
             return { ...m, translation: server.translation };
           }
         }
+        // Transcricao chega no INSERT do broadcast; se ele se perdeu, a bolha
+        // otimista (ja "sent") so e achada pelo externalId.
+        if (m.from === "user" && m.type === "audio" && !m.transcription) {
+          const server = body.messages.find(
+            (s) => !!m.externalId && s.externalId === m.externalId,
+          );
+          if (server?.transcription) {
+            changed = true;
+            return { ...m, transcription: server.transcription };
+          }
+        }
         if (!m.status || m.status === "sent" || !m.externalId) return m;
         const server = body.messages.find((s) => s.externalId === m.externalId);
         if (!server) return m;
         changed = true;
-        return { ...m, ...server, status: "sent" as const };
+        return mergeServerMessage(m, server);
       });
 
       const toAppend = body.messages.filter(
@@ -273,7 +305,7 @@ export function LiveThreadClient({
         if (idx !== -1) {
           pendingFilesRef.current.delete(key);
           const next = [...prev];
-          next[idx] = { ...next[idx], ...mapped, status: "sent" };
+          next[idx] = mergeServerMessage(next[idx], mapped);
           return next;
         }
         return [...prev, mapped];
@@ -457,11 +489,61 @@ export function LiveThreadClient({
     setMessageStatus(externalId, ok ? "sent" : "failed");
   }
 
+  async function uploadVoiceNote(
+    externalId: string,
+    recording: File,
+  ): Promise<boolean> {
+    try {
+      const file = await buildVoiceNoteFile(recording);
+      const { ok } = await postForm(
+        "/api/app/messages/upload",
+        buildUploadForm("audio", externalId, file),
+      );
+      return ok;
+    } catch (err) {
+      console.error("[uploadVoiceNote] prepare failed:", err);
+      return false;
+    }
+  }
+
+  async function handleSendAudio(recording: Blob) {
+    const externalId = ulid();
+    const audioUrl = URL.createObjectURL(recording);
+    blobUrlsRef.current.push(audioUrl);
+    const file = new File([recording], "voice", { type: recording.type });
+    pendingFilesRef.current.set(externalId, file);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: externalId,
+        externalId,
+        from: "user",
+        time: nowTime(),
+        date: new Date().toISOString(),
+        type: "audio",
+        audioUrl,
+        audioContentType: recording.type,
+        status: "sending",
+      },
+    ]);
+    const ok = await uploadVoiceNote(externalId, file);
+    setMessageStatus(externalId, ok ? "sent" : "failed");
+  }
+
   async function handleRetrySend(externalId: string) {
     const target = messagesRef.current.find((m) => m.externalId === externalId);
     if (!target || target.status !== "failed") return;
     setMessageStatus(externalId, "sending");
     await delay(2);
+
+    if (target.type === "audio") {
+      const recording = pendingFilesRef.current.get(externalId);
+      const ok = recording
+        ? await uploadVoiceNote(externalId, recording)
+        : false;
+      setMessageStatus(externalId, ok ? "sent" : "failed");
+      return;
+    }
 
     if (target.type === "file") {
       const file = pendingFilesRef.current.get(externalId);
@@ -536,6 +618,7 @@ export function LiveThreadClient({
       messages={displayedMessages}
       onSend={(text) => handleSend(text)}
       onSendFile={handleSendFile}
+      onSendAudio={handleSendAudio}
       onRetry={handleRetrySend}
       onAudioPlay={handleAudioPlay}
       onButtonClick={handleButtonClick}

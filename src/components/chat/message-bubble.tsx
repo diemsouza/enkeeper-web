@@ -43,6 +43,7 @@ export function MessageBubble({
     : "max-w-[85%] md:max-w-[70%]";
   const imageWidth = wide ? "w-[97%] md:w-[420px]" : "w-[85%] md:w-[420px]";
   const isAudio = message.type === "audio";
+  const isUserAudio = isUser && isAudio;
   const hasAudioWidth = !isUser && !isAudio && !wide;
   const bubbleRef = useRef<HTMLDivElement>(null);
 
@@ -74,6 +75,7 @@ export function MessageBubble({
             cn(imageWidth, maxWidth, "overflow-hidden"),
           hasAudioWidth && BOT_BUBBLE_MOBILE_WIDTH,
           hasAudioWidth && message.type !== "image" && "md:w-auto",
+          isUserAudio && message.status === "failed" && "opacity-50",
         )}
       >
         {message.type === "file" ? (
@@ -115,9 +117,11 @@ export function MessageBubble({
             externalId={message.externalId}
             onPlay={onAudioPlay}
             textFallback={message.textFallback}
-            translation={message.translation}
+            translation={isUser ? message.transcription : message.translation}
+            revealLabel={isUser ? t("transcription_label") : undefined}
             time={message.time}
             fluid={fluidAudio}
+            isUserBubble={isUser}
             onExport={exportBubble}
           />
         ) : message.type === "voice" ? (
@@ -159,7 +163,25 @@ export function MessageBubble({
           />
         )}
       </div>
-      {isUser && message.status === "failed" && (
+      {isUserAudio && message.status === "sending" && (
+        <div className="mt-1 flex items-center gap-1 px-1 text-xs text-muted-foreground">
+          <Clock3 className="h-3 w-3" aria-hidden />
+          <span>{t("voice.sending")}</span>
+        </div>
+      )}
+      {isUserAudio && message.status === "failed" && (
+        <div className="mt-1 flex items-center gap-1.5 px-1 text-sm text-destructive">
+          <span>{tErrors("voice_failed")}</span>
+          <button
+            type="button"
+            onClick={() => onRetry?.(message.externalId ?? message.id)}
+            className="font-medium underline underline-offset-2 transition-opacity hover:opacity-80"
+          >
+            {tErrors("voice_retry")}
+          </button>
+        </div>
+      )}
+      {!isUserAudio && isUser && message.status === "failed" && (
         <div className="mt-1 flex items-center gap-1.5 px-1 text-sm text-muted-foreground">
           <span>{tErrors("message_failed")}</span>
           <button

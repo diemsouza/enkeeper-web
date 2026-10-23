@@ -109,16 +109,69 @@
       "pause": "Pausar",
       "audio_position_aria": "Posição do áudio",
       "translation_label": "Ver tradução",
+      "transcription_label": "Ver transcrição",
       "pending_review": {
         "label": "Perguntas aguardando revisão",
         "cta": "Praticar"
+      },
+      "voice": {
+        "record_aria": "Gravar áudio",
+        "discard_aria": "Descartar gravação",
+        "send_aria": "Enviar áudio",
+        "recording_aria": "Gravando",
+        "time_warning": "Restam apenas 10s",
+        "release_to_send": "Solte para enviar",
+        "sending": "Enviando"
+      },
+      "mic_permission": {
+        "title": "Libere o microfone",
+        "description": "Para responder por voz, permita o acesso ao microfone para fluizer.com. Você também pode responder digitando.",
+        "confirm": "Entendi",
+        "ios": {
+          "steps": [
+            "Toque no botão de menu da página, ao lado do endereço.",
+            "Toque em Mais e depois em Ajustes do Site.",
+            "Em Microfone, escolha Permitir.",
+            "Recarregue a página."
+          ],
+          "note": "Se não aparecer, abra Ajustes > Apps > Safari > Microfone e escolha Perguntar."
+        },
+        "android": {
+          "steps": [
+            "Toque no ícone à esquerda do endereço.",
+            "Toque em Permissões e ative Microfone.",
+            "Recarregue a página."
+          ],
+          "note": "Se continuar bloqueado, abra Configurações > Apps > Chrome > Permissões > Microfone e permita."
+        },
+        "mac_safari": {
+          "steps": [
+            "No menu Safari, abra Ajustes e depois Sites.",
+            "Em Microfone, escolha Permitir para fluizer.com.",
+            "Recarregue a página."
+          ],
+          "note": ""
+        },
+        "desktop": {
+          "steps": [
+            "Clique no ícone à esquerda do endereço.",
+            "Em Microfone, escolha Permitir.",
+            "Recarregue a página."
+          ],
+          "note": ""
+        }
       }
     },
     "errors": {
       "message_failed": "Mensagem não enviada.",
       "resend": "Reenviar",
       "resend_aria": "Reenviar mensagem",
-      "audio_load_failed": "Não foi possível carregar este áudio."
+      "audio_load_failed": "Não foi possível carregar este áudio.",
+      "voice_failed": "Não foi enviado.",
+      "voice_retry": "Tentar de novo",
+      "mic_not_found": "Nenhum microfone encontrado. Você pode responder digitando.",
+      "mic_in_use": "O microfone está em uso por outro app. Feche o outro app e tente de novo.",
+      "mic_generic": "Não foi possível usar o microfone. Tente de novo ou responda digitando."
     },
     "summary": {
       "archived_message": "Esta atividade foi arquivada em {date}.",

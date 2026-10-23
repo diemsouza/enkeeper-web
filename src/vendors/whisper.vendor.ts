@@ -1,7 +1,9 @@
+import { audioExtensionForMime } from "../core/voice-note";
+
 type TranscribeResult = { text: string; duration: number | null; format: string }
 
 export async function transcribeAudio(buffer: Buffer, mimeType: string): Promise<TranscribeResult> {
-  const ext = mimeType.split("/")[1]?.split(";")[0] ?? "ogg";
+  const ext = audioExtensionForMime(mimeType);
   const formData = new FormData();
   formData.append("file", new Blob([new Uint8Array(buffer)], { type: mimeType }), `audio.${ext}`);
   formData.append("model", "whisper-1");

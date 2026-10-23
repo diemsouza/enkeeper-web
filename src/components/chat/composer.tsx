@@ -1,10 +1,12 @@
 "use client";
 
-import { ArrowUp, Paperclip } from "lucide-react";
+import { Paperclip } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   forwardRef,
   KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
@@ -15,8 +17,27 @@ import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import { type Command, searchAutoCompleteCommands } from "@/src/lib/commands";
 import { capitalizeFirst } from "@/src/lib/utils";
+import { canRecordVoice } from "@/src/lib/voice-recording";
+import { useToast } from "@/src/hooks/use-toast";
+import {
+  useVoiceRecorder,
+  type VoiceCaptureError,
+} from "@/src/hooks/use-voice-recorder";
+import { RecordingBar } from "@/src/components/chat/recording-bar";
+import {
+  ComposerActionButton,
+  type ComposerActionRole,
+} from "@/src/components/chat/composer-action-button";
+import { useHoldToRecord } from "@/src/hooks/use-hold-to-record";
+import { MicPermissionDialog } from "@/src/components/chat/mic-permission-dialog";
 
 const COMPOSER_MAX_ROWS = 4;
+
+const CAPTURE_ERROR_KEYS: Record<VoiceCaptureError, string> = {
+  not_found: "mic_not_found",
+  in_use: "mic_in_use",
+  generic: "mic_generic",
+};
 
 const COMPOSER_BACKDROP_MASK =
   "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.85) 100%)";
@@ -28,6 +49,7 @@ export type ComposerHandle = {
 type ComposerProps = {
   onSend: (text: string) => void | Promise<void>;
   onSendFile?: (file: File) => void | Promise<void>;
+  onSendAudio?: (recording: Blob) => void | Promise<void>;
   disabled?: boolean;
   disabledReason?: string;
   isWaitingForResponse?: boolean;
@@ -35,10 +57,32 @@ type ComposerProps = {
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(
   function Composer(
-    { onSend, onSendFile, disabled, disabledReason, isWaitingForResponse },
+    {
+      onSend,
+      onSendFile,
+      onSendAudio,
+      disabled,
+      disabledReason,
+      isWaitingForResponse,
+    },
     ref,
   ) {
     const t = useTranslations("app.chat");
+    const tErrors = useTranslations("app.errors");
+    const { toast } = useToast();
+    const [canRecord, setCanRecord] = useState(false);
+    const recorder = useVoiceRecorder({
+      onRecorded: (recording) => void onSendAudio?.(recording),
+      onCaptureError: (error) =>
+        toast({ description: tErrors(CAPTURE_ERROR_KEYS[error]) }),
+    });
+    const isRecording = recorder.status === "recording";
+    const hold = useHoldToRecord({
+      status: recorder.status,
+      start: recorder.start,
+      finish: recorder.finish,
+      resumeAudio: recorder.resumeAudio,
+    });
     const [text, setText] = useState("");
     const [activeIndex, setActiveIndex] = useState(0);
     const [menuDismissed, setMenuDismissed] = useState(false);
@@ -80,6 +124,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
     }, [text]);
 
     useEffect(() => {
+      setCanRecord(!!onSendAudio && canRecordVoice());
+    }, [onSendAudio]);
+
+    useEffect(() => {
       setActiveIndex(0);
       if (commandQuery === null) setMenuDismissed(false);
     }, [commandQuery]);
@@ -102,6 +150,36 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
       setText("");
       textareaRef.current?.blur();
       await onSend(trimmed);
+    }
+
+    const actionRole: ComposerActionRole = hold.isHolding
+      ? "hold"
+      : isRecording
+        ? "locked"
+        : canRecord && !text
+          ? "mic"
+          : "send";
+
+    const isActionDisabled =
+      actionRole === "send"
+        ? !text.trim() || !!disabled || !!isWaitingForResponse
+        : actionRole === "mic" && (!!disabled || !!isWaitingForResponse);
+
+    function handleActionPointerDown(
+      event: ReactPointerEvent<HTMLButtonElement>,
+    ) {
+      if (actionRole === "mic" && !isActionDisabled) {
+        hold.handlers.onPointerDown(event);
+      }
+    }
+
+    // Pelo ponteiro o mic ja comecou no pointerdown; o click sem ponteiro
+    // (teclado, detail 0) grava no modo travado.
+    function handleActionClick(event: ReactMouseEvent<HTMLButtonElement>) {
+      if (hold.shouldIgnoreClick()) return;
+      if (actionRole === "mic" && event.detail === 0) recorder.start();
+      if (actionRole === "locked") recorder.finish();
+      if (actionRole === "send") void handleSend();
     }
 
     function selectCommand(command: Command) {
@@ -202,52 +280,76 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                 </ul>
               </div>
             )}
+            {isRecording && recorder.isWarning && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-full z-30 mb-2 flex justify-center">
+                <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white shadow-sm">
+                  {t("voice.time_warning")}
+                </span>
+              </div>
+            )}
             <div className="pointer-events-auto flex w-full items-end gap-1.5 rounded-3xl border border-border bg-background/70 backdrop-blur-xl backdrop-saturate-150 px-1.5 py-1 shadow-sm">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*,application/pdf,text/plain,text/markdown,.txt,.md"
-                className="hidden"
+              {isRecording ? (
+                <RecordingBar
+                  mode={hold.isHolding ? "hold" : "locked"}
+                  elapsedMs={recorder.elapsedMs}
+                  levels={recorder.levels}
+                  isWarning={recorder.isWarning}
+                  onCancel={recorder.cancel}
+                />
+              ) : (
+                <>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*,application/pdf,text/plain,text/markdown,.txt,.md"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    disabled={disabled || isWaitingForResponse || !onSendFile}
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label={t("attach_file_aria")}
+                    title={t("attach_file_title")}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </button>
+                  <Textarea
+                    id="input_text"
+                    ref={textareaRef}
+                    rows={1}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    disabled={disabled}
+                    placeholder={
+                      disabled
+                        ? (disabledReason ?? t("placeholder_archived"))
+                        : t("placeholder_default")
+                    }
+                    className="min-h-9 flex-1 resize-none rounded-2xl border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </>
+              )}
+              <ComposerActionButton
+                role={actionRole}
+                disabled={isActionDisabled}
+                onClick={handleActionClick}
+                onPointerDown={handleActionPointerDown}
+                onPointerUp={hold.handlers.onPointerUp}
+                onPointerCancel={hold.handlers.onPointerCancel}
+                onLostPointerCapture={hold.handlers.onLostPointerCapture}
+                onContextMenu={hold.handlers.onContextMenu}
               />
-              <button
-                type="button"
-                disabled={disabled || isWaitingForResponse || !onSendFile}
-                onClick={() => fileInputRef.current?.click()}
-                aria-label={t("attach_file_aria")}
-                title={t("attach_file_title")}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
-              >
-                <Paperclip className="h-4 w-4" />
-              </button>
-              <Textarea
-                id="input_text"
-                ref={textareaRef}
-                rows={1}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={disabled}
-                placeholder={
-                  disabled
-                    ? (disabledReason ?? t("placeholder_archived"))
-                    : t("placeholder_default")
-                }
-                className="min-h-9 flex-1 resize-none rounded-2xl border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-              <Button
-                type="button"
-                size="icon"
-                onClick={() => void handleSend()}
-                disabled={!text.trim() || disabled || isWaitingForResponse}
-                className="h-9 w-9 shrink-0 rounded-full"
-                aria-label={t("send_aria")}
-              >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </div>
+        <MicPermissionDialog
+          open={recorder.status === "denied"}
+          onConfirm={recorder.dismissDenied}
+          onAfterClose={() => textareaRef.current?.focus()}
+        />
       </div>
     );
   },

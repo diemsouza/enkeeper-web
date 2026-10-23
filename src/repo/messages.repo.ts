@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma";
 import type { FormattedMessage } from "../types/out-message";
 
 type SaveMessageData = {
+  id?: string;
   userId: string;
   userChannelId: string;
   role: MessageRole;
@@ -60,6 +61,7 @@ export async function findMessagesPage(
 export async function saveMessage(data: SaveMessageData): Promise<Message> {
   return prisma.message.create({
     data: {
+      id: data.id,
       userId: data.userId,
       userChannelId: data.userChannelId,
       role: data.role,

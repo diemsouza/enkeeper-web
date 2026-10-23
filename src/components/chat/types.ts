@@ -27,6 +27,9 @@ export interface Message {
   caption?: string;
   textFallback?: string;
   translation?: string;
+  // Audio enviado pelo usuario: texto transcrito, ausente ate o servidor
+  // salvar a mensagem e em audio sem fala.
+  transcription?: string;
   externalId?: string;
   duration?: string;
   interactive?: FormattedMessage["interactive"] | null;

@@ -124,6 +124,16 @@ export const FEEDBACK_AUDIO_FOLDER = "feedback-audio";
 export const ANSWER_AUDIO_FOLDER = "answer-audio";
 export const CHART_FOLDER = "chart";
 export const OCR_IMAGE_FOLDER = "ocr-image";
+
+// Resposta por voz na web: limite unico de duracao, aviso antes do fim e
+// gravacao minima (abaixo disso e descartada sem mensagem).
+export const VOICE_MAX_SEC = 30;
+export const VOICE_WARN_SEC = 20;
+export const VOICE_MIN_MS = 1000;
+export const VOICE_MAX_BYTES = 1024 * 1024;
+// So formatos que o player toca: Ogg/Opus (nativo ou remuxado do WebM) e
+// AAC em MP4 (Safari antes do 18.4).
+export const VOICE_ACCEPTED_CONTENT_TYPES = ["audio/ogg", "audio/mp4"];
 export const MAX_ACTIVITIES_PER_DAY = 5;
 export const MAX_DOC_ITEMS_PER_DOC = 3;
 export const DOC_BUFFER_DELAY_SEC = 45;

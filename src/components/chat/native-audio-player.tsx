@@ -9,9 +9,14 @@ import {
   type SyntheticEvent,
 } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronDown } from "lucide-react";
 import { Spinner } from "@/src/components/ui/spinner";
 import { useKeepComposerFocus } from "@/src/hooks/use-keep-composer-focus";
+import {
+  WAVEFORM_BARS,
+  WaveformBars,
+} from "@/src/components/chat/waveform-bars";
+import { AudioAvatar } from "@/src/components/chat/audio-avatar";
+import { AudioRevealText } from "@/src/components/chat/audio-reveal-text";
 
 export type AudioPlayerProps = {
   audioUrl: string;
@@ -21,13 +26,13 @@ export type AudioPlayerProps = {
   translation?: string;
   time?: string;
   fluid?: boolean;
+  isUserBubble?: boolean;
+  revealLabel?: string;
   onExport?: (event: SyntheticEvent) => void;
 };
 
 type PlayerState = "ready" | "playing" | "paused" | "error";
 
-const WAVEFORM_BARS = 40;
-const WAVEFORM_IDLE_HEIGHT = 0.15;
 const DECODE_RETRY_MS = 500;
 const READY_FALLBACK_MS = 2000;
 
@@ -59,7 +64,7 @@ function stopActiveAudio(exceptStopper?: () => void): void {
   }
 }
 
-function formatTime(seconds: number): string {
+export function formatTime(seconds: number): string {
   const safe = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
   const m = Math.floor(safe / 60);
   const s = Math.floor(safe % 60);
@@ -107,6 +112,8 @@ export function NativeAudioPlayer({
   time,
   onExport,
   fluid,
+  isUserBubble,
+  revealLabel,
   onUnsupported,
 }: AudioPlayerProps & { onUnsupported?: () => void }) {
   const t = useTranslations("app.chat");
@@ -120,7 +127,6 @@ export function NativeAudioPlayer({
   const [progress, setProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [showErrorHint, setShowErrorHint] = useState(false);
-  const [showTranslation, setShowTranslation] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playFiredRef = useRef(false);
@@ -327,9 +333,7 @@ export function NativeAudioPlayer({
         onEnded={handleEnded}
         onError={handleError}
       />
-      <div
-        className={`flex items-center gap-3${isError ? " text-destructive" : ""}`}
-      >
+      <div className={`flex items-center gap-3${isError ? " opacity-50" : ""}`}>
         <button
           type="button"
           {...buttonProps}
@@ -368,29 +372,18 @@ export function NativeAudioPlayer({
           style={{ "--p": 0 } as CSSProperties}
         >
           {[0.3, 0.85].map((opacity) => (
-            <div
+            <WaveformBars
               key={opacity}
-              className="absolute inset-0 flex items-center gap-[2px] pointer-events-none"
+              heights={waveform}
+              barOpacity={opacity}
+              barClassName="transition-[height] duration-300"
+              className="absolute inset-0 pointer-events-none"
               style={
                 opacity === 0.85
                   ? { clipPath: "inset(0 calc((1 - var(--p)) * 100%) 0 0)" }
                   : undefined
               }
-            >
-              {(waveform.length > 0
-                ? waveform
-                : new Array(WAVEFORM_BARS).fill(WAVEFORM_IDLE_HEIGHT)
-              ).map((height, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-full bg-current transition-[height] duration-300"
-                  style={{
-                    height: `${Math.max(3, height * 22)}px`,
-                    opacity,
-                  }}
-                />
-              ))}
-            </div>
+            />
           ))}
           <input
             type="range"
@@ -413,29 +406,7 @@ export function NativeAudioPlayer({
           )}
         </div>
 
-        <div className="relative shrink-0">
-          <div className="w-9 h-9 rounded-full bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center">
-            <svg
-              viewBox="0 0 24 24"
-              className="w-5 h-5 fill-neutral-100 dark:fill-neutral-900"
-            >
-              <rect x="3" y="9" width="2" height="6" rx="1" />
-              <rect x="7" y="6" width="2" height="12" rx="1" />
-              <rect x="11" y="3.5" width="2" height="17" rx="1" />
-              <rect x="15" y="6" width="2" height="12" rx="1" />
-              <rect x="19" y="9" width="2" height="6" rx="1" />
-            </svg>
-          </div>
-          <div className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-neutral-700 dark:bg-neutral-300 flex items-center justify-center ring-2 ring-white dark:ring-[#1C1C1E]">
-            <svg
-              viewBox="0 0 24 24"
-              className="w-3 h-3 fill-neutral-100 dark:fill-neutral-900"
-            >
-              <path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3z" />
-              <path d="M17 11a1 1 0 10-2 0 3 3 0 01-6 0 1 1 0 10-2 0 5 5 0 004 4.9V18H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.1a5 5 0 004-4.9z" />
-            </svg>
-          </div>
-        </div>
+        <AudioAvatar isUserBubble={isUserBubble} />
       </div>
 
       <div className="flex items-center gap-3">
@@ -468,36 +439,16 @@ export function NativeAudioPlayer({
         </p>
       )}
       {isError && showErrorHint && (
-        <p className="mt-0.5 text-[11px] text-destructive">
+        <p className="mt-0.5 text-[11px] opacity-60">
           {tErrors("audio_load_failed")}
         </p>
       )}
       {translation && !isError && (
-        <>
-          <div className="mt-1 h-px bg-foreground/10" />
-          <button
-            type="button"
-            onClick={() => setShowTranslation((prev) => !prev)}
-            aria-expanded={showTranslation}
-            className="mt-0 flex w-full items-center justify-between gap-2 rounded-b-lg px-1 py-2.5 text-[13px] text-muted-foreground outline-none transition-colors hover:bg-foreground/[0.03] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-          >
-            <span>{t("translation_label")}</span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200${showTranslation ? " rotate-180 text-foreground/70" : ""}`}
-            />
-          </button>
-          <div
-            className={`grid transition-[grid-template-rows] duration-[280ms] ease-out ${showTranslation ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
-          >
-            <div className="min-w-0 overflow-hidden">
-              <p
-                className={`whitespace-pre-line break-words px-1 pb-3.5 pt-0.5 text-[14px] leading-[1.55] text-muted-foreground transition-all duration-200 ${showTranslation ? "translate-y-0 opacity-100 delay-[60ms]" : "-translate-y-1 opacity-0"}`}
-              >
-                {translation}
-              </p>
-            </div>
-          </div>
-        </>
+        <AudioRevealText
+          label={revealLabel ?? t("translation_label")}
+          text={translation}
+          isUserBubble={isUserBubble}
+        />
       )}
     </div>
   );

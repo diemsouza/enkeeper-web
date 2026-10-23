@@ -52,6 +52,7 @@ import {
   formatNoPendingAction,
   formatFeedbackFailed,
   formatAudioQuestionNeedsText,
+  formatVoiceNoteInaudible,
   formatPracticeWaiting,
   formatDailyPracticeLimitReached,
   formatReviewUpToDate,
@@ -115,7 +116,11 @@ import {
   switchToActivity,
 } from "./activity-service";
 import { resolveFeedbackAudioMediaId } from "./feedback-audio-service";
-import { storeAnswerAudio } from "./answer-audio-service";
+import { linkAnswerAudio } from "./answer-audio-service";
+import {
+  isInaudibleTranscription,
+  normalizeVoiceCommandText,
+} from "../core/voice-note";
 import {
   getTodayActivityCount,
   getTodayUsage,
@@ -245,6 +250,7 @@ export async function handleIncomingMessage(
 
   if (isLocked) {
     await saveMessage({
+      id: input.messageId,
       userId: user.id,
       userChannelId: userChannel.id,
       activityId: activeActivity?.id,
@@ -252,6 +258,8 @@ export async function handleIncomingMessage(
       content: rawText,
       intent: "ignored",
       externalId: input.externalId,
+      mediaType: input.mediaType,
+      mediaId: input.mediaId,
       metadata: { reason: "duplicate_within_window" },
       receivedAt: input.receivedAt,
     });
@@ -261,6 +269,31 @@ export async function handleIncomingMessage(
   await updateUserLastRequest(user.id, messageId);
 
   try {
+    // Audio sem fala nao chega a avaliacao: a pergunta continua pendente e
+    // nenhuma chamada de LLM e gasta.
+    if (input.isVoiceNote && isInaudibleTranscription(rawText)) {
+      await saveUserMsg({
+        userId: user.id,
+        userChannelId: userChannel.id,
+        content: rawText,
+        intent: "free_text",
+        input,
+        today,
+        activityId: activeActivity?.id,
+      });
+      await sendAndSaveMessage({
+        channel,
+        to: userChannel.channelUserId,
+        userId: user.id,
+        userChannelId: userChannel.id,
+        activityId: activeActivity?.id,
+        message: formatVoiceNoteInaudible(),
+        intent: "voice_note_inaudible",
+        today,
+      });
+      return;
+    }
+
     const [firstWord] = rawText.split(/\s+/);
     if (resolveCommand(firstWord) === "admin") {
       if (input.channelUserPhone !== process.env.WA_SUPPORT) return;
@@ -315,7 +348,12 @@ export async function handleIncomingMessage(
       user.planStatus = "expired";
     }
 
-    const parsed = parseMessage(text, { isIntensiveMode });
+    // Mesma deteccao de comando do texto digitado; na voz so as pontas da
+    // transcricao saem antes. O text original segue para avaliacao e historico.
+    const parsed = parseMessage(
+      input.isVoiceNote ? normalizeVoiceCommandText(text) : text,
+      { isIntensiveMode },
+    );
     const pendingIntent = user.pendingIntent as MessageIntent | undefined;
 
     // ─── Verificação de plano expirado ───────────────────────────────────────
@@ -1732,13 +1770,8 @@ export async function handleIncomingMessage(
               const tipMsg = evalTip ? formatEvalTip(evalTip) : null;
               let tipSent = false;
               const answerType = input.isVoiceNote ? "audio" : "text";
-              if (input.isVoiceNote && input.voiceAudioBuffer) {
-                await storeAnswerAudio(
-                  input.voiceAudioBuffer,
-                  input.voiceAudioMimeType ?? "audio/ogg",
-                  text,
-                  pendingQuestion,
-                );
+              if (input.isVoiceNote && input.mediaId) {
+                await linkAnswerAudio(pendingQuestion.id, input.mediaId);
               }
               const isWrongOrPartial =
                 evalStatus === "wrong" || evalStatus === "partial";
@@ -2409,7 +2442,12 @@ type SaveUserMsgParams = {
   intent: MessageIntent;
   input: Pick<
     IncomingMessage,
-    "externalId" | "mediaType" | "mediaId" | "mediaMetadata" | "receivedAt"
+    | "externalId"
+    | "mediaType"
+    | "mediaId"
+    | "mediaMetadata"
+    | "receivedAt"
+    | "messageId"
   >;
   today: Date;
   metadata?: Record<string, string | number | null>;
@@ -2526,6 +2564,7 @@ async function saveUserMsg(params: SaveUserMsgParams): Promise<Message> {
   let message: Message;
   try {
     message = await saveMessage({
+      id: input.messageId,
       userId,
       userChannelId,
       role: "user",
@@ -2791,7 +2830,12 @@ async function handleDocUpload(
   today: Date,
   input: Pick<
     IncomingMessage,
-    "externalId" | "mediaType" | "mediaId" | "mediaMetadata" | "receivedAt"
+    | "externalId"
+    | "mediaType"
+    | "mediaId"
+    | "mediaMetadata"
+    | "receivedAt"
+    | "messageId"
   >,
   channel: MessageChannel,
   to: string,
@@ -2824,6 +2868,7 @@ async function handleDocUpload(
     }
     const itemValidation = validateDocItemInput(rawContent, docType);
     const savedMsg = await saveMessage({
+      id: input.messageId,
       userId,
       userChannelId,
       activityId: activeActivity?.id,
@@ -2947,6 +2992,7 @@ async function handleDocUpload(
   }
 
   const savedMsg = await saveMessage({
+    id: input.messageId,
     userId,
     userChannelId,
     role: "user",

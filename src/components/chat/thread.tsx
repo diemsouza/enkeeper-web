@@ -30,6 +30,7 @@ type ChatThreadProps = {
   messages: Message[];
   onSend?: (text: string) => void | Promise<void>;
   onSendFile?: (file: File) => void | Promise<void>;
+  onSendAudio?: (recording: Blob) => void | Promise<void>;
   onRetry?: (externalId: string) => void;
   onAudioPlay?: (externalId: string) => void;
   onButtonClick?: (button: FormattedMessageButton, messageId: string) => void;
@@ -52,6 +53,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       messages,
       onSend,
       onSendFile,
+      onSendAudio,
       onRetry,
       onAudioPlay,
       onButtonClick,
@@ -317,6 +319,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
                 ref={ref}
                 onSend={onSend}
                 onSendFile={onSendFile}
+                onSendAudio={onSendAudio}
                 disabled={composerDisabled}
                 disabledReason={composerDisabledReason}
                 isWaitingForResponse={isWaitingForResponse}

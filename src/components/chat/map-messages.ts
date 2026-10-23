@@ -1,4 +1,5 @@
 import { MEDIA_INLINE_PARAM } from "@/src/lib/constants";
+import { isInaudibleTranscription } from "@/src/core/voice-note";
 import type { MessageWithMedia } from "@/src/repo/messages.repo";
 import type { FormattedMessage } from "@/src/types/out-message";
 import type { Message } from "./types";
@@ -155,6 +156,10 @@ function toMessage(
       textFallback: row.content,
       externalId: row.externalId ?? undefined,
       translation,
+      transcription:
+        from === "user" && !isInaudibleTranscription(row.content)
+          ? row.content
+          : undefined,
     };
   }
 

@@ -2,10 +2,23 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronDown } from "lucide-react";
 import { Spinner } from "@/src/components/ui/spinner";
 import { useKeepComposerFocus } from "@/src/hooks/use-keep-composer-focus";
 import type { AudioPlayerProps } from "@/src/components/chat/native-audio-player";
+import {
+  WAVEFORM_BARS,
+  WaveformBars,
+} from "@/src/components/chat/waveform-bars";
+import { AudioAvatar } from "@/src/components/chat/audio-avatar";
+import { AudioRevealText } from "@/src/components/chat/audio-reveal-text";
+import {
+  canResumeAudioContext,
+  closeSharedAudioContext,
+  getSharedAudioContext,
+  hasSharedAudioContext,
+  isSharedAudioContext,
+  unlockSharedAudioContext,
+} from "@/src/lib/shared-audio-context";
 
 type PlayerState = "loading" | "ready" | "playing" | "paused" | "error";
 
@@ -15,13 +28,8 @@ type DecodedAudio = {
   sampleRate: number;
 };
 
-const WAVEFORM_BARS = 40;
 const PROGRESS_TICK_MS = 100;
 const LOAD_TIMEOUT_MS = 20000;
-
-// iOS Safari limita o numero de AudioContext por pagina; um so, compartilhado.
-let sharedContext: AudioContext | null = null;
-let audioUnlocked = false;
 
 // Registro global de qual player está tocando agora, pra parar os outros
 // quando um novo começa. Guarda a função de interrupção do player ativo
@@ -33,39 +41,6 @@ function stopActiveAudio(exceptStopper?: () => void): void {
   if (activeStopper && activeStopper !== exceptStopper) {
     activeStopper();
   }
-}
-
-// Safari pode lancar sincronamente ao construir o AudioContext (politica de
-// autoplay, contextos demais). Retornar null e deixar o caller degradar em vez
-// de propagar a excecao pra fora do event handler e travar a pagina.
-function getAudioContext(): AudioContext | null {
-  if (sharedContext) {
-    if (sharedContext.state !== "closed") return sharedContext;
-    // iOS as vezes fecha o AudioContext sozinho depois de um tempo em
-    // segundo plano (nao so suspende). Um contexto "closed" nunca mais
-    // resume - descartando e criando um novo dentro do proprio clique
-    // (via unlockAudioContext) resolve sem precisar de reload.
-    sharedContext = null;
-    audioUnlocked = false;
-  }
-  try {
-    const Ctor =
-      window.AudioContext ||
-      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext;
-    sharedContext = new Ctor();
-    return sharedContext;
-  } catch (err) {
-    console.error("[CustomAudioPlayer] audiocontext:", err);
-    return null;
-  }
-}
-
-// Safari usa um estado "interrupted" (chamada, Siri, ou fundo prolongado)
-// que resume() normalmente traz de volta a "running" sem precisar recriar
-// o contexto - so "closed" e irrecuperavel.
-function canResume(state: AudioContextState): boolean {
-  return state === "suspended" || state === "interrupted";
 }
 
 let lastForcedDiscardAt = 0;
@@ -80,16 +55,12 @@ const FORCED_DISCARD_COOLDOWN_MS = 800;
 // de aba, ou cliques repetidos com audio genuinamente quebrado) que
 // esgotariam o limite de AudioContext por pagina do iOS Safari.
 function discardSharedContext(): void {
-  if (!sharedContext) return;
+  if (!hasSharedAudioContext()) return;
   const now = Date.now();
   if (now - lastForcedDiscardAt < FORCED_DISCARD_COOLDOWN_MS) return;
   lastForcedDiscardAt = now;
   stopActiveAudio();
-  sharedContext.close().catch(() => {
-    // ja fechando/fechado
-  });
-  sharedContext = null;
-  audioUnlocked = false;
+  closeSharedAudioContext();
 }
 
 let visibilityListenerAttached = false;
@@ -101,27 +72,6 @@ function attachVisibilityRecovery(): void {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") discardSharedContext();
   });
-}
-
-// iOS exige que a saida de audio seja liberada dentro do gesto do usuario:
-// um resume() apos await ja perde o gesto. Chamar isto sincronamente no clique,
-// antes de qualquer await. O buffer silencioso de 1 sample e o que efetivamente
-// destrava a saida no iOS quando o start() real vem depois do decode assincrono.
-function unlockAudioContext(): void {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    if (canResume(ctx.state)) void ctx.resume();
-    if (audioUnlocked) return;
-    const buffer = ctx.createBuffer(1, 1, 22050);
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(ctx.destination);
-    source.start(0);
-    audioUnlocked = true;
-  } catch {
-    audioUnlocked = false;
-  }
 }
 
 function formatTime(seconds: number): string {
@@ -157,6 +107,8 @@ export function OggAudioPlayer({
   time,
   onExport,
   fluid,
+  isUserBubble,
+  revealLabel,
 }: AudioPlayerProps) {
   const t = useTranslations("app.chat");
   const { buttonProps, sliderProps, restoreFocus } = useKeepComposerFocus();
@@ -166,7 +118,6 @@ export function OggAudioPlayer({
   const [progress, setProgress] = useState(0);
   const [waveform, setWaveform] = useState<number[]>([]);
   const [showErrorHint, setShowErrorHint] = useState(false);
-  const [showTranslation, setShowTranslation] = useState(false);
 
   const decodedRef = useRef<DecodedAudio | null>(null);
   const bufferRef = useRef<AudioBuffer | null>(null);
@@ -319,7 +270,7 @@ export function OggAudioPlayer({
     if (bufferRef.current) return bufferRef.current;
     const decoded = decodedRef.current;
     if (!decoded) return null;
-    const ctx = getAudioContext();
+    const ctx = getSharedAudioContext();
     if (!ctx) {
       fail("audiocontext");
       return null;
@@ -345,7 +296,7 @@ export function OggAudioPlayer({
     (fromSeconds: number) => {
       const buffer = getBuffer();
       if (!buffer) return;
-      const ctx = getAudioContext();
+      const ctx = getSharedAudioContext();
       if (!ctx) {
         fail("audiocontext");
         return;
@@ -355,7 +306,7 @@ export function OggAudioPlayer({
       stopSource();
 
       (async () => {
-        if (canResume(ctx.state)) {
+        if (canResumeAudioContext(ctx.state)) {
           try {
             await ctx.resume();
           } catch (err) {
@@ -370,7 +321,7 @@ export function OggAudioPlayer({
           console.warn(
             "[CustomAudioPlayer] audiocontext unusable after resume attempt, discarding for next click",
           );
-          if (sharedContext === ctx) discardSharedContext();
+          if (isSharedAudioContext(ctx)) discardSharedContext();
           return;
         }
 
@@ -419,7 +370,7 @@ export function OggAudioPlayer({
       setShowErrorHint(true);
       return;
     }
-    unlockAudioContext();
+    unlockSharedAudioContext();
     if (stateRef.current === "loading") return;
 
     if (stateRef.current === "playing") {
@@ -477,9 +428,7 @@ export function OggAudioPlayer({
     <div
       className={`flex flex-col gap-1 py-1 ${fluid ? "w-full" : "w-[260px] md:w-[320px]"}`}
     >
-      <div
-        className={`flex items-center gap-3${isError ? " text-destructive" : ""}`}
-      >
+      <div className={`flex items-center gap-3${isError ? " opacity-50" : ""}`}>
         <button
           type="button"
           {...buttonProps}
@@ -513,21 +462,11 @@ export function OggAudioPlayer({
         </button>
 
         <div className="flex-1 relative h-6 min-w-0">
-          <div className="absolute inset-0 flex items-center gap-[2px] pointer-events-none">
-            {(waveform.length > 0
-              ? waveform
-              : new Array(WAVEFORM_BARS).fill(0.15)
-            ).map((height, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-full bg-current"
-                style={{
-                  height: `${Math.max(3, height * 22)}px`,
-                  opacity: i < filledBars ? 0.85 : 0.3,
-                }}
-              />
-            ))}
-          </div>
+          <WaveformBars
+            heights={waveform}
+            barOpacity={(i) => (i < filledBars ? 0.85 : 0.3)}
+            className="absolute inset-0 pointer-events-none"
+          />
           <input
             type="range"
             min={0}
@@ -549,29 +488,7 @@ export function OggAudioPlayer({
           )}
         </div>
 
-        <div className="relative shrink-0">
-          <div className="w-9 h-9 rounded-full bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center">
-            <svg
-              viewBox="0 0 24 24"
-              className="w-5 h-5 fill-neutral-100 dark:fill-neutral-900"
-            >
-              <rect x="3" y="9" width="2" height="6" rx="1" />
-              <rect x="7" y="6" width="2" height="12" rx="1" />
-              <rect x="11" y="3.5" width="2" height="17" rx="1" />
-              <rect x="15" y="6" width="2" height="12" rx="1" />
-              <rect x="19" y="9" width="2" height="6" rx="1" />
-            </svg>
-          </div>
-          <div className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-neutral-700 dark:bg-neutral-300 flex items-center justify-center ring-2 ring-white dark:ring-[#1C1C1E]">
-            <svg
-              viewBox="0 0 24 24"
-              className="w-3 h-3 fill-neutral-100 dark:fill-neutral-900"
-            >
-              <path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3z" />
-              <path d="M17 11a1 1 0 10-2 0 3 3 0 01-6 0 1 1 0 10-2 0 5 5 0 004 4.9V18H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.1a5 5 0 004-4.9z" />
-            </svg>
-          </div>
-        </div>
+        <AudioAvatar isUserBubble={isUserBubble} />
       </div>
 
       <div className="flex items-center gap-3">
@@ -604,36 +521,16 @@ export function OggAudioPlayer({
         </p>
       )}
       {isError && showErrorHint && (
-        <p className="mt-0.5 text-[11px] text-destructive">
+        <p className="mt-0.5 text-[11px] opacity-60">
           {tErrors("audio_load_failed")}
         </p>
       )}
       {translation && !isLoading && !isError && (
-        <>
-          <div className="mt-1 h-px bg-foreground/10" />
-          <button
-            type="button"
-            onClick={() => setShowTranslation((prev) => !prev)}
-            aria-expanded={showTranslation}
-            className="mt-0 flex w-full items-center justify-between gap-2 rounded-b-lg px-1 py-2.5 text-[13px] text-muted-foreground outline-none transition-colors hover:bg-foreground/[0.03] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-          >
-            <span>{t("translation_label")}</span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200${showTranslation ? " rotate-180 text-foreground/70" : ""}`}
-            />
-          </button>
-          <div
-            className={`grid transition-[grid-template-rows] duration-[280ms] ease-out ${showTranslation ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
-          >
-            <div className="min-w-0 overflow-hidden">
-              <p
-                className={`whitespace-pre-line break-words px-1 pb-3.5 pt-0.5 text-[14px] leading-[1.55] text-muted-foreground transition-all duration-200 ${showTranslation ? "translate-y-0 opacity-100 delay-[60ms]" : "-translate-y-1 opacity-0"}`}
-              >
-                {translation}
-              </p>
-            </div>
-          </div>
-        </>
+        <AudioRevealText
+          label={revealLabel ?? t("translation_label")}
+          text={translation}
+          isUserBubble={isUserBubble}
+        />
       )}
     </div>
   );

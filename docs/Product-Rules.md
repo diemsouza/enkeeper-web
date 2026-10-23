@@ -162,6 +162,22 @@ Antes de reexibir, o estado da atividade é realinhado (pergunta pendente corren
 
 Vale para qualquer canal, não só WhatsApp. A avaliação da resposta dispara sempre que existe pergunta pendente de fato, mesmo que a marcação interna de aguardando resposta tenha ficado dessincronizada do status da pergunta (straggler de conclusão de rodada, duas perguntas pendentes).
 
+### Resposta por voz
+
+Na web, o usuário pode responder por áudio gravado no próprio composer. Com o campo de texto vazio, o botão de enviar dá lugar ao microfone; com texto digitado, volta o enviar. O botão só aparece quando o navegador grava num formato que o player do produto toca.
+
+- **Dois modos no mesmo botão:** tocar e soltar rápido (menos de 300ms) grava no modo travado, com lixeira e enviar. Segurar 300ms ou mais grava no modo segurar: a barra mostra "Solte para enviar" no lugar da lixeira e do enviar, e soltar em qualquer lugar da tela envia. Não há gesto de cancelar no modo segurar. Enquanto o microfone ainda não foi liberado, o pedido do navegador interrompe o gesto e a gravação segue no modo travado. O gesto não rola a conversa nem abre menu ou seleção de texto.
+- **Gravação:** limite de 30 segundos. Aos 20 segundos o cronômetro muda de cor e aparece o aviso "Restam apenas 10s"; aos 30 a gravação para e é enviada sozinha. Gravação com menos de 1 segundo é descartada sem mensagem. A lixeira cancela e descarta. Não há tela de pré-ouvir: enviar é parar e enviar.
+- **Interrupção:** se a gravação é interrompida (aba em segundo plano, tela bloqueada, erro do gravador), o que já foi gravado é enviado quando passa de 1 segundo e descartado abaixo disso. A tela nunca fica presa no estado gravando.
+- **Envio:** otimista. A bolha do usuário aparece na hora com o player, e "Enviando" fica embaixo até o arquivo ser recebido. Se falhar, a bolha fica apagada com "Não foi enviado." e "Tentar de novo", pelo mesmo mecanismo de reenvio das demais mensagens.
+- **Permissão:** o primeiro pedido é sempre o do próprio navegador. A tela do produto ("Libere o microfone", com o passo a passo da plataforma) só aparece quando o acesso é negado; "Entendi" fecha e leva ao campo de texto. Sem microfone ou microfone em uso por outro app geram um aviso curto, sem tela.
+- **Avaliação:** o áudio é transcrito e a transcrição segue exatamente o caminho de uma resposta digitada: mesma avaliação, mesmo feedback, mesmo SM-2 e mesma nota, com o bônus de resposta por áudio (Seção 6.3).
+- **Áudio sem fala:** transcrição sem nenhuma letra (silêncio, ruído) não chega à avaliação. A mensagem fica salva com o áudio, volta "Não deu para ouvir o áudio. Grave de novo ou responda digitando." e a pergunta continua pendente.
+- **Pergunta de escuta:** continua exigindo resposta digitada (Seção 4); voz nela não é avaliada.
+- Fora de uma pergunta pendente, a transcrição é tratada como texto digitado.
+- **Comandos por voz:** a transcrição passa pela mesma detecção de comandos do texto digitado, depois de tirar a pontuação das pontas, deixar minúsculo e cortar os espaços ("Menu." vale como "menu"). Com pergunta pendente vale a mesma regra do digitado: os comandos de navegação (ajuda/menu, atividades, suporte, pausar, retomar, cancelar, praticar, nível, nova atividade) são executados e a pergunta continua pendente; "sim" e "não" são avaliados como resposta.
+- **Ver transcrição:** abaixo do áudio do usuário, no mesmo formato do "Ver tradução" (abre e fecha), mostra o texto transcrito. Só aparece quando a transcrição fica pronta, sem recarregar a página, e nunca em áudio sem fala.
+
 ---
 
 ## 3. Extração de vocabulário do material
@@ -767,7 +783,7 @@ Comportamento pós-cancelamento depende do contexto. Sem Activity ativa (onboard
 Nem toda mídia é descartada após uso. PDF e texto em arquivo continuam sendo processados em memória e descartados após extração (Seção 14). As exceções armazenadas:
 
 - **Áudio de feedback**, gerado pelo sistema (Seção 6.1). Ogg/Opus é o formato de geração; o MP3 gravado entre 2026-10-07 e 2026-10-09 continua tocando, sem migração.
-- **Áudio de resposta**: quando o usuário responde uma pergunta pendente por nota de voz, o áudio é armazenado e usado no cálculo da nota da pergunta (Seção 6.3), diferente de uma resposta por texto, que não é retida.
+- **Áudio de resposta**: o áudio gravado pelo usuário (Seção 2, Resposta por voz) é armazenado como mídia da própria mensagem, com a transcrição e a duração, e aparece na conversa no mesmo player dos demais áudios. Quando responde uma pergunta pendente, a pergunta referencia o mesmo registro e ele entra no cálculo da nota (Seção 6.3). Ogg/Opus é o formato preferido; o navegador que só grava AAC (Safari antes do 18.4) gera m4a, sem conversão.
 - **Imagem original de OCR**: a imagem enviada como material é armazenada junto com o texto (ou descrição) extraído dela (Seção 14.1), independente do desfecho ser texto, descrição, bloqueio ou imagem ilegível.
 - **Charts de resumo**: as imagens de pentágono (Seção 1) e gauge (Seção 2) geradas junto dos resumos. Cada atividade referencia os seus: um chart de conclusão (pentágono) e um de rodada (gauge).
 - **Imagem de pergunta**: a imagem gerada para o reconhecimento por imagem (Seção 4), guardada com a descrição da cena que a originou.

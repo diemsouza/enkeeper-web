@@ -1159,6 +1159,12 @@ function formatAudioQuestion(
   return { text: prompt, audioMediaId };
 }
 
+export function formatVoiceNoteInaudible(): FormattedMessage {
+  return {
+    text: "Não foi possível ouvir o áudio. Grave de novamente ou responda digitando.",
+  };
+}
+
 export function formatAudioQuestionNeedsText(): FormattedMessage {
   return {
     text: "Nesta pergunta, a resposta precisa ser digitada. Ouça o áudio de novo e escreva o que entendeu.",

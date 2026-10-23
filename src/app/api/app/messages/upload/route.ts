@@ -14,6 +14,11 @@ import {
 import { uploadFile } from "@/src/vendors/storage.vendor";
 import { readImageDimensions } from "@/src/lib/image-dimensions";
 import type { IncomingMessage } from "@/src/types/domain";
+import { isAcceptedVoiceNote } from "@/src/core/voice-note";
+import {
+  processVoiceNote,
+  storeVoiceNote,
+} from "@/src/services/voice-note-service";
 
 export async function POST(request: Request): Promise<Response> {
   const receivedAt = new Date();
@@ -44,9 +49,30 @@ export async function POST(request: Request): Promise<Response> {
         ? externalIdField.trim()
         : ulid();
 
+    const baseInput: IncomingMessage = {
+      channelUserId: userChannel.channelUserId,
+      channelUserPhone: userChannel.channelUserPhone ?? undefined,
+      channelUsername: userChannel.channelUsername ?? undefined,
+      channelType: DEFAULT_CHANNEL_TYPE,
+      contactName: user.name ?? undefined,
+      externalId: resolvedExternalId,
+      receivedAt,
+    };
+
     let extractedText: string;
     let mediaMetadata: Record<string, string | number | null>;
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    // O upload e a confirmacao do envio; transcricao e avaliacao rodam depois
+    // da resposta.
+    if (mediaType === "audio") {
+      if (!isAcceptedVoiceNote(file.type, file.size)) {
+        return Response.json({ error: "unsupported audio" }, { status: 400 });
+      }
+      const voiceNote = await storeVoiceNote(buffer, file.type);
+      after(() => processVoiceNote(voiceNote, user.id, baseInput));
+      return Response.json({ ok: true, externalId: resolvedExternalId });
+    }
 
     if (mediaType === "image") {
       const mimeType = file.type || "image/jpeg";
@@ -103,16 +129,10 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const input: IncomingMessage = {
-      channelUserId: userChannel.channelUserId,
-      channelUserPhone: userChannel.channelUserPhone ?? undefined,
-      channelUsername: userChannel.channelUsername ?? undefined,
-      channelType: DEFAULT_CHANNEL_TYPE,
-      contactName: user.name ?? undefined,
+      ...baseInput,
       text: extractedText,
-      externalId: resolvedExternalId,
       mediaType,
       mediaMetadata,
-      receivedAt,
     };
 
     after(() => handleIncomingMessage(input, resolveChannel()));
