@@ -1,4 +1,5 @@
 import {
+  PAYMENT_GRACE_DAYS,
   PAYMENT_PROVIDER,
   SUBSCRIPTION_INTERVAL,
   SUBSCRIPTION_STATUS_CANCELED,
@@ -78,6 +79,12 @@ export function resolveAccessAfterEarlyCancel(
     userCreatedAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000,
   );
   return now < trialEnd ? trialEnd : canceledAt;
+}
+
+export function resolvePaidAccessEnd(currentPeriodEnd: Date): Date {
+  return new Date(
+    currentPeriodEnd.getTime() + PAYMENT_GRACE_DAYS * 24 * 60 * 60 * 1000,
+  );
 }
 
 export function isCancelScheduled(subscription: {

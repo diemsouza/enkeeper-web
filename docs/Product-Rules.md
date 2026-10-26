@@ -542,9 +542,9 @@ O trial de 7 dias continua sem cartão. Ao assinar, a primeira cobrança acontec
 
 **Acesso fora da assinatura:** cortesia e pagamento recebido por fora (Pix pelo `suporte`, por exemplo) são registrados direto no usuário (plano e data de expiração), sem depender de assinatura no cartão. O pagamento por fora também fica registrado no histórico de pagamentos do usuário.
 
-**Confirmação e renovação:** cada cobrança confirmada (a primeira e cada renovação) deixa o acesso Pro, ativo, até o fim do período pago. A mensagem de confirmação sai só na primeira cobrança da assinatura: "Assinatura confirmada", com o plano (mensal ou anual) e a data da próxima renovação. Renovações atualizam o acesso em silêncio. Evento repetido do mesmo pagamento não gera nova confirmação.
+**Confirmação e renovação:** cada cobrança confirmada (a primeira e cada renovação) deixa o acesso Pro, ativo, até o fim do período pago mais 1 dia de folga, que cobre a cobrança da renovação (feita pela Stripe pouco depois do fim do período) e falhas de rede. A data de renovação mostrada ao usuário é a do período, sem a folga. A mensagem de confirmação sai só na primeira cobrança da assinatura: "Assinatura confirmada", com o plano (mensal ou anual) e a data da próxima renovação. Renovações atualizam o acesso em silêncio. Evento repetido do mesmo pagamento não gera nova confirmação.
 
-**Falha de pagamento:** nenhum bloqueio imediato. A Stripe faz novas tentativas de cobrança e avisa o usuário por e-mail. Se todas falharem, o período pago acaba e o acesso expira pela regra geral.
+**Falha de pagamento:** nenhum bloqueio imediato. A Stripe faz novas tentativas de cobrança e avisa o usuário por e-mail. O acesso segue até o fim do período pago mais a folga de 1 dia; depois disso a conta fica bloqueada e é liberada na hora em que uma nova tentativa for paga. A folga é curta de propósito, para não manter prática (e custo de IA) para quem não pagou. Cancelamento imediato não tem folga.
 
 **Cancelamento:**
 - Pelo usuário: em "Assinatura" (menu da conta no app), que abre a página de planos; com assinatura no cartão ativa, o botão "Gerenciar ou alterar plano" leva ao portal de pagamento, onde também troca o cartão e muda de plano. Acesso pago por fora é cancelado pelo `suporte`.

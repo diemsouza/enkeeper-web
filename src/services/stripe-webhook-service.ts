@@ -14,6 +14,7 @@ import {
   isCancelScheduled,
   isEndedBeforePeriodEnd,
   resolveAccessAfterEarlyCancel,
+  resolvePaidAccessEnd,
   resolvePaymentMethod,
   resolveSubscriptionInterval,
 } from "../core/subscription";
@@ -111,9 +112,10 @@ async function sendSubscriptionConfirmed(
 async function applyPaidPeriodToUser(
   userId: string,
   interval: SubscriptionInterval,
-  planExpiresAt: Date,
+  renewsAt: Date,
   shouldNotify: boolean,
 ): Promise<void> {
+  const planExpiresAt = resolvePaidAccessEnd(renewsAt);
   const user = await findUserById(userId);
   if (!user) {
     throw new Error(`[applyPaidPeriodToUser] user not found: ${userId}`);
@@ -140,7 +142,7 @@ async function applyPaidPeriodToUser(
   await sendSubscriptionConfirmed(
     userId,
     interval,
-    planExpiresAt,
+    renewsAt,
     user.timezone,
   );
 }

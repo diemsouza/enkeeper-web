@@ -64,6 +64,9 @@ export const DAILY_PRACTICE_LIMIT = 60;
 export const CADENCE_RESERVE = 24;
 export const INTENSIVE_LIMIT = 60 - 24; // 36
 export const TRIAL_DAYS = 7;
+// Folga curta: cobre a cobrança de renovação, que a Stripe faz ~1-2h depois do
+// fim do período, e falha de rede; mais que isso paga IA para quem não pagou.
+export const PAYMENT_GRACE_DAYS = 1;
 export const SITE_URL = "https://fluizer.com";
 export const PAYMENT_PROVIDER = {
   STRIPE: "stripe",
