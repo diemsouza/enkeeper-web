@@ -1,6 +1,7 @@
 import { formatCommand, resolveCommand } from "../lib/commands";
 import { formatCanceled } from "../core/formatters";
-import { User, UserChannel } from "../lib/prisma";
+import { User } from "../lib/prisma";
+import { normalizePhoneToWaId } from "../core/phone";
 import { AdminSendMessageIntentData } from "../types/domain";
 import { MessageChannel } from "../types/message-channel";
 import {
@@ -9,8 +10,7 @@ import {
 } from "../repo/activities.repo";
 import { saveMessage } from "../repo/messages.repo";
 import {
-  findUserByIdentifier,
-  findUserChannelByUserId,
+  findUserByPhone,
   fetchUserStats,
   updateUserPlan,
   updateUserPendingIntent,
@@ -86,15 +86,12 @@ export async function handleAdminPendingSendMessage(
   if (!data) return "Estado invalido, tente novamente.";
 
   try {
-    const result = await channel.sendMessage(data.targetChannelUserId, {
-      text,
-    });
+    const result = await channel.sendMessage(data.targetUserId, { text });
     const activeActivity = await findLastActiveActivityByUser(
       data.targetUserId,
     );
     await saveMessage({
       userId: data.targetUserId,
-      userChannelId: data.targetUserChannelId,
       activityId: activeActivity?.id,
       role: "assistant",
       content: text,
@@ -107,14 +104,8 @@ export async function handleAdminPendingSendMessage(
   }
 }
 
-async function resolveTargetChannel(
-  identifier: string,
-): Promise<{ user: User; userChannel: UserChannel } | null> {
-  const user = await findUserByIdentifier("whatsapp", identifier);
-  if (!user) return null;
-  const userChannel = await findUserChannelByUserId(user.id, "whatsapp");
-  if (!userChannel) return null;
-  return { user, userChannel };
+async function resolveTargetUser(identifier: string): Promise<User | null> {
+  return findUserByPhone(normalizePhoneToWaId(identifier) ?? identifier);
 }
 
 async function sendAdminTemplate(
@@ -122,18 +113,14 @@ async function sendAdminTemplate(
   templateName: string,
   channel: MessageChannel,
 ): Promise<string> {
-  const target = await resolveTargetChannel(identifier);
+  const target = await resolveTargetUser(identifier);
   if (!target) return `Usuário não encontrado: ${identifier}`;
 
   try {
-    const result = await channel.sendTemplate(
-      target.userChannel.channelUserId,
-      templateName,
-    );
-    const activeActivity = await findLastActiveActivityByUser(target.user.id);
+    const result = await channel.sendTemplate(target.id, templateName);
+    const activeActivity = await findLastActiveActivityByUser(target.id);
     await saveMessage({
-      userId: target.user.id,
-      userChannelId: target.userChannel.id,
+      userId: target.id,
       activityId: activeActivity?.id,
       role: "assistant",
       content: templateName,
@@ -150,13 +137,11 @@ async function startAdminSendMessage(
   identifier: string,
   adminUserId: string,
 ): Promise<string> {
-  const target = await resolveTargetChannel(identifier);
+  const target = await resolveTargetUser(identifier);
   if (!target) return `Usuário não encontrado: ${identifier}`;
 
   await updateUserPendingIntent(adminUserId, "waiting_admin_send_message", {
-    targetUserId: target.user.id,
-    targetUserChannelId: target.userChannel.id,
-    targetChannelUserId: target.userChannel.channelUserId,
+    targetUserId: target.id,
     identifier,
   });
   return "Escreva sua msg ou use cancelar pra sair.";
@@ -185,9 +170,9 @@ function extractMetaErrorMessage(error: unknown): string {
   }
 }
 
-async function applyUpgrade(channelIdentity: string): Promise<string> {
-  const user = await findUserByIdentifier("whatsapp", channelIdentity);
-  if (!user) return `Usuário não encontrado: ${channelIdentity}`;
+async function applyUpgrade(identifier: string): Promise<string> {
+  const user = await resolveTargetUser(identifier);
+  if (!user) return `Usuário não encontrado: ${identifier}`;
   const planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await updateUserPlan(user.id, {
     planCode: "pro",
@@ -196,47 +181,47 @@ async function applyUpgrade(channelIdentity: string): Promise<string> {
   });
   return buildUserInfo(
     { ...user, planCode: "pro", planStatus: "active", planExpiresAt },
-    channelIdentity,
+    identifier,
   );
 }
 
-async function applyExpire(channelIdentity: string): Promise<string> {
-  const user = await findUserByIdentifier("whatsapp", channelIdentity);
-  if (!user) return `Usuário não encontrado: ${channelIdentity}`;
+async function applyExpire(identifier: string): Promise<string> {
+  const user = await resolveTargetUser(identifier);
+  if (!user) return `Usuário não encontrado: ${identifier}`;
   const planExpiresAt = new Date();
   await updateUserPlan(user.id, { planStatus: "expired", planExpiresAt });
   return buildUserInfo(
     { ...user, planStatus: "expired", planExpiresAt },
-    channelIdentity,
+    identifier,
   );
 }
 
 async function applyExtend(
-  channelIdentity: string,
+  identifier: string,
   days: number,
 ): Promise<string> {
-  const user = await findUserByIdentifier("whatsapp", channelIdentity);
-  if (!user) return `Usuário não encontrado: ${channelIdentity}`;
+  const user = await resolveTargetUser(identifier);
+  if (!user) return `Usuário não encontrado: ${identifier}`;
   const planExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
   await updateUserPlan(user.id, { planStatus: "active", planExpiresAt });
   return buildUserInfo(
     { ...user, planStatus: "active", planExpiresAt },
-    channelIdentity,
+    identifier,
   );
 }
 
-async function fetchInfo(channelIdentity: string): Promise<string> {
-  const user = await findUserByIdentifier("whatsapp", channelIdentity);
-  if (!user) return `Usuário não encontrado: ${channelIdentity}`;
-  return buildUserInfo(user, channelIdentity);
+async function fetchInfo(identifier: string): Promise<string> {
+  const user = await resolveTargetUser(identifier);
+  if (!user) return `Usuário não encontrado: ${identifier}`;
+  return buildUserInfo(user, identifier);
 }
 
 async function buildUserInfo(
   user: User,
-  channelIdentity: string,
+  identifier: string,
 ): Promise<string> {
   const countActivities = await countAllActivitiesByUser(user.id);
-  return formatAdminUserInfo(user, channelIdentity, countActivities);
+  return formatAdminUserInfo(user, identifier, countActivities);
 }
 
 async function fetchUsersReport(): Promise<string> {
@@ -255,7 +240,7 @@ async function fetchUsersReport(): Promise<string> {
     ...stats.recent.map((u) => {
       const d = u.createdAt;
       const date = `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      return `${u.channelIdentity} - ${u.name ?? "Nao identificado"} - ${date}`;
+      return `${u.phone ?? "?"} - ${u.name ?? "Nao identificado"} - ${date}`;
     }),
   ];
   return lines.join("\n");
@@ -278,14 +263,14 @@ function formatAdminHelp(): string {
 
 function formatAdminUserInfo(
   user: User,
-  channelIdentity: string,
+  identifier: string,
   activityCount: number,
 ): string {
   const expiresAt = user.planExpiresAt
     ? user.planExpiresAt.toISOString().slice(0, 10)
     : "sem expiracao";
   return [
-    `cid: ${channelIdentity}`,
+    `cid: ${identifier}`,
     `planCode: ${user.planCode}`,
     `planStatus: ${user.planStatus}`,
     `planExpiresAt: ${expiresAt}`,

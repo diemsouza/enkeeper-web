@@ -2,10 +2,9 @@ import { after } from "next/server";
 import { ulid } from "ulid";
 import { requireAuth } from "@/src/lib/auth/current-user";
 import { UnauthorizedError } from "@/src/lib/custom-errors";
-import { findUserChannelByUserId } from "@/src/repo/users.repo";
 import { handleIncomingMessage } from "@/src/services/message-service";
 import { resolveChannel } from "@/src/lib/channels/resolve-channel";
-import { DEFAULT_CHANNEL_TYPE, OCR_IMAGE_FOLDER } from "@/src/lib/constants";
+import { OCR_IMAGE_FOLDER } from "@/src/lib/constants";
 import { buildMediaPath } from "@/src/lib/utils";
 import {
   extractTextFromImage,
@@ -25,10 +24,6 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const user = await requireAuth();
-    const userChannel = await findUserChannelByUserId(user.id);
-    if (!userChannel) {
-      return Response.json({ error: "channel not found" }, { status: 409 });
-    }
 
     let formData: FormData;
     try {
@@ -50,11 +45,7 @@ export async function POST(request: Request): Promise<Response> {
         : ulid();
 
     const baseInput: IncomingMessage = {
-      channelUserId: userChannel.channelUserId,
-      channelUserPhone: userChannel.channelUserPhone ?? undefined,
-      channelUsername: userChannel.channelUsername ?? undefined,
-      channelType: DEFAULT_CHANNEL_TYPE,
-      contactName: user.name ?? undefined,
+      userId: user.id,
       externalId: resolvedExternalId,
       receivedAt,
     };

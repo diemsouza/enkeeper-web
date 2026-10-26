@@ -7,17 +7,6 @@ import { sanitizeText } from "../lib/utils";
 import { RetryContext } from "../types/retry-context";
 import { CreateQuestionData } from "../repo/questions.repo";
 
-const VOCABULARY_FORMATS: QuestionFormat[] = [
-  QuestionFormat.gap_fill,
-  QuestionFormat.recall,
-  QuestionFormat.recall_inverted,
-  QuestionFormat.scenario,
-  QuestionFormat.choice,
-  QuestionFormat.image_recognition,
-  QuestionFormat.audio_transcription,
-  QuestionFormat.audio_translation,
-];
-
 const FORMAT_FILES: Record<QuestionFormat, string> = {
   [QuestionFormat.gap_fill]: read("gap_fill.md"),
   [QuestionFormat.recall]: read("recall.md"),
@@ -36,14 +25,6 @@ function read(file: string): string {
     join(process.cwd(), "prompts", "examples", file),
     "utf-8",
   ).trim();
-}
-
-export function getFormatsBySectionType(
-  sectionType: "vocabulary" | "text" | "exercise",
-): QuestionFormat[] {
-  if (sectionType === "exercise") return [QuestionFormat.open_question];
-  if (sectionType === "text") return [QuestionFormat.open_text];
-  return VOCABULARY_FORMATS;
 }
 
 function extractSection(
@@ -206,18 +187,15 @@ function overflowMaxWords(limit: number, question: string) {
 
 export function validateGeneratedQuestion(
   question: SectionQuestionResult,
-  sectionType: string,
 ): string | undefined {
   if (question.warning) {
-    console.warn(
-      `[validateGeneratedQuestion] ${sectionType}: ${question.warning}`,
-    );
+    console.warn(`[validateGeneratedQuestion] ${question.warning}`);
     return question.warning;
   }
 
   if (looksLikeManyQuestion(question.question)) {
     const warning = `Pergunta descartada por parecer conter mais de uma pergunta: Q: ${question.question} A: ${question.answerKeys}`;
-    console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+    console.warn(`[validateGeneratedQuestion] ${warning}`);
     return warning;
   }
 
@@ -226,7 +204,7 @@ export function validateGeneratedQuestion(
     missingParenthesizedTerm(question.question)
   ) {
     const warning = `Pergunta de cenário descartada por não trazer o termo entre parênteses: Q: ${question.question} A: ${question.answerKeys}`;
-    console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+    console.warn(`[validateGeneratedQuestion] ${warning}`);
     return warning;
   }
 
@@ -238,7 +216,7 @@ export function validateGeneratedQuestion(
 
   if (leakedAnswer) {
     const warning = `Pergunta descartada por conter a resposta no próprio enunciado ("${leakedAnswer}"): Q: ${question.question} A: ${question.answerKeys}`;
-    console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+    console.warn(`[validateGeneratedQuestion] ${warning}`);
     return warning;
   }
 
@@ -250,7 +228,7 @@ export function validateGeneratedQuestion(
     );
     if (leakedAnswerInHint) {
       const warning = `Pergunta descartada por conter a resposta no termHint ("${leakedAnswerInHint}"): Q: ${question.question} A: ${question.answerKeys} Hint: ${question.termHint}`;
-      console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+      console.warn(`[validateGeneratedQuestion] ${warning}`);
       return warning;
     }
   }
@@ -264,7 +242,7 @@ export function validateGeneratedQuestion(
     const warning = `Pergunta descartada por referenciar mais de um answerKey ("${matchedAnswerKeys.join(
       '", "',
     )}"): Q: ${question.question} A: ${question.answerKeys}`;
-    console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+    console.warn(`[validateGeneratedQuestion] ${warning}`);
     return warning;
   }
 
@@ -274,7 +252,7 @@ export function validateGeneratedQuestion(
     overflowMaxWords(maxWords, question.question)
   ) {
     const warning = `Pergunta descartada por estourar o limite de ${maxWords} palavras da situação, desconsiderando termo em parênteses e pergunta final. Q: ${question.question}`;
-    console.warn(`[validateGeneratedQuestion] ${sectionType}: ${warning}`);
+    console.warn(`[validateGeneratedQuestion] ${warning}`);
     return warning;
   }
 

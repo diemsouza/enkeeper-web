@@ -66,8 +66,6 @@ export type UserSignedLinkMetadata = {
 
 export type AdminSendMessageIntentData = {
   targetUserId: string;
-  targetUserChannelId: string;
-  targetChannelUserId: string;
   identifier: string;
 };
 
@@ -79,11 +77,7 @@ export type ParsedMessage = {
 };
 
 export type IncomingMessage = {
-  channelUserId: string;
-  channelUserPhone?: string;
-  channelUsername?: string;
-  channelType: ChannelType;
-  contactName?: string;
+  userId: string;
   text?: string;
   imageUrl?: string;
   externalId?: string;
@@ -93,7 +87,6 @@ export type IncomingMessage = {
   isVoiceNote?: boolean;
   // Id pre-gerado da mensagem quando a Media (audio) e criada antes dela.
   messageId?: string;
-  referral?: Record<string, unknown> | null;
   // Id do botao clicado na web e da mensagem da lista a que ele pertence.
   buttonId?: string;
   buttonMessageId?: string;

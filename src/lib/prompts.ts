@@ -11,8 +11,6 @@ export const GEN_CONTENT_PROMPT = read("gen-content.md");
 export const TOPIC_VALIDATION_PROMPT = read("topic-validation.md");
 
 export const GEN_VOCABULARY_PROMPT = read("gen-vocabulary.md");
-export const GEN_TEXT_PROMPT = read("gen-text.md");
-export const GEN_EXERCISE_PROMPT = read("gen-exercise.md");
 
 export const ANSWER_EVALUATION_PROMPT = read("answer-evaluation.md");
 

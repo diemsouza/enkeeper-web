@@ -1,7 +1,6 @@
 import { requireAuth } from "@/src/lib/auth/current-user";
 import { UnauthorizedError } from "@/src/lib/custom-errors";
 import { findActivityById } from "@/src/repo/activities.repo";
-import { findUserChannelByUserId } from "@/src/repo/users.repo";
 import { resumeActivityFromWeb } from "@/src/services/activity-service";
 import { resolveChannel } from "@/src/lib/channels/resolve-channel";
 
@@ -19,18 +18,7 @@ export async function POST(
       return Response.json({ error: "activity not archived" }, { status: 409 });
     }
 
-    const userChannel = await findUserChannelByUserId(user.id);
-    if (!userChannel) {
-      return Response.json({ error: "channel not found" }, { status: 409 });
-    }
-
-    await resumeActivityFromWeb(
-      user.id,
-      activity,
-      resolveChannel(),
-      userChannel.id,
-      userChannel.channelUserId,
-    );
+    await resumeActivityFromWeb(user.id, activity, resolveChannel());
 
     return Response.json({ activityId: activity.id });
   } catch (error) {

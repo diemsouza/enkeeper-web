@@ -1,6 +1,6 @@
 import { z, ZodError } from "zod";
 import { verifyWaLoginToken } from "@/src/core/wa-login-token";
-import { findUserByIdentifier } from "@/src/repo/users.repo";
+import { findUserByPhone } from "@/src/repo/users.repo";
 import { setSessionCookie } from "@/src/lib/auth/session-cookie";
 
 const WaLoginSchema = z.object({
@@ -15,7 +15,7 @@ export async function POST(request: Request): Promise<Response> {
     const payload = await verifyWaLoginToken(waToken);
     if (!payload) return Response.json({ ok: false });
 
-    const user = await findUserByIdentifier("web", payload.phone);
+    const user = await findUserByPhone(payload.phone);
     if (!user) return Response.json({ ok: false });
 
     await setSessionCookie(user.id);

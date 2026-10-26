@@ -10,7 +10,6 @@ import type { FormattedMessage } from "../types/out-message";
 type SaveMessageData = {
   id?: string;
   userId: string;
-  userChannelId: string;
   role: MessageRole;
   content: string;
   intent?: string;
@@ -63,7 +62,6 @@ export async function saveMessage(data: SaveMessageData): Promise<Message> {
     data: {
       id: data.id,
       userId: data.userId,
-      userChannelId: data.userChannelId,
       role: data.role,
       content: data.content,
       intent: data.intent,

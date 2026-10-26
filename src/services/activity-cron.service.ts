@@ -22,7 +22,6 @@ import {
   CreateQuestionData,
 } from "../repo/questions.repo";
 import {
-  findUserChannelByUserId,
   findUserById,
   findUsersWithExpiredFlowIntent,
   updateUserPendingIntent,
@@ -120,21 +119,16 @@ export async function processActivityCron(
             status: "failed",
             error: `Doc pending more than ${DOC_PENDING_TIMEOUT_MS} ms.`,
           });
-          const userChannel = await findUserChannelByUserId(activity.userId);
-          if (userChannel) {
-            const msg =
-              "Não consegui processar seu conteúdo. Tenta mandar de novo.";
-            await sendAndSaveMessage({
-              channel,
-              to: userChannel.channelUserId,
-              userId: activity.userId,
-              userChannelId: userChannel.id,
-              activityId: activity.id,
-              message: { text: msg },
-              intent: "system_error",
-              today: startOfDay(new Date()),
-            });
-          }
+          const msg =
+            "Não consegui processar seu conteúdo. Tenta mandar de novo.";
+          await sendAndSaveMessage({
+            channel,
+            userId: activity.userId,
+            activityId: activity.id,
+            message: { text: msg },
+            intent: "system_error",
+            today: startOfDay(new Date()),
+          });
         }
         skipped++;
         continue;
@@ -153,21 +147,16 @@ export async function processActivityCron(
             status: "failed",
             error: `Doc processing more than ${DOC_PROCESSING_TIMEOUT_MS} ms.`,
           });
-          const userChannel = await findUserChannelByUserId(activity.userId);
-          if (userChannel) {
-            const msg =
-              "Não consegui processar seu conteúdo. Tenta mandar de novo.";
-            await sendAndSaveMessage({
-              channel,
-              to: userChannel.channelUserId,
-              userId: activity.userId,
-              userChannelId: userChannel.id,
-              activityId: activity.id,
-              message: { text: msg },
-              intent: "system_error",
-              today: startOfDay(new Date()),
-            });
-          }
+          const msg =
+            "Não consegui processar seu conteúdo. Tenta mandar de novo.";
+          await sendAndSaveMessage({
+            channel,
+            userId: activity.userId,
+            activityId: activity.id,
+            message: { text: msg },
+            intent: "system_error",
+            today: startOfDay(new Date()),
+          });
         }
         skipped++;
         continue;
@@ -187,33 +176,15 @@ export async function processActivityCron(
       //   continue;
       // }
       //
-      // const userChannel = await findUserChannelByUserId(activity.userId);
-      // if (!userChannel) {
-      //   skipped++;
-      //   continue;
-      // }
-      //
       // const today = startOfDay(new Date());
       //
-      // const question = await selectNextQuestion(
-      //   activity,
-      //   today,
-      //   userChannel.channelUserId,
-      //   userChannel.id,
-      //   channel,
-      // );
+      // const question = await selectNextQuestion(activity, today, channel);
       // if (!question) {
       //   skipped++;
       //   continue;
       // }
       //
-      // await sendCadenceQuestion(
-      //   question,
-      //   activity,
-      //   userChannel,
-      //   today,
-      //   channel,
-      // );
+      // await sendCadenceQuestion(question, activity, today, channel);
       //
       // processed++;
       skipped++;
@@ -241,7 +212,6 @@ async function sendCadenceQuestion(
     questionAudioMediaId: string | null;
   },
   activity: Activity,
-  userChannel: { channelUserId: string; id: string },
   today: Date,
   channel: MessageChannel,
 ): Promise<void> {
@@ -249,9 +219,7 @@ async function sendCadenceQuestion(
     const startMsg = formatActivityStart(activity.title);
     await sendAndSaveMessage({
       channel,
-      to: userChannel.channelUserId,
       userId: activity.userId,
-      userChannelId: userChannel.id,
       activityId: activity.id,
       message: startMsg,
       intent: "activity_start",
@@ -263,9 +231,7 @@ async function sendCadenceQuestion(
 
   await sendAndSaveMessage({
     channel,
-    to: userChannel.channelUserId,
     userId: activity.userId,
-    userChannelId: userChannel.id,
     activityId: activity.id,
     message: questionText,
     intent: "practice_question",
@@ -286,7 +252,6 @@ async function sendCadenceQuestion(
 
 export async function sendFirstQuestionNow(
   activity: Activity,
-  userChannel: { channelUserId: string; id: string },
   today: Date,
   channel: MessageChannel,
   replyToMessageId?: string,
@@ -308,7 +273,6 @@ export async function sendFirstQuestionNow(
     await sendCadenceQuestion(
       outcome.question,
       activity,
-      userChannel,
       today,
       channel,
     );
@@ -348,20 +312,15 @@ export async function processExpiredFlowIntents(
 
         await updateUserPendingIntent(user.id, null);
 
-        const userChannel = await findUserChannelByUserId(user.id);
-        if (userChannel) {
-          const msg = formatNewActivityFlowExpired();
-          const activeActivity = await findLastActiveActivityByUser(user.id);
-          await sendAndSaveMessage({
-            channel,
-            to: userChannel.channelUserId,
-            userId: user.id,
-            userChannelId: userChannel.id,
-            activityId: activeActivity?.id,
-            message: msg,
-            today: startOfDay(new Date()),
-          });
-        }
+        const msg = formatNewActivityFlowExpired();
+        const activeActivity = await findLastActiveActivityByUser(user.id);
+        await sendAndSaveMessage({
+          channel,
+          userId: user.id,
+          activityId: activeActivity?.id,
+          message: msg,
+          today: startOfDay(new Date()),
+        });
 
         processed++;
       } catch (err) {
@@ -385,8 +344,6 @@ export async function processExpiredFlowIntents(
 // async function selectNextQuestion(
 //   activity: Activity,
 //   today: Date,
-//   channelId: string,
-//   userChannelId: string,
 //   channel: MessageChannel,
 // ): Promise<{
 //   id: string;
@@ -415,10 +372,8 @@ export async function processExpiredFlowIntents(
 //       activity.id,
 //       activity.userId,
 //       today,
-//       userChannelId,
 //       activity.intervalMinutes,
 //       channel,
-//       channelId,
 //     );
 //   }
 //
@@ -452,7 +407,7 @@ async function generateValidatedQuestion(
       continue;
     }
 
-    genParams.retryContext = validateGeneratedQuestion(generated, "vocabulary");
+    genParams.retryContext = validateGeneratedQuestion(generated);
     if (!genParams.retryContext) return generated;
   }
 
@@ -639,7 +594,6 @@ export async function generateQuestionIfPoolNotFull(
     lastFormat,
     formatCounts,
     {
-      sectionType: "vocabulary",
       sectionTitle: doc.title ?? "",
       sectionContent: blocks[activity.questionCount % blocks.length],
       level: activity.userLevel,
@@ -693,10 +647,8 @@ export async function completeRoundZero(
   activityId: string,
   userId: string,
   today: Date,
-  userChannelId: string,
   intervalMinutes: number,
   channel: MessageChannel,
-  to: string,
   replyToMessageId?: string,
 ): Promise<void> {
   await updateActivity(activityId, userId, {
@@ -711,9 +663,7 @@ export async function completeRoundZero(
 
   await sendAndSaveMessage({
     channel,
-    to,
     userId,
-    userChannelId,
     activityId,
     message: msg,
     intent: "practice_complete",

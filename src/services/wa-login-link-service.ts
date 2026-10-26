@@ -4,7 +4,7 @@ import {
 } from "../core/wa-login-token";
 import { createShortLink } from "../repo/shortlinks.repo";
 import {
-  findUserByIdentifier,
+  findUserByPhone,
   findUserSignedLink,
   updateUserSignedLink,
 } from "../repo/users.repo";
@@ -57,7 +57,7 @@ export async function resolveWhatsAppAccessLink(
   const appUrl = `${process.env.NEXT_PUBLIC_APP_URL}/app`;
   if (!phone) return appUrl;
 
-  const user = await findUserByIdentifier("web", phone);
+  const user = await findUserByPhone(phone);
   if (!user) return appUrl;
   return getOrCreateWaLoginUrl(user.id, phone);
 }

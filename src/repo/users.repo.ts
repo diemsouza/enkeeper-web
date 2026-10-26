@@ -1,60 +1,20 @@
-import {
-  ChannelType,
-  Level,
-  PlanCode,
-  PlanStatus,
-  Prisma,
-  User,
-  UserChannel,
-} from "../lib/prisma";
+import { Level, PlanCode, PlanStatus, Prisma, User } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 import { CheckoutData, UserSignedLinkMetadata } from "../types/domain";
 import { getNearestReminderTimeSlot } from "../core/daily-reminder-time";
-import { DEFAULT_CHANNEL_TYPE } from "../lib/constants";
-
-type UserWithChannels = User & { channels: UserChannel[] };
 
 export async function findUserById(id: string): Promise<User | null> {
   return prisma.user.findUnique({ where: { id } });
 }
 
-export async function findUserByIdentifier(
-  channelType: ChannelType,
-  identifier: string,
-): Promise<User | null> {
-  const byPhone = await prisma.userChannel.findFirst({
-    where: { channelType, channelUserPhone: identifier },
-    include: { user: true },
-  });
-  if (byPhone) return byPhone.user;
-
-  const byUsername = await prisma.userChannel.findFirst({
-    where: { channelType, channelUsername: identifier },
-    include: { user: true },
-  });
-  if (byUsername) return byUsername.user;
-
-  const byChannelUserId = await prisma.userChannel.findFirst({
-    where: { channelType, channelUserId: identifier },
-    include: { user: true },
-  });
-  return byChannelUserId?.user ?? null;
+export async function findUserByPhone(phone: string): Promise<User | null> {
+  return prisma.user.findUnique({ where: { phone } });
 }
 
 export async function markUserOnboarded(userId: string): Promise<void> {
   await prisma.user.update({
     where: { id: userId },
     data: { onboardedAt: new Date() },
-  });
-}
-
-export async function updateUserName(
-  userId: string,
-  name: string,
-): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: { name },
   });
 }
 
@@ -65,51 +25,6 @@ export async function updateUserPlanStatus(
   await prisma.user.update({
     where: { id: userId },
     data: { planStatus, planStatusUpdatedAt: new Date() },
-  });
-}
-
-export async function findUserChannelByUserId(
-  userId: string,
-  channelType: ChannelType = DEFAULT_CHANNEL_TYPE,
-): Promise<UserChannel | null> {
-  return prisma.userChannel.findFirst({
-    where: { userId, channelType },
-  });
-}
-
-export async function findUserChannelByPhone(
-  phone: string,
-  filter: { channelType: ChannelType } | { channelTypeNot: ChannelType },
-): Promise<{ user: UserWithChannels; userChannel: UserChannel } | null> {
-  const where =
-    "channelType" in filter
-      ? { channelUserPhone: phone, channelType: filter.channelType }
-      : {
-          channelUserPhone: phone,
-          channelType: { not: filter.channelTypeNot },
-        };
-  const row = await prisma.userChannel.findFirst({
-    where,
-    include: { user: { include: { channels: true } } },
-  });
-  if (!row) return null;
-  const { user, ...userChannel } = row;
-  return { user, userChannel };
-}
-
-export async function upsertWebUserChannel(
-  userId: string,
-  phone: string,
-): Promise<UserChannel> {
-  return prisma.userChannel.upsert({
-    where: { userId_channelType: { userId, channelType: "web" } },
-    update: {},
-    create: {
-      userId,
-      channelType: "web",
-      channelUserId: phone,
-      channelUserPhone: phone,
-    },
   });
 }
 
@@ -242,7 +157,7 @@ type UserStat = {
   trial: number;
   pro: number;
   expired: number;
-  recent: { channelIdentity: string; name: string | null; createdAt: Date }[];
+  recent: { phone: string | null; name: string | null; createdAt: Date }[];
 };
 
 export async function fetchUserStats(): Promise<UserStat> {
@@ -262,37 +177,10 @@ export async function fetchUserStats(): Promise<UserStat> {
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
-      select: {
-        name: true,
-        createdAt: true,
-        channels: {
-          select: {
-            channelUserId: true,
-            channelUsername: true,
-            channelUserPhone: true,
-          },
-          where: { channelType: DEFAULT_CHANNEL_TYPE },
-          take: 1,
-        },
-      },
+      select: { name: true, phone: true, createdAt: true },
     }),
   ]);
-  return {
-    total,
-    active,
-    trial,
-    pro,
-    expired,
-    recent: recent.map((u) => ({
-      channelIdentity:
-        u.channels[0]?.channelUserPhone ||
-        u.channels[0]?.channelUsername ||
-        u.channels[0]?.channelUserId ||
-        "?",
-      name: u.name,
-      createdAt: u.createdAt,
-    })),
-  };
+  return { total, active, trial, pro, expired, recent };
 }
 
 export async function updateUserLastRequest(
@@ -319,140 +207,55 @@ export async function updateUserLastResponse(
   });
 }
 
-type UserChannelResolution = {
-  user: UserWithChannels;
-  userChannel: UserChannel;
-  isNew: boolean;
+type NewUserData = {
+  phone: string;
+  planExpiresAt: Date;
+  source: string | null;
+  sourceData: Prisma.InputJsonValue | null;
+  timezone?: string;
 };
 
-async function attemptFindOrCreateUserChannel(
-  channelType: ChannelType,
-  channelUserId: string,
-  channelUserPhone: string | undefined,
-  channelUsername: string | undefined,
-  planExpiresAt: Date | undefined,
-  source: string | null | undefined,
-  sourceData: Prisma.InputJsonValue | null | undefined,
-  timezone: string | undefined,
-): Promise<UserChannelResolution | null> {
+async function createUserWithPhone(data: NewUserData): Promise<User> {
+  const { phone, planExpiresAt, source, sourceData, timezone } = data;
+  return prisma.user.create({
+    data: {
+      phone,
+      planCode: "trial",
+      planStatus: "active",
+      planExpiresAt,
+      ...(source ? { source, sourceData: sourceData ?? undefined } : {}),
+      ...(timezone
+        ? {
+            timezone,
+            dailyReminderTime: getNearestReminderTimeSlot(new Date(), timezone),
+          }
+        : {}),
+    },
+  });
+}
+
+export async function findOrCreateUserByPhone(
+  data: NewUserData,
+): Promise<{ user: User; isNew: boolean }> {
+  const existing = await findUserByPhone(data.phone);
+  if (existing) return { user: existing, isNew: false };
+
   try {
-    return await prisma.$transaction(async (tx) => {
-      const byBsuid = await tx.userChannel.findFirst({
-        where: { channelType, channelUserId },
-        include: { user: { include: { channels: true } } },
-      });
-      if (byBsuid) {
-        const { user, ...userChannel } = byBsuid;
-        return { user, userChannel, isNew: false };
-      }
-
-      if (channelUserPhone) {
-        const byPhone = await tx.userChannel.findFirst({
-          where: { channelType, channelUserPhone },
-          include: { user: { include: { channels: true } } },
-        });
-        if (byPhone) {
-          const { user, ...rest } = byPhone;
-          const userChannel = await tx.userChannel.update({
-            where: { id: rest.id },
-            data: {
-              channelUserId,
-              ...(channelUsername ? { channelUsername } : {}),
-            },
-          });
-          return { user, userChannel, isNew: false };
-        }
-      }
-
-      const user = await tx.user.create({
-        data: {
-          planCode: "trial",
-          planStatus: "active",
-          planExpiresAt,
-          ...(source ? { source, sourceData: sourceData ?? undefined } : {}),
-          ...(timezone
-            ? {
-                timezone,
-                dailyReminderTime: getNearestReminderTimeSlot(
-                  new Date(),
-                  timezone,
-                ),
-              }
-            : {}),
-        },
-      });
-      const userChannel = await tx.userChannel.create({
-        data: {
-          userId: user.id,
-          channelType,
-          channelUserId,
-          channelUserPhone,
-          channelUsername,
-        },
-      });
-      return {
-        user: { ...user, channels: [userChannel] },
-        userChannel,
-        isNew: true,
-      };
-    });
+    return { user: await createUserWithPhone(data), isNew: true };
   } catch (err) {
+    // Login concorrente com o mesmo número criou o User entre a busca e o insert.
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
       err.code === "P2002"
     ) {
-      return null;
+      const created = await findUserByPhone(data.phone);
+      if (created) return { user: created, isNew: false };
     }
     throw err;
   }
 }
 
-export async function findOrCreateUserChannel(
-  channelType: ChannelType,
-  channelUserId: string,
-  channelUserPhone?: string,
-  channelUsername?: string,
-  planExpiresAt?: Date,
-  source?: string | null,
-  sourceData?: Prisma.InputJsonValue | null,
-  timezone?: string,
-): Promise<UserChannelResolution> {
-  const first = await attemptFindOrCreateUserChannel(
-    channelType,
-    channelUserId,
-    channelUserPhone,
-    channelUsername,
-    planExpiresAt,
-    source,
-    sourceData,
-    timezone,
-  );
-  if (first) return first;
-
-  // A concurrent request (webhook redelivery) resolved the same channelUserId
-  // between our lookup and write; re-read instead of failing the message.
-  const retry = await attemptFindOrCreateUserChannel(
-    channelType,
-    channelUserId,
-    channelUserPhone,
-    channelUsername,
-    planExpiresAt,
-    source,
-    sourceData,
-    timezone,
-  );
-  if (retry) return retry;
-
-  throw new Error(
-    `[findOrCreateUserChannel] failed to resolve UserChannel after retry (channelUserId=${channelUserId})`,
-  );
-}
-
 const DAILY_REMINDER_USER_INCLUDE = {
-  channels: {
-    where: { channelType: "web", channelUserPhone: { not: null } },
-    take: 1,
-  },
   activities: {
     where: { status: "active", deletedAt: null },
     orderBy: { statusUpdatedAt: "desc" },
@@ -521,9 +324,7 @@ export async function findUsersForDailyReminder(
       planStatus: "active",
       planExpiresAt: { gt: new Date() },
       activities: { some: { status: "active", deletedAt: null } },
-      channels: {
-        some: { channelType: "web", channelUserPhone: { not: null } },
-      },
+      phone: { not: null },
     },
     include: DAILY_REMINDER_USER_INCLUDE,
   });

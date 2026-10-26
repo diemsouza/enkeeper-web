@@ -5,11 +5,9 @@ import { getTranslations } from "next-intl/server";
 import { requireAuth } from "@/src/lib/auth/current-user";
 import { UnauthorizedError } from "@/src/lib/custom-errors";
 import { mapActivityMessages } from "@/src/components/chat/map-messages";
-import { findUserChannelByUserId } from "@/src/repo/users.repo";
 import { handleIncomingMessage } from "@/src/services/message-service";
 import { findMessagesTimelinePage } from "@/src/services/conversation-timeline-service";
 import { resolveChannel } from "@/src/lib/channels/resolve-channel";
-import { DEFAULT_CHANNEL_TYPE } from "@/src/lib/constants";
 import type { IncomingMessage } from "@/src/types/domain";
 
 const PostMessageSchema = z.object({
@@ -52,19 +50,11 @@ export async function POST(request: Request): Promise<Response> {
     const { text, externalId, buttonId, messageId } = PostMessageSchema.parse(
       await request.json(),
     );
-    const userChannel = await findUserChannelByUserId(user.id);
-    if (!userChannel) {
-      return Response.json({ error: "channel not found" }, { status: 409 });
-    }
 
     const resolvedExternalId = externalId ?? ulid();
 
     const input: IncomingMessage = {
-      channelUserId: userChannel.channelUserId,
-      channelUserPhone: userChannel.channelUserPhone ?? undefined,
-      channelUsername: userChannel.channelUsername ?? undefined,
-      channelType: DEFAULT_CHANNEL_TYPE,
-      contactName: user.name ?? undefined,
+      userId: user.id,
       text,
       externalId: resolvedExternalId,
       buttonId,

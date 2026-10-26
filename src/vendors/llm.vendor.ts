@@ -24,19 +24,11 @@ import {
   DOC_EXTRACTION_PROMPT,
   ANSWER_EVALUATION_PROMPT,
   GEN_VOCABULARY_PROMPT,
-  GEN_TEXT_PROMPT,
-  GEN_EXERCISE_PROMPT,
   GEN_CONTENT_PROMPT,
   TOPIC_VALIDATION_PROMPT,
   OCR_DOCUMENT_PROMPT,
 } from "../lib/prompts";
-import {
-  AiProvider,
-  DocSource,
-  Level,
-  QuestionFormat,
-  SectionType,
-} from "../lib/prisma";
+import { AiProvider, DocSource, Level, QuestionFormat } from "../lib/prisma";
 import { FocusSuggestion } from "../types/domain";
 import { FocusSelectionInput } from "../core/parser";
 import { getFocusEnumPromptText } from "../core/focus";
@@ -394,16 +386,9 @@ export async function generateFocusContent(params: {
   return { status: "content", data: result };
 }
 
-// ─── Section question generation ─────────────────────────────────────────────
-
-const SECTION_PROMPTS: Record<string, string> = {
-  vocabulary: GEN_VOCABULARY_PROMPT,
-  text: GEN_TEXT_PROMPT,
-  exercise: GEN_EXERCISE_PROMPT,
-};
+// ─── Question generation ─────────────────────────────────────────────────────
 
 export async function generateNextQuestion(params: {
-  sectionType: SectionType;
   sectionTitle: string;
   sectionContent: string;
   level: Level;
@@ -412,11 +397,9 @@ export async function generateNextQuestion(params: {
   questionFocus?: string;
   userId: string;
   docId: string;
-  sectionId?: string;
   retryContext?: string;
 }): Promise<SectionQuestionResult | null> {
   const {
-    sectionType,
     sectionTitle,
     sectionContent,
     level,
@@ -425,7 +408,6 @@ export async function generateNextQuestion(params: {
     questionFocus,
     userId,
     docId,
-    sectionId,
     retryContext,
   } = params;
   let inputTokens = 0;
@@ -436,7 +418,7 @@ export async function generateNextQuestion(params: {
   let logError: string | null = null;
   const startTime = Date.now();
 
-  const systemPrompt = SECTION_PROMPTS[sectionType]
+  const systemPrompt = GEN_VOCABULARY_PROMPT
     .replace("{voice}", VOICE_PROMPT)
     .replace("{question_examples}", questionExamples)
     .replace("{format}", format)
@@ -479,8 +461,7 @@ Variação: {variation_seed}`
     );
     result = {
       ...parsed,
-      questionFormat:
-        sectionType === "vocabulary" ? format : parsed.questionFormat,
+      questionFormat: format,
       sourceContent: sectionContent,
     };
   } catch (err) {
@@ -492,7 +473,6 @@ Variação: {variation_seed}`
   await llmUsageService.registerUsage({
     userId,
     docId,
-    sectionId,
     usageType: "question_extraction",
     provider: PROVIDER_STANDARD,
     model: getStandardModel(),
@@ -502,7 +482,7 @@ Variação: {variation_seed}`
   });
 
   await llmLogService.registerLog({
-    stage: `gen-${sectionType}`,
+    stage: "gen-vocabulary",
     provider: PROVIDER_STANDARD,
     model: getStandardModel(),
     input: { system: systemPrompt, prompt: userPrompt },
@@ -516,7 +496,6 @@ Variação: {variation_seed}`
     durationMs,
     userId,
     docId,
-    sectionId,
   });
 
   return result;

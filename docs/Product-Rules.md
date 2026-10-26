@@ -596,7 +596,7 @@ O acesso ao app começa pelo número do WhatsApp em `/login`, que recebe o códi
 - **Brasil:** aceita 10 ou 11 dígitos com DDD (fixo, celular com ou sem o nono dígito), sem alterar o nono dígito. Sem o `+`, um `55` no início só é lido como código do país quando o número não fecha como nacional, já que DDD 55 existe.
 - **Outros países:** aceita o número válido pelo plano de numeração do país.
 - **Botão "Continuar":** sempre clicável. Número incompleto ou inválido mostra "Digite o número com DDD." abaixo do campo.
-- **Mesma conta:** o número é gravado num único formato (código do país e número, só dígitos). O mesmo número digitado de qualquer forma cai sempre na mesma conta.
+- **Mesma conta:** o número é gravado num único formato (código do país e número, só dígitos). O mesmo número digitado de qualquer forma cai sempre na mesma conta. O número é a identidade da conta: um número, uma conta.
 - **Textos:** abaixo do campo, "Receba o código de acesso direto no seu WhatsApp."; abaixo do botão, "Seu número será usado para acesso e envio de lembrete diário."
 
 ---

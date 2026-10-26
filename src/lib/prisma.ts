@@ -3,11 +3,9 @@ import { PrismaClient } from "../../prisma/generated/client";
 
 export type {
   User,
-  UserChannel,
   Doc,
   DocItem,
   DailyUsage,
-  Section,
   Message,
   Question,
   Activity,
@@ -23,13 +21,10 @@ export type {
 export {
   PlanStatus,
   PlanCode,
-  ChannelType,
   DocStatus,
   DocType,
   DocSource,
   Level,
-  SectionStatus,
-  SectionType,
   MessageRole,
   ExternalMessageStatus,
   QuestionFormat,

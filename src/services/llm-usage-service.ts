@@ -5,7 +5,6 @@ import { LlmUsageType } from "../types/llm-usage-type";
 type RegisterLlmUsageInput = {
   userId: string;
   docId?: string | null;
-  sectionId?: string | null;
   usageType: LlmUsageType;
   provider: AiProvider;
   model: string;
@@ -18,7 +17,6 @@ class LlmUsageService {
   async registerUsage({
     userId,
     docId,
-    sectionId,
     usageType,
     provider,
     model,
@@ -30,7 +28,6 @@ class LlmUsageService {
       data: {
         userId,
         docId: docId ?? null,
-        sectionId: sectionId ?? null,
         usageType,
         provider,
         model,

@@ -16,7 +16,6 @@ type RegisterLlmLogInput = {
   durationMs: number;
   userId?: string | null;
   docId?: string | null;
-  sectionId?: string | null;
   questionId?: string | null;
 };
 
@@ -48,7 +47,6 @@ class LlmLogService {
           durationMs: params.durationMs,
           userId: params.userId ?? null,
           docId: params.docId ?? null,
-          sectionId: params.sectionId ?? null,
           questionId: params.questionId ?? null,
         },
       });

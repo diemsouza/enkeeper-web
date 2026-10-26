@@ -113,11 +113,9 @@ Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.servic
 
 | Model          | Proposito                                                                             |
 | -------------- | --------------------------------------------------------------------------------------|
-| `User`         | Conta; `planCode`, `planStatus`, `planExpiresAt`, `locale`, `currency`                |
+| `User`         | Conta e identidade; `phone` (unico, formato `normalizePhoneToWaId`), `email`, `planCode`, `planStatus`, `planExpiresAt`, `locale`, `currency` |
 | `Subscription` | Pagamento (1:N com User, mais recente = atual); nunca lido para liberar acesso, que fica no `User` |
-| `UserChannel`  | Canal conectado (whatsapp); `channelUserId`, `phoneNumber`                            |
 | `Doc`          | Material enviado; `rawContent`, `content`, `docType`, `level`, `status`               |
-| `Section`      | Nao usado hoje (schema legado de quando material era dividido por tipo, ver Product-Rules.md Secao 3) |
 | `Question`     | Pergunta gerada; `questionFormat`, `answerKeys`, `questionOptions`, `status`, `revisionCount` |
 | `Activity`     | Sessao de pratica por `[userId, docId, date]`; `nextMessageAt`, cadencia              |
 | `WeeklyReport` | Relatorio semanal enviado aos domingos                                                |
@@ -137,8 +135,7 @@ Selecao de formato ativa hoje: `pickNextFormat()` em `src/core/question-format-p
 Funcoes em `src/core/format-loader.ts`:
 - `getQuestionExamples(formats, level)` -- string formatada com exemplos de pergunta por formato
 - `getFeedbackExamples(formats, level)` -- string formatada com exemplos de feedback por formato
-- `validateGeneratedQuestion(questions, sectionType)` -- filtra perguntas invalidas por sourceItem; `sectionType` e sempre o literal `"vocabulary"` hoje
-- `getFormatsBySectionType(sectionType)` -- orfao, sem call site hoje
+- `validateGeneratedQuestion(question)` -- filtra perguntas invalidas por sourceItem
 
 O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotacao manual do texto da pergunta, so decide qual formato pedir (`pickNextFormat`).
 
@@ -161,7 +158,7 @@ O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotac
 | Funcao                    | Stage             | Modelo padrao      |
 | ------------------------- | ----------------- | ------------------ |
 | `generateDocSections`     | doc-extraction    | gpt-4.1-mini       |
-| `generateNextQuestion`    | gen-vocabulary (unico stage hoje) | PROVIDER_STANDARD |
+| `generateNextQuestion`    | gen-vocabulary    | PROVIDER_STANDARD  |
 | `generateTopicValidation` | topic-validation  | PROVIDER_STANDARD  |
 | `generateFocusContent`    | gen-content        | PROVIDER_STANDARD  |
 | `generateAnswerEvaluation`| answer-evaluation | PROVIDER_STANDARD  |
@@ -199,8 +196,6 @@ Arquivos de prompt ativos:
 - `gen-vocabulary.md` -- gera perguntas de vocabulario (unico prompt de geracao de pergunta em uso hoje)
 - `answer-evaluation.md` -- avalia resposta do usuario e gera feedback
 - `voice.md` -- persona e tom de voz (injetado nos prompts acima)
-
-`gen-text.md` e `gen-exercise.md` ainda existem em disco mas ficaram sem call site desde que `text`/`exercise` deixaram de existir como tipo de conteudo.
 
 ## Infra
 
@@ -252,9 +247,9 @@ Arquivos de prompt ativos:
 Sempre que enviar uma mensagem ao usuario, usar `sendAndSaveMessage` (`src/services/message-sender-service.ts`):
 ```typescript
 const msg = formatX();
-await sendAndSaveMessage({ channel, to: userChannel.channelId, userId, userChannelId, content: msg, today });
+await sendAndSaveMessage({ channel, userId, message: msg, today });
 ```
-`sendAndSaveMessage` envia via `channel.sendMessage`/`sendTemplate`, captura o `externalId` (wamid) retornado pela Cloud API e so entao salva a `Message` ja com esse valor -- envio sempre antes do save, nunca depois. Passar `today` quando a mensagem deve contar para `incrementAgentMessageCount`; omitir quando o fluxo nunca contou (ex: `process-doc-service.ts`, `merge-doc-service.ts`).
+`sendAndSaveMessage` passa o `userId` como destino (todo envio por ali vai para a web, que ignora o destino; WhatsApp envia direto pelo telefone, via `sendWhatsAppTemplate`), envia via `channel.sendMessage`/`sendTemplate`, captura o `externalId` (wamid) retornado pela Cloud API e so entao salva a `Message` ja com esse valor -- envio sempre antes do save, nunca depois. Passar `today` quando a mensagem deve contar para `incrementAgentMessageCount`; omitir quando o fluxo nunca contou (ex: `process-doc-service.ts`, `merge-doc-service.ts`).
 
 `MessageChannel.sendMessage`/`sendTemplate` enviam uma mensagem por chamada (sem array, sem `{ delay }`). Para pausas entre mensagens, usar `waitBeforeSend(channel, userId, ms, { replyToMessageId })` de `src/services/message-sender-service.ts` entre chamadas de `sendAndSaveMessage`, nunca `delay` cru: ele acende o "digitando" nos ultimos `TYPING_LEAD_MS` quando a pausa passa de `MIN_DELAY_FOR_TYPING_MS`.
 

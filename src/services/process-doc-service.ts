@@ -10,7 +10,7 @@ import {
   buildPreviousActivitySummary,
 } from "./activity-service";
 import { generateDocSections } from "../vendors/llm.vendor";
-import { findUserById, findUserChannelByUserId } from "../repo/users.repo";
+import { findUserById } from "../repo/users.repo";
 import { MessageChannel } from "../types/message-channel";
 import { incrementDailyActivityCount, incrementDailyDocCount } from "../repo/daily-usage.repo";
 import {
@@ -46,37 +46,27 @@ export async function processDoc(docId: string, userId: string, channel: Message
     if (!result) {
       console.error(`[processDoc] AI failed for doc ${docId}`);
       await updateDoc(docId, userId, { status: "failed" });
-      const userChannel = await findUserChannelByUserId(userId);
-      if (userChannel) {
-        const msg = formatDocProcessingFailed();
-        await sendAndSaveMessage({
-          channel,
-          to: userChannel.channelUserId,
-          userId,
-          userChannelId: userChannel.id,
-          activityId: activeActivity?.id,
-          message: msg,
-          intent: "system_error",
-        });
-      }
+      const msg = formatDocProcessingFailed();
+      await sendAndSaveMessage({
+        channel,
+        userId,
+        activityId: activeActivity?.id,
+        message: msg,
+        intent: "system_error",
+      });
       return;
     }
 
     if (!result.isValid) {
       await updateDoc(docId, userId, { status: "failed" });
-      const userChannel = await findUserChannelByUserId(userId);
-      if (userChannel) {
-        const msg = formatInvalidContentMessage(result.invalidReason);
-        await sendAndSaveMessage({
-          channel,
-          to: userChannel.channelUserId,
-          userId,
-          userChannelId: userChannel.id,
-          activityId: activeActivity?.id,
-          message: msg,
-          intent: "system_error",
-        });
-      }
+      const msg = formatInvalidContentMessage(result.invalidReason);
+      await sendAndSaveMessage({
+        channel,
+        userId,
+        activityId: activeActivity?.id,
+        message: msg,
+        intent: "system_error",
+      });
       return;
     }
 
@@ -121,55 +111,43 @@ export async function processDoc(docId: string, userId: string, channel: Message
     if (result.content.trim().length > 0) {
       const activityCount = await incrementDailyActivityCount(userId, date);
       await incrementDailyDocCount(userId, date);
-      const userChannel = await findUserChannelByUserId(userId);
-      if (userChannel) {
-        const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
-        const summary = currentActivity
-          ? await buildPreviousActivitySummary(userId, {
-              activityId: currentActivity.id,
-              forceRegenerate: true,
-            })
-          : null;
+      const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
+      const summary = currentActivity
+        ? await buildPreviousActivitySummary(userId, {
+            activityId: currentActivity.id,
+            forceRegenerate: true,
+          })
+        : null;
+      await sendAndSaveMessage({
+        channel,
+        userId,
+        activityId: activity.id,
+        message: msg,
+      });
+      if (summary) {
+        await waitBeforeSend(
+          channel,
+          userId,
+          DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+        );
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelUserId,
           userId,
-          userChannelId: userChannel.id,
           activityId: activity.id,
-          message: msg,
+          message: summary,
         });
-        if (summary) {
-          await waitBeforeSend(
-            channel,
-            userId,
-            DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
-          );
-          await sendAndSaveMessage({
-            channel,
-            to: userChannel.channelUserId,
-            userId,
-            userChannelId: userChannel.id,
-            activityId: activity.id,
-            message: summary,
-          });
-        }
-        await sendFirstQuestionNow(activity, userChannel, date, channel);
       }
+      await sendFirstQuestionNow(activity, date, channel);
     } else {
       await updateDoc(docId, userId, { status: "failed" });
-      const userChannel = await findUserChannelByUserId(userId);
-      if (userChannel) {
-        const msg = formatDocNoQuestions();
-        await sendAndSaveMessage({
-          channel,
-          to: userChannel.channelUserId,
-          userId,
-          userChannelId: userChannel.id,
-          activityId: activity.id,
-          message: msg,
-          intent: "system_error",
-        });
-      }
+      const msg = formatDocNoQuestions();
+      await sendAndSaveMessage({
+        channel,
+        userId,
+        activityId: activity.id,
+        message: msg,
+        intent: "system_error",
+      });
     }
   } catch (err) {
     console.error(`[processDoc] unexpected error for doc ${docId}`, err);
@@ -177,18 +155,13 @@ export async function processDoc(docId: string, userId: string, channel: Message
       status: "failed",
       error: err instanceof Error ? err.message : "Erro inesperado.",
     });
-    const userChannel = await findUserChannelByUserId(userId);
-    if (userChannel) {
-      const msg = formatDocProcessingFailed();
-      await sendAndSaveMessage({
-        channel,
-        to: userChannel.channelUserId,
-        userId,
-        userChannelId: userChannel.id,
-        activityId: activeActivity?.id,
-        message: msg,
-        intent: "system_error",
-      });
-    }
+    const msg = formatDocProcessingFailed();
+    await sendAndSaveMessage({
+      channel,
+      userId,
+      activityId: activeActivity?.id,
+      message: msg,
+      intent: "system_error",
+    });
   }
 }

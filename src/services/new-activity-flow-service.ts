@@ -47,10 +47,7 @@ import {
   archiveOrCancelActivity,
   buildPreviousActivitySummary,
 } from "./activity-service";
-import {
-  findUserChannelByUserId,
-  updateUserPendingIntent,
-} from "../repo/users.repo";
+import { updateUserPendingIntent } from "../repo/users.repo";
 import {
   incrementDailyActivityCount,
   incrementDailyDocCount,
@@ -257,16 +254,12 @@ export async function processFocusResponse(
     replyToMessageId,
   );
 
-  const userChannel = await findUserChannelByUserId(userId);
-  if (userChannel) {
-    await sendFirstQuestionNow(
-      activity,
-      userChannel,
-      activity.date,
-      channel,
-      replyToMessageId,
-    );
-  }
+  await sendFirstQuestionNow(
+    activity,
+    activity.date,
+    channel,
+    replyToMessageId,
+  );
 
   return { outcome: "done" };
 }
@@ -357,9 +350,6 @@ async function sendActivityCreatedConfirmation(
   const activityCount = await incrementDailyActivityCount(userId, date);
   await incrementDailyDocCount(userId, date);
 
-  const userChannel = await findUserChannelByUserId(userId);
-  if (!userChannel) return;
-
   const msg = formatDocProcessed(
     false,
     MAX_ACTIVITIES_PER_DAY - activityCount,
@@ -373,9 +363,7 @@ async function sendActivityCreatedConfirmation(
     : null;
   await sendAndSaveMessage({
     channel,
-    to: userChannel.channelUserId,
     userId,
-    userChannelId: userChannel.id,
     activityId,
     message: msg,
   });
@@ -385,9 +373,7 @@ async function sendActivityCreatedConfirmation(
     });
     await sendAndSaveMessage({
       channel,
-      to: userChannel.channelUserId,
       userId,
-      userChannelId: userChannel.id,
       activityId,
       message: summary,
     });

@@ -40,9 +40,8 @@ async function trySendReminder(
   user: DailyReminderCandidateUser,
   now: Date,
 ): Promise<"sent" | "skipped"> {
-  const userChannel = user.channels[0];
   const activity = user.activities[0];
-  if (!userChannel?.channelUserPhone || !activity) return "skipped";
+  if (!user.phone || !activity) return "skipped";
 
   const daysInactive = daysSince(
     activity.lastInteractionAt ?? activity.createdAt,
@@ -58,7 +57,7 @@ async function trySendReminder(
 
   await sendReminder(
     user.id,
-    userChannel.channelUserPhone,
+    user.phone,
     reminder,
     { eligibleCount, daysInactive },
     now,

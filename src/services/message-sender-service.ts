@@ -12,9 +12,7 @@ import { delay } from "../lib/utils";
 
 type SendAndSaveMessageParams = {
   channel: MessageChannel;
-  to: string;
   userId: string;
-  userChannelId: string;
   message: FormattedMessage;
   intent?: string;
   activityId?: string;
@@ -37,8 +35,10 @@ function resolveMessageMedia(
 export async function sendAndSaveMessage(
   params: SendAndSaveMessageParams,
 ): Promise<Message> {
-  const { channel, to, message, today, ...rest } = params;
-  const result = await channel.sendMessage(to, message);
+  const { channel, message, today, ...rest } = params;
+  // Todo envio por aqui vai para a web, que endereça o usuário pelo id (igual
+  // ao tópico do realtime). WhatsApp envia direto pelo telefone, fora daqui.
+  const result = await channel.sendMessage(rest.userId, message);
   const saved = await saveMessage({
     ...rest,
     ...resolveMessageMedia(message),

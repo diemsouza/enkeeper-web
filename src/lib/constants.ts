@@ -1,9 +1,5 @@
-import type {
-  ChannelType,
-  EvalTipClass,
-  Level,
-  QuestionFormat,
-} from "./prisma";
+import type { EvalTipClass, Level, QuestionFormat } from "./prisma";
+import type { ChannelType } from "../types/domain";
 import type { CountryCode } from "libphonenumber-js";
 
 export const EVAL_TIP_ALTERNATIVE_FORMATS: QuestionFormat[] = [

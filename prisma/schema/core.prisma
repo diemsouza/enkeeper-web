@@ -65,18 +65,6 @@ enum AnswerType {
     audio
 }
 
-enum SectionType {
-    vocabulary
-    text
-    exercise
-}
-
-enum SectionStatus {
-    pending
-    partial
-    completed
-}
-
 enum QuestionFormat {
     gap_fill // frase com lacuna no meio: "I found the ______ between work and enjoy."
     recall // dado o contexto ou uso, traga o termo: "Como se diz 'deixa pra lá' em inglês?"
@@ -111,7 +99,6 @@ enum Level {
 model Message {
     id            String      @id @default(ulid()) @map("id")
     userId        String      @map("user_id")
-    userChannelId String      @map("user_channel_id")
     activityId    String?     @map("activity_id")
     role          MessageRole @map("role")
     content       String      @map("content")
@@ -131,12 +118,11 @@ model Message {
     playedAt         DateTime?              @map("played_at")
 
     user        User        @relation(fields: [userId], references: [id])
-    userChannel UserChannel @relation(fields: [userChannelId], references: [id])
     activity    Activity?   @relation(fields: [activityId], references: [id])
     media       Media?      @relation("MessageMedia", fields: [mediaId], references: [id], onDelete: SetNull)
     docItems    DocItem[]
 
-    @@unique([userChannelId, externalId])
+    @@unique([userId, externalId])
     @@index([userId, createdAt])
     @@index([userId, role, createdAt])
     @@map("messages")
@@ -186,7 +172,6 @@ model Doc {
     user       User       @relation(fields: [userId], references: [id])
     activities Activity[]
     llmUsages  LlmUsage[]
-    sections   Section[]
     llmLogs    LlmLog[]
     docItems   DocItem[]
 
@@ -213,7 +198,6 @@ model Activity {
     intensiveUntil    DateTime?      @map("intensive_until")
     questionCount     Int            @default(0) @map("question_count")
     questionLimit     Int            @default(0) @map("question_limit")
-    sectionCount      Int            @default(0) @map("section_count")
     score             Float          @default(0) @map("score")
     roundCompleted    Boolean        @default(false) @map("round_completed")
     activitySuggestedAt DateTime?    @map("activity_suggested_at")
@@ -232,7 +216,6 @@ model Activity {
     doc       Doc        @relation(fields: [docId], references: [id])
     messages  Message[]
     questions Question[]
-    sections  Section[]
     chartCompletedMedia Media? @relation("ActivityChartCompleted", fields: [chartCompletedMediaId], references: [id], onDelete: SetNull)
     chartRoundMedia     Media? @relation("ActivityChartRound", fields: [chartRoundMediaId], references: [id], onDelete: SetNull)
 
@@ -241,38 +224,10 @@ model Activity {
     @@map("activities")
 }
 
-model Section {
-    id          String         @id @default(ulid()) @map("id")
-    userId      String         @map("user_id")
-    docId       String?        @map("doc_id")
-    activityId  String         @map("activity_id")
-    sectionType SectionType    @map("section_type")
-    title       String         @map("title")
-    content     String         @map("content") @db.Text
-    order       Int            @map("order")
-    metadata    Json?          @map("metadata")
-    status      SectionStatus? @map("status")
-    createdAt   DateTime       @default(now()) @map("created_at")
-    updatedAt   DateTime       @updatedAt @map("updated_at")
-    deletedAt   DateTime?      @map("deleted_at")
-
-    user      User       @relation(fields: [userId], references: [id])
-    doc       Doc?       @relation(fields: [docId], references: [id])
-    activity  Activity   @relation(fields: [activityId], references: [id])
-    questions Question[]
-    llmUsages LlmUsage[]
-    llmLogs   LlmLog[]
-
-    @@index([userId])
-    @@index([activityId, status])
-    @@map("sections")
-}
-
 model Question {
     id              String          @id @default(ulid()) @map("id")
     userId          String          @map("user_id")
     activityId      String          @map("activity_id")
-    sectionId       String?         @map("section_id")
     question        String          @map("question") @db.Text
     answerKeys      String[]        @map("answer_keys")
     answer          String?         @map("answer") @db.Text
@@ -310,14 +265,12 @@ model Question {
 
     user               User     @relation(fields: [userId], references: [id])
     activity           Activity @relation(fields: [activityId], references: [id])
-    section             Section? @relation(fields: [sectionId], references: [id])
     questionAudioMedia Media?   @relation("QuestionAudio", fields: [questionAudioMediaId], references: [id], onDelete: SetNull)
     feedbackAudioMedia Media?   @relation("FeedbackAudio", fields: [feedbackAudioMediaId], references: [id], onDelete: SetNull)
     answerAudioMedia   Media?   @relation("AnswerAudio", fields: [answerAudioMediaId], references: [id], onDelete: SetNull)
     questionImageMedia Media?   @relation("QuestionImage", fields: [questionImageMediaId], references: [id], onDelete: SetNull)
 
     @@index([activityId, status])
-    @@index([sectionId])
     @@index([userId])
     @@map("questions")
 }
@@ -407,7 +360,6 @@ model LlmUsage {
     id           String     @id @default(ulid()) @map("id")
     userId       String     @map("user_id")
     docId        String?    @map("doc_id")
-    sectionId    String?    @map("section_id")
     usageType    String     @map("usage_type")
     provider     AiProvider @default(openai) @map("provider")
     model        String     @map("model")
@@ -419,11 +371,9 @@ model LlmUsage {
 
     user    User     @relation(fields: [userId], references: [id])
     doc     Doc?     @relation(fields: [docId], references: [id])
-    section Section? @relation(fields: [sectionId], references: [id])
 
     @@index([userId])
     @@index([docId])
-    @@index([sectionId])
     @@map("llm_usages")
 }
 
@@ -431,7 +381,6 @@ model LlmLog {
     id           String     @id @default(ulid()) @map("id")
     userId       String?    @map("user_id")
     docId        String?    @map("doc_id")
-    sectionId    String?    @map("section_id")
     questionId   String?    @map("question_id")
     stage        String     @map("stage")
     provider     AiProvider @default(openai) @map("provider")
@@ -450,7 +399,6 @@ model LlmLog {
 
     user    User?    @relation(fields: [userId], references: [id])
     doc     Doc?     @relation(fields: [docId], references: [id])
-    section Section? @relation(fields: [sectionId], references: [id])
 
     @@index([userId])
     @@index([docId])

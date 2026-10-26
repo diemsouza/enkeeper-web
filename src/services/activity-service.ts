@@ -20,7 +20,6 @@ import {
   findLastMessageByIntent,
   findUserMessageDatesByActivity,
 } from "../repo/messages.repo";
-import { findUserChannelByUserId } from "../repo/users.repo";
 import { publishResumeSummary } from "../lib/qstash";
 import {
   computeElapsedDays,
@@ -90,16 +89,12 @@ export async function resumeActivityFromWeb(
   userId: string,
   target: Activity,
   channel: MessageChannel,
-  userChannelId: string,
-  to: string,
 ): Promise<void> {
   const leaving = await findCurrentActivityByUser(userId);
   await switchToActivity(userId, target);
   await sendAndSaveMessage({
     channel,
-    to,
     userId,
-    userChannelId,
     activityId: target.id,
     message: formatResumeSuccess(target.title),
     today: startOfDay(new Date()),
@@ -162,14 +157,6 @@ export async function sendResumeSummary(
   );
   if (invite && invite.createdAt >= resumedAt) return;
 
-  const userChannel = await findUserChannelByUserId(userId);
-  if (!userChannel) {
-    console.error(
-      `[activity-service] sendResumeSummary: sem UserChannel para ${userId}`,
-    );
-    return;
-  }
-  const to = userChannel.channelUserId;
   const today = startOfDay(new Date());
 
   const priorSummary = await findLastMessageByIntent(
@@ -195,9 +182,7 @@ export async function sendResumeSummary(
       if (summary) {
         await sendAndSaveMessage({
           channel,
-          to,
           userId,
-          userChannelId: userChannel.id,
           message: summary,
           intent: "previous_activity_summary",
           activityId: targetActivityId,
@@ -214,9 +199,7 @@ export async function sendResumeSummary(
 
   await sendAndSaveMessage({
     channel,
-    to,
     userId,
-    userChannelId: userChannel.id,
     message: formatResumeInvitation(),
     intent: "resume_invitation",
     activityId: targetActivityId,
@@ -485,11 +468,9 @@ export async function recordFeedbackAudioPlayed(
 type MaybeSendActivitySuggestionParams = {
   activity: Activity;
   userId: string;
-  userChannelId: string;
   isLastAnswerCorrect: boolean;
   isIntensiveMode: boolean;
   channel: MessageChannel;
-  to: string;
   today: Date;
   replyToMessageId?: string;
 };
@@ -500,11 +481,9 @@ export async function maybeSendActivitySuggestion(
   const {
     activity,
     userId,
-    userChannelId,
     isLastAnswerCorrect,
     isIntensiveMode,
     channel,
-    to,
     today,
     replyToMessageId,
   } = params;
@@ -524,9 +503,7 @@ export async function maybeSendActivitySuggestion(
   const message = formatActivitySuggestion({ isIntensiveMode });
   await sendAndSaveMessage({
     channel,
-    to,
     userId,
-    userChannelId,
     activityId: activity.id,
     message,
     intent: "activity_suggestion",

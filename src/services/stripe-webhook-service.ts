@@ -2,7 +2,6 @@ import Stripe from "stripe";
 import { stripe } from "../vendors/stripe.vendor";
 import {
   findUserById,
-  findUserChannelByUserId,
   updateUserCheckoutData,
   updateUserPlan,
 } from "../repo/users.repo";
@@ -96,20 +95,10 @@ async function sendSubscriptionConfirmed(
   renewsAt: Date,
   timezone: string,
 ): Promise<void> {
-  const userChannel = await findUserChannelByUserId(userId);
-  if (!userChannel) {
-    console.error("[sendSubscriptionConfirmed] no channel found, skipping", {
-      userId,
-    });
-    return;
-  }
-
   const activeActivity = await findLastActiveActivityByUser(userId);
   await sendAndSaveMessage({
     channel: resolveChannel(),
-    to: userChannel.channelUserId,
     userId,
-    userChannelId: userChannel.id,
     activityId: activeActivity?.id,
     message: formatSubscriptionConfirmed(interval, renewsAt, timezone),
     intent: "payment_confirmed",

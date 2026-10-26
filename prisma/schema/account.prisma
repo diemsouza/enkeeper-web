@@ -16,15 +16,12 @@ enum PlanStatus {
     expired
 }
 
-enum ChannelType {
-    whatsapp
-    web
-}
-
 model User {
     id       String  @id @default(ulid()) @map("id")
     name     String? @map("name")
     email    String? @unique @map("email")
+    // telefone no formato de normalizePhoneToWaId; identidade da conta no login e no WhatsApp
+    phone    String? @unique @map("phone")
     imageUrl String? @map("image_url")
     locale   String? @map("locale")
     currency String? @map("currency")
@@ -63,14 +60,12 @@ model User {
     updatedAt   DateTime   @updatedAt @map("updated_at")
     deletedAt   DateTime?  @map("deleted_at")
 
-    channels      UserChannel[]
     docs          Doc[]
     activities    Activity[]
     weeklyReports WeeklyReport[]
     llmUsages     LlmUsage[]
     messages      Message[]
     dailyUsages   DailyUsage[]
-    sections      Section[]
     llmLogs       LlmLog[]
     docItems      DocItem[]
     notifications Notification[]
@@ -138,26 +133,4 @@ model OtpCode {
 
     @@index([phone, createdAt])
     @@map("otp_codes")
-}
-
-model UserChannel {
-    id               String      @id @default(ulid()) @map("id")
-    userId           String      @map("user_id")
-    channelType      ChannelType @map("channel_type")
-    channelUserId    String      @map("channel_user_id") // BSUID Meta, userId Telegram, etc
-    channelUsername  String?     @map("channel_username") // username Meta - legível, auditoria
-    channelUserPhone String?     @map("channel_user_phone") // telefone do usuário no canal - legível
-    metadata         Json?       @map("metadata")
-    createdAt        DateTime    @default(now()) @map("created_at")
-    updatedAt        DateTime    @updatedAt @map("updated_at")
-
-    user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-    messages Message[]
-
-    @@unique([channelType, channelUserId])
-    @@unique([channelType, channelUsername])
-    @@unique([channelType, channelUserPhone])
-    @@unique([userId, channelType])
-    @@index([userId])
-    @@map("user_channels")
 }

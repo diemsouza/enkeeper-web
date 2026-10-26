@@ -45,7 +45,6 @@ function buildActivity(overrides: Partial<Activity> = {}): Activity {
     intensiveUntil: null,
     questionCount: 25,
     questionLimit: 25,
-    sectionCount: 1,
     roundCompleted: true,
     activitySuggestedAt: null,
     lastQuestionId: null,
@@ -109,11 +108,9 @@ describe("maybeSendActivitySuggestion", () => {
     await maybeSendActivitySuggestion({
       activity: buildActivity(),
       userId: "user_1",
-      userChannelId: "channel_1",
       isLastAnswerCorrect: false,
       isIntensiveMode: false,
       channel: fakeChannel,
-      to: "5511999999999",
       today: new Date(),
     });
     expect(sendAndSaveMessage).not.toHaveBeenCalled();
@@ -123,11 +120,9 @@ describe("maybeSendActivitySuggestion", () => {
     await maybeSendActivitySuggestion({
       activity: buildActivity({ roundCompleted: false }),
       userId: "user_1",
-      userChannelId: "channel_1",
       isLastAnswerCorrect: true,
       isIntensiveMode: false,
       channel: fakeChannel,
-      to: "5511999999999",
       today: new Date(),
     });
     expect(sendAndSaveMessage).not.toHaveBeenCalled();
@@ -137,11 +132,9 @@ describe("maybeSendActivitySuggestion", () => {
     await maybeSendActivitySuggestion({
       activity: buildActivity({ activitySuggestedAt: new Date() }),
       userId: "user_1",
-      userChannelId: "channel_1",
       isLastAnswerCorrect: true,
       isIntensiveMode: false,
       channel: fakeChannel,
-      to: "5511999999999",
       today: new Date(),
     });
     expect(sendAndSaveMessage).not.toHaveBeenCalled();
@@ -154,11 +147,9 @@ describe("maybeSendActivitySuggestion", () => {
     await maybeSendActivitySuggestion({
       activity: buildActivity(),
       userId: "user_1",
-      userChannelId: "channel_1",
       isLastAnswerCorrect: true,
       isIntensiveMode: false,
       channel: fakeChannel,
-      to: "5511999999999",
       today: new Date(),
     });
     expect(sendAndSaveMessage).not.toHaveBeenCalled();
@@ -177,11 +168,9 @@ describe("maybeSendActivitySuggestion", () => {
     await maybeSendActivitySuggestion({
       activity,
       userId: "user_1",
-      userChannelId: "channel_1",
       isLastAnswerCorrect: true,
       isIntensiveMode: false,
       channel: fakeChannel,
-      to: "5511999999999",
       today: new Date(),
     });
     expect(sendAndSaveMessage).toHaveBeenCalledTimes(1);

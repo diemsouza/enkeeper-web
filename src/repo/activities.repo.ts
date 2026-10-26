@@ -14,7 +14,6 @@ type CreateActivityData = {
   roundCompleted?: boolean;
   questionCount?: number;
   questionLimit?: number;
-  sectionCount?: number;
 };
 
 type UpdateActivityData = {
@@ -33,7 +32,6 @@ type UpdateActivityData = {
   completedAt?: Date | null;
   intensiveUntil?: Date | null;
   questionCount?: number;
-  sectionCount?: number;
   roundCompleted?: boolean;
   activitySuggestedAt?: Date;
   lastQuestionId?: string | null;

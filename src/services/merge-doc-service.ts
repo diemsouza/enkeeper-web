@@ -16,7 +16,6 @@ import {
 import { generateDocSections } from "../vendors/llm.vendor";
 import {
   findUserById,
-  findUserChannelByUserId,
   updateUserPendingIntent,
 } from "../repo/users.repo";
 import { MessageChannel } from "../types/message-channel";
@@ -61,19 +60,14 @@ export async function mergeDoc(
   if (validItems.length === 0) {
     const error = "Nenhum item válido para processar.";
     await updateDoc(docId, userId, { status: "failed", error });
-    const userChannel = await findUserChannelByUserId(userId);
-    if (userChannel) {
-      const msg = formatDocNoQuestions();
-      await sendAndSaveMessage({
-        channel,
-        to: userChannel.channelUserId,
-        userId,
-        userChannelId: userChannel.id,
-        activityId: activeActivity?.id,
-        message: msg,
-        intent: "system_error",
-      });
-    }
+    const msg = formatDocNoQuestions();
+    await sendAndSaveMessage({
+      channel,
+      userId,
+      activityId: activeActivity?.id,
+      message: msg,
+      intent: "system_error",
+    });
     return;
   }
 
@@ -89,19 +83,14 @@ export async function mergeDoc(
   if (user.level === null) {
     await updateDoc(docId, userId, { rawContent: consolidatedRaw, docType });
     await updateUserPendingIntent(userId, "waiting_set_level");
-    const userChannel = await findUserChannelByUserId(userId);
-    if (userChannel) {
-      const msg = formatLevelQuestion();
-      await sendAndSaveMessage({
-        channel,
-        to: userChannel.channelUserId,
-        userId,
-        userChannelId: userChannel.id,
-        activityId: activeActivity?.id,
-        message: msg,
-        intent: "waiting_set_level",
-      });
-    }
+    const msg = formatLevelQuestion();
+    await sendAndSaveMessage({
+      channel,
+      userId,
+      activityId: activeActivity?.id,
+      message: msg,
+      intent: "waiting_set_level",
+    });
     return;
   }
 
@@ -112,21 +101,16 @@ export async function mergeDoc(
         status: "failed",
         error: contentValidation.invalidReason ?? "Conteúdo inválido.",
       });
-      const userChannel = await findUserChannelByUserId(userId);
-      if (userChannel) {
-        const msg = formatInvalidContentMessage(
-          contentValidation.invalidReason,
-        );
-        await sendAndSaveMessage({
-          channel,
-          to: userChannel.channelUserId,
-          userId,
-          userChannelId: userChannel.id,
-          activityId: activeActivity?.id,
-          message: msg,
-          intent: "system_error",
-        });
-      }
+      const msg = formatInvalidContentMessage(
+        contentValidation.invalidReason,
+      );
+      await sendAndSaveMessage({
+        channel,
+        userId,
+        activityId: activeActivity?.id,
+        message: msg,
+        intent: "system_error",
+      });
       return;
     }
 
@@ -144,19 +128,14 @@ export async function mergeDoc(
         status: "failed",
         error: "Falha na extração de conteúdo.",
       });
-      const userChannel = await findUserChannelByUserId(userId);
-      if (userChannel) {
-        const msg = formatDocProcessingFailed();
-        await sendAndSaveMessage({
-          channel,
-          to: userChannel.channelUserId,
-          userId,
-          userChannelId: userChannel.id,
-          activityId: activeActivity?.id,
-          message: msg,
-          intent: "system_error",
-        });
-      }
+      const msg = formatDocProcessingFailed();
+      await sendAndSaveMessage({
+        channel,
+        userId,
+        activityId: activeActivity?.id,
+        message: msg,
+        intent: "system_error",
+      });
       return;
     }
 
@@ -165,19 +144,14 @@ export async function mergeDoc(
         status: "failed",
         error: docSectionResult.invalidReason ?? "Conteúdo inválido.",
       });
-      const userChannel = await findUserChannelByUserId(userId);
-      if (userChannel) {
-        const msg = formatInvalidContentMessage(docSectionResult.invalidReason);
-        await sendAndSaveMessage({
-          channel,
-          to: userChannel.channelUserId,
-          userId,
-          userChannelId: userChannel.id,
-          activityId: activeActivity?.id,
-          message: msg,
-          intent: "system_error",
-        });
-      }
+      const msg = formatInvalidContentMessage(docSectionResult.invalidReason);
+      await sendAndSaveMessage({
+        channel,
+        userId,
+        activityId: activeActivity?.id,
+        message: msg,
+        intent: "system_error",
+      });
       return;
     }
 
@@ -222,58 +196,46 @@ export async function mergeDoc(
 
     if (docSectionResult.content.trim().length > 0) {
       const activityCount = await incrementDailyActivityCount(userId, date);
-      const userChannel = await findUserChannelByUserId(userId);
-      if (userChannel) {
-        const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
-        const summary = currentActivity
-          ? await buildPreviousActivitySummary(userId, {
-              activityId: currentActivity.id,
-              forceRegenerate: true,
-            })
-          : null;
+      const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
+      const summary = currentActivity
+        ? await buildPreviousActivitySummary(userId, {
+            activityId: currentActivity.id,
+            forceRegenerate: true,
+          })
+        : null;
+      await sendAndSaveMessage({
+        channel,
+        userId,
+        activityId: activity.id,
+        message: msg,
+      });
+      if (summary) {
+        await waitBeforeSend(
+          channel,
+          userId,
+          DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+        );
         await sendAndSaveMessage({
           channel,
-          to: userChannel.channelUserId,
           userId,
-          userChannelId: userChannel.id,
           activityId: activity.id,
-          message: msg,
+          message: summary,
         });
-        if (summary) {
-          await waitBeforeSend(
-            channel,
-            userId,
-            DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
-          );
-          await sendAndSaveMessage({
-            channel,
-            to: userChannel.channelUserId,
-            userId,
-            userChannelId: userChannel.id,
-            activityId: activity.id,
-            message: summary,
-          });
-        }
-        await sendFirstQuestionNow(activity, userChannel, date, channel);
       }
+      await sendFirstQuestionNow(activity, date, channel);
     } else {
       await updateDoc(docId, userId, {
         status: "failed",
         error: "Nenhuma seção gerada.",
       });
-      const userChannel = await findUserChannelByUserId(userId);
-      if (userChannel) {
-        const msg = formatDocNoQuestions();
-        await sendAndSaveMessage({
-          channel,
-          to: userChannel.channelUserId,
-          userId,
-          userChannelId: userChannel.id,
-          activityId: activity.id,
-          message: msg,
-          intent: "system_error",
-        });
-      }
+      const msg = formatDocNoQuestions();
+      await sendAndSaveMessage({
+        channel,
+        userId,
+        activityId: activity.id,
+        message: msg,
+        intent: "system_error",
+      });
     }
   } catch (err) {
     console.error(`[mergeDoc] unexpected error for doc ${docId}`, err);
@@ -281,18 +243,13 @@ export async function mergeDoc(
       status: "failed",
       error: err instanceof Error ? err.message : "Erro inesperado.",
     });
-    const userChannel = await findUserChannelByUserId(userId);
-    if (userChannel) {
-      const msg = formatDocProcessingFailed();
-      await sendAndSaveMessage({
-        channel,
-        to: userChannel.channelUserId,
-        userId,
-        userChannelId: userChannel.id,
-        activityId: activeActivity?.id,
-        message: msg,
-        intent: "system_error",
-      });
-    }
+    const msg = formatDocProcessingFailed();
+    await sendAndSaveMessage({
+      channel,
+      userId,
+      activityId: activeActivity?.id,
+      message: msg,
+      intent: "system_error",
+    });
   }
 }

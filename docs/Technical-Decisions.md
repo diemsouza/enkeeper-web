@@ -6,6 +6,23 @@ topo.
 
 ---
 
+## Identidade do usuário em `users.phone` (fim de `user_channels`)
+
+Data: 2026-10-26
+
+Contexto: com a prática só na web e o WhatsApp restrito a notificação e código de acesso, `user_channels` (um registro por canal, com BSUID, username Meta e telefone) virou uma camada sem uso. A identidade passa a ser só o `User`, preparando o login com Google por `users.email`.
+
+- **Telefone em `users.phone`:** `String? @unique`, no formato de `normalizePhoneToWaId`. Opcional porque um login sem telefone (Google) é previsto; sem telefone, o usuário só não recebe o lembrete diário. Login OTP, `wa_token` e o link do webhook resolvem por `findUserByPhone`; usuário novo nasce em `findOrCreateUserByPhone` (retry em `P2002` para login concorrente).
+- **Backfill na própria migration** (`drop_user_channels_and_sections`), dentro de `BEGIN`/`COMMIT`: primeiro o telefone do canal `web`, que era o único usado por login e webhook; sem canal web, o do `whatsapp`, se nenhum outro User já tiver o número. Um User só-whatsapp com número já usado por um User web fica sem telefone; ele já era inacessível antes.
+- **Dedup de mensagem:** `messages` perdeu `user_channel_id`; o unique de reentrega passou de `(user_channel_id, external_id)` para `(user_id, external_id)`.
+- **Envio sem destino:** `sendAndSaveMessage` não recebe mais `to` nem `userChannelId`; passa o `userId` ao canal. Tudo que passa por ali vai para a web, que ignora o destino. O WhatsApp envia direto pelo telefone (`sendWhatsAppTemplate`, OTP, resposta do webhook).
+- **`IncomingMessage.userId`:** as rotas web já têm o usuário autenticado; o `handleIncomingMessage` deixou de resolver ou criar usuário pelo canal.
+- **Admin:** alvo dos comandos por telefone (`normalizePhoneToWaId`); BSUID e username deixaram de ser aceitos. O gate `WA_SUPPORT` compara com `user.phone`.
+- **`sections` junto:** a tabela não tinha leitura nem escrita desde o fim dos tipos de conteúdo (Product-Rules Seção 3). Saíram na mesma migration a tabela, os enums `SectionType`/`SectionStatus`, `section_id` de `questions`/`llm_usages`/`llm_logs` e `activities.section_count`; no código, `sections.repo.ts`, `getFormatsBySectionType`, `gen-text.md`/`gen-exercise.md` e o parâmetro `sectionType` de `generateNextQuestion` e `validateGeneratedQuestion` (era sempre `"vocabulary"`; o stage do log continua `gen-vocabulary`). Os valores `open_text`/`open_question` do enum `QuestionFormat` ficaram, porque podem existir em perguntas antigas.
+- **Fora do escopo:** `wa_id` brasileiro sem o nono dígito não casa com o número digitado com o 9, como antes.
+
+---
+
 ## Resposta por voz na web
 
 Data: 2026-10-23
@@ -164,7 +181,7 @@ Decisões:
   de payload nem handler por origem.
 - **Link do catch-all.** `resolveWhatsAppAccessLink`
   (`wa-login-link-service.ts`) procura o User pelo telefone normalizado
-  (`findUserByIdentifier("web", phone)`); achou, link assinado de login
+  (`findUserByPhone(phone)`); achou, link assinado de login
   automático; não achou ou o `wa_id` não normaliza (BSUID/username), `/app`
   fixo. O caso sem normalização antes recebia erro genérico.
 - **Cache do link assinado em `User.metadata`.** `signedLinkToken` guarda o

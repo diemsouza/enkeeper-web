@@ -1,4 +1,4 @@
-import type { ChannelType } from "../prisma";
+import type { ChannelType } from "../../types/domain";
 import type { MessageChannel } from "../../types/message-channel";
 import { DEFAULT_CHANNEL_TYPE } from "../constants";
 import { WebChannel } from "./web-channel";

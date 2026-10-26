@@ -1,16 +1,6 @@
 import { after } from "next/server";
-import {
-  ChannelType as PrismaChannelType,
-  Prisma,
-  User,
-  UserChannel,
-} from "../lib/prisma";
-import {
-  findOrCreateUserChannel,
-  findUserChannelByPhone,
-  upsertWebUserChannel,
-} from "../repo/users.repo";
-import { ChannelType } from "../types/domain";
+import { Prisma, User } from "../lib/prisma";
+import { findOrCreateUserByPhone } from "../repo/users.repo";
 import { TRIAL_DAYS } from "../lib/constants";
 import { sendSupportEmail } from "../vendors/email.vendor";
 import {
@@ -20,36 +10,24 @@ import {
   resolveSource,
 } from "../core/attribution";
 
-type UserWithChannels = User & { channels: UserChannel[] };
-
-type UserChannelLookup = {
-  user: UserWithChannels;
-  userChannel: UserChannel;
-  isNew: boolean;
-};
-
-export async function findOrCreateUserByChannel(
-  channelType: ChannelType,
-  channelUserId: string,
-  channelUserPhone?: string,
-  channelUsername?: string,
-  name?: string,
-  source?: string | null,
-  sourceData?: Record<string, unknown> | null,
+// Login web por telefone: o número é a identidade da conta, então o mesmo
+// número digitado de qualquer forma (já normalizado) cai sempre no mesmo User.
+export async function resolveWebLoginByPhone(
+  phone: string,
   timezone?: string,
-): Promise<UserChannelLookup> {
-  const prismaChannelType = channelType as PrismaChannelType;
-  const planExpiresAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-  const { user, userChannel, isNew } = await findOrCreateUserChannel(
-    prismaChannelType,
-    channelUserId,
-    channelUserPhone,
-    channelUsername,
-    planExpiresAt,
+  attribution?: AttributionCookie | null,
+): Promise<{ user: User; isNew: boolean }> {
+  const source = resolveSource(attribution ?? null);
+  const { user, isNew } = await findOrCreateUserByPhone({
+    phone,
+    planExpiresAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
     source,
-    sourceData as Prisma.InputJsonValue | null | undefined,
+    sourceData:
+      attribution && hasAttributionSignal(attribution)
+        ? (buildSourceData(attribution) as Prisma.InputJsonValue)
+        : null,
     timezone,
-  );
+  });
 
   if (isNew) {
     after(() =>
@@ -58,51 +36,11 @@ export async function findOrCreateUserByChannel(
         title: "Novo usuário cadastrado",
         fields: [
           { label: "ID", value: user.id },
-          { label: "Nome", value: name ?? "Não identificado" },
-          {
-            label: "Telefone",
-            value: `+${(channelUserPhone ?? channelUserId).replace("+", "")}`,
-          },
-          { label: "Canal", value: channelType },
-          { label: "Origem", value: source ?? "-" },
+          { label: "Telefone", value: `+${phone}` },
+          { label: "Origem", value: source },
         ],
       }),
     );
   }
-  return { user, userChannel, isNew };
-}
-
-// Login web por telefone: reconhece usuário legado de outro canal (hoje só
-// whatsapp) e traz o histórico dele para um canal "web" novo, em vez de
-// criar conta do zero. O canal de origem nunca é alterado.
-export async function resolveWebLoginByPhone(
-  phone: string,
-  timezone?: string,
-  attribution?: AttributionCookie | null,
-): Promise<UserChannelLookup> {
-  const existingWeb = await findUserChannelByPhone(phone, {
-    channelType: "web",
-  });
-  if (existingWeb) return { ...existingWeb, isNew: false };
-
-  const otherType = await findUserChannelByPhone(phone, {
-    channelTypeNot: "web",
-  });
-  if (otherType) {
-    const userChannel = await upsertWebUserChannel(otherType.user.id, phone);
-    return { user: otherType.user, userChannel, isNew: false };
-  }
-
-  return findOrCreateUserByChannel(
-    "web",
-    phone,
-    phone,
-    undefined,
-    undefined,
-    resolveSource(attribution ?? null),
-    attribution && hasAttributionSignal(attribution)
-      ? buildSourceData(attribution)
-      : null,
-    timezone,
-  );
+  return { user, isNew };
 }
