@@ -11,10 +11,14 @@ import {
   useState,
 } from "react";
 import { shouldShowDateSeparator } from "@/src/lib/datetime-utils";
-import { useScrollToBottom } from "@/src/hooks/use-scroll-to-bottom";
+import {
+  AT_END_TOLERANCE_PX,
+  useScrollToBottom,
+} from "@/src/hooks/use-scroll-to-bottom";
 import { useVisualViewportOffset } from "@/src/hooks/use-visual-viewport-offset";
 import { cn } from "@/src/lib/utils";
 import { Spinner } from "@/src/components/ui/spinner";
+import { isAnyAudioPlaying } from "./native-audio-player";
 import { Composer, type ComposerHandle } from "./composer";
 import { DateSeparator } from "./date-separator";
 import { MessageBubble } from "./message-bubble";
@@ -22,8 +26,19 @@ import { PendingReviewBanner } from "./pending-review-banner";
 import { TypingIndicatorBubble } from "./typing-indicator";
 import type { FormattedMessageButton, Message } from "./types";
 
+const RECENT_INTERACTION_MS = 3000;
+const JUMP_BUTTON_PX = 32;
+const INTERACTION_EVENTS = ["touchstart", "touchmove", "wheel", "pointerdown"];
+
 function msgKey(m: Message): string {
   return m.externalId ?? m.id;
+}
+
+function canAutoScroll(lastInteractionAt: number): boolean {
+  return (
+    !isAnyAudioPlaying() &&
+    Date.now() - lastInteractionAt > RECENT_INTERACTION_MS
+  );
 }
 
 type ChatThreadProps = {
@@ -77,10 +92,13 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       contentRef,
       endRef,
       isAtBottom,
+      isAtEnd,
       isFarFromBottom,
       scrollToBottom,
       scrollToBottomWhenSettled,
       notifySettleActivity,
+      getDistanceFromBottom,
+      isFollowPausedRef,
     } = useScrollToBottom();
     const vvOffset = useVisualViewportOffset((offset) => {
       if (offset > 0) scrollToBottom("instant");
@@ -97,6 +115,8 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       lastMessage ? msgKey(lastMessage) : undefined,
     );
     const seenIdsRef = useRef<Set<string>>(new Set());
+    const isFirstBotOfTurnRef = useRef(true);
+    const lastInteractionAtRef = useRef(0);
     const scrollPreserveRef = useRef<{ scrollHeight: number } | null>(null);
     const pendingOlderLoadRef = useRef(false);
     const prevFirstIdRef = useRef<string | undefined>(
@@ -132,7 +152,8 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     }, [composerHeight]);
 
     useEffect(() => {
-      if (isTyping) scrollToBottom("smooth");
+      if (!isTyping || isFollowPausedRef.current) return;
+      if (canAutoScroll(lastInteractionAtRef.current)) scrollToBottom("smooth");
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isTyping]);
 
@@ -154,6 +175,23 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     }, [containerRef]);
 
     useEffect(() => {
+      const containerEl = containerRef.current;
+      if (!containerEl) return;
+      function markInteraction() {
+        lastInteractionAtRef.current = Date.now();
+      }
+      INTERACTION_EVENTS.forEach((type) =>
+        containerEl.addEventListener(type, markInteraction, { passive: true }),
+      );
+      return () =>
+        INTERACTION_EVENTS.forEach((type) =>
+          containerEl.removeEventListener(type, markInteraction),
+        );
+    }, [containerRef]);
+
+    // Layout effect: precisa decidir antes do ResizeObserver do hook, que
+    // grudaria no fim assim que a mensagem nova muda a altura do conteudo.
+    useLayoutEffect(() => {
       const tail = messages[messages.length - 1];
       const lastId = tail ? msgKey(tail) : undefined;
       if (!hasMountedRef.current) {
@@ -166,20 +204,35 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       prevLastIdRef.current = lastId;
       if (!arrived) return;
       if (tail?.from === "user") {
+        isFollowPausedRef.current = false;
+        isFirstBotOfTurnRef.current = true;
         scrollToBottom("smooth");
         setHasNewMessage(false);
         return;
       }
-      if (isAtBottom) {
+      const isFirstBotOfTurn = isFirstBotOfTurnRef.current;
+      isFirstBotOfTurnRef.current = false;
+      if (
+        isFirstBotOfTurn &&
+        !isFollowPausedRef.current &&
+        canAutoScroll(lastInteractionAtRef.current)
+      ) {
         scrollToBottom("smooth");
-      } else {
-        setHasNewMessage(true);
+        return;
       }
-    }, [messages, isAtBottom, scrollToBottom, scrollToBottomWhenSettled]);
+      isFollowPausedRef.current = true;
+      if (getDistanceFromBottom() > AT_END_TOLERANCE_PX) setHasNewMessage(true);
+    }, [
+      messages,
+      scrollToBottom,
+      scrollToBottomWhenSettled,
+      getDistanceFromBottom,
+      isFollowPausedRef,
+    ]);
 
     useEffect(() => {
-      if (isAtBottom) setHasNewMessage(false);
-    }, [isAtBottom]);
+      if (isAtEnd) setHasNewMessage(false);
+    }, [isAtEnd]);
 
     useEffect(() => {
       messages.forEach((message) => seenIdsRef.current.add(msgKey(message)));
@@ -236,7 +289,9 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
             className="relative z-10 flex h-full flex-col gap-1.5 overflow-y-auto p-4"
             style={{
               overflowAnchor: "none",
-              ...(showComposer ? { paddingBottom: composerHeight + 16 } : {}),
+              ...(showComposer
+                ? { paddingBottom: composerHeight + 16 + JUMP_BUTTON_PX }
+                : {}),
             }}
           >
             <div

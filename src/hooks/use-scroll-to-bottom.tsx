@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const NEAR_BOTTOM_PX = 150;
 const FAR_FROM_BOTTOM_PX = 400;
+export const AT_END_TOLERANCE_PX = 8;
 const SETTLE_QUIET_MS = 150;
 const SETTLE_MAX_WAIT_MS = 2500;
 
@@ -11,7 +12,9 @@ export function useScrollToBottom() {
   const endRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [isFarFromBottom, setIsFarFromBottom] = useState(false);
+  const [isAtEnd, setIsAtEnd] = useState(false);
   const isAtBottomRef = useRef(false);
+  const isFollowPausedRef = useRef(false);
   const settleCallbackRef = useRef<(() => void) | null>(null);
   const settleQuietTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -24,7 +27,16 @@ export function useScrollToBottom() {
     endRef.current?.scrollIntoView({ behavior: "instant" });
     isAtBottomRef.current = true;
     setIsAtBottom(true);
+    setIsAtEnd(true);
     setIsFarFromBottom(false);
+  }, []);
+
+  const getDistanceFromBottom = useCallback((): number => {
+    const containerEl = containerRef.current;
+    if (!containerEl) return 0;
+    return (
+      containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight
+    );
   }, []);
 
   const clearSettleTimers = useCallback(() => {
@@ -103,19 +115,18 @@ export function useScrollToBottom() {
     if (!containerEl || !contentEl) return;
 
     function measure() {
-      if (!containerEl) return;
-      const distance =
-        containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight;
+      const distance = getDistanceFromBottom();
       const atBottom = distance <= NEAR_BOTTOM_PX;
       isAtBottomRef.current = atBottom;
       setIsAtBottom(atBottom);
+      setIsAtEnd(distance <= AT_END_TOLERANCE_PX);
       setIsFarFromBottom(distance > FAR_FROM_BOTTOM_PX);
     }
 
     function handleContentResize() {
       if (notifySettleActivity()) return;
       const wasAtBottom = isAtBottomRef.current;
-      if (wasAtBottom) {
+      if (wasAtBottom && !isFollowPausedRef.current) {
         snapToBottom();
         return;
       }
@@ -131,7 +142,7 @@ export function useScrollToBottom() {
       containerEl.removeEventListener("scroll", measure);
       resizeObserver.disconnect();
     };
-  }, [snapToBottom, notifySettleActivity]);
+  }, [snapToBottom, notifySettleActivity, getDistanceFromBottom]);
 
   useEffect(() => clearSettleTimers, [clearSettleTimers]);
 
@@ -144,8 +155,11 @@ export function useScrollToBottom() {
     contentRef,
     endRef,
     isAtBottom,
+    isAtEnd,
     isFarFromBottom,
     scrollToBottom,
+    getDistanceFromBottom,
+    isFollowPausedRef,
     scrollToBottomWhenSettled,
     notifySettleActivity,
   };

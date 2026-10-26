@@ -875,9 +875,9 @@ export function formatFeedbackFailed(): FormattedMessage {
 
 export function formatPracticeWaiting(): FormattedMessage {
   return {
-    text: `Nenhuma pergunta em aberto agora. A próxima chega no seu ritmo de prática, ou use ${formatCommand("practice_now")} para receber agora.`,
+    text: `Nenhuma pergunta em aberto. Use ${formatCommand("practice_now")} para continuar.`,
     interactive: {
-      body: "Nenhuma pergunta em aberto agora. A próxima chega no seu ritmo de prática, ou toque em Praticar para receber agora.",
+      body: "Nenhuma pergunta em aberto. Toque em Praticar para continuar.",
       buttons: [{ id: "practice_now", label: "Praticar", type: "reply" }],
     },
   };

@@ -4,7 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Spinner } from "@/src/components/ui/spinner";
 import { useKeepComposerFocus } from "@/src/hooks/use-keep-composer-focus";
-import type { AudioPlayerProps } from "@/src/components/chat/native-audio-player";
+import {
+  trackAudioPlaying,
+  type AudioPlayerProps,
+} from "@/src/components/chat/native-audio-player";
 import {
   WAVEFORM_BARS,
   WaveformBars,
@@ -134,6 +137,11 @@ export function OggAudioPlayer({
   useEffect(() => {
     attachVisibilityRecovery();
   }, []);
+
+  useEffect(() => {
+    if (state !== "playing") return;
+    return trackAudioPlaying();
+  }, [state]);
 
   const fail = useCallback((reason: string, err?: unknown): void => {
     console.error(`[CustomAudioPlayer] ${reason}`, err);

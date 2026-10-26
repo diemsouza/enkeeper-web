@@ -75,7 +75,6 @@ export function MessageBubble({
             cn(imageWidth, maxWidth, "overflow-hidden"),
           hasAudioWidth && BOT_BUBBLE_MOBILE_WIDTH,
           hasAudioWidth && message.type !== "image" && "md:w-auto",
-          isUserAudio && message.status === "failed" && "opacity-50",
         )}
       >
         {message.type === "file" ? (

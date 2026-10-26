@@ -58,6 +58,17 @@ function enqueueDecode(
   return decodeQueue;
 }
 
+export function isAnyAudioPlaying(): boolean {
+  return playingCount > 0;
+}
+
+export function trackAudioPlaying(): () => void {
+  playingCount += 1;
+  return () => {
+    playingCount -= 1;
+  };
+}
+
 function stopActiveAudio(exceptStopper?: () => void): void {
   if (activeStopper && activeStopper !== exceptStopper) {
     activeStopper();
