@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const NEAR_BOTTOM_PX = 150;
-const FAR_FROM_BOTTOM_PX = 400;
 const SETTLE_QUIET_MS = 150;
 const SETTLE_MAX_WAIT_MS = 2500;
+const SCROLL_UP_TOLERANCE_PX = 2;
 
-export function useScrollToBottom() {
+// nearBottomPx: distancia do fim em que a ultima mensagem ainda aparece
+// inteira (espaco do digitando e do botao abaixo dela).
+export function useScrollToBottom({ nearBottomPx }: { nearBottomPx: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const endRef = useRef<HTMLDivElement>(null);
-  const [isAtBottom, setIsAtBottom] = useState(false);
-  const [isFarFromBottom, setIsFarFromBottom] = useState(false);
-  const isAtBottomRef = useRef(false);
-  const isFollowPausedRef = useRef(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [isPinned, setIsPinned] = useState(true);
+  const isAtBottomRef = useRef(true);
+  // Depois de rolar ate o fim, crescimento do conteudo continua grudado no
+  // fim ate chegar mensagem que nao rola ou o usuario rolar para cima.
+  const isPinnedRef = useRef(true);
+  const isUserScrolledUpRef = useRef(false);
+  const lastScrollTopRef = useRef(0);
   const settleCallbackRef = useRef<(() => void) | null>(null);
   const settleQuietTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -21,12 +25,27 @@ export function useScrollToBottom() {
     null,
   );
 
-  const snapToBottom = useCallback(() => {
-    endRef.current?.scrollIntoView({ behavior: "instant" });
-    isAtBottomRef.current = true;
-    setIsAtBottom(true);
-    setIsFarFromBottom(false);
+  const setPinned = useCallback((pinned: boolean) => {
+    isPinnedRef.current = pinned;
+    setIsPinned(pinned);
   }, []);
+
+  const scrollContainerToBottom = useCallback((behavior: ScrollBehavior) => {
+    const containerEl = containerRef.current;
+    containerEl?.scrollTo({ top: containerEl.scrollHeight, behavior });
+  }, []);
+
+  const snapToBottom = useCallback(() => {
+    scrollContainerToBottom("instant");
+  }, [scrollContainerToBottom]);
+
+  const scrollToBottom = useCallback(
+    (behavior: ScrollBehavior = "smooth") => {
+      setPinned(true);
+      scrollContainerToBottom(behavior);
+    },
+    [setPinned, scrollContainerToBottom],
+  );
 
   const getDistanceFromBottom = useCallback((): number => {
     const containerEl = containerRef.current;
@@ -112,17 +131,29 @@ export function useScrollToBottom() {
     if (!containerEl || !contentEl) return;
 
     function measure() {
-      const distance = getDistanceFromBottom();
-      const atBottom = distance <= NEAR_BOTTOM_PX;
+      const atBottom = getDistanceFromBottom() <= nearBottomPx;
       isAtBottomRef.current = atBottom;
       setIsAtBottom(atBottom);
-      setIsFarFromBottom(distance > FAR_FROM_BOTTOM_PX);
+      if (atBottom) isUserScrolledUpRef.current = false;
+    }
+
+    // Rolagem programatica so desce; subir longe do fim e gesto do usuario.
+    function handleScroll() {
+      if (!containerEl) return;
+      const scrollTop = containerEl.scrollTop;
+      const movedUp =
+        scrollTop < lastScrollTopRef.current - SCROLL_UP_TOLERANCE_PX;
+      lastScrollTopRef.current = scrollTop;
+      measure();
+      if (movedUp && !isAtBottomRef.current && !settleCallbackRef.current) {
+        isUserScrolledUpRef.current = true;
+        setPinned(false);
+      }
     }
 
     function handleContentResize() {
       if (notifySettleActivity()) return;
-      const wasAtBottom = isAtBottomRef.current;
-      if (wasAtBottom && !isFollowPausedRef.current) {
+      if (isPinnedRef.current) {
         snapToBottom();
         return;
       }
@@ -130,30 +161,43 @@ export function useScrollToBottom() {
     }
 
     measure();
-    containerEl.addEventListener("scroll", measure, { passive: true });
+    lastScrollTopRef.current = containerEl.scrollTop;
+    containerEl.addEventListener("scroll", handleScroll, { passive: true });
     const resizeObserver = new ResizeObserver(handleContentResize);
     resizeObserver.observe(contentEl);
 
     return () => {
-      containerEl.removeEventListener("scroll", measure);
+      containerEl.removeEventListener("scroll", handleScroll);
       resizeObserver.disconnect();
     };
-  }, [snapToBottom, notifySettleActivity, getDistanceFromBottom]);
+  }, [
+    nearBottomPx,
+    setPinned,
+    snapToBottom,
+    notifySettleActivity,
+    getDistanceFromBottom,
+  ]);
 
   useEffect(() => clearSettleTimers, [clearSettleTimers]);
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    endRef.current?.scrollIntoView({ behavior });
-  }, []);
+  const isFollowing = useCallback(
+    (): boolean =>
+      !isUserScrolledUpRef.current &&
+      (isPinnedRef.current || isAtBottomRef.current),
+    [],
+  );
 
   return {
     containerRef,
     contentRef,
-    endRef,
     isAtBottom,
-    isFarFromBottom,
+    isPinned,
+    isUserScrolledUpRef,
+    isFollowing,
+    getDistanceFromBottom,
     scrollToBottom,
-    isFollowPausedRef,
+    snapToBottom,
+    setPinned,
     scrollToBottomWhenSettled,
     notifySettleActivity,
   };

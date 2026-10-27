@@ -877,7 +877,19 @@ Cada canal decide sozinho, ao enviar, o que fazer com as camadas opcionais. Hoje
 
 Na pergunta de escuta (Seção 4), o `text` é só a instrução e o `audioMediaId` é o áudio da pergunta. A web mostra os dois num card só, instrução em cima, um divisor (o mesmo do bloco "Ver tradução" do áudio de feedback) e o player embaixo, sem "Ver tradução" e sem texto abaixo do player. O WhatsApp envia só o áudio (o canal não entrega prática hoje).
 
-**Composer da web.** Tocar no play, no pause ou na barra de progresso de um áudio não tira o foco do campo de resposta: com o teclado aberto, ele continua aberto, para o usuário ouvir a pergunta quantas vezes quiser enquanto escreve. Tocar em qualquer outro lugar fecha o teclado. O campo cresce com o texto até 4 linhas e, passando disso, rola por dentro; depois do envio volta a uma linha. A última mensagem da conversa fica sempre visível acima dele.
+**Composer da web.** Tocar no play, no pause ou na barra de progresso de um áudio não tira o foco do campo de resposta: com o teclado aberto, ele continua aberto, para o usuário ouvir a pergunta quantas vezes quiser enquanto escreve. Tocar em qualquer outro lugar fecha o teclado. O campo cresce com o texto até 4 linhas e, passando disso, rola por dentro; depois do envio volta a uma linha. Nada da conversa fica escondido atrás dele ou do botão "ir para o final".
+
+**Rolagem do chat (web).** Uma única chave de auto scroll, ligada por padrão, decide se mensagem nova rola a conversa até o fim:
+
+- Mensagens de estudo são pergunta, feedback (texto e áudio) e dica: mensagem do sistema com `intent` `practice_question`, `practice_feedback` ou `eval_tip` e com `questionId`. Avisos, respostas a comandos e mensagens do usuário não são de estudo.
+- Chave ligada: toda mensagem nova rola até o fim.
+- Mensagem de estudo que chega quando a última mensagem do chat não era de estudo rola até o fim (a mensagem inteira visível, com o espaço do digitando abaixo) e desliga a chave.
+- Chave desligada: mensagem nova do sistema não rola. Se ficar fora da tela, aparece o botão "ir para o final" com a bolinha azul.
+- O usuário enviar qualquer mensagem (resposta, comando, opção) religa a chave e rola até o fim.
+- Se o usuário rolou para cima, nada rola sozinho, nem com a chave ligada; só aparece o botão.
+- O botão aparece só quando há mensagem fora da tela abaixo e some quando o usuário chega ao fim.
+- O "digitando" nunca rola a conversa. Ele vive num espaço fixo no fim da lista, que continua lá vazio quando ninguém está digitando, para a altura da conversa não mudar.
+- Mensagem já nasce com a altura final: imagem com a proporção conhecida antes de aparecer e player de áudio com altura fixa enquanto carrega.
 
 `imageMediaId` e `interactive` podem vir juntos na mesma mensagem (hoje: pergunta de reconhecimento por imagem, Seção 4, com um botão por opção). A superfície web mostra a imagem, o texto como legenda e as opções como botões. O WhatsApp segue a prioridade acima: envia a imagem com o `text` como legenda e acrescenta as opções numeradas à legenda no envio, sem botões.
 

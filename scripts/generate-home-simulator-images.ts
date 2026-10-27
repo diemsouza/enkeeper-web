@@ -3,7 +3,10 @@ import { writeFile, mkdir, access } from "node:fs/promises";
 import path from "node:path";
 import { requestImage } from "@/src/vendors/image.vendor";
 import { QUESTION_IMAGE_STYLE_PROMPT } from "@/src/lib/prompts";
-import { SIMULATOR_IMAGE_ITEMS } from "@/src/components/home/simulator/roteiro-data";
+import {
+  SIMULATOR_IMAGE_ITEMS,
+  simulatorImageFileName,
+} from "@/src/components/home/simulator/roteiro-data";
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -21,7 +24,7 @@ async function main(): Promise<void> {
 
   for (const item of SIMULATOR_IMAGE_ITEMS) {
     const label = `${item.domainId}-${item.turn}`;
-    const filePath = path.join(outDir, `${label}.webp`);
+    const filePath = path.join(outDir, simulatorImageFileName(item.domainId));
 
     if (!isForce && (await fileExists(filePath))) {
       console.log(`[${label}] ja existe, pulando`);

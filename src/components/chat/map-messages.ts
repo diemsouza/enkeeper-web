@@ -1,4 +1,5 @@
 import { MEDIA_INLINE_PARAM } from "@/src/lib/constants";
+import { isStudyMessage } from "@/src/core/study-message";
 import { isInaudibleTranscription } from "@/src/core/voice-note";
 import type { MessageWithMedia } from "@/src/repo/messages.repo";
 import type { FormattedMessage } from "@/src/types/out-message";
@@ -15,6 +16,7 @@ type NormalizedRow = {
   mediaType: string | null;
   mediaId: string | null;
   mediaContentType?: string | null;
+  mediaMetadata?: unknown;
   metadata: unknown;
   interactive: unknown;
   questionId: string | null;
@@ -70,7 +72,31 @@ function parseJsonMaybe(value: unknown): unknown {
   }
 }
 
+function readImageSize(
+  mediaMetadata: unknown,
+): { imageWidth: number; imageHeight: number } | undefined {
+  if (!mediaMetadata || typeof mediaMetadata !== "object") return undefined;
+  const { width, height } = mediaMetadata as Record<string, unknown>;
+  if (typeof width !== "number" || typeof height !== "number") return undefined;
+  if (width <= 0 || height <= 0) return undefined;
+  return { imageWidth: width, imageHeight: height };
+}
+
 function toMessage(
+  row: NormalizedRow,
+  labels: FileLabels,
+  feedbackTranslations: Record<string, string>,
+): Message {
+  const message = buildMessage(row, labels, feedbackTranslations);
+  const isStudy = isStudyMessage({
+    isUser: message.from === "user",
+    intent: row.intent,
+    questionId: row.questionId,
+  });
+  return { ...message, isStudy };
+}
+
+function buildMessage(
   row: NormalizedRow,
   labels: FileLabels,
   feedbackTranslations: Record<string, string>,
@@ -88,6 +114,7 @@ function toMessage(
       date,
       type: "image",
       imageUrl: buildMediaUrl(row.mediaId),
+      ...readImageSize(row.mediaMetadata),
       caption: row.content,
       externalId: row.externalId ?? undefined,
       interactive,
@@ -191,6 +218,7 @@ export function mapActivityMessages(
         mediaType: m.mediaType,
         mediaId: m.mediaId,
         mediaContentType: m.media?.contentType,
+        mediaMetadata: m.media?.metadata,
         metadata: m.metadata,
         interactive: m.interactive,
         questionId: m.questionId,

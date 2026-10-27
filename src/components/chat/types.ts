@@ -24,6 +24,9 @@ export interface Message {
   audioKind?: "question" | "feedback";
   imageUrl?: string;
   imageAlt?: string;
+  // Dimensoes da imagem: a bolha ja nasce com a altura final.
+  imageWidth?: number;
+  imageHeight?: number;
   caption?: string;
   textFallback?: string;
   translation?: string;
@@ -38,4 +41,6 @@ export interface Message {
   // "Voce respondeu sua primeira pergunta dessa atividade": pausa usada para
   // pedir o numero em conta sem telefone.
   isFirstFeedbackGuide?: boolean;
+  // Pergunta, feedback ou dica (isStudyMessage): decide o auto scroll.
+  isStudy?: boolean;
 }

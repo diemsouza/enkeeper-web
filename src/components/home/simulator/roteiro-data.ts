@@ -29,8 +29,12 @@ export function simulatorAudioUrl(domainId: DomainId, turn: number): string {
   return `/audio/simulator/${domainId}-${turn}.ogg`;
 }
 
+export function simulatorImageFileName(domainId: DomainId): string {
+  return `${domainId}-${SIMULATOR_IMAGE_VERSION}.webp`;
+}
+
 export function simulatorImageUrl(domainId: DomainId): string {
-  return `/images/simulator/${domainId}-${SIMULATOR_IMAGE_VERSION}.webp`;
+  return `/images/simulator/${simulatorImageFileName(domainId)}`;
 }
 
 const IMAGE_QUESTION_PROMPT = "Qual opção descreve a imagem?";
@@ -54,8 +58,10 @@ function summaryFor(title: string): string {
   return `📊 Resumo da atividade: *${title}*\n\nEm 3 dias, você respondeu 20 de 25 perguntas, 85% de acerto entre as respondidas (17 certas e 3 erradas), sendo 2 delas revisadas mais de uma vez antes de fixar.\n\nVocê está indo bem, continue assim.`;
 }
 
-function confirmationFor(domainLabel: string, activityTitle: string): string {
-  return `Pronto. A primeira pergunta chega em instantes.\n\n*Objetivo:* ${domainLabel}\n*Assunto:* ${activityTitle}\n*Foco:* Vocabulário geral`;
+const DEFAULT_FOCUS = "Vocabulário geral";
+
+function confirmationFor(domainLabel: string, activityTitle: string, focus: string): string {
+  return `Pronto. A primeira pergunta chega em instantes.\n\n*Objetivo:* ${domainLabel}\n*Assunto:* ${activityTitle}\n*Foco:* ${focus}`;
 }
 
 type TurnSpec = {
@@ -179,6 +185,7 @@ function buildTurn(spec: TurnSpec): { messages: Message[]; audio: SimulatorAudio
 function buildRoteiro(
   domainId: DomainId,
   activityTitle: string,
+  focus: string,
   summaryTime: string,
   turns: TurnSpec[],
 ): {
@@ -194,7 +201,7 @@ function buildRoteiro(
       id: `${domainId}-confirmation`,
       from: "bot",
       time: turns[0].baseTime,
-      text: confirmationFor(domainLabel, activityTitle),
+      text: confirmationFor(domainLabel, activityTitle, focus),
     },
     ...built.flatMap((b) => b.messages),
   ];
@@ -220,6 +227,7 @@ function buildRoteiro(
 const workResult = buildRoteiro(
   "work",
   "Reuniões e E-mails Profissionais",
+  DEFAULT_FOCUS,
   "18:20",
   [
     {
@@ -304,6 +312,7 @@ const workResult = buildRoteiro(
 const travelResult = buildRoteiro(
   "travel",
   "Inglês para Viagens Internacionais",
+  DEFAULT_FOCUS,
   "19:10",
   [
     {
@@ -388,6 +397,7 @@ const travelResult = buildRoteiro(
 const educationResult = buildRoteiro(
   "education",
   "Vocabulário de Universidade e Aulas",
+  DEFAULT_FOCUS,
   "18:45",
   [
     {
@@ -471,39 +481,40 @@ const educationResult = buildRoteiro(
 
 const dailyLifeResult = buildRoteiro(
   "daily_life",
-  "Vocabulário do Dia a Dia",
+  "Séries e filmes",
+  "Expressões de séries",
   "20:30",
   [
     {
       domainId: "daily_life",
       turn: 1,
       baseTime: "09:20",
-      question: 'Complete: "Just ______, it\'s not a big deal." (deixa pra lá)',
-      userAnswer: "never mind",
+      question: 'Complete: "No ______! I haven\'t watched the last episode yet." (sem spoiler)',
+      userAnswer: "spoilers",
       userTime: "09:22",
       status: "right",
       emoji: "✅",
       opening: "Isso!",
-      feedbackSentence: "Just never mind, it's not a big deal.",
-      translation: "Deixa pra lá, não é nada demais.",
+      feedbackSentence: "No spoilers! I haven't watched the last episode yet.",
+      translation: "Sem spoiler! Ainda não vi o último episódio.",
     },
     {
       domainId: "daily_life",
       turn: 2,
       baseTime: "11:00",
       question: IMAGE_QUESTION_PROMPT,
-      options: ["dishes", "lawn", "laundry", "trash"],
+      options: ["subtitles", "trailer", "credits", "episode"],
       imageDescription:
-        "A wicker basket full of freshly washed, neatly folded clothes and towels on a bed with white sheets.",
+        "A TV in a cozy living room at night, showing a paused TV series scene with one line of white subtitles at the bottom of the screen. Generic scene, no real show, characters, logos or brands.",
       imageAlt:
-        "Cesta de vime com roupas e toalhas dobradas sobre uma cama.",
-      userAnswer: "laundry",
+        "TV numa sala aconchegante à noite, com uma série pausada e legenda na parte de baixo da tela.",
+      userAnswer: "subtitles",
       userTime: "11:03",
       status: "right",
       emoji: "✅",
       opening: "Boa!",
-      feedbackSentence: "I still have to do the laundry tonight.",
-      translation: "Ainda tenho que lavar a roupa hoje à noite.",
+      feedbackSentence: "I want to watch it without subtitles.",
+      translation: "Quero assistir sem legenda.",
     },
     {
       domainId: "daily_life",
@@ -525,30 +536,31 @@ const dailyLifeResult = buildRoteiro(
       domainId: "daily_life",
       turn: 4,
       baseTime: "16:45",
-      question: 'Qual palavra significa "compras de mercado" em inglês?',
-      options: ["market", "shopping", "groceries", "grocery"],
-      userAnswer: "shopping",
+      question:
+        "Qual palavra descreve o episódio que termina no suspense e te deixa ansioso pelo próximo?",
+      options: ["cliffhanger", "plot twist", "ending", "spoiler"],
+      userAnswer: "plot twist",
       userTime: "16:48",
       status: "wrong",
       emoji: "❌",
       opening: "Errado!",
-      rightAnswer: "Groceries",
-      feedbackSentence: "I need to buy some groceries for dinner.",
-      translation: "Preciso comprar umas compras de mercado pro jantar.",
-      tip: '"Shopping" é compras em geral. Pra compras de mercado/comida, o termo é "groceries".',
+      rightAnswer: "Cliffhanger",
+      feedbackSentence: "The season ended on a cliffhanger.",
+      translation: "A temporada terminou no suspense.",
+      tip: '"Plot twist" é uma reviravolta no meio da história. Quando o episódio acaba no suspense, o termo é "cliffhanger".',
     },
     {
       domainId: "daily_life",
       turn: 5,
       baseTime: "20:00",
-      question: 'Como se diz "resenha" (crítica de filme/série) em inglês?',
-      userAnswer: "review",
+      question: 'Como se diz "vale muito a pena assistir" em inglês?',
+      userAnswer: "it's worth watching",
       userTime: "20:02",
       status: "right",
       emoji: "✅",
       opening: "Perfeito!",
-      feedbackSentence: "I read a great review of that movie.",
-      translation: "Eu li uma ótima resenha desse filme.",
+      feedbackSentence: "Trust me, it's totally worth watching.",
+      translation: "Confia, vale muito a pena assistir.",
     },
   ],
 );

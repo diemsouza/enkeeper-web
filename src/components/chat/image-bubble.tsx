@@ -8,10 +8,14 @@ export function ImageBubble({
   imageUrl,
   alt,
   caption,
+  width,
+  height,
   zoomDisabled = false,
 }: {
   imageUrl: string;
   alt?: string;
+  width?: number;
+  height?: number;
   caption?: string;
   zoomDisabled?: boolean;
 }) {
@@ -21,7 +25,10 @@ export function ImageBubble({
     <img
       src={imageUrl}
       alt={alt ?? t("image_alt")}
-      className="block -mx-3 -mt-2 w-[calc(100%_+_1.5rem)] max-w-none"
+      width={width}
+      height={height}
+      style={width && height ? { aspectRatio: `${width} / ${height}` } : undefined}
+      className="block -mx-3 -mt-2 h-auto w-[calc(100%_+_1.5rem)] max-w-none object-cover"
     />
   );
   return (

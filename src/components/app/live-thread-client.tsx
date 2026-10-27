@@ -19,6 +19,7 @@ import { useRealtimeMessages } from "@/src/hooks/use-realtime-messages";
 import { useIsMobile } from "@/src/hooks/use-is-mobile";
 import { setupAudioUnlock } from "@/src/lib/audio-unlock";
 import { delay, isAppUrl } from "@/src/lib/utils";
+import { loadImageSize } from "@/src/lib/image-size";
 import { buildVoiceNoteFile } from "@/src/lib/voice-recording";
 import { usePracticePill } from "./practice-pill-provider";
 import { useReminderFlow } from "./reminder-flow-provider";
@@ -38,6 +39,9 @@ const TYPING_TTL_MS = 25_000;
 // durante a vez do usuario, canal quieto por esse tempo busca as mensagens.
 const REALTIME_QUIET_REFRESH_MS = 5_000;
 const MIN_LOADING_OLDER_MS = 400;
+// Limite do pre-carregamento da imagem que chega pelo broadcast; passando
+// disso, a bolha entra sem dimensoes.
+const IMAGE_SIZE_TIMEOUT_MS = 4_000;
 // Conta sem telefone: o cadastro do numero abre sozinho uma vez, nessa pausa
 // depois da mensagem-guia da primeira resposta, sem cortar audio tocando.
 const PHONE_PROMPT_DELAY_MS = 3_000;
@@ -55,6 +59,15 @@ function mediaTypeFromFile(file: File): "image" | "pdf" | "text" {
   if (file.type.startsWith("image/")) return "image";
   if (file.type === "application/pdf") return "pdf";
   return "text";
+}
+
+async function withImageSize(message: Message): Promise<Message> {
+  if (message.type !== "image" || !message.imageUrl || message.imageWidth) {
+    return message;
+  }
+  const size = await loadImageSize(message.imageUrl, IMAGE_SIZE_TIMEOUT_MS);
+  if (!size) return message;
+  return { ...message, imageWidth: size.width, imageHeight: size.height };
 }
 
 function formatFileSize(bytes: number): string {
@@ -177,6 +190,7 @@ export function LiveThreadClient({
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isTurnActive, setIsTurnActive] = useState(false);
   const lastRealtimeEventAtRef = useRef(0);
+  const botInsertQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [hasMoreOlder, setHasMoreOlder] = useState(initialHasMoreOlder);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [showPendingReview, setShowPendingReview] = useState(
@@ -331,6 +345,21 @@ export function LiveThreadClient({
     return () => clearInterval(timer);
   }, [isTurnActive, refreshMessages]);
 
+  // Imagem do broadcast vem sem dimensoes: pre-carrega para a bolha nascer
+  // com a altura final. A fila mantem a ordem das mensagens seguintes.
+  const enqueueBotMessage = (message: Message): void => {
+    const previous = botInsertQueueRef.current;
+    botInsertQueueRef.current = (async () => {
+      await previous;
+      const sized = await withImageSize(message);
+      const key = sized.externalId ?? sized.id;
+      stopTyping();
+      setMessages((prev) =>
+        prev.some((m) => sameMessage(m, key)) ? prev : [...prev, sized],
+      );
+    })();
+  };
+
   const handleRealtimeEvent = (
     record: Record<string, unknown> | undefined,
   ): void => {
@@ -378,11 +407,8 @@ export function LiveThreadClient({
       router.refresh();
     }
 
-    stopTyping();
     void refreshPracticePill();
-    setMessages((prev) =>
-      prev.some((m) => sameMessage(m, key)) ? prev : [...prev, mapped],
-    );
+    enqueueBotMessage(mapped);
     setStarting(false);
     // Mensagem de audio de feedback chega via broadcast sem a traducao
     // (mapBroadcastRecord nao faz join com Question) - a rota /api/app/messages

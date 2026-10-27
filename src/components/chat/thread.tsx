@@ -15,46 +15,24 @@ import { useScrollToBottom } from "@/src/hooks/use-scroll-to-bottom";
 import { useVisualViewportOffset } from "@/src/hooks/use-visual-viewport-offset";
 import { cn } from "@/src/lib/utils";
 import { Spinner } from "@/src/components/ui/spinner";
-import { isAnyAudioPlaying } from "./native-audio-player";
 import { Composer, type ComposerHandle } from "./composer";
 import { DateSeparator } from "./date-separator";
 import { MessageBubble } from "./message-bubble";
 import { PendingReviewBanner } from "./pending-review-banner";
-import { TypingIndicatorBubble } from "./typing-indicator";
+import { TYPING_SLOT_PX, TypingIndicatorSlot } from "./typing-indicator";
 import type { FormattedMessageButton, Message } from "./types";
 
-const RECENT_INTERACTION_MS = 3000;
 const JUMP_BUTTON_PX = 32;
-const TAIL_SEEN_RATIO = 0.6;
-const INTERACTION_EVENTS = ["touchstart", "touchmove", "wheel", "pointerdown"];
+const JUMP_BUTTON_GAP_PX = 8;
+// Espaco abaixo da lista para o botao "ir para o final" nunca cobrir conteudo.
+const JUMP_SPACE_PX = JUMP_BUTTON_GAP_PX + JUMP_BUTTON_PX + JUMP_BUTTON_GAP_PX;
+// gap-3 entre a ultima mensagem e o slot do digitando.
+const CONTENT_GAP_PX = 12;
+// Ate essa distancia do fim a ultima mensagem aparece inteira.
+const NEAR_BOTTOM_PX = JUMP_SPACE_PX + TYPING_SLOT_PX + CONTENT_GAP_PX;
 
 function msgKey(m: Message): string {
   return m.externalId ?? m.id;
-}
-
-function canAutoScroll(lastInteractionAt: number): boolean {
-  return (
-    !isAnyAudioPlaying() &&
-    Date.now() - lastInteractionAt > RECENT_INTERACTION_MS
-  );
-}
-
-// Mensagem "vista" quando a maior parte dela aparece entre o topo do chat e o
-// composer; bolha mais alta que a tela conta pela fração da área visível.
-function isTailMostlyVisible(
-  containerEl: HTMLElement,
-  composerHeight: number,
-): boolean {
-  const bubbles = containerEl.querySelectorAll("[data-message-bubble]");
-  const tail = bubbles[bubbles.length - 1];
-  if (!tail) return true;
-  const containerRect = containerEl.getBoundingClientRect();
-  const visibleBottom = containerRect.bottom - composerHeight;
-  const rect = tail.getBoundingClientRect();
-  const visible =
-    Math.min(rect.bottom, visibleBottom) - Math.max(rect.top, containerRect.top);
-  const visibleArea = visibleBottom - containerRect.top;
-  return visible >= TAIL_SEEN_RATIO * Math.min(rect.height, visibleArea);
 }
 
 type ChatThreadProps = {
@@ -106,17 +84,18 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     const {
       containerRef,
       contentRef,
-      endRef,
       isAtBottom,
-      isFarFromBottom,
+      isPinned,
+      isUserScrolledUpRef,
+      isFollowing,
+      getDistanceFromBottom,
       scrollToBottom,
+      snapToBottom,
+      setPinned,
       scrollToBottomWhenSettled,
       notifySettleActivity,
-      isFollowPausedRef,
-    } = useScrollToBottom();
-    const vvOffset = useVisualViewportOffset((offset) => {
-      if (offset > 0) scrollToBottom("instant");
-    });
+    } = useScrollToBottom({ nearBottomPx: NEAR_BOTTOM_PX });
+    const vvOffset = useVisualViewportOffset();
     const [hasNewMessage, setHasNewMessage] = useState(false);
     const [composerHeight, setComposerHeight] = useState(0);
     const [mounted, setMounted] = useState(false);
@@ -124,13 +103,12 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     const composerWrapperRef = useRef<HTMLDivElement>(null);
     const topRef = useRef<HTMLDivElement>(null);
     const hasMountedRef = useRef(false);
-    const lastMessage = messages[messages.length - 1];
-    const prevLastIdRef = useRef<string | undefined>(
-      lastMessage ? msgKey(lastMessage) : undefined,
+    const prevTailRef = useRef<Message | undefined>(
+      messages[messages.length - 1],
     );
     const seenIdsRef = useRef<Set<string>>(new Set());
-    const isFirstBotOfTurnRef = useRef(true);
-    const lastInteractionAtRef = useRef(0);
+    // Chave unica de auto scroll (Product-Rules Secao 19, Rolagem do chat).
+    const isAutoScrollOnRef = useRef(true);
     const scrollPreserveRef = useRef<{ scrollHeight: number } | null>(null);
     const pendingOlderLoadRef = useRef(false);
     const prevFirstIdRef = useRef<string | undefined>(
@@ -160,23 +138,25 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       return () => observer.disconnect();
     }, [showComposer, notifySettleActivity]);
 
-    useEffect(() => {
-      if (isAtBottom) scrollToBottom("instant");
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [composerHeight]);
+    // Composer ou teclado mudam o padding inferior: quem acompanhava o fim
+    // continua nele.
+    useLayoutEffect(() => {
+      if (isFollowing()) snapToBottom();
+    }, [composerHeight, vvOffset, isFollowing, snapToBottom]);
 
     useEffect(() => {
-      if (!isTyping || isFollowPausedRef.current) return;
-      if (canAutoScroll(lastInteractionAtRef.current)) scrollToBottom("smooth");
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isTyping]);
+      if (isAtBottom) setHasNewMessage(false);
+    }, [isAtBottom]);
 
+    // So imagem sem dimensoes (anterior a Media.metadata guardar o tamanho)
+    // cresce ao carregar; acima da tela, compensa para o texto nao pular.
     useEffect(() => {
       const containerEl = containerRef.current;
       if (!containerEl) return;
       function handleImageLoad(event: Event) {
         const img = event.target;
         if (!(img instanceof HTMLImageElement) || !containerEl) return;
+        if (img.hasAttribute("width")) return;
         const containerTop = containerEl.getBoundingClientRect().top;
         const imgRect = img.getBoundingClientRect();
         if (imgRect.top < containerTop) {
@@ -188,80 +168,43 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
         containerEl.removeEventListener("load", handleImageLoad, true);
     }, [containerRef]);
 
-    useEffect(() => {
-      const containerEl = containerRef.current;
-      if (!containerEl) return;
-      function markInteraction() {
-        lastInteractionAtRef.current = Date.now();
-      }
-      INTERACTION_EVENTS.forEach((type) =>
-        containerEl.addEventListener(type, markInteraction, { passive: true }),
-      );
-      return () =>
-        INTERACTION_EVENTS.forEach((type) =>
-          containerEl.removeEventListener(type, markInteraction),
-        );
-    }, [containerRef]);
-
     // Layout effect: precisa decidir antes do ResizeObserver do hook, que
     // grudaria no fim assim que a mensagem nova muda a altura do conteudo.
     useLayoutEffect(() => {
       const tail = messages[messages.length - 1];
-      const lastId = tail ? msgKey(tail) : undefined;
       if (!hasMountedRef.current) {
         hasMountedRef.current = true;
-        prevLastIdRef.current = lastId;
+        prevTailRef.current = tail;
         scrollToBottomWhenSettled(() => setIsThreadReady(true));
         return;
       }
-      const arrived = lastId !== undefined && lastId !== prevLastIdRef.current;
-      prevLastIdRef.current = lastId;
-      if (!arrived) return;
-      if (tail?.from === "user") {
-        // O toque que iniciou a vez (opção, praticar, enviar) não é leitura:
-        // só rolagem feita depois dele segura o acompanhamento.
-        lastInteractionAtRef.current = 0;
-        isFollowPausedRef.current = false;
-        isFirstBotOfTurnRef.current = true;
-        scrollToBottom("smooth");
+      const prevTail = prevTailRef.current;
+      prevTailRef.current = tail;
+      if (!tail || (prevTail && msgKey(prevTail) === msgKey(tail))) return;
+      if (tail.from === "user") {
+        isAutoScrollOnRef.current = true;
+        isUserScrolledUpRef.current = false;
         setHasNewMessage(false);
-        return;
-      }
-      const isFirstBotOfTurn = isFirstBotOfTurnRef.current;
-      isFirstBotOfTurnRef.current = false;
-      if (
-        isFirstBotOfTurn &&
-        !isFollowPausedRef.current &&
-        canAutoScroll(lastInteractionAtRef.current)
-      ) {
         scrollToBottom("smooth");
         return;
       }
-      isFollowPausedRef.current = true;
-      const containerEl = containerRef.current;
-      if (containerEl && !isTailMostlyVisible(containerEl, composerHeight)) {
-        setHasNewMessage(true);
+      const startsStudy = Boolean(tail.isStudy) && !prevTail?.isStudy;
+      const shouldScroll = startsStudy || isAutoScrollOnRef.current;
+      if (startsStudy) isAutoScrollOnRef.current = false;
+      if (shouldScroll && !isUserScrolledUpRef.current) {
+        scrollToBottom("smooth");
+        return;
       }
+      setPinned(false);
+      if (getDistanceFromBottom() > NEAR_BOTTOM_PX) setHasNewMessage(true);
     }, [
       messages,
       scrollToBottom,
       scrollToBottomWhenSettled,
-      isFollowPausedRef,
-      containerRef,
-      composerHeight,
+      setPinned,
+      getDistanceFromBottom,
+      isUserScrolledUpRef,
     ]);
-
-    useEffect(() => {
-      const containerEl = containerRef.current;
-      if (!hasNewMessage || !containerEl) return;
-      function clearIfSeen() {
-        if (containerEl && isTailMostlyVisible(containerEl, composerHeight)) {
-          setHasNewMessage(false);
-        }
-      }
-      containerEl.addEventListener("scroll", clearIfSeen, { passive: true });
-      return () => containerEl.removeEventListener("scroll", clearIfSeen);
-    }, [hasNewMessage, composerHeight, containerRef]);
 
     useEffect(() => {
       messages.forEach((message) => seenIdsRef.current.add(msgKey(message)));
@@ -309,6 +252,9 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       setHasNewMessage(false);
     }
 
+    const bottomInset = showComposer ? composerHeight + vvOffset : 0;
+    const showJumpButton = !isAtBottom && !isPinned;
+
     return (
       <div className="flex h-full min-h-0 flex-col bg-[#F5F5F7] dark:bg-[#1C1C1E]">
         <div className="relative min-h-0 flex-1 overflow-hidden">
@@ -318,9 +264,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
             className="relative z-10 flex h-full flex-col gap-1.5 overflow-y-auto p-4"
             style={{
               overflowAnchor: "none",
-              ...(showComposer
-                ? { paddingBottom: composerHeight + 16 + JUMP_BUTTON_PX }
-                : {}),
+              paddingBottom: bottomInset + JUMP_SPACE_PX,
             }}
           >
             <div
@@ -356,9 +300,8 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
                   </Fragment>
                 );
               })}
-              {isTyping && <TypingIndicatorBubble />}
+              <TypingIndicatorSlot isVisible={Boolean(isTyping)} />
             </div>
-            <div ref={endRef} />
           </div>
           {!isThreadReady && (
             <Spinner
@@ -372,11 +315,11 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
               {t("loading")}
             </div>
           )}
-          {(isFarFromBottom || hasNewMessage) && (
+          {showJumpButton && (
             <button
               type="button"
               onClick={handleJumpToBottom}
-              style={{ bottom: composerHeight + vvOffset + 8 }}
+              style={{ bottom: bottomInset + JUMP_BUTTON_GAP_PX }}
               aria-label={t("scroll_to_bottom_aria")}
               className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-background/[95%] text-foreground shadow-sm backdrop-blur-sx backdrop-saturate-150"
             >

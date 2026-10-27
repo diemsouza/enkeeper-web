@@ -88,6 +88,8 @@ export function MessageBubble({
           <ImageBubble
             imageUrl={message.imageUrl!}
             alt={message.imageAlt}
+            width={message.imageWidth}
+            height={message.imageHeight}
             caption={message.interactive?.body ?? message.caption}
             zoomDisabled={zoomDisabled}
           />
