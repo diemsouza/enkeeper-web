@@ -55,6 +55,7 @@ export function MessageBubble({
 
   return (
     <div
+      data-message-bubble
       className={cn(
         "relative z-10",
         shouldAnimate && "animate-message-in",

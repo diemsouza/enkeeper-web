@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
@@ -12,28 +12,24 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/src/components/ui/sidebar";
-import { postJson } from "@/src/lib/api-client";
 import type { Activity, User } from "@/src/lib/prisma";
 import { ActivityListItem } from "./activity-list-item";
 import { NewActivityButton } from "./new-activity-button";
 import { PracticePill } from "./practice-pill";
+import { usePracticePill } from "./practice-pill-provider";
 import { SidebarFooterMenu } from "./sidebar-footer";
 
 type AppSidebarProps = {
   user: User;
   activities: Activity[];
-  currentActivityId: string | null;
-  canStartActivity: boolean;
 };
 
 export function AppSidebar({
   user,
   activities,
-  currentActivityId,
-  canStartActivity,
 }: AppSidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const { sendCommand } = usePracticePill();
   const t = useTranslations("app.sidebar");
   const { open, isMobile, setOpenMobile } = useSidebar();
   const showLabel = open || isMobile;
@@ -46,22 +42,12 @@ export function AppSidebar({
     .filter((a) => a.status === "archived")
     .sort((a, b) => b.statusUpdatedAt.getTime() - a.statusUpdatedAt.getTime());
 
-  const canClickNewActivity =
-    canStartActivity && !!currentActivityId && !starting;
-  const disabledReason = !canStartActivity
-    ? t("daily_limit_title")
-    : !currentActivityId
-      ? t("daily_limit_hint")
-      : undefined;
-
   async function handleNewActivity() {
-    if (!currentActivityId || starting) return;
+    if (starting) return;
     setStarting(true);
-    await postJson("/api/app/messages", { text: "nova atividade" });
-    setStarting(false);
     setOpenMobile(false);
-    router.push("/app");
-    router.refresh();
+    await sendCommand("/nova atividade");
+    setStarting(false);
   }
 
   function handleSelect() {
@@ -75,8 +61,7 @@ export function AppSidebar({
           <SidebarTrigger className={showLabel ? "self-end" : "self-center"} />
         )}
         <NewActivityButton
-          disabled={!canClickNewActivity}
-          disabledReason={disabledReason}
+          disabled={starting}
           showLabel={showLabel}
           onClick={handleNewActivity}
         />

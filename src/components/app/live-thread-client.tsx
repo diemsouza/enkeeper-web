@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatThread } from "@/src/components/chat/thread";
 import type { ComposerHandle } from "@/src/components/chat/composer";
+import { isAnyAudioPlaying } from "@/src/components/chat/native-audio-player";
 import { mapBroadcastRecord } from "@/src/components/chat/map-messages";
 import type {
   FormattedMessageButton,
@@ -20,6 +21,7 @@ import { setupAudioUnlock } from "@/src/lib/audio-unlock";
 import { delay, isAppUrl } from "@/src/lib/utils";
 import { buildVoiceNoteFile } from "@/src/lib/voice-recording";
 import { usePracticePill } from "./practice-pill-provider";
+import { useReminderFlow } from "./reminder-flow-provider";
 
 type MessagesResponse = { messages: Message[]; hasMore: boolean };
 
@@ -32,7 +34,14 @@ const REPLY_WAIT_TIMEOUT_MS = 45_000;
 // Failsafe do "digitando": typing:start perdido ou canal caido. Mesmo limite
 // do indicador nativo do WhatsApp.
 const TYPING_TTL_MS = 25_000;
+// O Realtime pode perder evento sem derrubar o canal (ex: tenant reiniciado):
+// durante a vez do usuario, canal quieto por esse tempo busca as mensagens.
+const REALTIME_QUIET_REFRESH_MS = 5_000;
 const MIN_LOADING_OLDER_MS = 400;
+// Conta sem telefone: o cadastro do numero abre sozinho uma vez, nessa pausa
+// depois da mensagem-guia da primeira resposta, sem cortar audio tocando.
+const PHONE_PROMPT_DELAY_MS = 3_000;
+const PHONE_PROMPT_AUDIO_POLL_MS = 500;
 
 function nowTime(): string {
   return new Date().toLocaleTimeString("pt-BR", {
@@ -136,6 +145,7 @@ export function LiveThreadClient({
   needsAutoStart,
   pendingReviewCount = 0,
   showPendingReviewBanner = false,
+  shouldPromptPhone = false,
 }: {
   userId: string;
   currentActivityId: string | null;
@@ -144,11 +154,13 @@ export function LiveThreadClient({
   needsAutoStart: boolean;
   pendingReviewCount?: number;
   showPendingReviewBanner?: boolean;
+  shouldPromptPhone?: boolean;
 }) {
   const t = useTranslations("app.onboarding");
   const tChat = useTranslations("app.chat");
   const router = useRouter();
   const { registerSender, refresh: refreshPracticePill } = usePracticePill();
+  const { openReminder } = useReminderFlow();
   const isMobile = useIsMobile();
   const fileLabels = {
     image: tChat("file_type_image"),
@@ -163,6 +175,8 @@ export function LiveThreadClient({
   const [waitTimedOut, setWaitTimedOut] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isTurnActive, setIsTurnActive] = useState(false);
+  const lastRealtimeEventAtRef = useRef(0);
   const [hasMoreOlder, setHasMoreOlder] = useState(initialHasMoreOlder);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [showPendingReview, setShowPendingReview] = useState(
@@ -171,6 +185,8 @@ export function LiveThreadClient({
   const autoStartTriggered = useRef(false);
   const composerRef = useRef<ComposerHandle>(null);
   const knownActivityIdRef = useRef(currentActivityId);
+  const mountedAtRef = useRef(new Date().toISOString());
+  const hasPhonePromptedRef = useRef(!shouldPromptPhone);
 
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
@@ -189,10 +205,10 @@ export function LiveThreadClient({
     setIsTyping(true);
   }, [stopTyping]);
 
-  const handleTyping = useCallback(
-    (isActive: boolean) => (isActive ? startTyping() : stopTyping()),
-    [startTyping, stopTyping],
-  );
+  const beginTurn = useCallback(() => {
+    lastRealtimeEventAtRef.current = Date.now();
+    setIsTurnActive(true);
+  }, []);
 
   useEffect(() => stopTyping, [stopTyping]);
 
@@ -289,9 +305,36 @@ export function LiveThreadClient({
     if (hasNewBotMessage) stopTyping();
   }, [stopTyping]);
 
+  // typing:stop sai no fim de cada vez no servidor: busca o que o broadcast
+  // possa ter perdido no caminho.
+  const handleTyping = (isActive: boolean): void => {
+    lastRealtimeEventAtRef.current = Date.now();
+    if (isActive) {
+      startTyping();
+      return;
+    }
+    stopTyping();
+    setIsTurnActive(false);
+    void refreshMessages();
+  };
+
+  useEffect(() => {
+    if (!isTurnActive) return;
+    const timer = setInterval(() => {
+      const quietMs = Date.now() - lastRealtimeEventAtRef.current;
+      if (quietMs >= REPLY_WAIT_TIMEOUT_MS) {
+        setIsTurnActive(false);
+        return;
+      }
+      if (quietMs >= REALTIME_QUIET_REFRESH_MS) void refreshMessages();
+    }, REALTIME_QUIET_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [isTurnActive, refreshMessages]);
+
   const handleRealtimeEvent = (
     record: Record<string, unknown> | undefined,
   ): void => {
+    lastRealtimeEventAtRef.current = Date.now();
     if (!record) {
       void refreshMessages();
       return;
@@ -366,8 +409,9 @@ export function LiveThreadClient({
   const triggerAutoStart = useCallback(() => {
     if (!needsAutoStart || autoStartTriggered.current) return;
     autoStartTriggered.current = true;
+    beginTurn();
     void postJson("/api/app/conversation/start", {});
-  }, [needsAutoStart]);
+  }, [needsAutoStart, beginTurn]);
 
   const handleReconnect = useCallback(() => {
     void refreshMessages();
@@ -415,6 +459,28 @@ export function LiveThreadClient({
     setupAudioUnlock();
   }, []);
 
+  // So a guia que chegou nesta sessao e ainda e a ultima mensagem: se a pessoa
+  // ja seguiu (Praticar), a pausa acabou e o pedido fica para a proxima.
+  const phonePromptGuideId =
+    lastMessage?.isFirstFeedbackGuide &&
+    (lastMessage.date ?? "") > mountedAtRef.current
+      ? lastMessage.id
+      : null;
+
+  useEffect(() => {
+    if (!phonePromptGuideId || hasPhonePromptedRef.current) return;
+    let timer = setTimeout(function openWhenAudioIdle() {
+      if (isAnyAudioPlaying()) {
+        timer = setTimeout(openWhenAudioIdle, PHONE_PROMPT_AUDIO_POLL_MS);
+        return;
+      }
+      hasPhonePromptedRef.current = true;
+      openReminder();
+      void postJson("/api/app/account/phone-prompt", {});
+    }, PHONE_PROMPT_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [phonePromptGuideId, openReminder]);
+
   function selectOption(
     messageId: string,
     buttonId: string,
@@ -430,6 +496,7 @@ export function LiveThreadClient({
     text: string,
     option?: { messageId: string; buttonId: string },
   ) {
+    beginTurn();
     if (showPendingReview && resolveCommand(text.trim()) === "practice_now") {
       setShowPendingReview(false);
     }
@@ -463,6 +530,7 @@ export function LiveThreadClient({
   }
 
   async function handleSendFile(file: File) {
+    beginTurn();
     const mediaType = mediaTypeFromFile(file);
     const externalId = ulid();
     pendingFilesRef.current.set(externalId, file);
@@ -507,6 +575,7 @@ export function LiveThreadClient({
   }
 
   async function handleSendAudio(recording: Blob) {
+    beginTurn();
     const externalId = ulid();
     const audioUrl = URL.createObjectURL(recording);
     blobUrlsRef.current.push(audioUrl);
@@ -533,6 +602,7 @@ export function LiveThreadClient({
   async function handleRetrySend(externalId: string) {
     const target = messagesRef.current.find((m) => m.externalId === externalId);
     if (!target || target.status !== "failed") return;
+    beginTurn();
     setMessageStatus(externalId, "sending");
     await delay(2);
 

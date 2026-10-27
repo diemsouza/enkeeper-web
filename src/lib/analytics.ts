@@ -1,6 +1,6 @@
 import { SubscriptionInterval } from "./constants";
 
-export type AuthMethod = "phone" | "whatsapp";
+export type AuthMethod = "phone" | "whatsapp" | "google";
 export type CheckoutPlan = "monthly" | "annual";
 
 export const CHECKOUT_PLAN_BY_INTERVAL: Record<

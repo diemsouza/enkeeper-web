@@ -35,4 +35,7 @@ export interface Message {
   interactive?: FormattedMessage["interactive"] | null;
   // Id do botao de opcao clicado, guardado para o reenvio da mensagem.
   buttonId?: string;
+  // "Voce respondeu sua primeira pergunta dessa atividade": pausa usada para
+  // pedir o numero em conta sem telefone.
+  isFirstFeedbackGuide?: boolean;
 }

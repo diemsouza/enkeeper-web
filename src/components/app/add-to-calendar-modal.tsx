@@ -50,11 +50,15 @@ export function AddToCalendarModal({
   onOpenChange,
   dailyReminderEnabled,
   dailyReminderTime,
+  isPreset = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   dailyReminderEnabled: boolean;
   dailyReminderTime: string;
+  // Valores vieram prontos de quem abriu (ex: logo após cadastrar o número):
+  // salvar fica liberado mesmo sem mudança, senão o lembrete nunca é gravado.
+  isPreset?: boolean;
 }) {
   const t = useTranslations("app.account");
   const router = useRouter();
@@ -74,7 +78,7 @@ export function AddToCalendarModal({
     }
   }, [open, dailyReminderEnabled, dailyReminderTime]);
 
-  const isDirty = enabled !== savedEnabled || time !== savedTime;
+  const isDirty = isPreset || enabled !== savedEnabled || time !== savedTime;
 
   function buildInput(): CalendarEventInput {
     const appUrl = `${process.env.NEXT_PUBLIC_APP_URL}/app`;

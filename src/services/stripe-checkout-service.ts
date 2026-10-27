@@ -85,9 +85,12 @@ export async function getOrCreateCheckoutUrl(
     return checkoutData.url;
   }
 
+  // Stripe recusa customer e customer_email juntos; o customer ja tem e-mail.
+  const customer = resolveStripeCustomerId(latest);
   const session = await stripe.checkout.sessions.create({
     client_reference_id: userId,
-    customer: resolveStripeCustomerId(latest),
+    customer,
+    customer_email: customer ? undefined : (user.email ?? undefined),
     line_items: [{ price: resolvePriceId(interval), quantity: 1 }],
     mode: "subscription",
     subscription_data: { metadata: { userId } },

@@ -19,8 +19,11 @@ enum PlanStatus {
 model User {
     id       String  @id @default(ulid()) @map("id")
     name     String? @map("name")
+    // sempre em minúsculas; identidade da conta no login com Google
+    // (CHECK users_email_lowercase_check, na migration users_phone_or_email)
     email    String? @unique @map("email")
     // telefone no formato de normalizePhoneToWaId; identidade da conta no login e no WhatsApp
+    // phone ou email, pelo menos um (CHECK users_phone_or_email_check)
     phone    String? @unique @map("phone")
     imageUrl String? @map("image_url")
     locale   String? @map("locale")

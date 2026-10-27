@@ -7,6 +7,7 @@ import {
   PAYMENT_SUCCESS_PARAM,
 } from "@/src/lib/constants";
 import { requireAuth } from "@/src/lib/auth/current-user";
+import { hasPhonePrompted } from "@/src/core/phone-prompt";
 import { findCurrentActivityByUser } from "@/src/repo/activities.repo";
 import { findPaidPurchase } from "@/src/services/stripe-checkout-service";
 import {
@@ -59,6 +60,7 @@ export default async function AppPage({
         needsAutoStart={mapped.length === 0}
         pendingReviewCount={pendingReviewBanner.count}
         showPendingReviewBanner={pendingReviewBanner.visible}
+        shouldPromptPhone={!user.phone && !hasPhonePrompted(user.metadata)}
       />
     </>
   );

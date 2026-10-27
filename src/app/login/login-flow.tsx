@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import Nav from "@/src/components/home/nav";
 import { Spinner } from "@/src/components/ui/spinner";
@@ -11,19 +12,25 @@ import { OTP_EXPIRATION_MIN } from "@/src/core/otp";
 import { clearOtpRequest, readOtpRequest, saveOtpRequest } from "./otp-session";
 import { sanitizeRedirectPath } from "@/src/core/auth-routes";
 import { setUserId, track } from "@/src/lib/analytics";
-
-type OtpErrorBody = {
-  error?: string;
-  code?: string;
-  retryAfterSec?: number;
-  attemptsRemaining?: number;
-};
+import { Button } from "@/src/components/ui/button";
+import { CampaignParams } from "@/src/core/embedded-browser";
+import { GoogleButton } from "./google-button";
+import { EmbeddedBrowserStep } from "./embedded-browser-step";
+import { startGoogleLogin } from "./google-login";
+import {
+  otpErrorMessage,
+  requestOtpCode,
+  type OtpErrorBody,
+  type OtpRequestResult,
+} from "./otp-client";
 
 type VerifyOtpBody = OtpErrorBody & { isNew?: boolean; userId?: string };
 
+type LoginStep = "options" | "phone" | "code";
+
 type LoginHeaderProps = {
   checkingWaToken: boolean;
-  step: "phone" | "code";
+  step: LoginStep;
   hasAccessedBefore: boolean;
 };
 
@@ -53,27 +60,68 @@ function LoginHeader({
   );
 }
 
-type RequestResult =
-  | { ok: true; requestedAt: number }
-  | { ok: false; message: string };
+type LoginOptionsProps = {
+  error: string | null;
+  onGoogle: () => void;
+  onPhone: () => void;
+};
 
-type LoginFlowProps = { hasAccessedBefore: boolean };
-
-export function LoginFlow({ hasAccessedBefore }: LoginFlowProps) {
+function LoginOptions({ error, onGoogle, onPhone }: LoginOptionsProps) {
   const t = useTranslations("login");
-  const [step, setStep] = useState<"phone" | "code">("phone");
+  return (
+    <div className="flex w-full max-w-sm flex-col gap-3">
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <GoogleButton onClick={onGoogle} />
+      <Button
+        type="button"
+        variant="outline"
+        onClick={onPhone}
+        className="h-12 w-full text-base"
+      >
+        {t("phone_continue")}
+      </Button>
+    </div>
+  );
+}
+
+function LegalNotice() {
+  const t = useTranslations("login");
+  return (
+    <footer className="mx-auto w-full max-w-sm py-4 text-center text-xs text-muted-foreground">
+      {t.rich("legal_notice", {
+        terms: (chunks) => (
+          <Link href="/terms" className="underline underline-offset-2">
+            {chunks}
+          </Link>
+        ),
+        privacy: (chunks) => (
+          <Link href="/privacy" className="underline underline-offset-2">
+            {chunks}
+          </Link>
+        ),
+      })}
+    </footer>
+  );
+}
+
+type LoginFlowProps = {
+  hasAccessedBefore: boolean;
+  campaignParams: CampaignParams;
+};
+
+export function LoginFlow({ hasAccessedBefore, campaignParams }: LoginFlowProps) {
+  const t = useTranslations("login");
+  const [step, setStep] = useState<LoginStep>("options");
   const [phone, setPhone] = useState("");
   const [requestedAt, setRequestedAt] = useState(0);
   const [loading, setLoading] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [checkingWaToken, setCheckingWaToken] = useState(false);
-
-  function messageFor(body: OtpErrorBody): string {
-    const key = `errors.${body.code}`;
-    if (body.code && t.has(key)) return t(key);
-    return body.error || t("errors.generic");
-  }
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const [externalLoginUrl, setExternalLoginUrl] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const waToken = new URLSearchParams(window.location.search).get("wa_token");
@@ -98,6 +146,15 @@ export function LoginFlow({ hasAccessedBefore }: LoginFlowProps) {
   }, []);
 
   useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get(
+      "google_error",
+    );
+    if (!code) return;
+    const key = `errors.${code}`;
+    setGoogleError(t.has(key) ? t(key) : t("errors.GOOGLE_FAILED"));
+  }, [t]);
+
+  useEffect(() => {
     const pending = readOtpRequest();
     if (!pending) return;
 
@@ -112,16 +169,12 @@ export function LoginFlow({ hasAccessedBefore }: LoginFlowProps) {
     setStep("code");
   }, []);
 
-  async function submitRequest(nextPhone: string): Promise<RequestResult> {
+  async function submitRequest(nextPhone: string): Promise<OtpRequestResult> {
     setLoading(true);
-    const { ok, body } = await postJson<OtpErrorBody>("/api/auth/otp/request", {
-      phone: nextPhone,
-    });
+    const result = await requestOtpCode(nextPhone, t);
     setLoading(false);
-    if (!ok) return { ok: false, message: messageFor(body) };
-    const now = Date.now();
-    saveOtpRequest(nextPhone, now);
-    return { ok: true, requestedAt: now };
+    if (result.ok) saveOtpRequest(nextPhone, result.requestedAt);
+    return result;
   }
 
   async function requestCode(nextPhone: string) {
@@ -157,7 +210,7 @@ export function LoginFlow({ hasAccessedBefore }: LoginFlowProps) {
     setLoading(false);
     if (!ok) {
       if (body.code === "OTP_EXPIRED") clearOtpRequest();
-      setCodeError(messageFor(body));
+      setCodeError(otpErrorMessage(t, body));
       return;
     }
     clearOtpRequest();
@@ -180,36 +233,63 @@ export function LoginFlow({ hasAccessedBefore }: LoginFlowProps) {
     <>
       <Nav hasLoginLink={false} />
       <div
-        className="flex min-h-[100dvh] flex-col items-center justify-center gap-8 bg-background px-6"
+        className="flex min-h-[100dvh] flex-col bg-background px-6"
         style={{
           paddingTop: "calc(env(safe-area-inset-top) + 0rem)",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
-        <LoginHeader
-          checkingWaToken={checkingWaToken}
-          step={step}
-          hasAccessedBefore={hasAccessedBefore}
-        />
-        {checkingWaToken ? (
-          <Spinner size="lg" />
-        ) : step === "phone" ? (
-          <PhoneStep
-            onSubmit={requestCode}
-            loading={loading}
-            error={phoneError}
-          />
-        ) : (
-          <CodeStep
-            phone={phone}
-            requestedAt={requestedAt}
-            loading={loading}
-            error={codeError}
-            onVerify={verifyCode}
-            onResend={resendCode}
-            onChangeNumber={changeNumber}
-          />
-        )}
+        <main className="flex flex-1 flex-col items-center justify-center gap-8">
+          {externalLoginUrl ? (
+            <EmbeddedBrowserStep
+              loginUrl={externalLoginUrl}
+              onUseWhatsApp={() => {
+                setExternalLoginUrl(null);
+                setStep("phone");
+              }}
+            />
+          ) : (
+            <>
+              <LoginHeader
+                checkingWaToken={checkingWaToken}
+                step={step}
+                hasAccessedBefore={hasAccessedBefore}
+              />
+              {checkingWaToken ? (
+                <Spinner size="lg" />
+              ) : step === "options" ? (
+                <LoginOptions
+                  error={googleError}
+                  onGoogle={() =>
+                    startGoogleLogin(campaignParams, setExternalLoginUrl)
+                  }
+                  onPhone={() => setStep("phone")}
+                />
+              ) : step === "phone" ? (
+                <PhoneStep
+                  onSubmit={requestCode}
+                  loading={loading}
+                  error={phoneError}
+                  onBack={() => {
+                    setPhoneError(null);
+                    setStep("options");
+                  }}
+                />
+              ) : (
+                <CodeStep
+                  phone={phone}
+                  requestedAt={requestedAt}
+                  loading={loading}
+                  error={codeError}
+                  onVerify={verifyCode}
+                  onResend={resendCode}
+                  onChangeNumber={changeNumber}
+                />
+              )}
+            </>
+          )}
+        </main>
+        {!checkingWaToken && <LegalNotice />}
       </div>
     </>
   );

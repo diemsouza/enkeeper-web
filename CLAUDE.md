@@ -101,7 +101,9 @@ Upload -> `POST /api/queue/process-doc` -> `process-doc-service` -> `llm.vendor.
 **Cadencia de pratica:**
 Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.service` envia a proxima pergunta pendente via WhatsApp.
 
-**Auth:** NextAuth.js v5 com `@auth/prisma-adapter`. API routes usam validacao por API key.
+**Auth:** sessao propria em JWT (`fz_session`, `src/core/session-token.ts`), gravada so por `setSessionCookie`/`writeSessionCookies`. Login por codigo no WhatsApp (`/api/auth/otp/*`, `wa_token` em `/api/auth/wa-login`) e com Google (`/api/auth/google/start` e `/callback`, `google-login-service.ts`, `google-oauth.vendor.ts` com `google-auth-library`; conta achada por `users.email`, so e-mail verificado, em minusculas; sem ID do provedor). O callback redireciona para `/login/google`, que dispara `sign_up`/`login` no GTM. Navegador embutido: `src/core/embedded-browser.ts`, checado so no clique do Google. O NextAuth em `src/auth.ts` nao esta em uso. API routes usam validacao por API key.
+
+**Numero em conta sem telefone:** `PhoneConfirmModal` (`src/components/shared/phone-confirm-modal.tsx`, titulo/subtitulo de quem abre, `onConfirmed`) reusa `PhoneStep`/`CodeStep` e `otp-client.ts` do login; o codigo sai por `/api/auth/otp/request` e a confirmacao vai em `POST /api/app/account/phone` (`confirmAccountPhone`, `account-phone-service.ts`), que usa `consumeOtp` (`otp-service.ts`, mesma validacao do `verifyOtp`) e grava o numero na conta logada sem mexer na sessao; numero de outra conta vira `PhoneTakenError`. `ReminderFlowProvider` (`useReminderFlow().openReminder()`) abre o modal de numero antes do `AddToCalendarModal` quando a conta nao tem telefone. Abertura automatica: `LiveThreadClient` 3s depois da mensagem `guide_after_first_feedback`, uma vez, registrada em `users.metadata.phonePromptedAt` (`/api/app/account/phone-prompt`, `hasPhonePrompted`). Ver Product-Rules Secao 11.3.3.
 
 **i18n:** next-intl PT-BR e EN-US. Strings de UI vao em `src/locales/pt.json` e `en.json`.
 
@@ -113,7 +115,7 @@ Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.servic
 
 | Model          | Proposito                                                                             |
 | -------------- | --------------------------------------------------------------------------------------|
-| `User`         | Conta e identidade; `phone` (unico, formato `normalizePhoneToWaId`), `email`, `planCode`, `planStatus`, `planExpiresAt`, `locale`, `currency` |
+| `User`         | Conta e identidade; `phone` (unico, formato `normalizePhoneToWaId`), `email` (unico, minusculas), pelo menos um dos dois (CHECK no banco), `planCode`, `planStatus`, `planExpiresAt`, `locale`, `currency` |
 | `Subscription` | Pagamento (1:N com User, mais recente = atual); nunca lido para liberar acesso, que fica no `User` |
 | `Doc`          | Material enviado; `rawContent`, `content`, `docType`, `level`, `status`               |
 | `Question`     | Pergunta gerada; `questionFormat`, `answerKeys`, `questionOptions`, `status`, `revisionCount` |

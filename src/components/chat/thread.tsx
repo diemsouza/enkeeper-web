@@ -11,10 +11,7 @@ import {
   useState,
 } from "react";
 import { shouldShowDateSeparator } from "@/src/lib/datetime-utils";
-import {
-  AT_END_TOLERANCE_PX,
-  useScrollToBottom,
-} from "@/src/hooks/use-scroll-to-bottom";
+import { useScrollToBottom } from "@/src/hooks/use-scroll-to-bottom";
 import { useVisualViewportOffset } from "@/src/hooks/use-visual-viewport-offset";
 import { cn } from "@/src/lib/utils";
 import { Spinner } from "@/src/components/ui/spinner";
@@ -28,6 +25,7 @@ import type { FormattedMessageButton, Message } from "./types";
 
 const RECENT_INTERACTION_MS = 3000;
 const JUMP_BUTTON_PX = 32;
+const TAIL_SEEN_RATIO = 0.6;
 const INTERACTION_EVENTS = ["touchstart", "touchmove", "wheel", "pointerdown"];
 
 function msgKey(m: Message): string {
@@ -39,6 +37,24 @@ function canAutoScroll(lastInteractionAt: number): boolean {
     !isAnyAudioPlaying() &&
     Date.now() - lastInteractionAt > RECENT_INTERACTION_MS
   );
+}
+
+// Mensagem "vista" quando a maior parte dela aparece entre o topo do chat e o
+// composer; bolha mais alta que a tela conta pela fração da área visível.
+function isTailMostlyVisible(
+  containerEl: HTMLElement,
+  composerHeight: number,
+): boolean {
+  const bubbles = containerEl.querySelectorAll("[data-message-bubble]");
+  const tail = bubbles[bubbles.length - 1];
+  if (!tail) return true;
+  const containerRect = containerEl.getBoundingClientRect();
+  const visibleBottom = containerRect.bottom - composerHeight;
+  const rect = tail.getBoundingClientRect();
+  const visible =
+    Math.min(rect.bottom, visibleBottom) - Math.max(rect.top, containerRect.top);
+  const visibleArea = visibleBottom - containerRect.top;
+  return visible >= TAIL_SEEN_RATIO * Math.min(rect.height, visibleArea);
 }
 
 type ChatThreadProps = {
@@ -92,12 +108,10 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       contentRef,
       endRef,
       isAtBottom,
-      isAtEnd,
       isFarFromBottom,
       scrollToBottom,
       scrollToBottomWhenSettled,
       notifySettleActivity,
-      getDistanceFromBottom,
       isFollowPausedRef,
     } = useScrollToBottom();
     const vvOffset = useVisualViewportOffset((offset) => {
@@ -204,6 +218,9 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       prevLastIdRef.current = lastId;
       if (!arrived) return;
       if (tail?.from === "user") {
+        // O toque que iniciou a vez (opção, praticar, enviar) não é leitura:
+        // só rolagem feita depois dele segura o acompanhamento.
+        lastInteractionAtRef.current = 0;
         isFollowPausedRef.current = false;
         isFirstBotOfTurnRef.current = true;
         scrollToBottom("smooth");
@@ -221,18 +238,30 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
         return;
       }
       isFollowPausedRef.current = true;
-      if (getDistanceFromBottom() > AT_END_TOLERANCE_PX) setHasNewMessage(true);
+      const containerEl = containerRef.current;
+      if (containerEl && !isTailMostlyVisible(containerEl, composerHeight)) {
+        setHasNewMessage(true);
+      }
     }, [
       messages,
       scrollToBottom,
       scrollToBottomWhenSettled,
-      getDistanceFromBottom,
       isFollowPausedRef,
+      containerRef,
+      composerHeight,
     ]);
 
     useEffect(() => {
-      if (isAtEnd) setHasNewMessage(false);
-    }, [isAtEnd]);
+      const containerEl = containerRef.current;
+      if (!hasNewMessage || !containerEl) return;
+      function clearIfSeen() {
+        if (containerEl && isTailMostlyVisible(containerEl, composerHeight)) {
+          setHasNewMessage(false);
+        }
+      }
+      containerEl.addEventListener("scroll", clearIfSeen, { passive: true });
+      return () => containerEl.removeEventListener("scroll", clearIfSeen);
+    }, [hasNewMessage, composerHeight, containerRef]);
 
     useEffect(() => {
       messages.forEach((message) => seenIdsRef.current.add(msgKey(message)));

@@ -32,10 +32,11 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { SidebarFooter, useSidebar } from "@/src/components/ui/sidebar";
 import { canPractice, getDaysUntil } from "@/src/core/access";
+import { formatPhoneForDisplay } from "@/src/core/phone";
 import { postJson } from "@/src/lib/api-client";
 import { PLANS_PATH } from "@/src/lib/constants";
 import type { User } from "@/src/lib/prisma";
-import { AddToCalendarModal } from "./add-to-calendar-modal";
+import { useReminderFlow } from "./reminder-flow-provider";
 import { ThemeMenuItems } from "./theme-menu";
 
 function planLabel(user: User, t: TAnyEnv): string {
@@ -46,6 +47,18 @@ function planLabel(user: User, t: TAnyEnv): string {
   return daysLeft > 0
     ? t("plan_trial_days_left", { days: daysLeft })
     : t("plan_trial_expired");
+}
+
+// E-mail só é gravado pelo login com Google; sem ele, a conta entrou pelo WhatsApp.
+function loginAccount(user: User, t: TAnyEnv): { method: string; account: string } | null {
+  if (user.email) return { method: t("logged_in_google"), account: user.email };
+  if (user.phone) {
+    return {
+      method: t("logged_in_whatsapp"),
+      account: formatPhoneForDisplay(user.phone),
+    };
+  }
+  return null;
 }
 
 export function SidebarFooterMenu({
@@ -59,8 +72,9 @@ export function SidebarFooterMenu({
   const t = useTranslations("app.account");
   const tCommon = useTranslations("app.common");
   const initial = user.name?.trim()?.[0]?.toUpperCase();
+  const login = loginAccount(user, t);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  const { openReminder } = useReminderFlow();
   const { setOpenMobile } = useSidebar();
 
   async function handleLogout() {
@@ -94,7 +108,7 @@ export function SidebarFooterMenu({
           <ThemeMenuItems />
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onSelect={() => setCalendarOpen(true)}
+            onSelect={openReminder}
             className="gap-2"
           >
             <CalendarPlus className="h-4 w-4" />
@@ -111,6 +125,14 @@ export function SidebarFooterMenu({
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          {login && (
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+              <p>{login.method}</p>
+              <p className="truncate font-medium text-foreground">
+                {login.account}
+              </p>
+            </div>
+          )}
           <DropdownMenuItem
             onSelect={() => setConfirmOpen(true)}
             className="gap-2"
@@ -120,18 +142,14 @@ export function SidebarFooterMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <AddToCalendarModal
-        open={calendarOpen}
-        onOpenChange={setCalendarOpen}
-        dailyReminderEnabled={user.dailyReminderEnabled}
-        dailyReminderTime={user.dailyReminderTime}
-      />
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("logout")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("logout_confirm_message")}
+              {login
+                ? t("logout_confirm_account", { account: login.account })
+                : t("logout_confirm_message")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -171,6 +171,7 @@ function toMessage(
     date,
     externalId: row.externalId ?? undefined,
     interactive,
+    isFirstFeedbackGuide: row.intent === "guide_after_first_feedback",
   };
 }
 

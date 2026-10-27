@@ -75,3 +75,27 @@ export class InvalidPhoneError extends SafeError {
     this.name = "InvalidPhoneError";
   }
 }
+
+export type GoogleLoginErrorCode =
+  | "GOOGLE_CANCELED"
+  | "GOOGLE_EMAIL_UNVERIFIED"
+  | "GOOGLE_FAILED";
+
+export class GoogleLoginError extends SafeError {
+  code: GoogleLoginErrorCode;
+
+  constructor(code: GoogleLoginErrorCode, message = "Falha no login com Google.") {
+    super(message);
+    this.name = "GoogleLoginError";
+    this.code = code;
+  }
+}
+
+export class PhoneTakenError extends SafeError {
+  code = "PHONE_TAKEN";
+
+  constructor(message = "Telefone já pertence a outra conta.") {
+    super(message);
+    this.name = "PhoneTakenError";
+  }
+}

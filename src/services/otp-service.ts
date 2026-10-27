@@ -61,12 +61,9 @@ export async function requestOtp(
   return { cooldownSec: OTP_RESEND_COOLDOWN_SEC };
 }
 
-export async function verifyOtp(
-  rawPhone: string,
-  code: string,
-  timezone?: string,
-  attribution?: AttributionCookie | null,
-): Promise<{ user: User; isNew: boolean }> {
+// Valida e consome o código; devolve o número normalizado. Usado pelo login
+// e pelo cadastro de número na conta logada.
+export async function consumeOtp(rawPhone: string, code: string): Promise<string> {
   const phone = normalizePhoneToWaId(rawPhone);
   if (!phone) throw new InvalidPhoneError();
 
@@ -88,12 +85,15 @@ export async function verifyOtp(
   }
 
   await consumeOtpCode(otp.id);
+  return phone;
+}
 
-  const { user, isNew } = await resolveWebLoginByPhone(
-    phone,
-    timezone,
-    attribution,
-  );
-
-  return { user, isNew };
+export async function verifyOtp(
+  rawPhone: string,
+  code: string,
+  timezone?: string,
+  attribution?: AttributionCookie | null,
+): Promise<{ user: User; isNew: boolean }> {
+  const phone = await consumeOtp(rawPhone, code);
+  return resolveWebLoginByPhone(phone, timezone, attribution);
 }

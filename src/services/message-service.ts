@@ -2272,6 +2272,7 @@ async function notifySupportRequest(
       { label: "ID", value: user.id },
       { label: "Nome", value: user.name ?? "Não identificado" },
       { label: "Telefone", value: user.phone ? `+${user.phone}` : "-" },
+      { label: "E-mail", value: user.email ?? "-" },
       { label: "Plano", value: user.planCode === "pro" ? "Pro" : "Trial" },
       {
         label: "Expira em",

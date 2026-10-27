@@ -240,7 +240,7 @@ async function fetchUsersReport(): Promise<string> {
     ...stats.recent.map((u) => {
       const d = u.createdAt;
       const date = `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      return `${u.phone ?? "?"} - ${u.name ?? "Nao identificado"} - ${date}`;
+      return `${u.phone ?? u.email ?? "?"} - ${u.name ?? "Nao identificado"} - ${date}`;
     }),
   ];
   return lines.join("\n");

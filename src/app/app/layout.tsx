@@ -7,7 +7,6 @@ import { AppHeader } from "@/src/components/app/app-header";
 import { AppSidebar } from "@/src/components/app/app-sidebar";
 import { AnalyticsIdentify } from "@/src/components/shared/AnalyticsIdentify";
 import { SidebarProvider } from "@/src/components/ui/sidebar";
-import { canStartActivity } from "@/src/core/limits";
 import { resolvePracticePillState } from "@/src/core/practice-pill";
 import { requireAuth } from "@/src/lib/auth/current-user";
 import {
@@ -15,6 +14,7 @@ import {
   findCurrentActivityByUser,
 } from "@/src/repo/activities.repo";
 import { PracticePillProvider } from "@/src/components/app/practice-pill-provider";
+import { ReminderFlowProvider } from "@/src/components/app/reminder-flow-provider";
 import { getTodayUsage } from "@/src/repo/daily-usage.repo";
 
 export const metadata: Metadata = {
@@ -54,26 +54,31 @@ export default async function AppLayout({
     common: messages.common,
     app: messages.app,
     pricing: messages.pricing,
+    login: messages.login,
   };
 
   return (
     <NextIntlClientProvider locale={locale} messages={scopedMessages}>
       <AnalyticsIdentify userId={user.id} />
       <PracticePillProvider initialState={practicePillState}>
-        <SidebarProvider defaultOpen={defaultOpen}>
-          <div className="flex h-[100dvh] w-full overflow-hidden">
-            <AppSidebar
-              user={user}
-              activities={activities}
-              currentActivityId={current?.id ?? null}
-              canStartActivity={canStartActivity(usage?.activityCount ?? 0)}
-            />
-            <div className="flex min-w-0 flex-1 flex-col">
-              <AppHeader />
-              <main className="min-h-0 flex-1">{children}</main>
+        <ReminderFlowProvider
+          hasPhone={Boolean(user.phone)}
+          dailyReminderEnabled={user.dailyReminderEnabled}
+          dailyReminderTime={user.dailyReminderTime}
+        >
+          <SidebarProvider defaultOpen={defaultOpen}>
+            <div className="flex h-[100dvh] w-full overflow-hidden">
+              <AppSidebar
+                user={user}
+                activities={activities}
+              />
+              <div className="flex min-w-0 flex-1 flex-col">
+                <AppHeader />
+                <main className="min-h-0 flex-1">{children}</main>
+              </div>
             </div>
-          </div>
-        </SidebarProvider>
+          </SidebarProvider>
+        </ReminderFlowProvider>
       </PracticePillProvider>
     </NextIntlClientProvider>
   );

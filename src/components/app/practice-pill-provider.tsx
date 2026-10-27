@@ -23,6 +23,7 @@ type PracticePillContextValue = {
   isVisible: boolean;
   isActive: boolean;
   practice: () => Promise<void>;
+  sendCommand: (text: string) => Promise<void>;
   refresh: () => Promise<void>;
   registerSender: (sender: PracticeSender | null) => void;
 };
@@ -77,26 +78,36 @@ export function PracticePillProvider({
     senderRef.current = sender;
   }, []);
 
+  // No /app o comando sai pelo chat (bolha, "digitando", vez ativa); fora
+  // dele, vai direto para a API e abre o /app.
+  const sendCommand = useCallback(
+    async (text: string) => {
+      if (senderRef.current) {
+        await senderRef.current(text);
+        return;
+      }
+      await postJson("/api/app/messages", { text });
+      router.push("/app");
+    },
+    [router],
+  );
+
   const practice = useCallback(async () => {
     const until = new Date(Date.now() + INTENSIVE_UNTIL_MIN * 60_000);
     setState((prev) => ({ ...prev, intensiveUntil: until.toISOString() }));
-    if (senderRef.current) {
-      await senderRef.current("praticar");
-      return;
-    }
-    await postJson("/api/app/messages", { text: "praticar" });
-    router.push("/app");
-  }, [router]);
+    await sendCommand("praticar");
+  }, [sendCommand]);
 
   const value = useMemo(
     () => ({
       isVisible: state.isVisible,
       isActive: isPracticePillActive(state, now),
       practice,
+      sendCommand,
       refresh,
       registerSender,
     }),
-    [state, now, practice, refresh, registerSender],
+    [state, now, practice, sendCommand, refresh, registerSender],
   );
 
   return (

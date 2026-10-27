@@ -231,6 +231,7 @@ Assinatura recorrente no cartão via Stripe Checkout, com renovação automátic
 | Armazenamento de mídia | Supabase Storage, bucket separado por ambiente, cobre áudio gerado (feedback), áudio de resposta do usuário, a imagem original enviada para OCR, os charts de resumo, as imagens geradas para perguntas de reconhecimento por imagem e o áudio das perguntas de escuta |
 | Evolução semanal | Modelo médio em batch |
 | Jobs agendados | Vercel Cron |
+| Autenticação | Sessão própria em cookie assinado; login por código no WhatsApp e login com Google (OAuth, só e-mail verificado) |
 | Pagamento | Stripe Checkout e Portal do Cliente (cartão), assinatura recorrente mensal ou anual com renovação automática; Pix manual via `suporte` como alternativa, registrado direto no usuário |
 | Número virtual | BRDID - (11) 5306-9000 |
 
@@ -384,6 +385,8 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Persistência da frase de demonstração e da tradução do feedback por pergunta (`feedback_text`/`feedback_translation`), com toggle "Ver tradução" no player de áudio da superfície web e reaproveitamento do áudio quando a frase não muda entre respostas
 
 - Login por telefone aceita número colado ou preenchido automaticamente em qualquer formato, de qualquer país (Brasil como padrão), com o botão sempre ativo e erro claro abaixo do campo (Product-Rules Seção 11.3)
+- Login com Google como primeira opção da tela de login, com o WhatsApp logo abaixo; conta pode existir só com e-mail, sem receber nada pelo WhatsApp até ter número; navegador dentro de apps (Instagram, Facebook, TikTok) reabre o login no navegador do celular, levando a origem da campanha (Product-Rules Seções 11.3 e 11.4)
+- Conta do Google cadastra e confirma o número depois do login para receber o lembrete pelo WhatsApp: pedido ao abrir o lembrete e, uma vez, logo após o primeiro feedback de uma atividade nova (Product-Rules Seção 11.3.3)
 
 **Falta:**
 - [ ] Evolução semanal com % acerto e vocabulário que travou

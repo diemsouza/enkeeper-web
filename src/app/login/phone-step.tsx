@@ -12,9 +12,10 @@ type PhoneStepProps = {
   onSubmit: (phone: string) => void;
   loading: boolean;
   error: string | null;
+  onBack?: () => void;
 };
 
-export function PhoneStep({ onSubmit, loading, error }: PhoneStepProps) {
+export function PhoneStep({ onSubmit, loading, error, onBack }: PhoneStepProps) {
   const t = useTranslations("login");
   const [display, setDisplay] = useState("");
   const [country, setCountry] = useState<CountryCode>(DEFAULT_PHONE_COUNTRY);
@@ -64,11 +65,8 @@ export function PhoneStep({ onSubmit, loading, error }: PhoneStepProps) {
           country={country}
           onCountryChange={setCountry}
           aria-invalid={visibleError ? true : undefined}
-          aria-describedby="phone-hint"
+          aria-describedby="phone-usage-note"
         />
-        <p id="phone-hint" className="text-sm text-muted-foreground">
-          {t("phone_hint")}
-        </p>
       </div>
       {visibleError && (
         <p className="text-sm text-destructive">{visibleError}</p>
@@ -76,9 +74,18 @@ export function PhoneStep({ onSubmit, loading, error }: PhoneStepProps) {
       <Button type="submit" disabled={loading} className="h-12 text-base">
         {loading ? t("sending") : t("send_code")}
       </Button>
-      <p className="text-sm text-muted-foreground">
+      <p id="phone-usage-note" className="text-sm text-muted-foreground">
         {t("phone_usage_note")}
       </p>
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="h-11 self-center px-2 text-sm text-muted-foreground underline underline-offset-2"
+        >
+          {t("back_to_options")}
+        </button>
+      )}
     </form>
   );
 }

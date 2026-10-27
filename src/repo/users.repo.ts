@@ -121,6 +121,21 @@ export async function updateUserSignedLink(
   });
 }
 
+export async function markUserPhonePrompted(userId: string): Promise<void> {
+  const metadata = await findUserMetadata(userId);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { metadata: { ...metadata, phonePromptedAt: new Date().toISOString() } },
+  });
+}
+
+export async function updateUserPhone(
+  userId: string,
+  phone: string,
+): Promise<void> {
+  await prisma.user.update({ where: { id: userId }, data: { phone } });
+}
+
 export async function updateUserPlan(
   userId: string,
   data: {
@@ -157,7 +172,12 @@ type UserStat = {
   trial: number;
   pro: number;
   expired: number;
-  recent: { phone: string | null; name: string | null; createdAt: Date }[];
+  recent: {
+    phone: string | null;
+    email: string | null;
+    name: string | null;
+    createdAt: Date;
+  }[];
 };
 
 export async function fetchUserStats(): Promise<UserStat> {
@@ -177,7 +197,7 @@ export async function fetchUserStats(): Promise<UserStat> {
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
-      select: { name: true, phone: true, createdAt: true },
+      select: { name: true, phone: true, email: true, createdAt: true },
     }),
   ]);
   return { total, active, trial, pro, expired, recent };
@@ -207,19 +227,30 @@ export async function updateUserLastResponse(
   });
 }
 
+export type UserIdentity = { phone: string } | { email: string };
+
 type NewUserData = {
-  phone: string;
+  identity: UserIdentity;
+  name?: string | null;
+  imageUrl?: string | null;
   planExpiresAt: Date;
   source: string | null;
   sourceData: Prisma.InputJsonValue | null;
   timezone?: string;
 };
 
-async function createUserWithPhone(data: NewUserData): Promise<User> {
-  const { phone, planExpiresAt, source, sourceData, timezone } = data;
+function findUserByIdentity(identity: UserIdentity): Promise<User | null> {
+  return prisma.user.findUnique({ where: identity });
+}
+
+async function createUser(data: NewUserData): Promise<User> {
+  const { identity, name, imageUrl, planExpiresAt, source, sourceData, timezone } =
+    data;
   return prisma.user.create({
     data: {
-      phone,
+      ...identity,
+      name: name ?? undefined,
+      imageUrl: imageUrl ?? undefined,
       planCode: "trial",
       planStatus: "active",
       planExpiresAt,
@@ -234,21 +265,21 @@ async function createUserWithPhone(data: NewUserData): Promise<User> {
   });
 }
 
-export async function findOrCreateUserByPhone(
+export async function findOrCreateUser(
   data: NewUserData,
 ): Promise<{ user: User; isNew: boolean }> {
-  const existing = await findUserByPhone(data.phone);
+  const existing = await findUserByIdentity(data.identity);
   if (existing) return { user: existing, isNew: false };
 
   try {
-    return { user: await createUserWithPhone(data), isNew: true };
+    return { user: await createUser(data), isNew: true };
   } catch (err) {
-    // Login concorrente com o mesmo número criou o User entre a busca e o insert.
+    // Login concorrente com a mesma identidade criou o User entre a busca e o insert.
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
       err.code === "P2002"
     ) {
-      const created = await findUserByPhone(data.phone);
+      const created = await findUserByIdentity(data.identity);
       if (created) return { user: created, isNew: false };
     }
     throw err;

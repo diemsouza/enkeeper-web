@@ -540,6 +540,8 @@ Cobrança é assinatura recorrente no cartão, em dois planos:
 
 O trial de 7 dias continua sem cartão. Ao assinar, a primeira cobrança acontece na hora, sem período de teste adicional.
 
+**E-mail no checkout:** se a conta tem e-mail cadastrado, o checkout da Stripe já abre com ele preenchido. Quem já foi cliente na Stripe abre com o e-mail que está no cadastro de lá. Conta sem e-mail preenche no próprio checkout, como antes.
+
 **Acesso fora da assinatura:** cortesia e pagamento recebido por fora (Pix pelo `suporte`, por exemplo) são registrados direto no usuário (plano e data de expiração), sem depender de assinatura no cartão. O pagamento por fora também fica registrado no histórico de pagamentos do usuário.
 
 **Confirmação e renovação:** cada cobrança confirmada (a primeira e cada renovação) deixa o acesso Pro, ativo, até o fim do período pago mais 1 dia de folga, que cobre a cobrança da renovação (feita pela Stripe pouco depois do fim do período) e falhas de rede. A data de renovação mostrada ao usuário é a do período, sem a folga. A mensagem de confirmação sai só na primeira cobrança da assinatura: "Assinatura confirmada", com o plano (mensal ou anual) e a data da próxima renovação. Renovações atualizam o acesso em silêncio. Evento repetido do mesmo pagamento não gera nova confirmação.
@@ -577,8 +579,9 @@ Link enviado pelo WhatsApp que aponta pro app pode carregar um token assinado qu
 autentica automaticamente quem abre o link no navegador, sem passar pelo formulário
 de telefone e código. Sessão já ativa no navegador é sempre respeitada, o token nunca
 sobrescreve um login existente. Token expira em 24 horas; expirado, ausente ou sem
-conta correspondente, cai no fluxo normal de login por telefone e código, sem nenhum
-aviso de erro.
+conta correspondente, cai no fluxo normal de login, sem nenhum aviso de erro. Só
+existe para conta com número: o link sai pelo WhatsApp e o token é resolvido pelo
+número.
 
 O link efetivamente entregue ao usuário não carrega o token direto na URL: é um
 link curto (shortlink) que resolve por redirecionamento pro destino real, com a
@@ -587,17 +590,63 @@ silenciosamente. O mecanismo de shortlink é genérico, reutilizável por qualqu
 outro caso que precise de link curto com expiração (ex: link de pagamento,
 indicação), não é exclusivo do login por WhatsApp.
 
-### 11.3 Login por telefone
+### 11.3 Login
 
-O acesso ao app começa pelo número do WhatsApp em `/login`, que recebe o código de acesso.
+O acesso ao app começa em `/login`. A tela inicial tem só o título, o subtítulo e dois botões do mesmo tamanho, um embaixo do outro: "Continuar com Google", no padrão oficial do Google (estilo escuro no tema claro, estilo claro com o "G" colorido no tema escuro), e "Entrar com telefone", só com contorno. O botão de telefone não cita WhatsApp para não parecer login pela Meta. O campo de número só aparece depois do toque em "Entrar com telefone". No rodapé da tela, em todas as etapas do login (opções, telefone e código), em texto pequeno: "Ao continuar, você concorda com os Termos de uso e a Política de privacidade.", com links para `/terms` e `/privacy`. O título e o subtítulo mudam entre visitante novo e quem já entrou antes neste navegador ("Comece agora" / "Entrar").
+
+**Conta:** toda conta tem número, e-mail ou os dois. Um número, uma conta; um e-mail, uma conta. Quem entra por telefone não precisa de e-mail. Conta sem número não recebe nada pelo WhatsApp (lembrete, reengajamento, link de login automático); todo o resto do produto funciona igual. O número é pedido depois, em etapa própria (Seção 11.3.3).
+
+**Destino:** os dois logins voltam para a página que o usuário tentou abrir (`redirect_to`), ou para `/app`.
+
+**Sair:** o menu da conta mostra, acima de "Sair", com o que a pessoa entrou ("Conectado com Google" e o e-mail, ou "Conectado com WhatsApp" e o número), e a confirmação pergunta "Deseja realmente sair da conta {conta}?". Sair encerra só a sessão do Fluizer; no próximo login com Google a pessoa escolhe a conta Google de novo.
+
+**Origem e medição:** o cadastro por qualquer um dos dois grava a mesma origem (campanha, clique de anúncio, referência) e dispara o mesmo evento de cadastro para conta nova e de login para conta existente, com o método usado (`google`, `phone` ou `whatsapp`).
+
+#### 11.3.1 Login com Google
+
+- Pede só a identificação básica da conta Google (e-mail, nome e foto).
+- A conta é achada pelo e-mail. Só vale e-mail que o Google confirma como verificado, gravado sempre em minúsculas. Sem conta com esse e-mail, cria uma nova (trial padrão, com nome e foto do Google); com conta, entra nela sem alterar nada.
+- Nenhum identificador do usuário no Google é guardado.
+- Quem entrou antes por telefone e toca no Google com um e-mail que não está em nenhuma conta ganha uma conta nova, separada.
+- Erros, acima dos dois botões da tela inicial:
+  - Cancelou na tela do Google: "Login com Google cancelado. Tente de novo."
+  - E-mail não verificado: "Seu e-mail do Google não está verificado. Use outra conta ou entre com WhatsApp."
+  - Qualquer outra falha: "Não foi possível entrar com o Google. Tente de novo."
+
+#### 11.3.2 Login por telefone
+
+Aberto pelo botão "Entrar com telefone". O número do WhatsApp recebe o código de acesso. A tela tem o campo "Número do WhatsApp", o botão "Enviar código de acesso", um único texto de apoio e, abaixo, o link discreto "Voltar", que retorna aos dois botões. Código pedido há pouco (ainda válido) reabre direto a etapa do código; "Trocar número" volta para o campo.
 
 - **País:** qualquer país, com o Brasil já selecionado. Sem detecção automática. O seletor fica à esquerda, dentro do campo (bandeira e código do país).
 - **Formatos aceitos:** digitado, colado ou por preenchimento automático, com ou sem código do país (`+55`, `55`, `0055`), com ou sem o `0` de tronco (`011`), com espaços, traços, pontos, parênteses e os caracteres invisíveis que vêm ao copiar de um contato. Número colado com o código de outro país troca o seletor para esse país.
 - **Brasil:** aceita 10 ou 11 dígitos com DDD (fixo, celular com ou sem o nono dígito), sem alterar o nono dígito. Sem o `+`, um `55` no início só é lido como código do país quando o número não fecha como nacional, já que DDD 55 existe.
 - **Outros países:** aceita o número válido pelo plano de numeração do país.
 - **Botão "Continuar":** sempre clicável. Número incompleto ou inválido mostra "Digite o número com DDD." abaixo do campo.
-- **Mesma conta:** o número é gravado num único formato (código do país e número, só dígitos). O mesmo número digitado de qualquer forma cai sempre na mesma conta. O número é a identidade da conta: um número, uma conta.
-- **Textos:** abaixo do campo, "Receba o código de acesso direto no seu WhatsApp."; abaixo do botão, "Seu número será usado para acesso e envio de lembrete diário."
+- **Mesma conta:** o número é gravado num único formato (código do país e número, só dígitos). O mesmo número digitado de qualquer forma cai sempre na mesma conta.
+- **Campo:** com foco automático ao abrir o formulário (a escolha pelo telefone já foi feita).
+- **Texto de apoio:** abaixo do botão, "Seu número é usado para o acesso e os lembretes da sua prática diária."
+
+#### 11.3.3 Cadastro de número em conta sem telefone
+
+Conta criada pelo Google cadastra o número depois do login, num modal de número e código com as mesmas regras, campo e código do login por telefone (Seção 11.3.2), sem o link "Voltar". Quem abre o modal define o título e o subtítulo.
+
+- **Gravação:** confirmado o código, o número entra na conta logada. Não cria nem abre outra conta, e a sessão continua a mesma. A partir daí o número é identidade da conta: entra por telefone e recebe pelo WhatsApp.
+- **Número de outra conta:** confirmado o código, se o número já pertence a outra conta, nada é gravado e aparece "Esse número já está sendo usado por outra conta." A checagem só acontece depois do código, para não revelar a qualquer conta logada se um número tem cadastro.
+- **Lembrete sem número:** o item "Lembrete de prática" do menu da conta, em conta sem número, abre primeiro o modal de número com título "Lembrete de prática" e subtítulo "Para receber o lembrete pelo WhatsApp, cadastre seu número." Confirmado o número, abre em seguida o modal de lembrete com o lembrete ativado e o horário da conta (o padrão do cadastro), com "Salvar" liberado para a pessoa só ajustar e salvar. Fechou sem confirmar, nada muda. Conta com número abre o modal de lembrete direto.
+- **Abertura automática:** em conta sem número, o mesmo fluxo abre sozinho alguns segundos (3 s) depois da mensagem "Você respondeu sua primeira pergunta dessa atividade...", a pausa natural depois do primeiro feedback de uma atividade nova. Se houver áudio tocando nesse momento, espera ele terminar. Se a pessoa tocar em Praticar antes, não abre e fica para a próxima atividade nova.
+- **Só uma vez:** a abertura automática fica registrada na conta no momento em que abre. Fechada, não reabre sozinha em nenhuma sessão ou navegador; o número continua disponível pelo item do lembrete.
+
+### 11.4 Navegador dentro de apps
+
+O Google bloqueia login dentro do navegador de apps como Instagram, Facebook, Messenger e TikTok. A checagem acontece só no toque em "Continuar com Google", nunca ao abrir a tela: quem entra por WhatsApp segue no próprio app.
+
+- **Android:** a mesma tela de login abre no navegador padrão do celular.
+- **iPhone:** tenta abrir no Safari. Se o app não deixar, mostra uma tela curta:
+  - Título: "Abra no Safari para entrar com o Google"
+  - Texto: "O Google não permite entrar por este navegador. Toque em ••• e escolha Abrir no navegador, ou copie o link e cole no Safari."
+  - O link visível e o botão "Copiar link" (vira "Link copiado").
+  - "ou entre com WhatsApp", que abre direto o formulário de telefone.
+- **Origem preservada:** o link aberto fora do app leva a página de destino e todos os parâmetros de campanha (UTM, `fbclid`, `gclid`), da URL atual ou, sem eles, da origem já registrada no navegador do app. Sem isso, o cadastro feito no outro navegador perderia a atribuição.
 
 ---
 
@@ -605,7 +654,7 @@ O acesso ao app começa pelo número do WhatsApp em `/login`, que recebe o códi
 
 Um único fluxo automático de notificação pelo WhatsApp leva o usuário de volta à prática na superfície web (`/app`). Lembrete diário e reengajamento por inatividade não são fluxos separados: a decisão sai só de quantos dias se passaram desde a última resposta de prática do usuário, calculada no momento do disparo, sem estado próprio guardado entre um dia e outro.
 
-Aplica-se só a usuário com ao menos uma Activity ativa. Usuário sem atividade não recebe nada deste fluxo, esse caso é tratado pela Seção 10.1.
+Aplica-se só a usuário com ao menos uma Activity ativa e com número cadastrado. Usuário sem atividade não recebe nada deste fluxo, esse caso é tratado pela Seção 10.1. Conta sem número (login com Google, Seção 11.3) também não recebe, até cadastrar o número (Seção 11.3.3).
 
 ### Disparo
 
@@ -703,7 +752,7 @@ Caminho alternativo ao upload de material para criar uma atividade. O usuário i
 
 ### Disparo
 
-O fluxo inicia de duas formas, sempre pelo app: automaticamente ao final da sequência de onboarding (Seção 10), ou a qualquer momento pelo comando `nova atividade`. O fluxo não é iniciável pelo WhatsApp, que só responde com o link de acesso ao app (Seção 12).
+O fluxo inicia de duas formas, sempre pelo app: automaticamente ao final da sequência de onboarding (Seção 10), ou a qualquer momento pelo comando `nova atividade`. O botão "+ Nova atividade" do menu lateral envia esse comando pelo chat e fica sempre clicável: limite diário de atividades e demais bloqueios respondem no chat, como no comando digitado. O fluxo não é iniciável pelo WhatsApp, que só responde com o link de acesso ao app (Seção 12).
 
 ### Sequência de captura
 

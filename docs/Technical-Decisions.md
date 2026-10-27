@@ -6,6 +6,21 @@ topo.
 
 ---
 
+## Login com Google sobre a sessão própria
+
+Data: 2026-10-26
+
+Contexto: quem chega pelos anúncios abandona o login ao ver o campo de WhatsApp. O Google entra como primeira opção e a conta passa a poder existir só com e-mail (Product-Rules Seções 11.3 e 11.4).
+
+- **Sem NextAuth.** A sessão já era própria (`fz_session`, jose) e o NextAuth em `src/auth.ts` estava sem provider e sem uso. Plugar o Google nele traria um segundo modelo de sessão. `google-auth-library` faz só o OAuth (URL, troca do código, PKCE) e a validação do `id_token`; a sessão continua em `setSessionCookie`.
+- **Fluxo no servidor, Authorization Code + PKCE.** `GET /api/auth/google/start` gera `state`, `nonce` e `code_verifier` e grava tudo, com `redirect_to` e `timezone`, num JWT assinado no cookie `fz_google_oauth` (httpOnly, `sameSite: lax`, 10 min, path `/api/auth/google`). O callback confere `state` e `nonce`, exige `email_verified` e acha ou cria a conta por `users.email` em minúsculas (`findOrCreateUser`, mesma proteção de `P2002` do telefone). O `sub` do Google não é guardado.
+- **Evento no cliente.** O GTM só recebe evento do navegador, e o callback é redirecionamento de servidor. Ele envia para `/login/google?event=sign_up|login&redirect_to=...`, que dispara `setUserId` e o evento com `method: "google"` e segue para o destino.
+- **CHECK no banco.** `users_phone_or_email_check` (telefone ou e-mail) e `users_email_lowercase_check`, na migration `users_phone_or_email`. O Prisma não expressa CHECK, então o schema só tem comentário apontando para eles.
+- **Navegador embutido.** Detecção por user agent (`src/core/embedded-browser.ts`) só no clique do Google. Android abre `intent://` sem `package` (navegador padrão) com `browser_fallback_url`; iPhone tenta `x-safari-https://` e, se a página continuar visível depois de 1,5 s, mostra a tela de copiar link. A URL leva `redirect_to` e os `CAMPAIGN_PARAM_KEYS` da URL atual ou, na falta deles, do cookie de atribuição (httpOnly, lido no servidor por `login/page.tsx`); no navegador externo o middleware grava o cookie de novo a partir da URL.
+- **Fora do escopo:** pedir o número para conta só com e-mail; unir conta de telefone e conta de Google da mesma pessoa.
+
+---
+
 ## Identidade do usuário em `users.phone` (fim de `user_channels`)
 
 Data: 2026-10-26
