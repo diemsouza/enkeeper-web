@@ -115,7 +115,7 @@ Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.servic
 
 | Model          | Proposito                                                                             |
 | -------------- | --------------------------------------------------------------------------------------|
-| `User`         | Conta e identidade; `phone` (unico, formato `normalizePhoneToWaId`), `email` (unico, minusculas), pelo menos um dos dois (CHECK no banco), `planCode`, `planStatus`, `planExpiresAt`, `locale`, `currency` |
+| `User`         | Conta e identidade; `phone` (unico, formato `normalizePhoneToWaId`), `email` (unico, minusculas), pelo menos um dos dois (CHECK no banco), `planCode`, `planStatus`, `planExpiresAt` |
 | `Subscription` | Pagamento (1:N com User, mais recente = atual); nunca lido para liberar acesso, que fica no `User` |
 | `Doc`          | Material enviado; `rawContent`, `content`, `docType`, `level`, `status`               |
 | `Question`     | Pergunta gerada; `questionFormat`, `answerKeys`, `questionOptions`, `status`, `revisionCount` |

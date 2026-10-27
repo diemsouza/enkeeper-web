@@ -26,8 +26,6 @@ model User {
     // phone ou email, pelo menos um (CHECK users_phone_or_email_check)
     phone    String? @unique @map("phone")
     imageUrl String? @map("image_url")
-    locale   String? @map("locale")
-    currency String? @map("currency")
 
     // plano - atualizado pelo webhook Stripe ou manualmente no MVP
     planCode            PlanCode   @default(trial) @map("plan_code")
