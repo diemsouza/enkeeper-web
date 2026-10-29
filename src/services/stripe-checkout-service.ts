@@ -94,6 +94,7 @@ export async function getOrCreateCheckoutUrl(
     line_items: [{ price: resolvePriceId(interval), quantity: 1 }],
     mode: "subscription",
     subscription_data: { metadata: { userId } },
+    branding_settings: { border_style: "rounded" },
     expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_EXPIRES_SECONDS,
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app?${PAYMENT_SUCCESS_PARAM}=success&${PAYMENT_SESSION_PARAM}={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}${PLANS_PATH}`,

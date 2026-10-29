@@ -43,7 +43,7 @@ export function DomainSelector({ active, onChange }: DomainSelectorProps) {
   }, []);
 
   return (
-    <div className="relative w-full px-7">
+    <div className="relative w-full px-8">
       <div
         ref={scrollRef}
         className="flex w-full flex-nowrap gap-6 overflow-x-auto scrollbar-hide sm:justify-center"
@@ -54,7 +54,7 @@ export function DomainSelector({ active, onChange }: DomainSelectorProps) {
             type="button"
             onClick={() => onChange(domain.id)}
             className={cn(
-              "shrink-0 whitespace-nowrap border-b-2 px-1 pb-2 text-sm font-medium transition-colors",
+              "shrink-0 whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors",
               domain.id === active
                 ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground",
@@ -77,7 +77,7 @@ export function DomainSelector({ active, onChange }: DomainSelectorProps) {
             })
           }
           aria-label={t("scroll_left_aria")}
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-8"
         >
           <ChevronLeft className="h-4 w-4" strokeWidth={2} />
         </Button>
@@ -94,7 +94,7 @@ export function DomainSelector({ active, onChange }: DomainSelectorProps) {
             })
           }
           aria-label={t("scroll_right_aria")}
-          className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full"
+          className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8"
         >
           <ChevronRight className="h-4 w-4" strokeWidth={2} />
         </Button>

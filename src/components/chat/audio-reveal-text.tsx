@@ -31,7 +31,7 @@ export function AudioRevealText({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         className={cn(
-          "mt-0 flex w-full items-center justify-between gap-2 rounded-b-lg px-1 py-2.5 text-[13px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+          "mt-0 flex min-h-touch w-full items-center justify-between gap-2 rounded-b-lg px-1 py-2.5 text-[14px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
           isUserBubble
             ? "text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground"
             : "text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground",
@@ -55,7 +55,7 @@ export function AudioRevealText({
         <div className="min-w-0 overflow-hidden">
           <p
             className={cn(
-              "whitespace-pre-line break-words px-1 pb-3.5 pt-0.5 text-[14px] leading-[1.55] transition-all duration-200",
+              "whitespace-pre-line break-words px-1 pb-3.5 pt-0.5 text-chat transition-all duration-200",
               isUserBubble
                 ? "text-primary-foreground/90"
                 : "text-muted-foreground",

@@ -2,79 +2,46 @@ import { describe, expect, it, vi } from "vitest";
 import { Level, QuestionFormat } from "../lib/prisma";
 import {
   formatActivitySuggestion,
-  formatCaptureStepOptionsText,
-  formatDomainQuestion,
+  formatCreateActivityPrompt,
+  formatDocProcessed,
   formatFeedback,
-  formatFocusQuestion,
-  formatLevelQuestion,
-  formatNewActivityFlowCanceled,
   formatPracticeWaiting,
   formatQuestion,
   formatReviewUpToDate,
-  formatTopicQuestion,
 } from "./formatters";
+import { resolveCommand } from "../lib/commands";
 
 // lib/prisma instancia o PrismaClient no import; os testes so precisam dos enums
 vi.mock("../lib/prisma", async () => import("../../prisma/generated/enums"));
 
-describe("passos de captura", () => {
-  it("nível: opções no interactive, text com enunciado e aviso de cancelar", () => {
-    const message = formatLevelQuestion();
-    expect(message.text).not.toContain("Básico");
-    expect(message.text).toContain("*Nível de Inglês*");
-    expect(message.text).toMatch(/para sair\._$/);
-    expect(message.interactive?.body).toBe(message.text);
-    expect(message.interactive?.isOptionList).toBe(true);
-    expect(message.interactive?.isCaptureStep).toBe(true);
-    expect(message.interactive?.buttons.map((b) => b.label)).toEqual([
-      "Básico",
-      "Intermediário",
-      "Avançado",
-    ]);
-  });
-
-  it("objetivo: lista completa e sem instrução de número", () => {
-    const message = formatDomainQuestion();
-    expect(message.text).not.toContain("número");
-    expect(message.interactive?.buttons).toHaveLength(4);
-  });
-
-  it("assunto e ponto: um botão por sugestão, sem atalhos", () => {
-    const topic = formatTopicQuestion(["Viagem", "Comida"]);
-    expect(topic.interactive?.buttons.map((b) => b.label)).toEqual([
-      "Viagem",
-      "Comida",
-    ]);
-    const focus = formatFocusQuestion([
-      { key: "general_vocabulary", label: "Vocabulário geral" },
-    ]);
-    expect(focus.interactive?.buttons.map((b) => b.label)).toEqual([
-      "Vocabulário geral",
-    ]);
-    expect(focus.text).toContain("até 2");
-  });
-
-  it("formatCaptureStepOptionsText: corpo, opções e instrução", () => {
-    expect(formatCaptureStepOptionsText("Corpo", ["A", "B"])).toBe(
-      "Corpo\n\n1️⃣ A\n2️⃣ B\n\n_Responda com o número de uma opção._",
-    );
+describe("formatCreateActivityPrompt", () => {
+  it("botão com rótulo que é alias do comando de nova atividade", () => {
+    const message = formatCreateActivityPrompt(true);
+    expect(message.text).toContain("primeira atividade");
+    const [button] = message.interactive?.buttons ?? [];
+    expect(resolveCommand(button.label)).toBe("new_activity");
   });
 });
 
-describe("formatNewActivityFlowCanceled", () => {
-  it("sem atividade ativa, mensagem simples", () => {
-    expect(formatNewActivityFlowCanceled().text).toBe("Ok, cancelado.");
+describe("formatDocProcessed", () => {
+  it("mostra objetivo, assunto, nível e foco aplicados", () => {
+    const message = formatDocProcessed(false, 3, Level.advanced, {
+      domainKey: "work",
+      domain: "Mercado de Trabalho",
+      topic: "Pedir mais prazo",
+      subtopics: [],
+      subtopic: "",
+      focusKeys: ["modals", "future"],
+      focus: ["Verbos modais", "Futuro"],
+    });
+    expect(message.text).toContain("*Nível:* Avançado");
+    expect(message.text).toContain("*Foco:* Verbos modais, Futuro");
   });
 
-  it("com atividade ativa, avisa que ela continua normal", () => {
-    expect(formatNewActivityFlowCanceled(true).text).toBe(
-      "Ok, cancelado. Seguindo com a atividade atual.",
-    );
-  });
-
-  it("false explícito equivale a default", () => {
-    expect(formatNewActivityFlowCanceled(false).text).toBe(
-      formatNewActivityFlowCanceled().text,
+  it("material sem metadata mostra só o nível", () => {
+    const message = formatDocProcessed(false, 3, Level.basic);
+    expect(message.text).toBe(
+      "Pronto. A primeira pergunta chega em instantes.\n\n*Nível:* Básico",
     );
   });
 });

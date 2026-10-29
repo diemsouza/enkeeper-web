@@ -76,7 +76,7 @@ function LoginOptions({ error, onGoogle, onPhone }: LoginOptionsProps) {
         type="button"
         variant="outline"
         onClick={onPhone}
-        className="h-12 w-full text-base"
+        className="w-full"
       >
         {t("phone_continue")}
       </Button>

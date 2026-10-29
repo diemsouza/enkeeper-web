@@ -67,6 +67,16 @@ export async function findUserMediaById(
   });
 }
 
+export async function findUserMediaTranscription(
+  id: string,
+  userId: string,
+): Promise<Pick<Media, "parentId" | "mediaTranscription"> | null> {
+  return prisma.media.findFirst({
+    where: { id, userId, deletedAt: null },
+    select: { parentId: true, mediaTranscription: true },
+  });
+}
+
 export async function softDeleteMedia(id: string): Promise<void> {
   await prisma.media.update({ where: { id }, data: { deletedAt: new Date() } });
 }

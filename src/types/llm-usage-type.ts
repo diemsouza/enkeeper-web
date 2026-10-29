@@ -3,6 +3,7 @@ export type LlmUsageType =
   | "ocr"
   | "topic_extraction"
   | "topic_validation"
+  | "activity_request"
   | "practice_generation"
   | "practice_feedback"
   | "question_extraction"

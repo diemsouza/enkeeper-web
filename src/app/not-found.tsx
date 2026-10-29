@@ -17,7 +17,7 @@ export default async function NotFound() {
           <Button
             asChild
             size="lg"
-            className="md:inline-flex rounded-full px-5"
+            className="md:inline-flex px-5"
           >
             <a href="/">{t("cta_back_home")}</a>
           </Button>

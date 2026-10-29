@@ -2,6 +2,7 @@ import type {
   FormattedMessage,
   FormattedMessageButton,
 } from "@/src/types/out-message";
+import type { ClientCommand } from "@/src/types/client-command";
 
 export type { FormattedMessageButton };
 
@@ -41,6 +42,8 @@ export interface Message {
   // "Voce respondeu sua primeira pergunta dessa atividade": pausa usada para
   // pedir o numero em conta sem telefone.
   isFirstFeedbackGuide?: boolean;
+  // Mensagem de comando (null = action desconhecida): nunca vira balao.
+  command?: ClientCommand | null;
   // Pergunta, feedback ou dica (isStudyMessage): decide o auto scroll.
   isStudy?: boolean;
 }

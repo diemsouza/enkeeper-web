@@ -3,10 +3,10 @@ import {
   ACTIVITY_SUGGESTION_EMOJI,
   ANSWER_EMOJI,
   AUDIO_QUESTION_FORMATS,
-  DOMAINS,
+  CREATE_ACTIVITY_BUTTON_ID,
   INTENSIVE_UNTIL_MIN,
   LEVEL_OPTIONS,
-  MAX_DOC_ITEMS_PER_DOC,
+  RETRY_NEW_ACTIVITY_BUTTON_ID,
   SUBSCRIPTION_INTERVAL,
   SubscriptionInterval,
   TRIAL_DAYS,
@@ -36,7 +36,7 @@ export function formatOnboardingMsg1(): FormattedMessage {
 
 export function formatOnboardingMsg2(): FormattedMessage {
   return {
-    text: "Conte o que quer praticar, ou envie um arquivo (texto, imagem ou PDF) com conteúdo em inglês, como material de aula.\n\nSua prática fica pronta pra você praticar no seu ritmo.",
+    text: "Escolha um tema ou envie seu material de aula (texto, imagem ou PDF).\n\nSua prática fica pronta pra você responder no seu ritmo.",
   };
 }
 
@@ -46,19 +46,79 @@ export function formatOnboardingMsg3(): FormattedMessage {
   };
 }
 
+// Convite iniciado pelo sistema (onboarding, conversa sem atividade). O
+// rotulo "Criar atividade" e alias do comando nova atividade: o clique envia
+// o comando pelo chat e a resposta (mensagem de comando) abre a modal.
+export function formatCreateActivityPrompt(
+  isFirstActivity: boolean,
+): FormattedMessage {
+  const text = isFirstActivity
+    ? "Crie sua primeira atividade para começar a praticar sobre o que você quiser."
+    : "Crie uma atividade para praticar sobre o que você quiser.";
+  return {
+    text,
+    interactive: {
+      body: text,
+      buttons: [
+        {
+          id: CREATE_ACTIVITY_BUTTON_ID,
+          label: "Criar atividade",
+          type: "reply",
+        },
+      ],
+    },
+  };
+}
+
+export function formatActivityCreationFailed(): FormattedMessage {
+  const text = "Não foi possível criar a atividade.";
+  return {
+    text,
+    interactive: {
+      body: text,
+      buttons: [
+        {
+          id: RETRY_NEW_ACTIVITY_BUTTON_ID,
+          label: "Tentar de novo",
+          type: "reply",
+        },
+      ],
+    },
+  };
+}
+
+export function formatActivityCreationInProgress(): FormattedMessage {
+  return { text: "A atividade já está sendo criada." };
+}
+
+export function formatDailyActivityLimitReached(): FormattedMessage {
+  return { text: "⚠️ Você atingiu o limite de atividades de hoje." };
+}
+
 export function formatMaterialGuidance(): string {
   return `Use ${formatCommand("new_activity")} para praticar um tema à sua escolha.\n\nOu envie um arquivo de texto em inglês: foto de página de livro, captura de tela de conversa, letra de música, post nas redes sociais, material de aula ou PDF.`;
 }
 
 export function formatNoActivity(): FormattedMessage {
+  const text = [
+    "Você ainda não tem atividade ativa.",
+    "",
+    formatMaterialGuidance(),
+    "",
+    `_Use ${formatCommand("help")} para ver os comandos disponíveis._`,
+  ].join("\n");
   return {
-    text: [
-      "Você ainda não tem atividade ativa.",
-      "",
-      formatMaterialGuidance(),
-      "",
-      `_Use ${formatCommand("help")} para ver os comandos disponíveis._`,
-    ].join("\n"),
+    text,
+    interactive: {
+      body: text,
+      buttons: [
+        {
+          id: CREATE_ACTIVITY_BUTTON_ID,
+          label: "Criar atividade",
+          type: "reply",
+        },
+      ],
+    },
   };
 }
 
@@ -130,58 +190,6 @@ const LEVEL_LABEL: Record<Level, string> = {
   [Level.advanced]: "avançado",
 };
 
-function formatCaptureStep(
-  bodyLines: string[],
-  options: string[],
-  idPrefix: string,
-): FormattedMessage {
-  const body = [
-    ...bodyLines,
-    "",
-    `_Use ${formatCommand("cancel", { strictMode: false })} para sair._`,
-  ].join("\n");
-  return {
-    text: body,
-    interactive: {
-      ...buildOptionsInteractive(body, options, idPrefix),
-      isCaptureStep: true,
-    },
-  };
-}
-
-export function formatCaptureStepOptionsText(
-  body: string,
-  options: string[],
-): string {
-  const numbered = options.map((o, i) => `${getEmojiNumber(i + 1)} ${o}`);
-  return [
-    body,
-    "",
-    ...numbered,
-    "",
-    "_Responda com o número de uma opção._",
-  ].join("\n");
-}
-
-export function formatLevelQuestion(): FormattedMessage {
-  return formatCaptureStep(
-    [
-      "*Nível de Inglês*",
-      "Qual é o seu nível de inglês? Isso define o idioma e o formato das perguntas que você vai receber.",
-    ],
-    LEVEL_OPTIONS.map((o) => o.label),
-    "level_option",
-  );
-}
-
-export function formatLevelConfirmed(): FormattedMessage {
-  return { text: "Nível atualizado com sucesso." };
-}
-
-export function formatLevelCanceled(): FormattedMessage {
-  return { text: "Ok, nenhuma alteração feita." };
-}
-
 export function formatCommandList(level: Level | null): FormattedMessage {
   const setLevelDescription = level
     ? `Atualiza o nível do seu inglês. atual: ${LEVEL_LABEL[level]}`
@@ -200,128 +208,6 @@ export function formatCommandList(level: Level | null): FormattedMessage {
       "_Envie um arquivo de texto, imagem ou PDF com conteúdo em inglês suficiente para virar prática._",
     ].join("\n"),
   };
-}
-
-function getEmojiNumber(num: number): string {
-  const numberMap: Record<string, string> = {
-    "0": "0️⃣",
-    "1": "1️⃣",
-    "2": "2️⃣",
-    "3": "3️⃣",
-    "4": "4️⃣",
-    "5": "5️⃣",
-    "6": "6️⃣",
-    "7": "7️⃣",
-    "8": "8️⃣",
-    "9": "9️⃣",
-  };
-
-  return numberMap[num.toString()] || num.toString();
-}
-
-export function formatDomainQuestion(): FormattedMessage {
-  return formatCaptureStep(
-    [
-      "*Objetivo (1/3)*",
-      "Escolha o objetivo desta prática. Isso define o tipo de conteúdo gerado para as suas perguntas, baseado no que você quer alcançar.",
-    ],
-    DOMAINS.map((d) => d.label),
-    "domain_option",
-  );
-}
-
-export function formatTopicQuestion(topics: string[]): FormattedMessage {
-  return formatCaptureStep(
-    [
-      "*Assunto (2/3)*",
-      "Escolha um assunto para esta prática ou escreva algo do seu interesse. Quanto mais específico, mais as perguntas combinam com você.",
-    ],
-    topics,
-    "topic_option",
-  );
-}
-
-export function formatFocusQuestion(
-  suggestions: { key: string; label: string }[],
-): FormattedMessage {
-  return formatCaptureStep(
-    [
-      "*Foco (3/3)*",
-      "Escolha o foco desta prática ou escreva outro do seu interesse ou necessidade. Isso define o que será praticado no assunto e no objetivo escolhidos",
-    ],
-    suggestions.map((s) => s.label),
-    "focus_option",
-  );
-}
-
-export function formatNewActivityFlowCanceled(
-  hasActiveActivity = false,
-): FormattedMessage {
-  return {
-    text: hasActiveActivity
-      ? "Ok, cancelado. Seguindo com a atividade atual."
-      : "Ok, cancelado.",
-  };
-}
-
-export function formatNewActivityFlowCanceledGuidance(): FormattedMessage {
-  return {
-    text: `Use ${formatCommand("new_activity")} para começar, ou ${formatCommand("help")} para ver a lista de comandos.`,
-  };
-}
-
-export function formatSetFirstLevelCanceled(): FormattedMessage {
-  return {
-    text: `Use ${formatCommand("new_activity")} para tentar de novo, ou ${formatCommand("help")} para ver a lista de comandos.`,
-  };
-}
-
-export function formatFirstNewActivityCanceled(): FormattedMessage {
-  return {
-    text: `Use ${formatCommand("new_activity")} para começar quando quiser, ou ${formatCommand("help")} para ver a lista de comandos.`,
-  };
-}
-
-export function formatNewActivityFlowExpired(): FormattedMessage {
-  return {
-    text: `Criação da nova atividade encerrada por inatividade. Pode recomeçar quando quiser com ${formatCommand("new_activity")}.`,
-  };
-}
-
-export function formatTopicError(): FormattedMessage {
-  return {
-    text: `Assunto inválido. Envie outra opção, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`,
-  };
-}
-
-export function formatFocusError(): FormattedMessage {
-  return {
-    text: `Não foi possível usar essa opção. Tente descrever de outra forma, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`,
-  };
-}
-
-export function formatFocusTooMany(): FormattedMessage {
-  return {
-    text: `Não é possível informar mais de 2 opções. Tente de novo com uma ou duas opções, ou use ${formatCommand("cancel", { strictMode: false })} para sair.`,
-  };
-}
-
-export function formatSelectionOutOfRange(): FormattedMessage {
-  return { text: "Escolha apenas uma das opções disponíveis na lista." };
-}
-
-export function formatSelectionMixedFormat(): FormattedMessage {
-  return {
-    text: "Informe ou o número da lista ou o texto, sem misturar os dois formatos.",
-  };
-}
-
-export function formatSelectionSingleOnly(): FormattedMessage {
-  return { text: "Escolha apenas uma opção da lista." };
-}
-
-export function formatFocusNumericTooMany(): FormattedMessage {
-  return { text: "Você pode escolher até 2 opções da lista." };
 }
 
 type ActivityListItem = {
@@ -389,26 +275,32 @@ export function formatDocReceiving(): FormattedMessage {
 export function formatDocProcessed(
   hasWarning: boolean,
   remaining: number,
+  level: Level,
   metadata?: GeneratedDocMetadata | null,
 ): FormattedMessage {
-  const topicContext =
+  const levelLine = `*Nível:* ${findLevelLabel(level)}`;
+  const contextLines =
     metadata?.domain && metadata?.topic && metadata?.focus?.length
-      ? {
-          domain: metadata.domain,
-          topic: metadata.topic,
-          focus: metadata.focus.join(" e "),
-        }
-      : null;
-  const intro = topicContext
-    ? `Pronto. A primeira pergunta chega em instantes.\n\n*Objetivo:* ${sanitizeWhatsappContent(topicContext.domain)}\n*Assunto:* ${sanitizeWhatsappContent(topicContext.topic)}\n*Foco:* ${sanitizeWhatsappContent(topicContext.focus)}`
-    : "Pronto. A primeira pergunta chega em instantes.";
-  const lines = [intro];
+      ? [
+          `*Objetivo:* ${sanitizeWhatsappContent(metadata.domain)}`,
+          `*Assunto:* ${sanitizeWhatsappContent(metadata.topic)}`,
+          `*Foco:* ${sanitizeWhatsappContent(metadata.focus.join(", "))}`,
+          levelLine,
+        ]
+      : [levelLine];
+  const lines = [
+    `Pronto. A primeira pergunta chega em instantes.\n\n${contextLines.join("\n")}`,
+  ];
   if (hasWarning)
     lines.push("\nAlguns termos pareceram inconsistentes e foram ignorados.");
   if (remaining === 1)
     lines.push("\n_Você ainda pode enviar mais 1 atividade hoje._");
   if (remaining === 0) lines.push("\n_Essa é sua última atividade do dia._");
   return { text: lines.join("") };
+}
+
+function findLevelLabel(level: Level): string {
+  return LEVEL_OPTIONS.find((option) => option.level === level)?.label ?? level;
 }
 
 export function formatGuideAfterFirstFeedback(): FormattedMessage {
@@ -463,58 +355,6 @@ export function formatIntensiveDailyLimitReached(): FormattedMessage {
   };
 }
 
-export function formatActivityReplacePrompt(
-  title: string,
-  activitiesRemaining: number,
-): FormattedMessage {
-  const limitNote =
-    activitiesRemaining === 1
-      ? "\n_Você só pode criar mais uma atividade hoje._"
-      : activitiesRemaining === 0
-        ? "\n_Esse foi sua última atividade do dia._"
-        : "";
-
-  const text = [
-    `Você já tem uma atividade em andamento${title ? `: *"${title}"*` : ""}. Deseja arquivar esta atividade e começar uma nova?`,
-    "",
-    `_Use ${formatCommand("confirm_yes")} para continuar ou ${formatCommand("confirm_no")} para manter o atual._${limitNote}`,
-  ].join("\n");
-
-  const body = [
-    `Você já tem uma atividade em andamento${title ? `: *"${title}"*` : ""}. Deseja arquivar esta atividade e começar uma nova?`,
-  ].join("\n");
-
-  return {
-    text,
-    interactive: {
-      body,
-      buttons: [
-        {
-          id: "confirm_yes",
-          label: "Sim, continuar",
-        },
-        { id: "confir_no", label: "Não, cancelar" },
-      ],
-    },
-  };
-}
-
-export function formatDailyActivityLimitReached(): FormattedMessage {
-  return { text: "⚠️ Você atingiu o limite de atividades de hoje." };
-}
-
-export function formatDocItemReceived(itemCount: number): FormattedMessage {
-  const suffix = `Você pode enviar mais materiais ou só aguardar. Use ${formatCommand("cancel")} para descartar e começar de novo.`;
-  if (itemCount === 1) return { text: `Recebido. ${suffix}` };
-  return { text: `Recebido ${itemCount}/${MAX_DOC_ITEMS_PER_DOC}. ${suffix}` };
-}
-
-export function formatDocItemLimitReached(): FormattedMessage {
-  return {
-    text: `⚠️ Essa atividade já atingiu o limite de ${MAX_DOC_ITEMS_PER_DOC} materiais. Continuando com o que já foi enviado...`,
-  };
-}
-
 export function formatPauseSuccess(title: string): FormattedMessage {
   return {
     text: `Atividade *${title || "Sem título"}* pausada. Use ${formatCommand("resume")} para continuar de onde parou.`,
@@ -541,24 +381,6 @@ export function formatResumeInvitation(): FormattedMessage {
 
 export function formatNoPausedDocs(): FormattedMessage {
   return { text: "Nenhuma atividade pausada no momento." };
-}
-
-export function formatSupportRequest(): FormattedMessage {
-  return {
-    text: `Escreva em uma única mensagem como podemos ajudar ou use ${formatCommand("cancel", { strictMode: false })} para sair.`,
-  };
-}
-
-export function formatSupportReceived(): FormattedMessage {
-  return {
-    text: "Sua mensagem foi enviada! Um especialista entrará em contato em breve.",
-  };
-}
-
-export function formatSupportCanceledGuidance(): FormattedMessage {
-  return {
-    text: `Se precisar de ajuda da equipe, chame ${formatCommand("support")} de novo.`,
-  };
 }
 
 export function formatShortTextWithDocs(): FormattedMessage {
@@ -741,16 +563,6 @@ export function formatPreviousActivitySummary(
   };
 }
 
-export function formatImageBlocked(): FormattedMessage {
-  return { text: "Não foi possível processar esse material." };
-}
-
-export function formatImageUnreadable(): FormattedMessage {
-  return {
-    text: "Não conseguimos ler essa imagem. Tente enviar com melhor iluminação ou resolução.",
-  };
-}
-
 export function formatIntensiveModeActivated({
   isIntensiveMode,
   hasPendingQuestion,
@@ -845,10 +657,6 @@ export function formatEngagementReminder(
     templateName: reminder,
     templateBodyParams: ENGAGEMENT_REMINDER_PARAMS[reminder](params),
   };
-}
-
-export function formatActivityReplaceCanceled(): FormattedMessage {
-  return { text: "Ok, cancelado e seguindo com a atividade atual." };
 }
 
 export function formatInvalidResumeIndex(): FormattedMessage {

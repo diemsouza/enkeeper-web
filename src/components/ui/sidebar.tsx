@@ -111,7 +111,7 @@ export function SidebarTrigger({ className }: { className?: string }) {
       size="icon"
       onClick={toggleSidebar}
       aria-label="Alternar barra lateral"
-      className={cn("h-11 w-11", className)}
+      className={cn("h-touch w-11", className)}
     >
       <PanelLeft className="h-5 w-5" />
     </Button>
@@ -177,7 +177,7 @@ export function SidebarMenuButton({
     <Comp
       data-active={isActive}
       className={cn(
-        "flex h-11 w-full items-center gap-2 overflow-hidden rounded-md px-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none",
+        "flex h-11 w-full items-center gap-2 overflow-hidden rounded-md px-2.5 text-base font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none",
         isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
         !open && !isMobile && "justify-center px-0",
         className,

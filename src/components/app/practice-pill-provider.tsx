@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ulid } from "ulid";
 import {
   createContext,
   useCallback,
@@ -16,6 +17,7 @@ import {
 } from "@/src/core/practice-pill";
 import { getJson, postJson } from "@/src/lib/api-client";
 import { INTENSIVE_UNTIL_MIN } from "@/src/lib/constants";
+import { markSentInSession } from "@/src/lib/session-sent-messages";
 
 type PracticeSender = (text: string) => Promise<void>;
 
@@ -86,7 +88,11 @@ export function PracticePillProvider({
         await senderRef.current(text);
         return;
       }
-      await postJson("/api/app/messages", { text });
+      // Fora do chat ao vivo: o externalId entra no registro da aba para a
+      // resposta (ex: mensagem de comando) executar quando o chat montar.
+      const externalId = ulid();
+      markSentInSession(externalId);
+      await postJson("/api/app/messages", { text, externalId });
       router.push("/app");
     },
     [router],

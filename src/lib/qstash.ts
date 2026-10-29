@@ -1,5 +1,4 @@
 import { Client } from "@upstash/qstash";
-import { DOC_BUFFER_DELAY_SEC } from "./constants";
 
 let _client: Client | null = null;
 
@@ -16,19 +15,6 @@ export async function publishDocProcessing(
 ): Promise<void> {
   const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/queue/process-doc`;
   await getClient().publishJSON({ url, body: { docId, userId } });
-}
-
-export async function publishDocMerge(
-  docId: string,
-  userId: string,
-  latestDocItemId: string,
-): Promise<void> {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/queue/merge-doc`;
-  await getClient().publishJSON({
-    url,
-    body: { docId, userId, latestDocItemId },
-    delay: DOC_BUFFER_DELAY_SEC,
-  });
 }
 
 export async function publishResumeSummary(params: {

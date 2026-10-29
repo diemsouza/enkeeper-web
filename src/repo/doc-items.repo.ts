@@ -22,12 +22,6 @@ export async function findDocItemsByDoc(docId: string): Promise<DocItem[]> {
   });
 }
 
-export async function countValidDocItemsByDoc(docId: string): Promise<number> {
-  return prisma.docItem.count({
-    where: { docId, error: null },
-  });
-}
-
 export async function findLatestDocItem(docId: string): Promise<DocItem | null> {
   return prisma.docItem.findFirst({
     where: { docId },

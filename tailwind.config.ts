@@ -73,6 +73,29 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        control: "12px",
+        panel: "16px",
+        modal: "24px",
+        composer: "20px",
+        tray: "20px",
+      },
+      fontSize: {
+        caption: ["12px", "16px"],
+        chat: ["var(--chat-font-size)", "1.5"],
+        "chat-meta": ["var(--chat-meta-size)", "1.35"],
+      },
+      height: {
+        control: "48px",
+        "control-compact": "36px",
+        "control-mini": "32px",
+        touch: "44px",
+        composer: "var(--composer-control)",
+        "composer-icon": "var(--composer-icon)",
+      },
+      width: {
+        "control-mini": "32px",
+        composer: "var(--composer-control)",
+        "composer-icon": "var(--composer-icon)",
       },
       keyframes: {
         "accordion-down": {
@@ -115,6 +138,8 @@ export default {
       },
       minHeight: {
         "screen-dvh": "100dvh",
+        touch: "44px",
+        "composer-field": "var(--composer-field)",
       },
     },
   },

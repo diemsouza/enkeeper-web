@@ -27,16 +27,9 @@ Cada mudança de status é registrada com a data em que ocorreu, permitindo sabe
 
 Activity nunca encerra por inatividade. Só muda de status por ação do usuário, envio de novo material, ou conclusão do fluxo de nova atividade. O lembrete diário e o reengajamento (Seção 12) cuidam de trazer o usuário de volta enquanto a activity permanece `active`.
 
-### Recebimento de material (buffer antes da atividade)
+### Recebimento de material
 
-O material enviado pelo usuário não vira atividade imediatamente. Existe uma janela de buffer de 45 segundos a partir do primeiro envio, durante a qual o usuário pode enviar mais peças do mesmo material (por exemplo, várias fotos de páginas seguidas) sem que cada envio dispare uma atividade separada.
-
-- Tudo que chega dentro da janela de 45 segundos é tratado como parte do mesmo material.
-- Limite de 3 peças por material dentro dessa janela.
-- O comando `cancelar` aborta o processamento em andamento antes da janela fechar, nesse caso, nenhuma atividade é criada e o material descartado não conta para o cap diário (seção 14).
-- Ao fechar a janela, o material consolidado gera a atividade.
-
-Essa janela de buffer não se aplica ao fluxo de nova atividade (Seção 15), que gera a atividade assim que o ponto é resolvido e o conteúdo é gerado, sem etapa de acúmulo de peças.
+Material entra só pela modal de nova atividade (Seção 15, "Material"). O usuário escolhe até 3 arquivos (imagem, PDF, TXT ou MD) e o nível. Cada arquivo é lido e validado na própria modal assim que é adicionado. Ao continuar, os arquivos formam um único material, a modal fecha e o processamento segue no chat, sem janela de espera. Fechar a modal antes de continuar não cria nada e não deixa rastro no chat.
 
 ### Transições ao subir novo material ou concluir o fluxo de nova atividade
 
@@ -241,9 +234,9 @@ Prática de escuta ativa, para tirar a prática do ritmo só de leitura e escrit
 
 O nível pode vir de duas fontes: informado pelo usuário ou detectado automaticamente no material enviado.
 
-O usuário informa seu nível uma vez (no início do uso, ou quando quiser trocar) e esse nível passa a valer para qualquer atividade futura, tendo prioridade sobre o nível do material. Se o usuário não informar nível, o sistema usa o nível detectado no material enviado. Para conteúdo gerado pelo fluxo de nova atividade (Seção 15), o nível declarado do usuário é sempre a referência, não há detecção automática nesse caminho.
+O nível do perfil é o declarado pelo usuário e vale para qualquer atividade futura, com prioridade sobre o nível do material. Não existe pergunta de nível no onboarding: a modal de nova atividade (Seção 15) abre com o nível do perfil, ou Básico quando ainda não há nenhum, e a escolha feita nela atualiza o perfil. Nível escrito explicitamente no texto do pedido ("nível avançado", "sou iniciante") vale só para aquela atividade, sem alterar o perfil.
 
-A pergunta de nível, tanto no fluxo de nova atividade quanto pelo comando `nivel`, usa a mesma lista de opções dos passos da Seção 15: seleção por toque na web, botões nativos no WhatsApp (ver Seção 19).
+O nível do perfil também é trocado na modal de nível, aberta pelo comando `nivel` (como qualquer comando, a resposta é uma mensagem de comando, Seção 19, sem balão no chat) ou direto pelo item "Nível" do menu da conta. A modal mostra as três opções já marcadas com o nível atual e avisa que a troca vale para as próximas atividades criadas; a atividade atual continua no nível dela. Salvar fecha a modal com um toast de confirmação. A modal de nível e o combo de nível da modal de nova atividade leem e gravam o mesmo valor do perfil: o que muda num lugar já aparece no outro. Fechar ou cancelar não gera mensagem.
 
 Cada atividade guarda o nível que foi usado para gerar suas perguntas, então o histórico permanece consistente mesmo se o usuário trocar de nível depois.
 
@@ -442,7 +435,7 @@ Atalho fixo para o comando `praticar` (Seção 9), independente do banner da Se�
 
 ### 8.4 Toast de confirmação em ações do app
 
-Ações do usuário em `/app` que dependem de uma chamada ao backend (hoje: salvar preferência de lembrete diário no modal de calendário) mostram um toast de confirmação de sucesso ou erro após a resposta.
+Ações do usuário em `/app` que dependem de uma chamada ao backend (hoje: salvar preferência de lembrete diário no modal de calendário, salvar o nível na modal de nível e enviar o pedido na modal de suporte) mostram um toast de confirmação de sucesso ou erro após a resposta.
 
 O toast é renderizado acima de qualquer modal aberto no momento (z-index maior que o de Dialog/Sheet/Popover), para não ficar escondido atrás de fluxos que abrem modal.
 
@@ -457,12 +450,16 @@ O toast é renderizado acima de qualquer modal aberto no momento (z-index maior 
 | `pausar` | Para o envio de perguntas |
 | `retomar` | Retoma após pausa |
 | `atividade` | Lista a atividade ativa e as anteriores |
-| `nova atividade` | Inicia o fluxo de captura de nível, objetivo, assunto e ponto, e gera uma atividade individual a partir da combinação escolhida (ver Seção 15) |
-| `nivel` | Atualiza o nível de inglês declarado pelo usuário (básico, intermediário ou avançado), com atalho de botão para cada opção |
-| `cancelar` | Sai do fluxo ou ação em andamento: processamento de material dentro da janela de buffer (ver Seção 1), ou qualquer passo do fluxo de nova atividade (ver Seção 15) |
-| `suporte` | Aciona suporte via WhatsApp do admin |
+| `nova atividade` | Abre a modal de nova atividade (ver Seção 15). Nada aparece no chat até a atividade ser validada |
+| `nivel` | Abre a modal de nível (ver Seção 5). Nada aparece no chat |
+| `cancelar` | Sai do fluxo ou ação em andamento |
+| `suporte` | Abre a modal de suporte (ver Seção 9.1). Nada aparece no chat |
 
 Comandos não atualizam o histórico de prática nem contam como interação.
+
+### 9.1 Suporte
+
+O pedido de suporte acontece só na modal de suporte, aberta pelo comando `suporte` (e aliases, texto ou voz, inclusive com plano vencido) ou direto pelo item "Suporte" do menu da conta. A modal tem um campo de texto e o botão Enviar, que só habilita com texto. O pedido vai para a equipe pelo mesmo canal de sempre (e-mail de suporte com os dados da conta) e nunca entra no histórico do chat nem passa pela avaliação de exercício. Ao enviar, a modal fecha e um toast diz por onde a resposta chega: WhatsApp para conta com número, e-mail para conta só com e-mail. Falha no envio aparece dentro da modal, com o texto mantido para tentar de novo. Fechar ou cancelar não gera mensagem.
 
 Usuário sem nenhuma atividade criada recebe, junto da resposta ao comando `ajuda`, orientação sobre como começar a praticar (ver Seção 10). É a mesma orientação usada no onboarding e no fallback de usuário sem atividade (ver Seção 10.1), com uma única fonte de conteúdo para as três situações, evitando que a mesma regra fique escrita de formas diferentes em pontos distintos do produto.
 
@@ -473,15 +470,15 @@ A lista de comandos tem duas superfícies de descoberta, ambas alimentadas pela 
 - O comando `ajuda`, que devolve a lista formatada.
 - O autocomplete do composer na superfície web: ao digitar `/`, o campo sugere comandos de forma incremental, filtrando por prefixo ou alias conforme o usuário digita, e envia o comando escolhido direto.
 
-O comando `ajuda` não aparece na própria lista que gera nem no autocomplete. Comandos de confirmação dentro de um fluxo (`sim`, `não`, `cancelar` dentro do fluxo de nova atividade) e o comando interno de staff também ficam fora das duas superfícies. Alterar a fonte de comandos atualiza as duas ao mesmo tempo.
+O comando `ajuda` não aparece na própria lista que gera nem no autocomplete. Comandos de confirmação dentro de um fluxo em andamento (`sim`, `não`, `cancelar`) e o comando interno de staff também ficam fora das duas superfícies. Alterar a fonte de comandos atualiza as duas ao mesmo tempo.
 
 ---
 
 ## 10. Onboarding
 
-Sequência fixa de mensagens no primeiro contato. A estrutura, sequência com ordem fixa e prazo de trial declarado antes de qualquer ação, é regra de negócio. A quantidade de mensagens não é regra fixa, pode variar conforme necessidade de copy, desde que a ordem lógica seja preservada: saudação, proposta de valor, instrução da ação (contar o tema que quer praticar ou enviar material), o que acontece depois, prazo de trial e comandos disponíveis.
+Sequência fixa de mensagens no primeiro contato. A estrutura, sequência com ordem fixa e prazo de trial declarado antes de qualquer ação, é regra de negócio. A quantidade de mensagens não é regra fixa, pode variar conforme necessidade de copy, desde que a ordem lógica seja preservada: saudação, proposta de valor, instrução da ação (escolher um tema ou enviar material), o que acontece depois, prazo de trial e comandos disponíveis.
 
-Ao final da sequência fixa, o sistema já inicia automaticamente a captura de nível (se ainda não informado) seguida do fluxo de nova atividade (Seção 15), sem que o usuário precise usar nenhum comando. Upload de material continua disponível a qualquer momento, inclusive durante esse fluxo, e cancela o fluxo automaticamente quando chega (ver Seção 15).
+A sequência termina com uma mensagem com o botão "Criar atividade", que abre a modal de nova atividade (Seção 15). Nada começa sozinho: não há pergunta de nível nem passo de criação no chat, e a modal não abre sem o toque do usuário. Quem já passou pelo onboarding e abre o app sem nenhuma atividade recebe a mesma mensagem com o botão.
 
 Mensagens da sequência não são enviadas simultaneamente. Existe intervalo deliberado entre uma e outra, simulando envio natural e evitando que o usuário receba um bloco único de texto. O valor exato do intervalo é parâmetro de configuração, não regra de negócio, e pode ser ajustado sem necessidade de atualizar este documento. O indicador de "digitando" entre as mensagens segue a regra da Seção 19: com o intervalo curto atual, a sequência sai sem indicador.
 
@@ -505,7 +502,11 @@ Você tem {TRIAL_DAYS} dias pra praticar sem custo. Use *ajuda* pra ver
 os comandos disponíveis.
 ```
 
-O comando `nova atividade` não é mencionado nesta sequência porque o fluxo já dispara automaticamente logo em seguida, sem exigir que o usuário o digite.
+Última mensagem da sequência (exemplo do texto atual, com o botão "Criar atividade"):
+
+```
+Crie sua primeira atividade para começar a praticar sobre o que você quiser.
+```
 
 ### 10.1 Usuário sem atividade ativa
 
@@ -724,15 +725,15 @@ Conteúdo planejado: materiais enviados, atividades geradas por tema, trocas tot
 
 ## 14. Processamento de material
 
-Texto solto enviado no chat nunca é interpretado como material. Só arquivo (imagem, PDF, texto em arquivo) dispara o processamento desta seção. Texto no chat tem só duas leituras possíveis: comando, ou resposta a uma pergunta de prática ou a um passo do fluxo de nova atividade (Seção 15) em andamento.
+Texto solto enviado no chat nunca é interpretado como material. Só arquivo (imagem, PDF, texto em arquivo) dispara o processamento desta seção. Texto no chat tem só duas leituras possíveis: comando, ou resposta a uma pergunta de prática (ou a um passo em andamento, como a troca de nível). Arquivo de material entra só pela modal de nova atividade (Seção 15); o clipe do chat abre a modal na tela de material.
 
 Áudio não faz mais parte do processamento de material: só imagem, PDF e texto em arquivo geram Doc. Nota de voz (áudio) serve exclusivamente para responder a uma pergunta de prática pendente (ver Seção 17). PDF e texto em arquivo são processados em memória e descartados após extração — a imagem é a exceção, ver Seção 14.1 e Seção 17.
 
-**Cap diário invisível: 5 atividades por usuário por dia.** O cap conta atividades criadas, não peças de material enviadas nem conclusões do fluxo de nova atividade, várias fotos ou páginas enviadas dentro da janela de buffer de 45 segundos (Seção 1) formam um único material e consomem uma única vaga do cap. Material abortado via `cancelar` antes do fechamento da janela não consome o cap, porque nenhuma atividade chegou a ser criada. O mesmo vale para o fluxo de nova atividade cancelado antes de gerar conteúdo.
+**Cap diário: 5 atividades por usuário por dia.** O cap conta atividades criadas, não arquivos enviados: até 3 arquivos enviados juntos pela modal formam um único material e consomem uma única vaga. A modal checa o cap antes de fechar e avisa ali mesmo quando ele já foi atingido. Modal fechada antes de continuar, ou pedido barrado na validação, não consome o cap.
 
 Após o processamento, a primeira pergunta é agendada com um atraso de 3 minutos, para garantir que o usuário receba a confirmação de processamento antes da primeira interação de prática. O mesmo atraso se aplica à primeira pergunta de uma atividade criada pelo fluxo de nova atividade.
 
-**Origem do material:** cada material grava sua origem, `upload` ou `generated` (ver Seção 15). Material com origem `generated` grava também o objetivo, o assunto e o(s) ponto(s) que originaram aquele conteúdo, para rastreabilidade. Material com origem `upload` não grava esses dados por enquanto.
+**Origem do material:** cada material grava sua origem, `upload` ou `generated` (ver Seção 15). Material com origem `generated` grava também o objetivo, o assunto, o(s) foco(s) e o subtópico que originaram aquele conteúdo, para rastreabilidade. Material com origem `upload` não grava esses dados por enquanto.
 
 O webhook classifica a mensagem recebida pelo type informado pelo canal antes de decidir o processamento. text, image, audio, document, button e interactive seguem o processamento normal. reaction e sticker são ignorados silenciosamente, sem gerar resposta nem entrar no pipeline de avaliação. video recebe mensagem própria informando que ainda não é suportado. Os demais tipos (location, contacts, order, system, unknown, e qualquer tipo não mapeado) recebem mensagem de comando inválido, orientando o uso de /ajuda.
 
@@ -746,67 +747,75 @@ Uma imagem enviada como material passa por três desfechos possíveis:
 
 ---
 
-## 15. Fluxo de nova atividade (conteúdo gerado por tema)
+## 15. Nova atividade (modal)
 
-Caminho alternativo ao upload de material para criar uma atividade. O usuário informa o que quer praticar em vez de trazer material próprio, e o sistema gera o conteúdo individualmente para aquele usuário. Existe para quem não tem material formal em mãos, ou quer trocar de assunto sem procurar um arquivo.
+Toda atividade nasce numa modal única, por tema escrito ou escolhido, ou pelo material do usuário. A modal substitui o antigo fluxo de captura em etapas no chat: com as opções todas visíveis de uma vez, o usuário percebe que pode escrever o que quiser, e o início da prática deixa de ser uma sequência de mensagens.
 
-### Disparo
+### Abertura
 
-O fluxo inicia de duas formas, sempre pelo app: automaticamente ao final da sequência de onboarding (Seção 10), ou a qualquer momento pelo comando `nova atividade`. O botão "+ Nova atividade" do menu lateral envia esse comando pelo chat e fica sempre clicável: limite diário de atividades e demais bloqueios respondem no chat, como no comando digitado. O fluxo não é iniciável pelo WhatsApp, que só responde com o link de acesso ao app (Seção 12).
+A modal abre pela resposta ao comando `nova atividade`, como qualquer comando do chat: digitado, pelo menu `/`, por voz, por qualquer alias, pelo botão "+ Nova atividade" do menu lateral, pelo botão "Criar atividade" do convite (Seção 10) ou pelo botão "Nova atividade" da sugestão de troca (Seção 6.3). O pedido fica no histórico como mensagem do usuário, e a resposta é uma mensagem de comando (Seção 19), que não aparece no chat e abre a modal direto. Assim o histórico sempre mostra quem pediu a atividade e como, sem balão repetido de resposta. A detecção é só pelo comando e seus aliases; texto livre ("quero praticar...") não abre a modal.
 
-### Sequência de captura
+A modal só abre quando a resposta chega em retorno a uma mensagem enviada nesta aba. Recarregar a página, outra aba ou outro dispositivo nunca abrem a modal. O clipe do composer abre a modal direto na tela de material, sem mensagem.
 
-Pergunta e resposta fixa, na ordem:
+O card "Crie sua primeira atividade..." / "Crie uma atividade..." com o botão "Criar atividade" existe só nas mensagens que o sistema inicia: o fim do onboarding e a conversa aberta sem nenhuma atividade. O toque no botão envia "Criar atividade" como mensagem do usuário, que segue o caminho acima.
 
-1. **Nível** — só perguntado se o usuário ainda não tem nível declarado (ver Seção 5). Se já existe, pula direto para o passo seguinte.
-2. **Objetivo** — lista fechada de 4 opções: Mercado de Trabalho, Viagens Internacionais, Educação e Intercâmbio, Dia a Dia e Lazer.
-3. **Assunto** — lista de 5 sugestões específicas por objetivo, mais opção de informar outro assunto por texto livre. As 5 sugestões são fixas por objetivo, não geradas por LLM.
-4. **Ponto** — o que praticar dentro do assunto escolhido: vocabulário geral, um tempo verbal, uma estrutura gramatical, entre outros (ver "Catálogo de foco linguístico" abaixo). Lista de 5 sugestões geradas com base no objetivo e no assunto informados, ordenadas da mais comum e didática pra mais específica, sempre incluindo a opção de vocabulário geral, mais opção de informar outro ponto por texto livre.
+Fechar ou cancelar a modal não gera nenhuma mensagem. A resposta visível ao pedido passa a ser o fluxo de criação ("Pronto", primeira pergunta), quando a atividade é criada. Não existe estado pendente de criação no chat.
 
-Nenhum termo técnico de categoria aparece em copy voltada ao usuário, tanto assunto quanto ponto são perguntados em linguagem natural.
+### Tela principal
 
-Os quatro passos (nível, objetivo, assunto e ponto) mostram as opções como lista. Na superfície web, a lista é de escolha única por toque: o usuário toca na opção, ela fica destacada e a lista trava (ver Seção 19). Assunto e ponto continuam aceitando texto livre digitado, e o enunciado deixa isso claro. Ponto é escolha única na lista; a combinação de até 2 pontos (ver "Catálogo de foco linguístico") é feita por texto livre, e o enunciado do ponto indica isso.
+- **Texto livre**, até 200 caracteres: o que o usuário quer praticar.
+- **Sugestões**, em abas pelos 4 objetivos (Dia a Dia e Lazer, Viagens Internacionais, Educação e Intercâmbio, Mercado de Trabalho), 20 por objetivo, ordenadas das que mais engajam para as mais específicas. Tocar numa sugestão preenche o campo, que continua editável, e marca o item como referência. A lista nunca é filtrada nem destacada pelo que se digita.
+- **Nível** (Básico, Intermediário, Avançado), vindo do perfil (Seção 5).
+- **Foco**, até 3, escolhido do catálogo de foco linguístico, agrupado por seção. Sem escolha, a prática usa o vocabulário e as estruturas naturais da situação (vocabulário geral).
+- Rodapé com "Usar meu material" e "Continuar", que só habilita com texto.
 
-No WhatsApp, até 3 opções (nível) viram botões de resposta rápida nativos. Com mais de 3 opções (objetivo, assunto e ponto), as opções vão numeradas no texto, com instrução de responder pelo número e os atalhos de botão "Primeira opção" e "Escolha para mim". Os atalhos existem só no WhatsApp, a web não mostra atalho porque a seleção já é direta.
+### Validação dentro da modal
 
-Em qualquer canal, o passo aceita também número ou texto livre digitado. A resposta por número é tolerante a variações de digitação: aceita separadores equivalentes à vírgula (`1 e 2`, `1, 2`, `1-2`, `1/2`) quando o passo permite mais de uma seleção. Número fora da lista, misturar número com texto na mesma resposta, ou informar mais números do que o passo aceita, cada caso retorna um aviso específico pedindo pra corrigir, não um "resposta inválida" genérico.
+Ao continuar, a validação acontece na própria modal, antes de fechar. Erro de validação nunca vai para o chat.
 
-### Catálogo de foco linguístico
+1. **Acesso e cap**: plano ativo, cap diário (Seção 14) e nenhuma outra criação em andamento.
+2. **Pedido** (uma chamada de LLM): conteúdo proibido (pornografia, sexualização, qualquer conteúdo sexual envolvendo criança ou adolescente, drogas, armas, violência, discurso de ódio, xenofobia, racismo ou equivalente), informação suficiente para gerar uma atividade e extração de objetivo, assunto, nível e foco do texto. Conteúdo proibido recebe aviso curto e genérico, sem revelar o motivo. Falta de informação mostra o que falta e 2 ou 3 exemplos clicáveis que completam o texto.
+3. **Sugestão pronta escolhida e não editada** pula a chamada do passo 2, porque já carrega objetivo e assunto.
 
-Ponto é escolhido de um catálogo fixo de aspectos da língua: vocabulário geral, classes de palavra (substantivos, adjetivos), tempos verbais, conectores, phrasal verbs, estruturas gramaticais, entre outros. O catálogo vale igualmente para os três níveis, sem restrição por nível, o que muda por nível é só o peso de prioridade nas 5 sugestões exibidas, não a disponibilidade do item.
+### Coerência entre texto e controles
 
-Usuário pode combinar até 2 pontos numa mesma atividade, por texto livre ou, no WhatsApp, digitando até 2 números da lista numerada. A lista por toque da web é de escolha única. Quando vêm 2 números, o texto das duas opções é classificado contra o catálogo antes de gerar, mesmo caminho do texto livre. Se pedir mais de 2, o sistema não trata como erro, pede pra escolher no máximo 2 entre o que foi mencionado. Objetivo e assunto continuam aceitando uma seleção só, em qualquer formato.
+Sem bloquear nem perguntar ao usuário:
 
-Novo item só entra no catálogo por decisão deliberada, mesmo princípio de mudança rara que já vale para outras regras de negócio deste documento.
+- Foco escrito no texto e nada selecionado: usa o do texto.
+- Focos selecionados mais os escritos passando de 3: os selecionados primeiro, completando com os do texto até 3.
+- Nível explícito no texto diferente do selecionado: o do texto vale para esta atividade; o perfil fica com o selecionado.
+- Objetivo: o que o texto indica; sem indicação, o da aba aberta.
 
-### Estado do fluxo
+A mensagem "Pronto" no chat mostra objetivo, assunto, nível e foco aplicados.
 
-Controlado por um campo de intenção pendente por usuário, com um valor por passo em andamento. Enquanto o fluxo está ativo, qualquer texto recebido do usuário é tratado como resposta ao passo atual, com prioridade sobre qualquer resposta de prática pendente.
+### Depois de validar
 
-**Timeout:** fora do onboarding, o fluxo expira por inatividade após um tempo configurável. Ao expirar, o fluxo é cancelado silenciosamente, o usuário recebe aviso de que pode recomeçar quando quiser. Dentro do onboarding, o fluxo não expira, aguarda resposta indefinidamente, já que não há activity competindo pela atenção do usuário nesse momento.
+A modal fecha e o chat segue com o fluxo de sempre: indicador de digitando durante a geração, "Pronto" com o que foi aplicado, resumo da atividade anterior (Seção 1) e primeira pergunta. Falha na geração aparece no chat com o botão "Tentar de novo". O toque vai pelo chat como mensagem do usuário e repete a geração com o mesmo pedido, sem reabrir a modal; sem pedido guardado, a resposta é a mesma do comando `nova atividade` (abre a modal). Com o cap diário atingido ou outra criação em andamento, a resposta avisa no chat.
 
-**Cancelamento:** o comando `cancelar` sai do fluxo em qualquer passo, sem criar nada. Não existe retorno a um passo anterior, cancelar sempre descarta o fluxo inteiro.
+### Material
 
-**Upload durante o fluxo:** se chega um arquivo válido em qualquer passo do fluxo, o fluxo é cancelado silenciosamente e o arquivo segue o pipeline normal de material (Seção 14), incluindo a confirmação de substituição já existente quando há uma activity ativa em andamento (ver Seção 1). Não há confirmação adicional pelo fato de o usuário estar em meio ao fluxo, apenas a que já existe para upload comum.
+"Usar meu material" troca o conteúdo da modal: envio de até 3 arquivos (imagem, PDF, TXT ou MD), nível e rodapé com Voltar e Continuar. Não há campo de colar texto. Cada arquivo é lido ao ser adicionado e erros aparecem no próprio arquivo: imagem bloqueada ou ilegível (Seção 14.1), arquivo sem conteúdo, formato não aceito ou acima do tamanho máximo. Ao continuar, a modal checa o cap e o mínimo de conteúdo; validou, fecha, os arquivos aparecem no chat e o processamento é acompanhado ali (Seção 14), incluindo a recusa de conteúdo proibido pela extração, que roda depois.
 
 ### Geração de conteúdo
 
-A combinação de nível, objetivo, assunto e ponto passa por duas chamadas de LLM em sequência:
+Depois que a modal fecha, duas chamadas de LLM em sequência:
 
-1. **Validação do assunto.** Valida o assunto em duas camadas: encaixe (o assunto faz sentido dentro do objetivo escolhido) e conteúdo proibido (pornografia, sexualização, drogas, armas, discurso de ódio, xenofobia, racismo ou equivalente, mesmo quando tecnicamente se encaixaria no objetivo). Falhando qualquer uma, retorna erro curto e genérico, sem revelar qual camada falhou, e o usuário pode tentar outro assunto ou cancelar. Passando, retorna as 5 sugestões de ponto usadas no passo seguinte, além de 5 subtópicos, recortes específicos dentro do assunto.
-2. **Resolução do ponto e geração.** Se o ponto veio como um único número da lista, gera direto, sem reclassificar. Se veio como texto livre ou como 2 números da lista, classifica contra o catálogo de foco antes de gerar, podendo identificar até 2 pontos válidos numa mesma resposta. Antes de gerar, o sistema sorteia um dos 5 subtópicos retornados na validação, excluindo o último subtópico usado por aquele usuário na geração mais recente com o mesmo objetivo e assunto (se houver), e ancora o conteúdo nesse subtópico sorteado, não no assunto amplo. O sorteio é interno, o usuário não escolhe nem vê o subtópico diretamente. Na prática, permite repetir o mesmo assunto várias vezes sem receber o mesmo vocabulário. Gera 25 itens de vocabulário (quantidade de config, sujeita a revisão) no mesmo formato de lista de vocabulário que o processamento de upload já produz (ver Seção 3).
+1. **Subtópicos.** Revalida o assunto contra conteúdo proibido e gera 5 subtópicos, recortes específicos dentro do assunto.
+2. **Geração.** O sistema sorteia um dos 5 subtópicos, excluindo o último usado por aquele usuário na geração mais recente com o mesmo objetivo e assunto, e gera 25 itens de vocabulário ancorados nesse subtópico e filtrados pelos focos resolvidos (quantidade de config, sujeita a revisão), no mesmo formato de lista do processamento de material (Seção 3). O sorteio é interno; na prática, repetir o mesmo assunto não repete o vocabulário.
+
+Objetivo, assunto, foco e subtópico ficam gravados separados no material gerado, para rastreabilidade (Seção 14).
+
+### Catálogo de foco linguístico
+
+Foco é escolhido de um catálogo fixo de aspectos da língua: vocabulário geral, classes de palavra (substantivos, adjetivos), tempos verbais, conectores, phrasal verbs, estruturas gramaticais, entre outros. O catálogo vale para os três níveis, sem restrição por nível. Uma atividade combina até 3 focos. Novo item só entra no catálogo por decisão deliberada.
 
 ### Sem compartilhamento entre usuários
 
-Diferente de material de upload, conteúdo gerado por este fluxo é individual: sem pool compartilhado entre usuários, sem versionamento. Cada geração é única para o usuário e para aquela troca de atividade específica. Essa é uma diferença deliberada em relação a desenhos anteriores considerados para este fluxo, o custo de geração escala por usuário e por troca, não há reuso de conteúdo entre usuários.
-
-Sem revisão humana prévia antes da entrega ao usuário, diferente do que um pool compartilhado permitiria. A validação de encaixe e conteúdo proibido no passo de geração reduz risco, mas não substitui auditoria amostral do conteúdo já entregue.
+Conteúdo gerado é individual: sem pool compartilhado entre usuários, sem versionamento. O custo de geração escala por usuário e por troca de atividade. Sem revisão humana prévia; a moderação na modal e na geração reduz risco, mas não substitui auditoria amostral do conteúdo já entregue.
 
 ### Criação da atividade
 
-Atividade criada por este fluxo segue as mesmas regras de transição e visibilidade da Seção 1 (arquiva ou cancela conforme a anterior teve resposta), e conta para o mesmo cap diário de 5 atividades por usuário por dia (Seção 14).
-
-Comportamento pós-cancelamento depende do contexto. Sem Activity ativa (onboarding): a mensagem "Ok, cancelado." é emendada imediatamente pelo reinício automático do fluxo, mostrando a primeira pergunta aplicável (pula nível se já declarado, ver Seção 5). Sem mensagem de orientação separada. Com Activity ativa (troca de atividade): comportamento inalterado, avisa que a atividade anterior continua normal, sem reiniciar automaticamente.
+Atividade criada pela modal segue as mesmas regras de transição e visibilidade da Seção 1 (arquiva ou cancela conforme a anterior teve resposta) e conta para o mesmo cap diário de 5 atividades (Seção 14). A atividade anterior só é arquivada depois que o novo conteúdo existe: falha na geração mantém a atividade atual.
 
 ---
 
@@ -893,18 +902,17 @@ Na pergunta de escuta (Seção 4), o `text` é só a instrução e o `audioMedia
 
 `imageMediaId` e `interactive` podem vir juntos na mesma mensagem (hoje: pergunta de reconhecimento por imagem, Seção 4, com um botão por opção). A superfície web mostra a imagem, o texto como legenda e as opções como botões. O WhatsApp segue a prioridade acima: envia a imagem com o `text` como legenda e acrescenta as opções numeradas à legenda no envio, sem botões.
 
-**Listas de opções.** Toda mensagem com lista de opções (`choice`, `image_recognition` e os passos de nível, objetivo, assunto e ponto) segue o mesmo padrão: o `text` leva só o enunciado, neutro de canal, sem opções numeradas nem instrução de responder por número; as opções vivem no `interactive`, que é persistido com a lista completa; cada canal monta a apresentação a partir dele. A web renderiza a lista a partir do `interactive`, inclusive ao recarregar. O WhatsApp pode acrescentar as opções numeradas ao texto no envio, e nos passos de captura decide entre botões nativos (até 3 opções) ou lista numerada com instrução e atalhos (mais de 3, ver Seção 15). O que é salvo no histórico é o `text` canônico, não o texto montado pelo canal.
+**Listas de opções.** Toda mensagem com lista de opções (`choice` e `image_recognition`) segue o mesmo padrão: o `text` leva só o enunciado, neutro de canal, sem opções numeradas nem instrução de responder por número; as opções vivem no `interactive`, que é persistido com a lista completa; cada canal monta a apresentação a partir dele. A web renderiza a lista a partir do `interactive`, inclusive ao recarregar. O WhatsApp pode acrescentar as opções numeradas ao texto no envio. O que é salvo no histórico é o `text` canônico, não o texto montado pelo canal.
+
+**Mensagem de comando.** Além das mensagens com texto, o sistema envia mensagens de comando: instruções para a interface que nunca aparecem como balão. Cada uma tem uma ação e dados opcionais (hoje: "abrir a modal de nova atividade", Seção 15, com um texto pré-preenchido opcional ainda não usado; "abrir a modal de suporte", Seção 9.1; "abrir a modal de nível", Seção 5). Ficam salvas no histórico como as demais, para manter o registro de pergunta e resposta, mas a interface só executa a que chega ao vivo em resposta a uma mensagem enviada naquela aba, uma única vez. Histórico carregado, outra aba, outro dispositivo e recarregar a página nunca executam um comando. Canal sem interface para executar o comando o ignora. Uma ação nova entra sem mudar o formato.
 
 Um canal novo pode nascer só com suporte a `text` e ganhar as camadas opcionais depois, sem quebrar nada que já existe (ver Seção 7 do Product-Brief, arquitetura multicanal).
 
 Dentro de `interactive`, um botão pode ser de dois tipos: ação (resposta rápida nativa do canal, ex: "Nova atividade") ou link (abre uma URL, ex: link do bloqueio de acesso para a página de planos ou o portal de pagamento, Seção 11.1). Link do próprio app navega na mesma aba; link externo abre em nova aba. Mensagem com botão de link sempre inclui a mesma URL também no `text` puro, como fallback para quem recebe só a camada canônica.
 
-`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário, não só o texto equivalente. O `interactive` em produção cobre hoje cinco casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade" e, fora do modo intensivo, "Praticar"; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre a página de planos ou o portal de pagamento e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; os passos de nível (Seção 5, também pelo comando `nivel`), objetivo, assunto e ponto do fluxo de nova atividade (Seção 15), com um botão por opção; e as perguntas `choice` e de reconhecimento por imagem (Seção 4), com um botão por opção.
+`Message.templateName` e `Message.interactive` são persistidos junto do envio (colunas nullable, preenchidas só quando aplicável), como registro de auditoria do que foi de fato enviado ao usuário, não só o texto equivalente. O `interactive` em produção cobre hoje quatro casos: a sugestão de troca de atividade (Seção 6.3), botão de ação "Nova atividade" e, fora do modo intensivo, "Praticar"; o link de pagamento do bloqueio de acesso (Seção 11.1), botão de link que abre a página de planos ou o portal de pagamento e aparece como link clicável dentro do próprio texto em qualquer canal sem suporte a botão; os botões "Criar atividade" (convite do sistema) e "Tentar de novo" da criação de atividade (Seção 15); e as perguntas `choice` e de reconhecimento por imagem (Seção 4), com um botão por opção.
 
-Nas listas de opções, o `interactive` guarda também o estado da seleção: `disabled` (todas as opções travadas) e `selectedId` (id da opção escolhida, destacada). Ausentes, a lista está pendente. Dois caminhos gravam:
-
-- **Avaliação da resposta** (`choice` e `image_recognition`): na mensagem mais recente e ainda livre daquela pergunta; a opção vem do botão clicado, senão do número ou do texto digitado, e sem correspondência grava só `disabled`.
-- **Clique num passo de captura** (nível, objetivo, assunto, ponto): só quando a web envia o id da mensagem e o id do botão, a mensagem é do usuário, é do sistema com lista, o botão existe nela, a opção bate com a lista atual do passo e a lista ainda não está travada. O clique segue o mesmo caminho da escolha daquela opção da lista. Texto digitado nesses passos não grava estado.
+Nas listas de opções, o `interactive` guarda também o estado da seleção: `disabled` (todas as opções travadas) e `selectedId` (id da opção escolhida, destacada). Ausentes, a lista está pendente. Quem grava é a avaliação da resposta (`choice` e `image_recognition`), na mensagem mais recente e ainda livre daquela pergunta; a opção vem do botão clicado, senão do número ou do texto digitado, e sem correspondência grava só `disabled`. Cards de nível do antigo fluxo no chat continuam no histórico, sempre travados.
 
 Comandos e respostas barradas (limite, supressão) não alteram a mensagem; a gravação só acontece depois que a mensagem é aceita para processamento. A superfície web antecipa localmente a seleção no clique e volta ao pendente se o envio falhar ou se o servidor não avaliar a mensagem como resposta. Mensagens anteriores a essa regra ficam sem estado (sem backfill).
 
@@ -915,7 +923,7 @@ Comandos e respostas barradas (limite, supressão) não alteram a mensagem; a gr
 
 Quando aparece:
 
-- Logo antes de qualquer preparo de duração incerta: avaliação da resposta (incluindo o áudio de feedback que vem junto), geração da próxima pergunta (incluindo a imagem), validação do assunto e geração do conteúdo no fluxo de nova atividade (Seção 15), processamento de material (Seção 14), resumo de conclusão da rodada (Seção 2) e resumo ao retomar uma atividade (Seção 1). Quando o preparo tem várias etapas lentas (pergunta com imagem, e o novo formato quando a imagem falha), o aviso é renovado antes de cada etapa, para o indicador não sumir no meio.
+- Logo antes de qualquer preparo de duração incerta: avaliação da resposta (incluindo o áudio de feedback que vem junto), geração da próxima pergunta (incluindo a imagem), subtópicos e geração do conteúdo depois da modal de nova atividade (Seção 15), processamento de material (Seção 14), resumo de conclusão da rodada (Seção 2) e resumo ao retomar uma atividade (Seção 1). Quando o preparo tem várias etapas lentas (pergunta com imagem, e o novo formato quando a imagem falha), o aviso é renovado antes de cada etapa, para o indicador não sumir no meio.
 - Nos segundos finais de uma pausa deliberada entre duas mensagens da mesma sequência (ex: entre o feedback e o áudio, entre a dica e a próxima pergunta, depois de `praticar`, entre um cancelamento e a orientação que vem em seguida). Mensagens de uma mesma sequência nunca saem coladas, sempre com pausa entre elas. Pausas curtas saem em silêncio, como as do onboarding, sem indicador, para ele não piscar na tela. A antecedência e o limiar mínimo da pausa são parâmetros de configuração, como os próprios intervalos, e podem ser ajustados sem atualizar este documento.
 
 Quando some, o que vier primeiro:

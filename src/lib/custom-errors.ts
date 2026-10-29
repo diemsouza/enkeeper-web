@@ -99,3 +99,12 @@ export class PhoneTakenError extends SafeError {
     this.name = "PhoneTakenError";
   }
 }
+
+export class SupportDeliveryError extends SafeError {
+  code = "SUPPORT_DELIVERY_FAILED";
+
+  constructor(message = "Falha ao enviar o pedido de suporte.") {
+    super(message);
+    this.name = "SupportDeliveryError";
+  }
+}

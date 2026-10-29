@@ -24,13 +24,13 @@ export default function Footer() {
         </p>
       </div>
       <div className="flex items-center justify-center gap-2 pb-6 opacity-80 hover:opacity-100 transition text-sm text-muted-foreground">
-        <Link href="/terms" className="hover:text-foreground transition-colors">
+        <Link href="/terms" className="-my-3 inline-flex min-h-touch items-center px-1 hover:text-foreground transition-colors">
           Termos de uso
         </Link>
         •
         <Link
           href="/privacy"
-          className="hover:text-foreground transition-colors"
+          className="-my-3 inline-flex min-h-touch items-center px-1 hover:text-foreground transition-colors"
         >
           Privacidade
         </Link>

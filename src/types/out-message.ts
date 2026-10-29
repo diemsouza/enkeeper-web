@@ -24,12 +24,8 @@ export type FormattedMessage = {
     // WhatsApp limita reply buttons a 3 e o titulo a 20 chars, entao la
     // o canal anexa a lista numerada ao text em vez de mandar botoes.
     isOptionList?: boolean;
-    // Passo de captura (nivel, objetivo, assunto, ponto): no WhatsApp ate 3
-    // opcoes viram botoes nativos; acima disso, lista numerada com instrucao
-    // e atalhos "Primeira opcao"/"Escolha para mim".
-    isCaptureStep?: boolean;
     // Estado da selecao de uma lista de opcoes, escrito pela avaliacao da
-    // resposta ou pelo clique num passo de captura. Ausentes = pendente.
+    // resposta. Ausentes = pendente.
     disabled?: boolean;
     selectedId?: string;
   };

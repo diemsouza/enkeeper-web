@@ -68,7 +68,7 @@ A interseção "prática contextual contínua, ancorada no material do aluno, de
 
 ### Nível e idioma das perguntas
 
-O usuário pode informar seu próprio nível, que passa a valer para qualquer atividade e tem prioridade sobre o nível do material. Se não informar, o sistema detecta o nível automaticamente no material enviado.
+O nível fica no perfil do usuário, escolhido na própria modal de nova atividade (Básico quando ainda não há nenhum), e tem prioridade sobre o nível do material.
 
 - Básico: pergunta em português, termo em inglês
 - Intermediário: misto PT/EN natural
@@ -90,7 +90,7 @@ Usuário pode iniciar sessão ativa - perguntas chegam em sequência, uma após 
 
 ### Nova atividade por tema
 
-Quando o usuário não tem material em mãos, ou quer trocar de assunto sem subir arquivo, o comando `nova atividade` inicia um fluxo curto de pergunta e resposta: nível (se ainda não informado), objetivo, assunto e ponto. Objetivo é uma lista fechada de 4 opções (Mercado de Trabalho, Viagens Internacionais, Educação e Intercâmbio, Dia a Dia e Lazer). Assunto e ponto combinam lista de sugestões com opção de resposta livre, o assunto com 5 sugestões fixas por objetivo, o ponto com 5 sugestões geradas com base no objetivo e no assunto escolhidos, sempre incluindo a opção de vocabulário geral. Na web, cada passo mostra as opções como lista de escolha única por toque, e a opção escolhida fica destacada, o que deixa a primeira interação de prática, logo no fim do onboarding, direta e rápida. No WhatsApp, o nível vem em botões nativos e os demais passos trazem as opções numeradas com os atalhos de resposta rápida "Primeira opção" e "Escolha para mim" (aleatório). Em qualquer canal, o passo continua aceitando resposta por número ou por texto livre. O sistema gera o conteúdo individualmente para aquele usuário a partir dessa combinação, e a atividade segue o mesmo ciclo de sempre a partir daí. Upload de material continua disponível a qualquer momento, inclusive durante esse fluxo.
+Toda atividade nasce numa modal única, aberta pelo botão "+ Nova atividade", pelo comando `nova atividade` ou pelo botão "Criar atividade" do onboarding. O usuário escreve o que quer praticar (até 200 caracteres) ou toca numa das 20 sugestões de cada um dos 4 objetivos (Dia a Dia e Lazer, Viagens Internacionais, Educação e Intercâmbio, Mercado de Trabalho), ajusta nível e até 3 focos, e continua. A modal modera o pedido, completa o que falta com exemplos clicáveis e só fecha quando dá para gerar a atividade; o chat recebe só o resultado. "Usar meu material" troca a modal para o envio de até 3 arquivos. O conteúdo é gerado individualmente para aquele usuário, e a atividade segue o mesmo ciclo de sempre a partir daí.
 
 Ponto representa o aspecto da língua a praticar dentro do assunto escolhido, vocabulário geral, um tempo verbal, uma estrutura gramatical, entre outros, e pode combinar até 2 pontos numa mesma geração quando informado por texto livre.
 
@@ -126,7 +126,7 @@ Você tem 7 dias pra praticar sem custo. Use ajuda pra ver os comandos
 disponíveis.
 ```
 
-Logo em seguida, o sistema já inicia o fluxo de nível e nova atividade automaticamente, sem o usuário precisar comandar nada.
+A sequência termina com a mensagem "Crie sua primeira atividade para começar a praticar sobre o que você quiser." e o botão "Criar atividade", que abre a modal de nova atividade.
 
 ---
 
@@ -276,7 +276,7 @@ Custo de geração de imagem do reconhecimento por imagem (rollout parcial) aind
 
 Custo do áudio da pergunta de escuta (rollout parcial, fração própria) ainda não tem medição real. É uma geração de texto-para-voz por pergunta, de uma frase curta, reaproveitada em toda reexibição e revisão, e essas perguntas nunca geram áudio de feedback, o que compensa parte do custo. Falha na geração cai para outro formato depois da chamada de geração da pergunta (uma chamada extra de LLM nesses casos).
 
-Geração de conteúdo por tema (nova atividade) ainda não tem custo médio medido em produção, é individual por usuário e por troca de atividade, sem compartilhamento entre usuários. O fluxo passou a usar duas chamadas de LLM por troca (validação do assunto com sugestão de pontos, depois resolução do ponto e geração), em vez de uma. Vale revisar essa tabela quando houver volume real desse fluxo.
+Geração de conteúdo por tema (nova atividade) ainda não tem custo médio medido em produção, é individual por usuário e por troca de atividade, sem compartilhamento entre usuários. São até três chamadas de LLM por troca: validação do pedido na modal (pulada quando o usuário escolhe uma sugestão pronta sem editar), subtópicos e geração. Vale revisar essa tabela quando houver volume real desse fluxo.
 
 ---
 
@@ -367,6 +367,7 @@ Grupos de WhatsApp e Facebook de inglês. Como fundador respondendo dúvidas, n�
 - Fluxo de nova atividade (nível, objetivo, assunto e ponto, com sugestões de assunto por lista fixa e sugestões de ponto geradas por LLM) com geração de conteúdo individual em duas chamadas de LLM
 - Áudio no feedback de resposta (TTS), rollout parcial habilitado por configuração
 - Onboarding atualizado para refletir o fluxo de nova atividade como caminho principal
+- Criação de atividade numa modal única (tema livre ou sugestão, nível, até 3 focos, ou até 3 arquivos de material), com moderação e validação na própria modal, no lugar das etapas no chat; onboarding sem pergunta de nível, terminando no botão "Criar atividade"
 - Site com copy atualizada, refletindo os dois caminhos de entrada (material ou tema) na home, publicado
 - Cobrança de acesso Pro por assinatura recorrente no cartão (Stripe), planos Mensal R$29,90 e Anual R$262,80, renovação automática, liberação do plano a cada cobrança confirmada, confirmação pelo chat só na primeira cobrança, página de planos por situação (item "Assinatura" no menu) com acesso ao portal da Stripe (cancelar, trocar cartão, mudar de plano), trava contra assinatura duplicada e recálculo do acesso no cancelamento imediato
 - Taxas reais da Stripe medidas em produção e registradas na Seção 10

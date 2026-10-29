@@ -44,16 +44,16 @@ export function ComposerActionButton({
       {...props}
       aria-label={t(ARIA_KEYS[role])}
       className={cn(
-        "relative h-9 shrink-0 touch-none select-none rounded-full transition-[width,padding] [-webkit-touch-callout:none] [-webkit-user-select:none] before:absolute before:-inset-1",
-        isHold ? "w-auto px-4 text-sm font-medium" : "w-9",
+        "mb-[var(--composer-button-offset)] h-composer shrink-0 touch-none select-none rounded-full transition-[width,padding] [-webkit-touch-callout:none] [-webkit-user-select:none]",
+        isHold ? "w-auto px-4 text-[15px] font-medium" : "w-composer",
       )}
     >
       {isHold ? (
         t("voice.release_to_send")
       ) : role === "mic" ? (
-        <Mic className="h-4 w-4" />
+        <Mic className="h-composer-icon w-composer-icon" />
       ) : (
-        <ArrowUp className="h-4 w-4" />
+        <ArrowUp className="h-composer-icon w-composer-icon" />
       )}
     </Button>
   );

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   buildAnsweredInteractive,
-  resolveOptionIndex,
   resolveSelectedButtonId,
 } from "./parser";
 
@@ -39,41 +38,6 @@ describe("resolveSelectedButtonId", () => {
   it("sem correspondência devolve null", () => {
     expect(resolveSelectedButtonId(buttons, undefined, "sofá")).toBeNull();
     expect(resolveSelectedButtonId(buttons, undefined, "7")).toBeNull();
-  });
-});
-
-describe("resolveOptionIndex", () => {
-  const labels = buttons.map((b) => b.label);
-  const interactive = { body: "Qual?", buttons, isOptionList: true };
-
-  it("devolve a posição do botão", () => {
-    expect(resolveOptionIndex(interactive, "choice_option_2", labels)).toBe(1);
-  });
-
-  it("botão inexistente devolve null", () => {
-    expect(resolveOptionIndex(interactive, "outro_1", labels)).toBeNull();
-  });
-
-  it("lista já respondida devolve null", () => {
-    expect(
-      resolveOptionIndex(
-        { ...interactive, disabled: true },
-        "choice_option_1",
-        labels,
-      ),
-    ).toBeNull();
-  });
-
-  it("rótulo diferente da opção atual devolve null", () => {
-    expect(
-      resolveOptionIndex(interactive, "choice_option_1", ["Sofá", "Cadeira"]),
-    ).toBeNull();
-  });
-
-  it("sem isOptionList devolve null", () => {
-    expect(
-      resolveOptionIndex({ body: "Qual?", buttons }, "choice_option_1", labels),
-    ).toBeNull();
   });
 });
 

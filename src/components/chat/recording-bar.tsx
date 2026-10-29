@@ -26,7 +26,7 @@ export function RecordingBar({
   return (
     <div
       className={cn(
-        "flex h-9 min-w-0 flex-1 items-center gap-1.5",
+        "flex h-[var(--composer-field)] min-w-0 flex-1 items-center gap-1.5",
         mode === "hold" && "pl-3",
       )}
       role="status"
@@ -37,9 +37,9 @@ export function RecordingBar({
           type="button"
           onClick={onCancel}
           aria-label={t("discard_aria")}
-          className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors before:absolute before:-inset-1 hover:bg-accent hover:text-destructive"
+          className="touch-target flex h-composer w-composer shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-composer-icon w-composer-icon" />
         </button>
       )}
       <span

@@ -99,7 +99,7 @@ export default function FeaturesSection() {
           <div className="flex justify-center">
             <HomeCTA
               waLabel={t("cta")}
-              buttonClassName="rounded-full px-10 h-12 font-semibold gap-2 text-base"
+              buttonClassName="px-10 gap-2"
               isCtaAnchor
             />
           </div>

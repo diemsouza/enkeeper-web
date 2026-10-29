@@ -16,7 +16,7 @@ type SaveMessageData = {
   externalId?: string;
   mediaType?: string;
   mediaId?: string;
-  metadata?: Record<string, string | number | null>;
+  metadata?: Prisma.InputJsonObject;
   templateName?: string | null;
   interactive?: FormattedMessage["interactive"];
   activityId?: string;
@@ -68,10 +68,7 @@ export async function saveMessage(data: SaveMessageData): Promise<Message> {
       externalId: data.externalId,
       mediaType: data.mediaType,
       mediaId: data.mediaId,
-      metadata:
-        data.metadata !== undefined
-          ? (data.metadata as Prisma.InputJsonObject)
-          : undefined,
+      metadata: data.metadata,
       templateName: data.templateName,
       interactive:
         data.interactive !== undefined
@@ -81,15 +78,6 @@ export async function saveMessage(data: SaveMessageData): Promise<Message> {
       questionId: data.questionId,
       createdAt: data.receivedAt,
     },
-  });
-}
-
-export async function findLastUserMessage(
-  userId: string,
-): Promise<Message | null> {
-  return prisma.message.findFirst({
-    where: { userId, role: "user" },
-    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -201,21 +189,6 @@ export async function findOptionListMessagesByQuestion(
     orderBy: { createdAt: "desc" },
     select: { id: true, interactive: true },
     take: 5,
-  });
-}
-
-export async function findOptionListMessageById(
-  id: string,
-  userId: string,
-): Promise<Pick<Message, "id" | "interactive"> | null> {
-  return prisma.message.findFirst({
-    where: {
-      id,
-      userId,
-      role: "assistant",
-      interactive: { path: ["isOptionList"], equals: true },
-    },
-    select: { id: true, interactive: true },
   });
 }
 

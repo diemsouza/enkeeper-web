@@ -6,6 +6,26 @@ topo.
 
 ---
 
+## Nova atividade em modal
+
+Data: 2026-10-28
+
+Contexto: a criação em etapas no chat (nível, objetivo, assunto, ponto) escondia as opções e atrasava o início da prática. Tudo passa para uma modal única (Product-Rules Seção 15); o chat só recebe o resultado.
+
+- **Sem estado de criação no chat.** Saem os intents `waiting_set_activity_domain|topic|focus` e `waiting_doc_replace`, o `intent_data` de fluxo, o cron de expiração (`processExpiredFlowIntents`) e o buffer de material de 45 s (`handleDocUpload`, `publishDocMerge`, `/api/queue/merge-doc`). Usuário parado num desses intents cai no fallback "pendingIntent sem handler" de `handleIncomingMessage`, que limpa e segue.
+- **Comando passa pelo chat, resposta é mensagem de comando.** `nova atividade` (texto, voz, menu `/`, sidebar ou botão cujo rótulo é alias) é tratado no servidor como qualquer comando: a mensagem do usuário fica salva e a resposta é `sendCommand` (`message-sender-service.ts`), que só grava uma `Message` `role: assistant`, `content: ""`, `intent: "client_command"`, `activityId` nulo, `metadata.command = { action: "open_create_activity", payload: { prefill? }, replyTo: <externalId do usuário> }`. Sem `channel.sendMessage` e fora da contagem diária. Chega ao front pelo trigger de INSERT do Realtime, sem mudança no Supabase. Abrir direto no cliente foi descartado porque o histórico perderia quem pediu a atividade e como; o card com botão como resposta foi descartado porque repetia balões e pedia um toque a mais.
+- **Execução no front.** `buildMessage` (`map-messages.ts`) preenche `Message.command` com `parseClientCommand` (`src/core/client-command.ts`, zod por action; action desconhecida vira `null` e é ignorada). As mensagens de comando ficam no estado (a resposta encerra o digitando e o timeout) e saem de `displayedMessages`. `LiveThreadClient` executa quando `consumeSentInSession(replyTo)` (`src/lib/session-sent-messages.ts`, `Set` em módulo por aba, alimentado em `handleSend`, `handleSendAudio` e `PracticePillProvider.sendCommand`) devolve true: cada envio aceita um único comando, então remontar o chat não repete, e reload, outra aba ou outro dispositivo não executam. Ação nova: entrada em `ClientCommandPayloads` (`src/types/client-command.ts`), schema em `PAYLOAD_SCHEMAS` e handler no mapa do `LiveThreadClient`.
+- **API.** `POST /api/app/activities` (união por `source`): texto valida e responde `created`, `needs_more` (com `hint` e `examples`), `blocked`, `daily_limit`, `already_creating` ou `plan_expired`; a geração roda em `after()` (`createTextActivity`). Material chega como itens já extraídos.
+- **Material sem estado intermediário.** `POST /api/app/activities/material/extract` lê um arquivo por chamada (limite de corpo da Vercel) e devolve o texto e um `messageId` pré-gerado; a imagem já nasce como `Media` ligada a esse id, e o texto da imagem é lido da `Media` na criação, nunca do cliente. Na criação, o Doc `pending`, as `Message` de arquivo e os `DocItem` são gravados de uma vez e `mergeDoc` roda em `after()`, sem fila nem espera.
+- **LLM.** `generateActivityRequest` (`prompts/activity-request.md`, stage `activity-request`, `PROVIDER_STANDARD`) modera, checa suficiência e extrai objetivo, assunto, nível e focos; pulada para sugestão de `TOPIC_SUGGESTIONS` não editada. `generateTopicValidation` deixa de sugerir foco e fica só com revalidação e subtópicos. `generateFocusContent` recebe sempre as chaves resolvidas (até 3), sem classificar texto livre.
+- **Coerência em código puro.** `resolveActivityRequest` (`src/core/activity-request.ts`): focos marcados primeiro e completa com os do texto até 3, sem nenhum vira `vocabulary`; nível do texto vale só para a atividade (o perfil recebe o do controle).
+- **Trava e retry em `users.metadata`.** `lastActivityRequest` guarda o pedido resolvido para o botão "Tentar de novo", que vai pelo chat com `buttonId` `RETRY_NEW_ACTIVITY_BUTTON_ID` e é tratado em `handleIncomingMessage` (`retryActivityCreation`); `activityCreatingAt` (TTL `ACTIVITY_CREATING_TTL_MS`) e Doc `pending` recente barram uma segunda criação.
+- **Arquivar depois de gerar.** A atividade anterior só é arquivada quando o conteúdo novo existe; antes, conteúdo vazio arquivava a atual e devolvia erro.
+- **Modal padrão do produto.** `MODAL_*_CLASS` em `src/components/ui/dialog.tsx` (também usadas pelo `AlertDialog`): centralizada, com margem lateral no mobile, cantos `rounded-3xl`, fechar maior no canto e título `text-2xl` em negrito alinhado à esquerda. Botões dentro de modal ganham `MODAL_BUTTON_CLASS` (`rounded-xl`, `button.tsx`): o `Button` marca `data-slot="button"` e o `MODAL_CONTENT_CLASS` arredonda os que contém; `AlertDialogAction`/`Cancel` aplicam a classe direto. Contexto React foi descartado porque o `Button` também roda em server components. Fora de modal o `Button` não muda.
+- **Sem migration.** Limpeza de usuários parados no fluxo antigo e das listas antigas de objetivo/assunto/ponto no histórico vai por script SQL manual em prod.
+
+---
+
 ## Login com Google sobre a sessão própria
 
 Data: 2026-10-26
@@ -212,6 +232,8 @@ Decisões:
 ## Passos de captura como lista de opções
 
 Data: 2026-09-30
+
+Atualização 2026-10-28: objetivo, assunto e ponto saíram do chat (ver "Nova atividade em modal"); só o nível, pelo comando `nivel`, continua como passo de captura.
 
 Contexto: nível (e comando `nivel`), objetivo, assunto e ponto mostravam as
 opções numeradas no `text`, com os atalhos "Primeira opção" / "Escolha para

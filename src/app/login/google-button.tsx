@@ -22,7 +22,7 @@ export function GoogleButton({ onClick }: GoogleButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-md border border-[#8E918F] bg-[#131314] px-4 text-base font-medium text-[#E3E3E3] transition-colors hover:bg-[#2A2A2C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-[#747775] dark:bg-white dark:text-[#1F1F1F] dark:hover:bg-[#F2F2F2]"
+      className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-control border border-[#8E918F] bg-[#131314] px-4 text-base font-medium text-[#E3E3E3] transition-colors hover:bg-[#2A2A2C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-[#747775] dark:bg-white dark:text-[#1F1F1F] dark:hover:bg-[#F2F2F2]"
     >
       <GoogleIcon />
       {t("google_continue")}

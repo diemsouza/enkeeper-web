@@ -15,6 +15,8 @@ import {
   TopicValidationResult,
   focusContentSchema,
   FocusContentResult,
+  activityRequestSchema,
+  ActivityRequestResult,
 } from "../lib/llm-schemas";
 import { parseJsonWithFallback } from "../lib/json-utils";
 import { llmUsageService } from "../services/llm-usage-service";
@@ -26,12 +28,12 @@ import {
   GEN_VOCABULARY_PROMPT,
   GEN_CONTENT_PROMPT,
   TOPIC_VALIDATION_PROMPT,
+  ACTIVITY_REQUEST_PROMPT,
   OCR_DOCUMENT_PROMPT,
 } from "../lib/prompts";
 import { AiProvider, DocSource, Level, QuestionFormat } from "../lib/prisma";
-import { FocusSuggestion } from "../types/domain";
-import { FocusSelectionInput } from "../core/parser";
 import { getFocusEnumPromptText } from "../core/focus";
+import { DOMAINS } from "../lib/constants";
 
 /*
 claude-haiku-4-5-20251001 -> US$ 1,00 / US$ 5,00
@@ -165,11 +167,7 @@ export async function generateTopicValidation(params: {
   topic: string;
   userId: string;
 }): Promise<
-  | {
-      status: "valid";
-      focusSuggestions: FocusSuggestion[];
-      subtopics: string[];
-    }
+  | { status: "valid"; subtopics: string[] }
   | { status: "error"; reason: string }
 > {
   const { level, domain, topic, userId } = params;
@@ -183,8 +181,7 @@ export async function generateTopicValidation(params: {
 
   const systemPrompt = TOPIC_VALIDATION_PROMPT.replace("{level}", level)
     .replace("{domain}", domain)
-    .replace("{topic}", topic)
-    .replace("{focus_enum}", getFocusEnumPromptText());
+    .replace("{topic}", topic);
   const userPrompt = `Tema: {topic}`.replace("{topic}", topic);
 
   try {
@@ -254,11 +251,7 @@ export async function generateTopicValidation(params: {
     return { status: "error", reason: TOPIC_VALIDATION_ERROR_REASON };
   }
 
-  return {
-    status: "valid",
-    focusSuggestions: result.focusSuggestions || [],
-    subtopics: result.subtopics || [],
-  };
+  return { status: "valid", subtopics: result.subtopics || [] };
 }
 
 // ─── Focus content generation ────────────────────────────────────────────────
@@ -271,13 +264,13 @@ export async function generateFocusContent(params: {
   domain: string;
   topic: string;
   subtopic: string;
-  focusSelection: FocusSelectionInput;
+  focusKeys: string[];
   userId: string;
 }): Promise<
   | { status: "content"; data: FocusContentResult }
-  | { status: "error"; kind: "invalid" | "too_many_focus"; reason: string }
+  | { status: "error"; reason: string }
 > {
-  const { level, domain, topic, subtopic, focusSelection, userId } = params;
+  const { level, domain, topic, subtopic, focusKeys, userId } = params;
   let inputTokens = 0;
   let outputTokens = 0;
   let cachedTokens = 0;
@@ -286,18 +279,12 @@ export async function generateFocusContent(params: {
   let logError: string | null = null;
   const startTime = Date.now();
 
-  const focusKnown =
-    focusSelection.type === "known" ? focusSelection.keys.join(", ") : "";
-  const focusFreeText =
-    focusSelection.type === "freeText" ? focusSelection.text : "";
-
   const systemPrompt = GEN_CONTENT_PROMPT.replace("{level}", level)
     .replace("{domain}", domain)
     .replace("{topic}", topic)
     .replace("{subtopic}", subtopic)
     .replace("{focus_enum}", getFocusEnumPromptText())
-    .replace("{focus_known}", focusKnown)
-    .replace("{focus_free_text}", focusFreeText);
+    .replace("{focus_keys}", focusKeys.join(", "));
 
   const userPrompt = `Variação: {variation_seed}`.replace(
     "{variation_seed}",
@@ -368,22 +355,104 @@ export async function generateFocusContent(params: {
   });
 
   if (!result || !result.isValid) {
-    if (result?.tooManyFocus) {
-      return {
-        status: "error",
-        kind: "too_many_focus",
-        reason: "Usuário mencionou mais de 2 opções distintas",
-      };
-    }
-    return {
-      status: "error",
-      kind: "invalid",
-      reason: FOCUS_CONTENT_ERROR_REASON,
-    };
+    return { status: "error", reason: FOCUS_CONTENT_ERROR_REASON };
   }
 
-  result.focusKeys = result.focusKeys ?? [];
   return { status: "content", data: result };
+}
+
+// ─── Activity request (modal de nova atividade) ──────────────────────────────
+
+function getDomainEnumPromptText(): string {
+  return DOMAINS.map((domain) => `- ${domain.id}: ${domain.label}`).join("\n");
+}
+
+export async function generateActivityRequest(params: {
+  text: string;
+  level: Level;
+  domainHint: string;
+  userId: string;
+}): Promise<ActivityRequestResult | null> {
+  const { text, level, domainHint, userId } = params;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cachedTokens = 0;
+  let result: ActivityRequestResult | null = null;
+  let rawOutput: string | null = null;
+  let logError: string | null = null;
+  const startTime = Date.now();
+
+  const systemPrompt = ACTIVITY_REQUEST_PROMPT.replace("{text}", text)
+    .replace("{level}", level)
+    .replace("{domain_hint}", domainHint)
+    .replace("{domain_enum}", getDomainEnumPromptText())
+    .replace("{focus_enum}", getFocusEnumPromptText());
+  const userPrompt = `Texto: {text}`.replace("{text}", text);
+
+  try {
+    const llmResult = await generateText({
+      model: getStandardLanguageModel(),
+      output: Output.object({ schema: activityRequestSchema }),
+      ...(isReasoningModel()
+        ? {
+            providerOptions: {
+              openai: { reasoningEffort: "low" },
+            },
+          }
+        : { temperature: 0.2 }),
+      system: systemPrompt,
+      prompt: userPrompt,
+    });
+    inputTokens += llmResult.usage?.inputTokens ?? 0;
+    outputTokens += llmResult.usage?.outputTokens ?? 0;
+    cachedTokens += llmResult.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+    rawOutput = llmResult.text ?? null;
+    result = llmResult.output;
+  } catch (err) {
+    if (NoObjectGeneratedError.isInstance(err) && err.text) {
+      rawOutput = err.text;
+      try {
+        result = activityRequestSchema.parse(
+          parseJsonWithFallback(err.text.trim()),
+        );
+      } catch {
+        // structured parse failed after NoObjectGeneratedError
+      }
+    } else if (err instanceof Error) {
+      logError = err.message;
+    }
+  }
+
+  const durationMs = Date.now() - startTime;
+
+  await llmUsageService.registerUsage({
+    userId,
+    docId: null,
+    usageType: "activity_request",
+    provider: PROVIDER_STANDARD,
+    model: getStandardModel(),
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+  });
+
+  await llmLogService.registerLog({
+    stage: "activity-request",
+    provider: PROVIDER_STANDARD,
+    model: getStandardModel(),
+    input: { system: systemPrompt, prompt: userPrompt },
+    output: rawOutput,
+    parsedOutput: result,
+    success: result !== null,
+    error: logError,
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+    durationMs,
+    userId,
+  });
+
+  return result;
 }
 
 // ─── Question generation ─────────────────────────────────────────────────────

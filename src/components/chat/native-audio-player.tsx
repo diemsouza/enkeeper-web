@@ -354,7 +354,7 @@ export function NativeAudioPlayer({
           }}
           aria-label={state === "playing" ? t("pause") : t("play")}
           disabled={!isReady && !isError}
-          className="shrink-0 rounded-full p-1 transition-colors active:bg-foreground/10 disabled:opacity-60"
+          className="touch-target shrink-0 rounded-full p-1 transition-colors active:bg-foreground/10 disabled:opacity-60"
         >
           <span className="flex h-7 w-7 items-center justify-center">
             {!isReady && !isError ? (
@@ -424,7 +424,7 @@ export function NativeAudioPlayer({
         <div className="w-9 shrink-0" aria-hidden="true" />
         <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
           <span
-            className="select-none text-[10.5px] opacity-60 tabular-nums"
+            className="select-none text-chat-meta opacity-60 tabular-nums"
             onDoubleClick={() =>
               window.open(audioUrl, "_blank", "noopener,noreferrer")
             }
@@ -433,7 +433,7 @@ export function NativeAudioPlayer({
           </span>
           {time && (
             <span
-              className="select-none text-[10.5px] opacity-55 whitespace-nowrap"
+              className="select-none text-chat-meta opacity-55 whitespace-nowrap"
               onDoubleClick={onExport}
               onContextMenu={onExport}
             >
@@ -450,7 +450,7 @@ export function NativeAudioPlayer({
         </p>
       )}
       {isError && showErrorHint && (
-        <p className="mt-0.5 text-[11px] opacity-60">
+        <p className="mt-0.5 text-caption opacity-60">
           {tErrors("audio_load_failed")}
         </p>
       )}

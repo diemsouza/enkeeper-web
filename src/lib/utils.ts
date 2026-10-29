@@ -1,5 +1,22 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+// Tokens de tailwind.config.ts; sem isso o twMerge le text-chat como cor e
+// nao resolve conflito entre rounded-control e rounded-full.
+const RADIUS_TOKENS = ["control", "panel", "modal", "composer", "tray"];
+
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      "font-size": [{ text: ["caption", "chat", "chat-meta"] }],
+      rounded: [{ rounded: RADIUS_TOKENS }],
+      "rounded-t": [{ "rounded-t": RADIUS_TOKENS }],
+      h: [{ h: ["control", "control-compact", "control-mini", "touch", "composer", "composer-icon"] }],
+      w: [{ w: ["control-mini", "composer", "composer-icon"] }],
+      "min-h": [{ "min-h": ["touch", "composer-field"] }],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

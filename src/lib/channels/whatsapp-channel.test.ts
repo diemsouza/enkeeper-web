@@ -80,53 +80,6 @@ describe("WhatsAppChannel.sendMessage", () => {
     expect(result).toEqual({ externalId: "wamid_text" });
   });
 
-  it("passo de captura com até 3 opções envia botões nativos", async () => {
-    await channel.sendMessage("5511999999999", {
-      text: "Qual nível?\n\nRodapé",
-      interactive: {
-        body: "Qual nível?\n\nRodapé",
-        buttons: [
-          { id: "level_option_1", label: "Básico" },
-          { id: "level_option_2", label: "Avançado" },
-        ],
-        isOptionList: true,
-        isCaptureStep: true,
-      },
-    });
-    expect(sendWhatsAppInteractiveButtons).toHaveBeenCalledWith(
-      "5511999999999",
-      "Qual nível?\n\nRodapé",
-      [
-        { id: "level_option_1", title: "Básico" },
-        { id: "level_option_2", title: "Avançado" },
-      ],
-    );
-    expect(sendWhatsAppMessage).not.toHaveBeenCalled();
-  });
-
-  it("passo de captura com mais de 3 opções numera no texto e envia os atalhos", async () => {
-    await channel.sendMessage("5511999999999", {
-      text: "Objetivo\n\nRodapé",
-      interactive: {
-        body: "Objetivo\n\nRodapé",
-        buttons: ["A", "B", "C", "D"].map((label, i) => ({
-          id: `domain_option_${i + 1}`,
-          label,
-        })),
-        isOptionList: true,
-        isCaptureStep: true,
-      },
-    });
-    expect(sendWhatsAppInteractiveButtons).toHaveBeenCalledWith(
-      "5511999999999",
-      "Objetivo\n\nRodapé\n\n1️⃣ A\n2️⃣ B\n3️⃣ C\n4️⃣ D\n\n_Responda com o número de uma opção._",
-      [
-        { id: "first_option", title: "Primeira opção" },
-        { id: "random", title: "Escolha para mim" },
-      ],
-    );
-  });
-
   it("templateName tem prioridade sobre interactive e text", async () => {
     const result = await channel.sendMessage("5511999999999", {
       text: "texto livre",

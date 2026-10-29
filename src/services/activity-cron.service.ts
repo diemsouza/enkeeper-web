@@ -1,6 +1,5 @@
 import {
   findEligibleActivities,
-  findLastActiveActivityByUser,
   updateActivity,
 } from "../repo/activities.repo";
 import {
@@ -23,15 +22,12 @@ import {
 } from "../repo/questions.repo";
 import {
   findUserById,
-  findUsersWithExpiredFlowIntent,
-  updateUserPendingIntent,
 } from "../repo/users.repo";
 import { MessageChannel, TypingTarget } from "../types/message-channel";
 import { sendAndSaveMessage, waitBeforeSend } from "./message-sender-service";
 import {
   formatQuestion,
   formatActivityStart,
-  formatNewActivityFlowExpired,
 } from "../core/formatters";
 import { canPractice } from "../core/access";
 import {
@@ -39,7 +35,6 @@ import {
   MAX_RETRY_ATTEMPTS,
   RETRY_DELAY_MS,
   DOC_PENDING_TIMEOUT_MS,
-  COMMAND_TIMEOUT_MIN,
   DEFAULT_MESSAGE_INTERVAL_SEC,
   AUDIO_QUESTION_FORMATS,
 } from "../lib/constants";
@@ -58,7 +53,6 @@ import { ulid } from "ulid";
 import { storeQuestionImage } from "./question-image-service";
 import { storeQuestionAudio } from "./question-audio-service";
 import { buildRoundCompletedSummary } from "./activity-service";
-import { UserIntentMetadata } from "../types/domain";
 
 const IMAGE_QUESTION_ROLLOUT_FRACTION = parseFloat(
   process.env.IMAGE_QUESTION_ROLLOUT_FRACTION ?? "0",
@@ -66,11 +60,6 @@ const IMAGE_QUESTION_ROLLOUT_FRACTION = parseFloat(
 const AUDIO_QUESTION_ROLLOUT_FRACTION = parseFloat(
   process.env.AUDIO_QUESTION_ROLLOUT_FRACTION ?? "0",
 );
-
-function isNewActivityFlowIntent(user: { metadata: unknown }): boolean {
-  const metadata = user.metadata as UserIntentMetadata | null;
-  return metadata?.intent_data?.flow === "new_activity";
-}
 
 type CronResult = {
   processed: number;
@@ -91,22 +80,6 @@ export async function processActivityCron(
     try {
       const user = await findUserById(activity.userId);
       if (!user || !canPractice(user)) {
-        skipped++;
-        continue;
-      }
-
-      if (user.pendingIntent === "waiting_doc_replace") {
-        skipped++;
-        continue;
-      }
-
-      if (
-        user.pendingIntent === "waiting_set_activity_domain" ||
-        user.pendingIntent === "waiting_set_activity_topic" ||
-        user.pendingIntent === "waiting_set_activity_focus" ||
-        (user.pendingIntent === "waiting_set_level" &&
-          isNewActivityFlowIntent(user))
-      ) {
         skipped++;
         continue;
       }
@@ -284,59 +257,6 @@ export async function sendFirstQuestionNow(
     );
     return false;
   }
-}
-
-export async function processExpiredFlowIntents(
-  channel: MessageChannel,
-): Promise<CronResult> {
-  const threshold = new Date(Date.now() - COMMAND_TIMEOUT_MIN * 60 * 1000);
-
-  let processed = 0;
-  let skipped = 0;
-  let errors = 0;
-  let cursorId: string | null = null;
-
-  for (;;) {
-    const users = await findUsersWithExpiredFlowIntent(cursorId, threshold, 500);
-    if (users.length === 0) break;
-
-    for (const user of users) {
-      try {
-        if (
-          user.pendingIntent === "waiting_set_level" &&
-          !isNewActivityFlowIntent(user)
-        ) {
-          skipped++;
-          continue;
-        }
-
-        await updateUserPendingIntent(user.id, null);
-
-        const msg = formatNewActivityFlowExpired();
-        const activeActivity = await findLastActiveActivityByUser(user.id);
-        await sendAndSaveMessage({
-          channel,
-          userId: user.id,
-          activityId: activeActivity?.id,
-          message: msg,
-          today: startOfDay(new Date()),
-        });
-
-        processed++;
-      } catch (err) {
-        console.error(
-          `[processExpiredFlowIntents] expired flow intent for user ${user.id}:`,
-          err,
-        );
-        errors++;
-      }
-    }
-
-    cursorId = users[users.length - 1].id;
-    if (users.length < 500) break;
-  }
-
-  return { processed, skipped, errors };
 }
 
 // selectNextQuestion: só era usada pelo ramo de envio de pergunta da cadência

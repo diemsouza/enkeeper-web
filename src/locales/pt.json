@@ -72,6 +72,8 @@
       "theme_system": "Sistema",
       "add_to_calendar": "Lembrete",
       "subscription": "Assinatura",
+      "level": "Nível",
+      "support": "Suporte",
       "add_to_calendar_modal_title": "Lembrete de prática",
       "phone_prompt_title": "Lembrete de prática",
       "phone_prompt_subtitle": "Para receber o lembrete pelo WhatsApp, cadastre seu número.",
@@ -89,6 +91,26 @@
       "daily_reminder_save_success": "Lembrete salvo com sucesso.",
       "daily_reminder_save_error": "Não deu pra salvar o lembrete. Tenta de novo.",
       "daily_reminder_calendar_divider": "Você também pode adicionar na sua agenda"
+    },
+    "support": {
+      "title": "Suporte",
+      "subtitle": "Escreva sua dúvida ou o problema em uma mensagem.",
+      "field_label": "Mensagem para o suporte",
+      "placeholder": "Descreva sua dúvida ou o problema",
+      "send": "Enviar",
+      "sending": "Enviando...",
+      "send_error": "Não deu pra enviar a mensagem. Tenta de novo.",
+      "sent_whatsapp": "Mensagem enviada. A resposta chega pelo WhatsApp.",
+      "sent_email": "Mensagem enviada. A resposta chega pelo e-mail {email}."
+    },
+    "level": {
+      "title": "Nível de inglês",
+      "subtitle": "Define o idioma e o formato das perguntas.",
+      "rule": "Começa refletindo apenas nas próximas atividades.",
+      "save": "Salvar",
+      "saving": "Salvando...",
+      "saved": "Nível atualizado.",
+      "save_error": "Não deu pra salvar o nível. Tenta de novo."
     },
     "chat": {
       "attach_file_aria": "Anexar arquivo",
@@ -182,6 +204,63 @@
       "resume_confirm_message": "Ao retomar esta atividade, a atividade atual será arquivada. Deseja continuar?",
       "resuming": "Retomando...",
       "resume": "Retomar"
+    },
+    "new_activity": {
+      "title": "Nova atividade",
+      "subtitle": "Escreva o que você quer praticar ou escolha uma sugestão.",
+      "placeholder": "Ex: reunião com meu chefe sobre um atraso no projeto",
+      "text_label": "O que você quer praticar",
+      "suggestions_label": "Sugestões",
+      "level_label": "Nível",
+      "levels": {
+        "basic": "Básico",
+        "intermediate": "Intermediário",
+        "advanced": "Avançado"
+      },
+      "focus_label": "Foco",
+      "focus_general": "Geral",
+      "focus_title": "Foco da prática",
+      "focus_description": "Escolha até {max}. Sem escolha, a prática usa o vocabulário e as estruturas naturais da situação.",
+      "focus_count": "{count} de {max}",
+      "focus_done": "Pronto",
+      "use_material": "Usar meu material",
+      "continue": "Continuar",
+      "creating": "Criando",
+      "close": "Fechar",
+      "needs_more_default": "Conte um pouco mais: a situação e o que você quer treinar.",
+      "plans_link": "Ver planos",
+      "errors": {
+        "blocked": "Esse tema não pode ser usado. Escreva outro.",
+        "daily_limit": "Você atingiu o limite de atividades de hoje.",
+        "already_creating": "Uma atividade já está sendo criada. Acompanhe no chat.",
+        "plan_expired": "Seu acesso encerrou. Escolha um plano para continuar praticando.",
+        "insufficient_content": "O material tem pouco conteúdo em inglês. Envie um material com mais texto.",
+        "generic": "Não foi possível continuar. Tente de novo."
+      },
+      "material": {
+        "title": "Praticar com seu material",
+        "subtitle": "Envie o conteúdo da sua aula, apostila ou livro e as perguntas serão criadas a partir dele.",
+        "upload": "Enviar arquivo",
+        "upload_hint": "Imagem, PDF ou TXT",
+        "tip_photo_label": "Imagem:",
+        "tip_photo": "foto do caderno, página de livro ou post do Instagram com texto em inglês.",
+        "tip_pdf_label": "PDF:",
+        "tip_pdf": "páginas de conteúdo em inglês, como histórias, artigos e apostilas de aula.",
+        "tip_text_label": "TXT:",
+        "tip_text": "lista de palavras, diálogo ou texto que você preparou pra praticar.",
+        "back": "Voltar",
+        "remove": "Remover",
+        "extracting": "Lendo arquivo",
+        "ready": "Pronto para usar",
+        "file_errors": {
+          "blocked": "Conteúdo não permitido.",
+          "unreadable": "Imagem ilegível. Envie uma foto mais nítida.",
+          "empty": "Sem conteúdo em inglês para praticar.",
+          "unsupported": "Formato não aceito.",
+          "too_large": "Arquivo acima de 4 MB.",
+          "failed": "Não foi possível ler o arquivo."
+        }
+      }
     }
   },
   "home": {

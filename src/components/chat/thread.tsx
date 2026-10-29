@@ -38,7 +38,7 @@ function msgKey(m: Message): string {
 type ChatThreadProps = {
   messages: Message[];
   onSend?: (text: string) => void | Promise<void>;
-  onSendFile?: (file: File) => void | Promise<void>;
+  onAttachClick?: () => void;
   onSendAudio?: (recording: Blob) => void | Promise<void>;
   onRetry?: (externalId: string) => void;
   onAudioPlay?: (externalId: string) => void;
@@ -61,7 +61,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
     {
       messages,
       onSend,
-      onSendFile,
+      onAttachClick,
       onSendAudio,
       onRetry,
       onAudioPlay,
@@ -321,7 +321,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
               onClick={handleJumpToBottom}
               style={{ bottom: bottomInset + JUMP_BUTTON_GAP_PX }}
               aria-label={t("scroll_to_bottom_aria")}
-              className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-background/[95%] text-foreground shadow-sm backdrop-blur-sx backdrop-saturate-150"
+              className="touch-target absolute left-1/2 z-20 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-background/[95%] text-foreground shadow-sm backdrop-blur-sx backdrop-saturate-150"
             >
               <ArrowDown className="h-4 w-4" />
               {hasNewMessage && (
@@ -332,24 +332,28 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
           {showComposer && onSend && (
             <div
               ref={composerWrapperRef}
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-20 cz-margin-vv"
+              data-keyboard-open={vvOffset > 0 || undefined}
+              className="group/composer pointer-events-none absolute inset-x-0 bottom-0 z-20 cz-margin-vv"
             >
-              {showPendingReviewBanner && onPracticeClick && (
-                <div className="px-3 pt-2">
-                  <PendingReviewBanner
-                    count={pendingReviewCount}
-                    onPractice={onPracticeClick}
-                  />
-                </div>
-              )}
               <Composer
                 ref={ref}
                 onSend={onSend}
-                onSendFile={onSendFile}
+                onAttachClick={onAttachClick}
                 onSendAudio={onSendAudio}
                 disabled={composerDisabled}
                 disabledReason={composerDisabledReason}
                 isWaitingForResponse={isWaitingForResponse}
+                notice={
+                  onPracticeClick && (
+                    <PendingReviewBanner
+                      count={pendingReviewCount}
+                      onPractice={onPracticeClick}
+                    />
+                  )
+                }
+                isNoticeVisible={
+                  Boolean(showPendingReviewBanner) && pendingReviewCount > 0
+                }
               />
             </div>
           )}

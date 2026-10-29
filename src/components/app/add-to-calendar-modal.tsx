@@ -137,7 +137,7 @@ export function AddToCalendarModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center justify-between rounded-md border px-3 py-2">
+        <div className="flex items-center justify-between rounded-control border px-3 py-2">
           <div>
             <p className="text-sm font-medium">
               {t("daily_reminder_toggle_label")}

@@ -1,28 +1,19 @@
 ## Role
 
-Você gera material de vocabulário em inglês para prática individual, a partir de um objetivo, um tema livre e um foco linguístico escolhidos pelo usuário. Não extrai nem transcreve nada existente, cria conteúdo novo.
+Você gera material de vocabulário em inglês para prática individual, a partir de um objetivo, um tema livre e de um a três focos linguísticos escolhidos pelo usuário. Não extrai nem transcreve nada existente, cria conteúdo novo.
 
 Focos linguísticos disponíveis, cada um com chave canônica, rótulo e variações reconhecidas:
 {focus_enum}
 
 ## IMPORTANTE
 
-O tema já foi validado contra o objetivo em uma etapa anterior, não valide encaixe de tema nem conteúdo proibido de novo aqui.
+O tema e os focos já foram validados e resolvidos em uma etapa anterior. Não valide encaixe de tema nem conteúdo proibido de novo aqui, e não reclassifique os focos: use exatamente as chaves de `Focos`. isValid é sempre true, salvo quando for impossível gerar qualquer item, caso em que isValid é false, invalidReason traz um motivo curto de uso interno e content fica vazio.
 
-Se `Foco já resolvido` não estiver vazio, use exatamente essas chaves como focusKeys, sem reclassificar nada. isValid é sempre true, tooManyFocus é sempre false nesse caso. Vá direto para a geração.
-
-Se `Foco em texto livre` não estiver vazio, classifique esse texto contra a lista de focos disponíveis, nessa ordem:
-
-1. Identifique quais chaves da lista o texto do usuário está pedindo, usando os rótulos e variações reconhecidas como guia. Nunca invente uma chave fora da lista.
-2. Se o texto claramente pedir mais de 2 focos distintos, não gere nada: retorne isValid false, tooManyFocus true, focusKeys vazio, content vazio.
-3. Se o texto pedir 1 foco, ou 2 focos cuja combinação faz sentido prático para uma sessão de prática, colapse chaves repetidas em uma só, defina focusKeys com essas 1 ou 2 chaves, isValid true, tooManyFocus false, e gere.
-4. Se o texto pedir uma combinação de 2 focos sem sentido semântico prático (não relacionada a aprendizado real de inglês), ou não corresponder a nenhuma chave da lista, retorne isValid false, tooManyFocus false, invalidReason curto de uso interno, focusKeys vazio, content vazio.
-
-Quando isValid for true, gere uma lista de vocabulário sobre o tema, usando o subtópico apenas como ângulo para escolher e contextualizar os itens, nunca como o campo lexical em si, filtrada pelo(s) foco(s) resolvido(s) em focusKeys, no nível declarado, no idioma inglês com tradução em português.
+Gere uma lista de vocabulário sobre o tema, usando o subtópico apenas como ângulo para escolher e contextualizar os itens, nunca como o campo lexical em si, filtrada pelos focos, no nível declarado, no idioma inglês com tradução em português. Com mais de um foco, distribua os itens entre eles de forma equilibrada.
 
 Gere exatamente 25 itens, cada um um termo, expressão ou frase curta relacionada ao tema e ao(s) foco(s) escolhido(s).
 
-Quando o foco resolvido pertencer à categoria verbal ou estrutural (nunca quando for lexico), o item nunca é o marcador gramatical isolado. Nunca gere apenas o auxiliar, o verbo no infinitivo puro, o artigo sozinho ou o possessivo sozinho como item. Cada item é uma unidade mínima que um falante diria de verdade: sujeito e verbo quando o foco for verbal ou negação, substantivo e modificador quando o foco for artigo, possessivo ou quantificador. A tradução reflete essa unidade curta e completa, nunca o rótulo isolado da regra gramatical.
+Quando o foco pertencer à categoria verbal ou estrutural (nunca quando for lexico), o item nunca é o marcador gramatical isolado. Nunca gere apenas o auxiliar, o verbo no infinitivo puro, o artigo sozinho ou o possessivo sozinho como item. Cada item é uma unidade mínima que um falante diria de verdade: sujeito e verbo quando o foco for verbal ou negação, substantivo e modificador quando o foco for artigo, possessivo ou quantificador. A tradução reflete essa unidade curta e completa, nunca o rótulo isolado da regra gramatical.
 
 Exemplos: 
 
@@ -88,8 +79,6 @@ Estrutura do JSON:
 {
   "isValid": boolean,
   "invalidReason": string | null,
-  "tooManyFocus": boolean,
-  "focusKeys": array de string,
   "title": string,
   "level": "basic" | "intermediate" | "advanced",
   "content": string
@@ -101,5 +90,4 @@ Nível declarado do usuário: {level}
 Objetivo (domain): {domain}
 Tema (topic, já validado antes desta etapa): {topic}
 Subtópico desta geração (recorte específico dentro do tema): {subtopic}
-Foco já resolvido (chaves separadas por vírgula, vazio se o usuário respondeu com texto livre): {focus_known}
-Foco em texto livre do usuário (vazio se o foco já veio resolvido acima): {focus_free_text}
+Focos (chaves separadas por vírgula): {focus_keys}

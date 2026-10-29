@@ -10,7 +10,7 @@ export function FooterSocial() {
         target="_blank"
         rel="noreferrer"
         aria-label="Instagram"
-        className="hover:opacity-70 transition"
+        className="touch-target hover:opacity-70 transition"
       >
         <Instagram className="h-5 w-5" />
       </a>
@@ -20,7 +20,7 @@ export function FooterSocial() {
         target="_blank"
         rel="noreferrer"
         aria-label="LinkedIn"
-        className="hover:opacity-70 transition"
+        className="touch-target hover:opacity-70 transition"
       >
         <Linkedin className="h-5 w-5" />
       </a>
@@ -30,7 +30,7 @@ export function FooterSocial() {
         target="_blank"
         rel="noreferrer"
         aria-label="X / Twitter"
-        className="hover:opacity-70 transition"
+        className="touch-target hover:opacity-70 transition"
       >
         <Twitter className="h-5 w-5" />
       </a> */}
@@ -40,7 +40,7 @@ export function FooterSocial() {
         target="_blank"
         rel="noreferrer"
         aria-label="Facebook"
-        className="hover:opacity-70 transition"
+        className="touch-target hover:opacity-70 transition"
       >
         <Facebook className="h-5 w-5" />
       </a>

@@ -13,7 +13,7 @@ import {
   SubscriptionInterval,
 } from "@/src/lib/constants";
 
-const CTA_CLASS_NAME = "w-full rounded-full h-12 font-semibold text-base";
+const CTA_CLASS_NAME = "w-full";
 
 function CurrentPlanCta() {
   const t = useTranslations("pricing");

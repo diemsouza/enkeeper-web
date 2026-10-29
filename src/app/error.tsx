@@ -39,13 +39,13 @@ export default function AppError({
           {t("description")}
         </p>
         <div className="mt-10 flex items-center justify-center gap-x-4">
-          <Button size="lg" className="rounded-full px-5" onClick={retry}>
+          <Button size="lg" className="px-5" onClick={retry}>
             {t("cta_retry")}
           </Button>
           <Button
             size="lg"
             variant="outline"
-            className="rounded-full px-5"
+            className="px-5"
             onClick={goToLogin}
           >
             {t("cta_login")}

@@ -43,7 +43,10 @@ export const SimulatorThreadPanel = forwardRef<
   const compact = size === "compact";
 
   const content = (
-    <div className="flex h-full min-h-0 flex-col bg-[#F5F5F7] dark:bg-[#1C1C1E]">
+    <div
+      data-chat-density="compact"
+      className="flex h-full min-h-0 flex-col bg-[#F5F5F7] dark:bg-[#1C1C1E]"
+    >
       <div className="relative min-h-0 flex-1 overflow-hidden">
         {/* <div
           aria-hidden="true"
@@ -83,7 +86,7 @@ export const SimulatorThreadPanel = forwardRef<
           </div>
         </div>
       </div>
-      <Composer onSend={() => {}} disabled />
+      <Composer onSend={() => {}} isPreview />
     </div>
   );
 

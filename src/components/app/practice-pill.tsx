@@ -3,14 +3,17 @@
 import { Play } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SidebarMenuButton, useSidebar } from "@/src/components/ui/sidebar";
+import { buttonVariants } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { usePracticePill } from "./practice-pill-provider";
 
 export function PracticePill({
   showLabel = true,
+  size = "compact",
   className,
 }: {
   showLabel?: boolean;
+  size?: "compact" | "mini";
   className?: string;
 }) {
   const t = useTranslations("app.practice_pill");
@@ -45,10 +48,10 @@ export function PracticePill({
       onClick={handleClick}
       disabled={!isActive}
       className={cn(
-        "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
+        buttonVariants({ size }),
         isActive
           ? "bg-primary text-primary-foreground hover:opacity-90"
-          : "cursor-not-allowed bg-muted text-muted-foreground",
+          : "cursor-not-allowed bg-muted text-muted-foreground disabled:opacity-100",
         className,
       )}
     >

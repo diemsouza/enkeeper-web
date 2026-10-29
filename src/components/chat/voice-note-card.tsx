@@ -25,7 +25,7 @@ export function VoiceNoteCard({ duration }: { duration: string }) {
             />
           ))}
         </div>
-        <span className="absolute left-0 top-full mt-0.5 text-[10px] opacity-60">
+        <span className="absolute left-0 top-full mt-0.5 text-chat-meta opacity-60">
           {duration}
         </span>
       </div>

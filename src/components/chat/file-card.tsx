@@ -32,8 +32,8 @@ export function FileCard({
         </span>
       </div>
       <div className="min-w-0">
-        <p className="font-semibold text-[13px] leading-tight">{fileName}</p>
-        <p className="text-[11px] opacity-50 mt-0.5">{fileSize}</p>
+        <p className="font-semibold text-[14px] leading-tight">{fileName}</p>
+        <p className="text-caption opacity-50 mt-0.5">{fileSize}</p>
       </div>
     </div>
   );

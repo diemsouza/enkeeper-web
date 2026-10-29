@@ -23,6 +23,19 @@ import { loadImageSize } from "@/src/lib/image-size";
 import { buildVoiceNoteFile } from "@/src/lib/voice-recording";
 import { usePracticePill } from "./practice-pill-provider";
 import { useReminderFlow } from "./reminder-flow-provider";
+import { useNewActivity } from "./new-activity-provider";
+import { useProfileLevel } from "./profile-level-provider";
+import { useSupportFlow } from "./support-flow-provider";
+import { RETRY_NEW_ACTIVITY_BUTTON_ID } from "@/src/lib/constants";
+import {
+  consumeSentInSession,
+  markSentInSession,
+} from "@/src/lib/session-sent-messages";
+import type {
+  ClientCommand,
+  ClientCommandAction,
+  ClientCommandPayloads,
+} from "@/src/types/client-command";
 
 type MessagesResponse = { messages: Message[]; hasMore: boolean };
 
@@ -55,12 +68,6 @@ function nowTime(): string {
   });
 }
 
-function mediaTypeFromFile(file: File): "image" | "pdf" | "text" {
-  if (file.type.startsWith("image/")) return "image";
-  if (file.type === "application/pdf") return "pdf";
-  return "text";
-}
-
 async function withImageSize(message: Message): Promise<Message> {
   if (message.type !== "image" || !message.imageUrl || message.imageWidth) {
     return message;
@@ -70,10 +77,18 @@ async function withImageSize(message: Message): Promise<Message> {
   return { ...message, imageWidth: size.width, imageHeight: size.height };
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+type ClientCommandHandlers = {
+  [A in ClientCommandAction]: (payload: ClientCommandPayloads[A]) => void;
+};
+
+function runClientCommand(
+  command: ClientCommand,
+  handlers: ClientCommandHandlers,
+): void {
+  const handler = handlers[command.action] as (
+    payload: ClientCommand["payload"],
+  ) => void;
+  handler(command.payload);
 }
 
 function sameMessage(a: Message, key: string): boolean {
@@ -174,6 +189,9 @@ export function LiveThreadClient({
   const router = useRouter();
   const { registerSender, refresh: refreshPracticePill } = usePracticePill();
   const { openReminder } = useReminderFlow();
+  const { openNewActivity } = useNewActivity();
+  const { openLevel } = useProfileLevel();
+  const { openSupport } = useSupportFlow();
   const isMobile = useIsMobile();
   const fileLabels = {
     image: tChat("file_type_image"),
@@ -493,6 +511,22 @@ export function LiveThreadClient({
       ? lastMessage.id
       : null;
 
+  // Mensagem de comando so executa em resposta a um envio desta aba, uma vez:
+  // historico, outra aba, outro dispositivo e reload nunca executam.
+  useEffect(() => {
+    const handlers: ClientCommandHandlers = {
+      open_create_activity: (payload) =>
+        openNewActivity({ prefill: payload.prefill }),
+      open_support: openSupport,
+      open_level: openLevel,
+    };
+    for (const message of messages) {
+      if (!message.command) continue;
+      if (!consumeSentInSession(message.command.replyTo)) continue;
+      runClientCommand(message.command, handlers);
+    }
+  }, [messages, openNewActivity, openSupport, openLevel]);
+
   useEffect(() => {
     if (!phonePromptGuideId || hasPhonePromptedRef.current) return;
     let timer = setTimeout(function openWhenAudioIdle() {
@@ -527,6 +561,7 @@ export function LiveThreadClient({
       setShowPendingReview(false);
     }
     const externalId = ulid();
+    markSentInSession(externalId);
     setMessages((prev) => [
       ...prev,
       {
@@ -555,34 +590,6 @@ export function LiveThreadClient({
     setMessageStatus(externalId, ok ? "sent" : "failed");
   }
 
-  async function handleSendFile(file: File) {
-    beginTurn();
-    const mediaType = mediaTypeFromFile(file);
-    const externalId = ulid();
-    pendingFilesRef.current.set(externalId, file);
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: externalId,
-        externalId,
-        from: "user",
-        time: nowTime(),
-        date: new Date().toISOString(),
-        type: "file",
-        fileName: file.name,
-        fileSize: formatFileSize(file.size),
-        mediaType,
-        status: "sending",
-      },
-    ]);
-    const { ok } = await postForm(
-      "/api/app/messages/upload",
-      buildUploadForm(mediaType, externalId, file),
-    );
-    composerRef.current?.focus();
-    setMessageStatus(externalId, ok ? "sent" : "failed");
-  }
-
   async function uploadVoiceNote(
     externalId: string,
     recording: File,
@@ -603,6 +610,7 @@ export function LiveThreadClient({
   async function handleSendAudio(recording: Blob) {
     beginTurn();
     const externalId = ulid();
+    markSentInSession(externalId);
     const audioUrl = URL.createObjectURL(recording);
     blobUrlsRef.current.push(audioUrl);
     const file = new File([recording], "voice", { type: recording.type });
@@ -641,20 +649,6 @@ export function LiveThreadClient({
       return;
     }
 
-    if (target.type === "file") {
-      const file = pendingFilesRef.current.get(externalId);
-      if (!file || !target.mediaType) {
-        setMessageStatus(externalId, "failed");
-        return;
-      }
-      const { ok } = await postForm(
-        "/api/app/messages/upload",
-        buildUploadForm(target.mediaType, externalId, file),
-      );
-      setMessageStatus(externalId, ok ? "sent" : "failed");
-      return;
-    }
-
     const optionMessageId = target.buttonId
       ? findOpenOptionMessageId(messagesRef.current, target.buttonId)
       : null;
@@ -688,6 +682,11 @@ export function LiveThreadClient({
       return;
     }
     const target = messagesRef.current.find((m) => m.id === messageId);
+    if (button.id === RETRY_NEW_ACTIVITY_BUTTON_ID) {
+      if (target?.interactive?.disabled || optimisticSelections[messageId]) return;
+      void handleSend(button.label, { messageId, buttonId: button.id });
+      return;
+    }
     if (!target?.interactive?.isOptionList) {
       void handleSend(button.label);
       return;
@@ -704,7 +703,11 @@ export function LiveThreadClient({
   }, [registerSender]);
 
   const displayedMessages = useMemo(
-    () => applyOptimisticSelections(messages, optimisticSelections),
+    () =>
+      applyOptimisticSelections(
+        messages.filter((m) => m.command === undefined),
+        optimisticSelections,
+      ),
     [messages, optimisticSelections],
   );
 
@@ -713,7 +716,7 @@ export function LiveThreadClient({
       ref={composerRef}
       messages={displayedMessages}
       onSend={(text) => handleSend(text)}
-      onSendFile={handleSendFile}
+      onAttachClick={() => openNewActivity({ step: "material" })}
       onSendAudio={handleSendAudio}
       onRetry={handleRetrySend}
       onAudioPlay={handleAudioPlay}

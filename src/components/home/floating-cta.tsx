@@ -51,7 +51,7 @@ export default function FloatingCta() {
     >
       <HomeCTA
         waLabel={t("cta")}
-        buttonClassName="w-full rounded-full h-12 font-semibold gap-2 text-base"
+        buttonClassName="w-full gap-2"
       />
     </div>
   );

@@ -22,7 +22,7 @@ export function ThemeSwitcher() {
       variant="ghost"
       size="icon"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="transition-all duration-200 hover:bg-accent"
+      className="rounded-md transition-all duration-200 hover:bg-accent"
       aria-label="Toggle theme"
     >
       {theme === "dark" ? (

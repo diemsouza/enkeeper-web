@@ -15,6 +15,10 @@ import {
 } from "@/src/repo/activities.repo";
 import { PracticePillProvider } from "@/src/components/app/practice-pill-provider";
 import { ReminderFlowProvider } from "@/src/components/app/reminder-flow-provider";
+import { NewActivityProvider } from "@/src/components/app/new-activity-provider";
+import { ProfileLevelProvider } from "@/src/components/app/profile-level-provider";
+import { SupportFlowProvider } from "@/src/components/app/support-flow-provider";
+import type { SupportReplyChannel } from "@/src/components/app/support-modal";
 import { getTodayUsage } from "@/src/repo/daily-usage.repo";
 
 export const metadata: Metadata = {
@@ -50,6 +54,10 @@ export default async function AppLayout({
     intensiveCount: usage?.intensiveCount ?? 0,
   });
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+  const supportReplyChannel: SupportReplyChannel =
+    !user.phone && user.email
+      ? { kind: "email", email: user.email }
+      : { kind: "whatsapp" };
   const scopedMessages = {
     common: messages.common,
     app: messages.app,
@@ -66,18 +74,24 @@ export default async function AppLayout({
           dailyReminderEnabled={user.dailyReminderEnabled}
           dailyReminderTime={user.dailyReminderTime}
         >
-          <SidebarProvider defaultOpen={defaultOpen}>
-            <div className="flex h-[100dvh] w-full overflow-hidden">
-              <AppSidebar
-                user={user}
-                activities={activities}
-              />
-              <div className="flex min-w-0 flex-1 flex-col">
-                <AppHeader />
-                <main className="min-h-0 flex-1">{children}</main>
-              </div>
-            </div>
-          </SidebarProvider>
+          <SupportFlowProvider replyChannel={supportReplyChannel}>
+            <ProfileLevelProvider initialLevel={user.level}>
+              <NewActivityProvider>
+                <SidebarProvider defaultOpen={defaultOpen}>
+                  <div className="flex h-[100dvh] w-full overflow-hidden">
+                    <AppSidebar
+                      user={user}
+                      activities={activities}
+                    />
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <AppHeader />
+                      <main className="min-h-0 flex-1">{children}</main>
+                    </div>
+                  </div>
+                </SidebarProvider>
+              </NewActivityProvider>
+            </ProfileLevelProvider>
+          </SupportFlowProvider>
         </ReminderFlowProvider>
       </PracticePillProvider>
     </NextIntlClientProvider>

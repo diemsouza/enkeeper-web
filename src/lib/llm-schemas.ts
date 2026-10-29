@@ -60,7 +60,6 @@ export type DocProcessingResult = z.infer<typeof docProcessingSchema>;
 export const topicValidationSchema = z.object({
   isValid: z.boolean(),
   invalidReason: z.string().nullable(),
-  focusSuggestions: z.array(z.object({ key: z.string(), label: z.string() })),
   subtopics: z.array(z.string()),
 });
 
@@ -69,14 +68,25 @@ export type TopicValidationResult = z.infer<typeof topicValidationSchema>;
 export const focusContentSchema = z.object({
   isValid: z.boolean(),
   invalidReason: z.string().nullable(),
-  tooManyFocus: z.boolean(),
-  focusKeys: z.array(z.string()).max(2),
   title: z.string(),
   level: z.enum(["basic", "intermediate", "advanced"]),
   content: z.string(),
 });
 
 export type FocusContentResult = z.infer<typeof focusContentSchema>;
+
+export const activityRequestSchema = z.object({
+  isAllowed: z.boolean(),
+  isSufficient: z.boolean(),
+  missingHint: z.string().nullable(),
+  examples: z.array(z.string()),
+  domainKey: z.string().nullable(),
+  topic: z.string().nullable(),
+  levelFromText: z.enum(["basic", "intermediate", "advanced"]).nullable(),
+  focusKeysFromText: z.array(z.string()),
+});
+
+export type ActivityRequestResult = z.infer<typeof activityRequestSchema>;
 
 export const sectionQuestionSchema = z.object({
   question: z.string(),

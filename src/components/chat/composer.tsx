@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import {
   forwardRef,
   KeyboardEvent,
+  type ReactNode,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   useEffect,
@@ -16,7 +17,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import { type Command, searchAutoCompleteCommands } from "@/src/lib/commands";
-import { capitalizeFirst } from "@/src/lib/utils";
+import { capitalizeFirst, cn } from "@/src/lib/utils";
 import { canRecordVoice } from "@/src/lib/voice-recording";
 import { useToast } from "@/src/hooks/use-toast";
 import {
@@ -48,22 +49,32 @@ export type ComposerHandle = {
 
 type ComposerProps = {
   onSend: (text: string) => void | Promise<void>;
-  onSendFile?: (file: File) => void | Promise<void>;
+  // O clipe abre a modal de material; o arquivo nao e enviado pelo chat.
+  onAttachClick?: () => void;
   onSendAudio?: (recording: Blob) => void | Promise<void>;
   disabled?: boolean;
   disabledReason?: string;
   isWaitingForResponse?: boolean;
+  // Linha da bandeja (aviso de revisao); fica montada para animar a saida.
+  notice?: ReactNode;
+  isNoticeVisible?: boolean;
+  // Simulador da home: composer em repouso como no app (mic no lugar do
+  // enviar), sem aparencia de desabilitado e sem interacao.
+  isPreview?: boolean;
 };
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(
   function Composer(
     {
       onSend,
-      onSendFile,
+      onAttachClick,
       onSendAudio,
       disabled,
       disabledReason,
       isWaitingForResponse,
+      notice,
+      isNoticeVisible = false,
+      isPreview = false,
     },
     ref,
   ) {
@@ -86,7 +97,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
     const [text, setText] = useState("");
     const [activeIndex, setActiveIndex] = useState(0);
     const [menuDismissed, setMenuDismissed] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -156,7 +166,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
       ? "hold"
       : isRecording
         ? "locked"
-        : canRecord && !text
+        : (canRecord || isPreview) && !text
           ? "mic"
           : "send";
 
@@ -219,12 +229,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
       }
     }
 
-    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-      const file = e.target.files?.[0];
-      if (e.target) e.target.value = "";
-      if (file) void onSendFile?.(file);
-    }
-
     return (
       <div className="relative">
         {/* Fundo desfocado do footer, atrás de tudo. Usa a mesma cor do fundo
@@ -240,108 +244,147 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
           }}
         />
         <div
-          className="flex flex-col gap-1 px-3 pt-2"
-          style={{
-            paddingBottom:
-              "max(0.75rem, calc(env(safe-area-inset-bottom) - 0.75rem))",
-          }}
+          className={cn(
+            "flex flex-col gap-1 pt-2 transition-[padding] duration-200 motion-reduce:transition-none",
+            isNoticeVisible
+              ? "max-md:px-0 max-md:pb-0 md:px-3 md:pb-3"
+              : "px-3 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)_-_0.75rem))]",
+          )}
         >
-          <div ref={containerRef} className="relative mx-auto w-full max-w-3xl">
-            {showCommandMenu && (
-              <div className="pointer-events-auto absolute inset-x-0 bottom-full z-30 mb-2 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-md">
-                <ul
-                  className="overflow-y-auto py-1"
-                  style={{ maxHeight: "min(15rem, 40vh)" }}
-                >
-                  {commandMatches.map((command, index) => (
-                    <li key={command.id}>
-                      <button
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          selectCommand(command);
-                        }}
-                        onMouseEnter={() => setActiveIndex(index)}
-                        className={`flex w-full items-center px-3 py-2 text-left text-sm ${
-                          index === clampedActiveIndex
-                            ? "bg-accent text-accent-foreground"
-                            : ""
-                        }`}
-                      >
-                        <span className="font-medium whitespace-nowrap shrink-0">
-                          {capitalizeFirst(command.display)}
-                        </span>
-                        <span className="ml-1.5 min-w-0 truncate text-muted-foreground">
-                          - {command.description}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+          <div
+            className={cn(
+              "pointer-events-auto relative isolate mx-auto w-full max-w-3xl transition-[padding] duration-200 motion-reduce:transition-none",
+              isNoticeVisible &&
+                "rounded-t-tray px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] group-data-[keyboard-open]/composer:pb-2 md:rounded-tray md:p-2",
             )}
-            {isRecording && recorder.isWarning && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-full z-30 mb-2 flex justify-center">
-                <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white shadow-sm">
-                  {t("voice.time_warning")}
-                </span>
-              </div>
-            )}
-            <div className="pointer-events-auto flex w-full items-end gap-1.5 rounded-3xl border border-border bg-background/70 backdrop-blur-xl backdrop-saturate-150 px-1.5 py-1 shadow-sm">
-              {isRecording ? (
-                <RecordingBar
-                  mode={hold.isHolding ? "hold" : "locked"}
-                  elapsedMs={recorder.elapsedMs}
-                  levels={recorder.levels}
-                  isWarning={recorder.isWarning}
-                  onCancel={recorder.cancel}
+          >
+            {notice && (
+              <>
+                <div
+                  aria-hidden
+                  className={cn(
+                    "absolute inset-0 -z-10 rounded-[inherit] border border-primary/20 bg-primary/15 backdrop-blur-xl backdrop-saturate-150 transition-opacity duration-200 motion-reduce:transition-none max-md:border-b-0 dark:bg-primary/20",
+                    isNoticeVisible ? "opacity-100" : "opacity-0",
+                  )}
                 />
-              ) : (
-                <>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept="image/*,application/pdf,text/plain,text/markdown,.txt,.md"
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    disabled={disabled || isWaitingForResponse || !onSendFile}
-                    onClick={() => fileInputRef.current?.click()}
-                    aria-label={t("attach_file_aria")}
-                    title={t("attach_file_title")}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+                <div
+                  inert={!isNoticeVisible}
+                  className={cn(
+                    "grid transition-[grid-template-rows] duration-200 motion-reduce:transition-none",
+                    isNoticeVisible ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                  )}
+                >
+                  <div className="min-h-0 overflow-hidden">
+                    <div
+                      className={cn(
+                        "pb-2 transition-transform duration-200 motion-reduce:transition-none",
+                        isNoticeVisible ? "translate-y-0" : "translate-y-full",
+                      )}
+                    >
+                      {notice}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+            <div
+              ref={containerRef}
+              inert={isPreview}
+              className="relative w-full"
+            >
+              {showCommandMenu && (
+                <div className="pointer-events-auto absolute inset-x-0 bottom-full z-30 mb-2 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-md">
+                  <ul
+                    className="overflow-y-auto py-1"
+                    style={{ maxHeight: "min(15rem, 40vh)" }}
                   >
-                    <Paperclip className="h-4 w-4" />
-                  </button>
-                  <Textarea
-                    id="input_text"
-                    ref={textareaRef}
-                    rows={1}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={disabled}
-                    placeholder={
-                      disabled
-                        ? (disabledReason ?? t("placeholder_archived"))
-                        : t("placeholder_default")
-                    }
-                    className="min-h-9 flex-1 resize-none rounded-2xl border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
-                </>
+                    {commandMatches.map((command, index) => (
+                      <li key={command.id}>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectCommand(command);
+                          }}
+                          onMouseEnter={() => setActiveIndex(index)}
+                          className={`flex min-h-touch w-full items-center px-3 py-2 text-left text-base ${
+                            index === clampedActiveIndex
+                              ? "bg-accent text-accent-foreground"
+                              : ""
+                          }`}
+                        >
+                          <span className="font-medium whitespace-nowrap shrink-0">
+                            {capitalizeFirst(command.display)}
+                          </span>
+                          <span className="ml-1.5 min-w-0 truncate text-muted-foreground">
+                            - {command.description}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
-              <ComposerActionButton
-                role={actionRole}
-                disabled={isActionDisabled}
-                onClick={handleActionClick}
-                onPointerDown={handleActionPointerDown}
-                onPointerUp={hold.handlers.onPointerUp}
-                onPointerCancel={hold.handlers.onPointerCancel}
-                onLostPointerCapture={hold.handlers.onLostPointerCapture}
-                onContextMenu={hold.handlers.onContextMenu}
-              />
+              {isRecording && recorder.isWarning && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-full z-30 mb-2 flex justify-center">
+                  <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white shadow-sm">
+                    {t("voice.time_warning")}
+                  </span>
+                </div>
+              )}
+              <div
+                className={cn(
+                  "pointer-events-auto flex w-full items-end gap-1.5 rounded-composer border border-border bg-background/70 backdrop-blur-xl backdrop-saturate-150 px-1.5 py-1 shadow-sm",
+                )}
+              >
+                {isRecording ? (
+                  <RecordingBar
+                    mode={hold.isHolding ? "hold" : "locked"}
+                    elapsedMs={recorder.elapsedMs}
+                    levels={recorder.levels}
+                    isWarning={recorder.isWarning}
+                    onCancel={recorder.cancel}
+                  />
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={!isPreview && (disabled || !onAttachClick)}
+                      onClick={onAttachClick}
+                      aria-label={t("attach_file_aria")}
+                      title={t("attach_file_title")}
+                      className="touch-target mb-[var(--composer-button-offset)] flex h-composer w-composer shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+                    >
+                      <Paperclip className="h-composer-icon w-composer-icon" />
+                    </button>
+                    <Textarea
+                      id="input_text"
+                      ref={textareaRef}
+                      rows={1}
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      disabled={disabled}
+                      placeholder={
+                        disabled
+                          ? (disabledReason ?? t("placeholder_archived"))
+                          : t("placeholder_default")
+                      }
+                      className="min-h-composer-field flex-1 resize-none rounded-none border-0 bg-transparent py-[var(--composer-field-padding)] leading-5 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </>
+                )}
+                <ComposerActionButton
+                  role={actionRole}
+                  disabled={isActionDisabled}
+                  onClick={handleActionClick}
+                  onPointerDown={handleActionPointerDown}
+                  onPointerUp={hold.handlers.onPointerUp}
+                  onPointerCancel={hold.handlers.onPointerCancel}
+                  onLostPointerCapture={hold.handlers.onLostPointerCapture}
+                  onContextMenu={hold.handlers.onContextMenu}
+                />
+              </div>
             </div>
           </div>
         </div>

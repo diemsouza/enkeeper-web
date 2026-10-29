@@ -26,7 +26,7 @@ function AudioPlayerPlaceholder(): React.JSX.Element {
       </div>
       <div className="flex items-center gap-3">
         <div className="w-9 shrink-0" aria-hidden="true" />
-        <span className="select-none text-[10.5px] opacity-60 tabular-nums">
+        <span className="select-none text-chat-meta opacity-60 tabular-nums">
           {formatTime(0)}
         </span>
       </div>

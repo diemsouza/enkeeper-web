@@ -111,7 +111,11 @@ export async function processDoc(docId: string, userId: string, channel: Message
     if (result.content.trim().length > 0) {
       const activityCount = await incrementDailyActivityCount(userId, date);
       await incrementDailyDocCount(userId, date);
-      const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
+      const msg = formatDocProcessed(
+        false,
+        MAX_ACTIVITIES_PER_DAY - activityCount,
+        activityLevel,
+      );
       const summary = currentActivity
         ? await buildPreviousActivitySummary(userId, {
             activityId: currentActivity.id,

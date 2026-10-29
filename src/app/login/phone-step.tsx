@@ -71,7 +71,7 @@ export function PhoneStep({ onSubmit, loading, error, onBack }: PhoneStepProps) 
       {visibleError && (
         <p className="text-sm text-destructive">{visibleError}</p>
       )}
-      <Button type="submit" disabled={loading} className="h-12 text-base">
+      <Button type="submit" disabled={loading}>
         {loading ? t("sending") : t("send_code")}
       </Button>
       <p id="phone-usage-note" className="text-sm text-muted-foreground">

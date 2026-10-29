@@ -98,6 +98,10 @@ Todas as rotas de fila validam assinatura Upstash.
 **Processamento de documento:**
 Upload -> `POST /api/queue/process-doc` -> `process-doc-service` -> `llm.vendor.ts` (extracao de vocabulario + geracao de perguntas)
 
+**Nova atividade (modal):** toda atividade nasce em `NewActivityModal` (`src/components/app/new-activity-modal.tsx`, aberta por `useNewActivity().openNewActivity()` de `NewActivityProvider`). O comando `new_activity` (texto, voz, aliases como o botao "Criar atividade", sidebar) passa pelo chat como qualquer comando; a resposta e uma mensagem de comando (`open_create_activity`), sem balao, que abre a modal (ver "Mensagem de comando" abaixo). O card de `formatCreateActivityPrompt` fica so no convite iniciado pelo sistema. O clipe do composer abre direto na tela de material. Texto: `POST /api/app/activities` com `source: "text"` -> `prepareTextActivity` (`new-activity-service.ts`: plano, cap, trava, `generateActivityRequest` pulado para sugestao de `TOPIC_SUGGESTIONS` nao editada, `resolveActivityRequest` de `src/core/activity-request.ts`) e `createTextActivity` em `after()` (subtopicos, `generateFocusContent`, arquiva a anterior so com conteudo pronto, "Pronto" com nivel e foco, primeira pergunta). Material: cada arquivo por `POST /api/app/activities/material/extract` (`material-extract-service.ts`, imagem vira `Media` com `messageId` pre-gerado), depois `source: "material"` -> `prepareMaterialActivity` + `mergeDoc` em `after()`. Falha da geracao manda `formatActivityCreationFailed` com o botao `RETRY_NEW_ACTIVITY_BUTTON_ID`, enviado pelo chat com `buttonId` e tratado por `retryActivityCreation` em `message-service.ts` (pedido em `users.metadata.lastActivityRequest`). Toda modal (Dialog, AlertDialog, Drawer) segue `MODAL_*_CLASS` de `src/components/ui/dialog.tsx` (centralizada, `rounded-modal`); `DialogContent` com `isFullScreenOnMobile` vira tela cheia abaixo de `sm` (hoje so a `NewActivityModal`); ver "Escala de UI".
+
+**Mensagem de comando (servidor controla o front):** `sendCommand({ userId, command })` (`message-sender-service.ts`) grava `Message` com `intent: "client_command"`, `content: ""` e `metadata.command = { action, payload, replyTo }` (tipos em `src/types/client-command.ts`, parse em `src/core/client-command.ts`). Nao passa pelo canal; chega pelo trigger do Realtime. No front, `Message.command` nunca vira balao e `LiveThreadClient` executa o handler da action so quando `consumeSentInSession(replyTo)` (`src/lib/session-sent-messages.ts`) confirma um envio desta aba. Nova action: tipo em `ClientCommandPayloads`, schema em `PAYLOAD_SCHEMAS`, handler no mapa do `LiveThreadClient`. Actions hoje: `open_create_activity`, `open_support` e `open_level` (todas enviadas por `sendOpenCommand` em `message-service.ts`). Onboarding termina com `formatCreateActivityPrompt`, sem pergunta de nivel. Ver Product-Rules Secao 15.
+
 **Cadencia de pratica:**
 Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.service` envia a proxima pergunta pendente via WhatsApp.
 
@@ -149,9 +153,9 @@ O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotac
 
 **Choice shuffle:** opcoes sao embaralhadas uma vez antes de salvar no banco (`updateQuestion`). **Opcoes por canal:** choice e image_recognition devolvem so a pergunta em `text` e as opcoes em `interactive.buttons` com `isOptionList: true`. O `WhatsAppChannel` anexa a lista numerada via `formatNumberedOptions` (texto ou legenda); a web salva so a pergunta e o cliente renderiza os botoes. `formatNumberedOptions` nao embaralha.
 
-**Passos de captura:** nivel, objetivo, assunto e ponto tambem sao listas (`isOptionList` + `isCaptureStep`; `text` = `body` com enunciado e aviso de cancelar, opcoes so nos botoes). No WhatsApp, ate 3 opcoes viram reply buttons; acima disso, `formatCaptureStepOptionsText` + atalhos `PICK_SHORTCUTS`. O clique na web manda `buttonId` + `messageId`; `applyCaptureStepSelection` valida (`resolveOptionIndex`), grava a selecao e passa a posicao ao parser do passo.
+**Suporte e nivel (modais):** nenhum dos dois passa pelo chat nem deixa `pendingIntent`. Comando `suporte`/`nivel` (texto, voz, aliases) grava a mensagem do usuario e responde `open_support`/`open_level`; o menu da conta (`sidebar-footer.tsx`) abre direto. Suporte: `SupportModal` (`useSupportFlow().openSupport()`, `support-flow-provider.tsx`) -> `POST /api/app/support` -> `sendSupportRequest` (`support-service.ts`, e-mail para `EMAIL_SUPPORT`); toast diz o canal da resposta (WhatsApp com telefone, senao e-mail). Nivel: `LevelModal` (`useProfileLevel().openLevel()`, `profile-level-provider.tsx`) -> `POST /api/app/account/level`. `ProfileLevelProvider` e a fonte unica do nivel no cliente: a `NewActivityModal` abre com ele e atualiza ao criar. Card de nivel antigo no historico (`isCaptureStep` no JSON) e renderizado travado por `map-messages.ts`. Ver Product-Rules Secoes 5 e 9.1.
 
-**Estado da selecao:** o `interactive` de lista de opcoes ganha `disabled` e `selectedId`, gravados por `markOptionListSelection` (`message-service.ts`, idempotente): na avaliacao (`markOptionListAnswered`, antes do `saveUserMsg`) na mensagem mais recente e livre da pergunta (`question_id`), e no clique de um passo de captura. A resolucao da opcao e `resolveSelectedButtonId` (`src/core/parser.ts`): id do botao, senao numero, senao texto. A web antecipa a selecao no clique e reconcilia quando a mensagem do usuario chega pelo realtime.
+**Estado da selecao:** o `interactive` de lista de opcoes ganha `disabled` e `selectedId`, gravados por `markOptionListSelection` (`message-service.ts`, idempotente): na avaliacao (`markOptionListAnswered`, antes do `saveUserMsg`) na mensagem mais recente e livre da pergunta (`question_id`). A resolucao da opcao e `resolveSelectedButtonId` (`src/core/parser.ts`): id do botao, senao numero, senao texto. A web antecipa a selecao no clique e reconcilia quando a mensagem do usuario chega pelo realtime.
 
 ## LLM vendor
 
@@ -161,6 +165,7 @@ O LLM decide o formato de cada pergunta no JSON de saida. O codigo nao faz rotac
 | ------------------------- | ----------------- | ------------------ |
 | `generateDocSections`     | doc-extraction    | gpt-4.1-mini       |
 | `generateNextQuestion`    | gen-vocabulary    | PROVIDER_STANDARD  |
+| `generateActivityRequest` | activity-request  | PROVIDER_STANDARD  |
 | `generateTopicValidation` | topic-validation  | PROVIDER_STANDARD  |
 | `generateFocusContent`    | gen-content        | PROVIDER_STANDARD  |
 | `generateAnswerEvaluation`| answer-evaluation | PROVIDER_STANDARD  |
@@ -193,8 +198,9 @@ Cada prompt vive em `prompts/<etapa>.md`. Formato e convencoes em `prompts/stand
 
 Arquivos de prompt ativos:
 - `doc-extraction.md` -- extrai vocabulario do material (lista unica, sem seçoes tipadas, ver Product-Rules.md Secao 3)
-- `topic-validation.md` -- valida tema do fluxo de nova atividade e sugere focos linguisticos
-- `gen-content.md` -- resolve o foco linguistico (lista numerada ou texto livre) e gera o conteudo do fluxo de nova atividade
+- `activity-request.md` -- modera o pedido da modal de nova atividade, checa se ha informacao suficiente e extrai objetivo, assunto, nivel e focos
+- `topic-validation.md` -- revalida o assunto e gera os 5 subtopicos
+- `gen-content.md` -- gera o conteudo da atividade a partir das chaves de foco ja resolvidas (ate 3)
 - `gen-vocabulary.md` -- gera perguntas de vocabulario (unico prompt de geracao de pergunta em uso hoje)
 - `answer-evaluation.md` -- avalia resposta do usuario e gera feedback
 - `voice.md` -- persona e tom de voz (injetado nos prompts acima)
@@ -256,6 +262,16 @@ await sendAndSaveMessage({ channel, userId, message: msg, today });
 `MessageChannel.sendMessage`/`sendTemplate` enviam uma mensagem por chamada (sem array, sem `{ delay }`). Para pausas entre mensagens, usar `waitBeforeSend(channel, userId, ms, { replyToMessageId })` de `src/services/message-sender-service.ts` entre chamadas de `sendAndSaveMessage`, nunca `delay` cru: ele acende o "digitando" nos ultimos `TYPING_LEAD_MS` quando a pausa passa de `MIN_DELAY_FOR_TYPING_MS`.
 
 **Digitando:** antes de chamada de duracao incerta (LLM, geracao de pergunta/imagem, TTS), chamar `await channel.notifyTyping(userId, { replyToMessageId })` direto na linha anterior, sem wrapper nem heartbeat. `replyToMessageId` e o `externalId` da mensagem recebida (wamid no WhatsApp; sem ele o WhatsApp nao mostra nada). Em fluxo com varias etapas lentas, passar `TypingTarget` (`{ channel, replyToMessageId }`) para renovar o aviso antes de cada etapa (ex: `generateQuestionIfPoolNotFull`). Duas mensagens de uma mesma sequencia nunca saem coladas: sempre `waitBeforeSend` entre elas. `notifyTypingStop` so existe no `finally` de `handleIncomingMessage`, via `trackChannelSends`. Regra em Product-Rules Secao 19.
+
+### Escala de UI
+
+Valores de tamanho e raio ficam em um lugar so: tokens em `tailwind.config.ts` (registrados no `cn` de `src/lib/utils.ts` para o `twMerge` resolver conflito) e variaveis do chat em `src/app/globals.css`. Nunca escrever altura, raio ou tamanho de titulo solto em botao ou modal.
+- `Button` (`src/components/ui/button.tsx`): base com raio de 12px (`rounded-control`), 16px, peso 600. `default`/`lg` = 48px (`h-control`), `compact` = 36px e 15px com toque de 44px (sidebar, aviso de revisao), `mini` = 32px e 14px com toque de 44px (barra do topo no mobile), `icon` = circulo de 40px com toque de 44px. Botao de acao com texto e retangulo arredondado; so icone e circulo; seletores (abas, chips, filtros) e o composer ficam em pilula.
+- Raios: `rounded-control` (12px, botoes e controles), `rounded-panel` (16px, superficies internas), `rounded-modal` (24px, caixa da modal), `rounded-composer` (20px, o composer e o proprio campo, sem fundo interno) e `rounded-tray` (20px, bandeja do aviso de revisao; fundo translucido com blur, como o composer).
+- Aviso de revisao pendente: e a bandeja do composer (`notice`/`isNoticeVisible` do `Composer`, linha em `pending-review-banner.tsx`). Mobile: largura total, cantos so em cima, cobre a area segura (`pb-2` com teclado aberto via `data-keyboard-open` do wrapper no `thread.tsx`). Desktop: flutua com os quatro cantos. So a linha e clicavel; a linha sobe e desce por `grid-template-rows`.
+- Area de toque: `touch-target` (`globals.css`) garante 44px sem mudar o visual; `h-touch`/`min-h-touch` para itens de menu e lista (44px, 16px).
+- Texto: `text-chat` (bolha, 16px, altura de linha 1.5), `text-chat-meta` (horario, 12px), `text-caption` (12px, minimo para texto auxiliar).
+- Chat e composer leem `--chat-*`/`--composer-*` de `globals.css`; o simulador da home usa `data-chat-density="compact"` para manter a escala anterior.
 
 ### Padrao de telefone
 

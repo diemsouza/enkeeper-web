@@ -4,6 +4,8 @@ import { useState } from "react";
 import {
   CalendarPlus,
   CreditCard,
+  GraduationCap,
+  LifeBuoy,
   LogOut,
   User as UserIcon,
 } from "lucide-react";
@@ -37,6 +39,8 @@ import { postJson } from "@/src/lib/api-client";
 import { PLANS_PATH } from "@/src/lib/constants";
 import type { User } from "@/src/lib/prisma";
 import { useReminderFlow } from "./reminder-flow-provider";
+import { useProfileLevel } from "./profile-level-provider";
+import { useSupportFlow } from "./support-flow-provider";
 import { ThemeMenuItems } from "./theme-menu";
 
 function planLabel(user: User, t: TAnyEnv): string {
@@ -75,6 +79,9 @@ export function SidebarFooterMenu({
   const login = loginAccount(user, t);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { openReminder } = useReminderFlow();
+  const { level, openLevel } = useProfileLevel();
+  const { openSupport } = useSupportFlow();
+  const tLevels = useTranslations("app.new_activity.levels");
   const { setOpenMobile } = useSidebar();
 
   async function handleLogout() {
@@ -103,7 +110,7 @@ export function SidebarFooterMenu({
             </div>
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" className="w-56">
+        <DropdownMenuContent side="top" align="start" className="w-64">
           <DropdownMenuLabel>{t("theme_label")}</DropdownMenuLabel>
           <ThemeMenuItems />
           <DropdownMenuSeparator />
@@ -114,6 +121,15 @@ export function SidebarFooterMenu({
             <CalendarPlus className="h-4 w-4" />
             {t("add_to_calendar")}
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={openLevel} className="gap-2">
+            <GraduationCap className="h-4 w-4" />
+            {t("level")}
+            {level && (
+              <span className="ml-auto text-xs text-muted-foreground">
+                {tLevels(level)}
+              </span>
+            )}
+          </DropdownMenuItem>
           <DropdownMenuItem
             asChild
             onSelect={() => setOpenMobile(false)}
@@ -123,6 +139,10 @@ export function SidebarFooterMenu({
               <CreditCard className="h-4 w-4" />
               {t("subscription")}
             </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={openSupport} className="gap-2">
+            <LifeBuoy className="h-4 w-4" />
+            {t("support")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {login && (

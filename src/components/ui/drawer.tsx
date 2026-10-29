@@ -4,6 +4,10 @@ import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "@/src/lib/utils";
+import {
+  MODAL_DESCRIPTION_CLASS,
+  MODAL_TITLE_CLASS,
+} from "@/src/components/ui/dialog";
 
 const Drawer = ({
   shouldScaleBackground = true,
@@ -43,7 +47,7 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
+        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-modal border bg-background",
         className
       )}
       {...props}
@@ -83,10 +87,7 @@ const DrawerTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Title
     ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className
-    )}
+    className={cn(MODAL_TITLE_CLASS, className)}
     {...props}
   />
 ));
@@ -98,7 +99,7 @@ const DrawerDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn(MODAL_DESCRIPTION_CLASS, className)}
     {...props}
   />
 ));

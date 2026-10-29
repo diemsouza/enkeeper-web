@@ -36,7 +36,7 @@ export function EmbeddedBrowserStep({
       <p className="w-full break-all rounded-md border border-input px-3 py-2 text-left text-sm text-muted-foreground select-all">
         {loginUrl}
       </p>
-      <Button type="button" onClick={copyLink} className="h-12 w-full text-base">
+      <Button type="button" onClick={copyLink} className="w-full">
         {isCopied ? t("embedded_copied") : t("embedded_copy")}
       </Button>
       <button

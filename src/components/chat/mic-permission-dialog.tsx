@@ -37,7 +37,7 @@ function PermissionSteps({
   const steps = t.raw(`${platform}.steps`) as string[];
   const note = t(`${platform}.note`);
   return (
-    <div className="rounded-xl bg-muted px-4 py-3 text-left text-sm">
+    <div className="rounded-control bg-muted px-4 py-3 text-left text-sm">
       <ol className="list-decimal space-y-1.5 pl-4">
         {steps.map((step) => (
           <li key={step}>{step}</li>
@@ -67,7 +67,7 @@ function PermissionBody({
   return (
     <div className="flex flex-col gap-4">
       <PermissionSteps platform={platform} />
-      <Button type="button" className="h-11 w-full" onClick={onConfirm}>
+      <Button type="button" className="w-full" onClick={onConfirm}>
         {t("confirm")}
       </Button>
     </div>

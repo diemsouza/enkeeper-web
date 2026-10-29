@@ -14,6 +14,23 @@
   background-color: rgba(0, 0, 0, 0.95);
 }
 
+/* Fica em components (abaixo de utilities) para que absolute/fixed do
+   proprio elemento venca o position: relative. */
+@layer components {
+  .touch-target {
+    position: relative;
+  }
+  .touch-target::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
 @layer utilities {
   .pb-safe {
     padding-bottom: calc(18px + env(safe-area-inset-bottom));
@@ -82,6 +99,31 @@
 
     --section-light: 0 0% 100%;
     --section-dark: 260 14% 97%;
+
+    --chat-font-size: 16px;
+    --chat-meta-size: 12px;
+    --composer-control: 40px;
+    --composer-field: 44px;
+    --composer-field-padding: 12px;
+    --composer-button-offset: 2px;
+    --composer-icon: 20px;
+  }
+
+  /* Simulador da home: mantem a escala anterior do chat. */
+  [data-chat-density="compact"] {
+    --chat-font-size: 15px;
+    --chat-meta-size: 10.5px;
+    --composer-control: 36px;
+    --composer-field: 36px;
+    --composer-field-padding: 8px;
+    --composer-button-offset: 0px;
+    --composer-icon: 16px;
+  }
+
+  @media (min-width: 768px) {
+    [data-chat-density="compact"] {
+      --chat-font-size: 14px;
+    }
   }
 
   .dark {

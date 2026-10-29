@@ -124,6 +124,8 @@ export const ANSWER_AUDIO_FOLDER = "answer-audio";
 export const CHART_FOLDER = "chart";
 export const OCR_IMAGE_FOLDER = "ocr-image";
 
+export const SUPPORT_MESSAGE_MAX_LENGTH = 2000;
+
 // Resposta por voz na web: limite unico de duracao, aviso antes do fim e
 // gravacao minima (abaixo disso e descartada sem mensagem).
 export const VOICE_MAX_SEC = 30;
@@ -135,7 +137,16 @@ export const VOICE_MAX_BYTES = 1024 * 1024;
 export const VOICE_ACCEPTED_CONTENT_TYPES = ["audio/ogg", "audio/mp4"];
 export const MAX_ACTIVITIES_PER_DAY = 5;
 export const MAX_DOC_ITEMS_PER_DOC = 3;
-export const DOC_BUFFER_DELAY_SEC = 45;
+export const MAX_ACTIVITY_FOCUS = 3;
+export const CREATE_ACTIVITY_BUTTON_ID = "new_activity";
+export const RETRY_NEW_ACTIVITY_BUTTON_ID = "retry_new_activity";
+// Abaixo do limite de corpo de request da Vercel (4,5 MB).
+export const MATERIAL_MAX_BYTES = 4 * 1024 * 1024;
+export const MATERIAL_ACCEPT =
+  "image/*,application/pdf,text/plain,text/markdown,.txt,.md";
+export const ACTIVITY_TEXT_MAX_CHARS = 200;
+// Janela em que um segundo pedido de criacao e recusado enquanto o primeiro gera.
+export const ACTIVITY_CREATING_TTL_MS = 2 * 60 * 1000;
 export const DOC_PENDING_TIMEOUT_MS = 5 * 60 * 1000;
 export const DOC_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 export const ONBOARDING_MESSAGE_INTERVAL_SEC = 2;
@@ -161,8 +172,6 @@ export const MESSAGE_SUPPRESSION_SEC = 10;
 export const MAX_RETRY_ATTEMPTS = 3;
 export const RETRY_DELAY_MS = 1000;
 
-export const COMMAND_TIMEOUT_MIN = 5;
-
 export const DOMAINS = [
   { id: "daily_life", label: "Dia a Dia e Lazer" },
   { id: "travel", label: "Viagens Internacionais" },
@@ -181,61 +190,95 @@ export const LEVEL_OPTIONS: readonly { level: Level; label: string }[] = [
   { level: "advanced", label: "Avançado" },
 ];
 
-export const PICK_SHORTCUTS = {
-  FIRST_OPTION: { id: "first_option", label: "Primeira opção" },
-  RANDOM: { id: "random", label: "Escolha para mim" },
-} as const;
-
-export const TOPIC_SUGGESTIONS_DISPLAY_COUNT = 5;
-
+// Ordem de cada lista: das situacoes que mais engajam para as mais especificas.
 export const TOPIC_SUGGESTIONS: Record<DomainId, string[]> = {
-  work: [
-    "Entrevista de emprego",
-    "Reuniões e apresentações",
-    "Negociação e vendas",
-    "Networking e eventos",
-    "Liderança e gestão de time",
-    "Feedback e avaliações",
-    "E-mails profissionais",
-    "Currículo e LinkedIn",
-    "Trabalho remoto e ferramentas",
-    "Termos técnicos da sua área",
+  daily_life: [
+    "Comentar a última série que você assistiu",
+    "Contar como foi seu fim de semana",
+    "Recomendar um filme e explicar por quê",
+    "Encontro com amigos no shopping",
+    "Combinar um programa com amigos",
+    "Falar sobre seus hobbies",
+    "Contar uma história engraçada que aconteceu com você",
+    "Conversar sobre futebol e outros esportes",
+    "Falar sobre música e shows",
+    "Falar sobre comidas e receitas favoritas",
+    "Dar sua opinião sobre redes sociais",
+    "Falar sobre sua família",
+    "Falar sobre seu animal de estimação",
+    "Comentar um jogo de videogame",
+    "Planejar uma festa de aniversário",
+    "Pedir delivery e resolver um problema no pedido",
+    "Descrever sua rotina de manhã",
+    "Conversar com o personal na academia",
+    "Conversar com um vizinho novo",
+    "Contar sobre sua infância",
   ],
   travel: [
-    "Conversar com nativos",
-    "Restaurante e pedidos",
-    "Passeios e pontos turísticos",
-    "Fazer amigos na viagem",
-    "Compras e lojas",
-    "Hospedagem e hotel",
-    "Pedir informações e direções",
-    "Aeroporto e embarque",
-    "Transporte e deslocamento",
-    "Situações de emergência",
+    "Vocabulário para viagem para Orlando",
+    "Imigração no aeroporto",
+    "Pedir comida em restaurante e perguntar sobre ingredientes",
+    "Fazer check-in no hotel e resolver um problema no quarto",
+    "Pedir informação de caminho e transporte",
+    "Fazer compras e pedir troca de produto",
+    "Comprar ingresso para parques e atrações",
+    "Pedir um carro por aplicativo e conversar com o motorista",
+    "Conversar com outros turistas em um passeio",
+    "Reservar mesa e pedir a conta",
+    "Alugar um carro",
+    "Remarcar um voo cancelado",
+    "Resolver mala extraviada no aeroporto",
+    "Fazer check-in com o anfitrião de uma hospedagem",
+    "Comprar chip de celular e resolver a internet",
+    "Fazer perguntas ao guia em um museu",
+    "Negociar preço em uma feira",
+    "Ir ao médico ou à farmácia no exterior",
+    "Pedir ajuda depois de perder o passaporte",
+    "Contar para os amigos como foi a viagem",
   ],
   education: [
-    "Intercâmbio e vida fora",
-    "Fazer amigos internacionais",
-    "Vida no campus",
-    "Universidade e aulas",
-    "Apresentar trabalhos e seminários",
-    "Bolsas e processos seletivos",
-    "Entrevista de intercâmbio",
-    "Estágios e primeira experiência",
-    "Moradia estudantil",
-    "Provas de proficiência (TOEFL, IELTS)",
+    "Entrevista para visto de estudante",
+    "Primeiro dia de aula na escola de idiomas",
+    "Se apresentar para a turma",
+    "Fazer amigos de outros países",
+    "Conversar com a família anfitriã",
+    "Explicar por que você escolheu esse intercâmbio",
+    "Entrevista para bolsa de estudos",
+    "Apresentar um trabalho em sala",
+    "Participar de um debate em grupo",
+    "Tirar dúvidas com o professor depois da aula",
+    "Falar sobre a cultura do Brasil",
+    "Procurar moradia e conversar com o proprietário",
+    "Trabalho de meio período durante o intercâmbio",
+    "Combinar um trabalho em grupo com colegas",
+    "Abrir conta no banco morando fora",
+    "Escrever um e-mail para o professor",
+    "Pedir informação na secretaria da faculdade",
+    "Pedir ajuda na biblioteca para uma pesquisa",
+    "Resolver um problema com a matrícula",
+    "Contar sua rotina de estudos",
   ],
-  daily_life: [
-    "Séries, filmes e streaming",
-    "Música e shows",
-    "Games e cultura pop",
-    "Comida e culinária",
-    "Encontros e vida social",
-    "Viagens e passeios",
-    "Esportes e academia",
-    "Redes sociais e internet",
-    "Compras e mercado",
-    "Rotina e casa",
+  work: [
+    "Negociar salário em uma entrevista",
+    "Falar sobre seu currículo e suas experiências",
+    "Se apresentar no primeiro dia de trabalho",
+    "Pedir aumento ou promoção",
+    "Daily com um time internacional",
+    "Apresentar um projeto para o time",
+    "Conversa rápida antes de começar uma reunião",
+    "Pedir mais prazo para o chefe",
+    "Dar e receber feedback de um colega",
+    "Discordar de uma decisão com educação",
+    "Entrevista técnica para vaga de tecnologia",
+    "Entrevista para vaga de atendimento em hotel de luxo",
+    "Reunião com a diretoria sobre resultados do trimestre",
+    "Atender um cliente estrangeiro por chamada",
+    "Explicar um problema técnico para quem não é da área",
+    "Fazer uma apresentação de vendas",
+    "Resolver a reclamação de um cliente",
+    "Escrever e responder e-mails do dia a dia",
+    "Networking em um evento da área",
+    "Treinar um colega novo",
   ],
 };
 

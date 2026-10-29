@@ -1,6 +1,8 @@
 import { MEDIA_INLINE_PARAM } from "@/src/lib/constants";
 import { isStudyMessage } from "@/src/core/study-message";
 import { isInaudibleTranscription } from "@/src/core/voice-note";
+import { parseClientCommand } from "@/src/core/client-command";
+import { CLIENT_COMMAND_INTENT } from "@/src/types/client-command";
 import type { MessageWithMedia } from "@/src/repo/messages.repo";
 import type { FormattedMessage } from "@/src/types/out-message";
 import type { Message } from "./types";
@@ -96,6 +98,19 @@ function toMessage(
   return { ...message, isStudy };
 }
 
+// Card do antigo passo de captura (nivel no chat): o nivel agora e trocado na
+// modal, entao o clique no historico nao pode virar resposta de exercicio.
+function readInteractive(raw: unknown): FormattedMessage["interactive"] {
+  const interactive = (raw as StoredInteractive) ?? undefined;
+  const isLegacyCaptureStep = Boolean(
+    (raw as { isCaptureStep?: boolean } | null)?.isCaptureStep,
+  );
+  if (interactive && isLegacyCaptureStep) {
+    return { ...interactive, disabled: true };
+  }
+  return interactive;
+}
+
 function buildMessage(
   row: NormalizedRow,
   labels: FileLabels,
@@ -104,7 +119,17 @@ function buildMessage(
   const from: Message["from"] = row.role === "user" ? "user" : "bot";
   const time = formatTime(row.createdAt);
   const date = row.createdAt.toISOString();
-  const interactive = (row.interactive as StoredInteractive) ?? undefined;
+  const interactive = readInteractive(row.interactive);
+
+  if (from === "bot" && row.intent === CLIENT_COMMAND_INTENT) {
+    return {
+      id: row.id,
+      from,
+      time,
+      date,
+      command: parseClientCommand(row.metadata),
+    };
+  }
 
   if (from === "bot" && row.mediaType === "image" && row.mediaId) {
     return {

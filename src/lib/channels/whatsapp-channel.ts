@@ -17,11 +17,7 @@ import {
 } from "../../vendors/whatsapp.vendor";
 import { downloadFile } from "../../vendors/storage.vendor";
 import { getMediaById } from "../../repo/media.repo";
-import {
-  formatCaptureStepOptionsText,
-  formatNumberedOptions,
-} from "../../core/formatters";
-import { PICK_SHORTCUTS } from "../constants";
+import { formatNumberedOptions } from "../../core/formatters";
 
 async function downloadMedia(
   mediaId: string,
@@ -61,39 +57,10 @@ async function sendImagePart(
   }
 }
 
-const MAX_NATIVE_REPLY_BUTTONS = 3;
-
 function resolveText(message: FormattedMessage): string {
   if (!message.interactive?.isOptionList) return message.text;
   const options = message.interactive.buttons.map((b) => b.label);
   return formatNumberedOptions(message.text, options);
-}
-
-type Interactive = NonNullable<FormattedMessage["interactive"]>;
-
-async function sendCaptureStep(
-  to: string,
-  interactive: Interactive,
-): Promise<string | null> {
-  const { body, buttons } = interactive;
-  if (buttons.length <= MAX_NATIVE_REPLY_BUTTONS) {
-    return sendWhatsAppInteractiveButtons(
-      to,
-      body,
-      buttons.map((b) => ({ id: b.id, title: b.label })),
-    );
-  }
-  return sendWhatsAppInteractiveButtons(
-    to,
-    formatCaptureStepOptionsText(
-      body,
-      buttons.map((b) => b.label),
-    ),
-    [PICK_SHORTCUTS.FIRST_OPTION, PICK_SHORTCUTS.RANDOM].map((b) => ({
-      id: b.id,
-      title: b.label,
-    })),
-  );
 }
 
 export class WhatsAppChannel implements MessageChannel {
@@ -114,9 +81,6 @@ export class WhatsAppChannel implements MessageChannel {
         message.templateBodyParams,
         message.templateButtonUrlParam,
       );
-    }
-    if (message.interactive?.isOptionList && message.interactive.isCaptureStep) {
-      return { externalId: await sendCaptureStep(to, message.interactive) };
     }
     if (message.interactive && !message.interactive.isOptionList) {
       const linkButton = message.interactive.buttons.find(

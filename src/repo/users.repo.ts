@@ -1,6 +1,11 @@
 import { Level, PlanCode, PlanStatus, Prisma, User } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
-import { CheckoutData, UserSignedLinkMetadata } from "../types/domain";
+import {
+  CheckoutData,
+  UserActivityCreationMetadata,
+  UserSignedLinkMetadata,
+} from "../types/domain";
+import type { ResolvedActivityRequest } from "../core/activity-request";
 import { getNearestReminderTimeSlot } from "../core/daily-reminder-time";
 
 export async function findUserById(id: string): Promise<User | null> {
@@ -33,32 +38,6 @@ export async function updateUserLevel(
   level: Level,
 ): Promise<void> {
   await prisma.user.update({ where: { id: userId }, data: { level } });
-}
-
-const NEW_ACTIVITY_FLOW_INTENTS = [
-  "waiting_set_level",
-  "waiting_set_activity_domain",
-  "waiting_set_activity_topic",
-  "waiting_set_activity_focus",
-];
-
-export async function findUsersWithExpiredFlowIntent(
-  cursorId: string | null,
-  threshold: Date,
-  limit = 500,
-): Promise<User[]> {
-  return prisma.user.findMany({
-    where: {
-      pendingIntent: { in: NEW_ACTIVITY_FLOW_INTENTS },
-      pendingIntentAt: { lt: threshold },
-      ...(cursorId ? { id: { gt: cursorId } } : {}),
-      activities: {
-        some: { status: { in: ["active", "paused"] }, deletedAt: null },
-      },
-    },
-    orderBy: { id: "asc" },
-    take: limit,
-  });
 }
 
 export async function updateUserPendingIntent(
@@ -118,6 +97,49 @@ export async function updateUserSignedLink(
   await prisma.user.update({
     where: { id: userId },
     data: { metadata: { ...metadata, ...signedLink } },
+  });
+}
+
+export async function findUserActivityCreation(
+  userId: string,
+): Promise<UserActivityCreationMetadata> {
+  const { lastActivityRequest, activityCreatingAt } =
+    await findUserMetadata(userId);
+  return {
+    lastActivityRequest:
+      lastActivityRequest && typeof lastActivityRequest === "object"
+        ? (lastActivityRequest as ResolvedActivityRequest)
+        : null,
+    activityCreatingAt:
+      typeof activityCreatingAt === "string" ? activityCreatingAt : null,
+  };
+}
+
+export async function markUserActivityCreating(
+  userId: string,
+  request: ResolvedActivityRequest,
+): Promise<void> {
+  const metadata = await findUserMetadata(userId);
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      metadata: {
+        ...metadata,
+        lastActivityRequest: request,
+        activityCreatingAt: new Date().toISOString(),
+      },
+    },
+  });
+}
+
+export async function clearUserActivityCreating(userId: string): Promise<void> {
+  const current = await findUserMetadata(userId);
+  const metadata = Object.fromEntries(
+    Object.entries(current).filter(([key]) => key !== "activityCreatingAt"),
+  );
+  await prisma.user.update({
+    where: { id: userId },
+    data: { metadata: metadata as Prisma.InputJsonObject },
   });
 }
 

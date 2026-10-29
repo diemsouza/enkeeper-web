@@ -68,7 +68,7 @@ export function MessageBubble({
           isUser
             ? "bg-primary text-primary-foreground rounded-[10px_10px_2px_10px]"
             : "bg-white text-foreground dark:bg-[#252529] rounded-[10px_10px_10px_2px]",
-          "px-3 pt-2 pb-1.5 text-[15px] md:text-[14px]",
+          "px-3 pt-2 pb-1.5 text-chat",
           isAudio && !fluidAudio && "shrink-0",
           isAudio && fluidAudio && cn("w-full", maxWidth),
           !isAudio && cn("min-w-[80px]", maxWidth),
@@ -134,7 +134,7 @@ export function MessageBubble({
         {message.type !== "audio" && (
           <div className="mt-0.5 flex items-center justify-end gap-1">
             <p
-              className="select-none text-[10.5px] opacity-55 text-right"
+              className="select-none text-chat-meta opacity-55 text-right"
               onDoubleClick={exportBubble}
               onContextMenu={exportBubble}
             >
@@ -151,7 +151,7 @@ export function MessageBubble({
                 type="button"
                 onClick={() => onRetry?.(message.externalId ?? message.id)}
                 aria-label={tErrors("resend_aria")}
-                className="flex items-center text-red-200 transition-opacity hover:opacity-80"
+                className="touch-target flex items-center text-red-200 transition-opacity hover:opacity-80"
               >
                 <AlertCircle className="h-3.5 w-3.5" />
               </button>

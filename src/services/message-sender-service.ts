@@ -9,6 +9,11 @@ import {
   TYPING_LEAD_MS,
 } from "../lib/constants";
 import { delay } from "../lib/utils";
+import {
+  CLIENT_COMMAND_INTENT,
+  ClientCommand,
+} from "../types/client-command";
+import { buildClientCommandMetadata } from "../core/client-command";
 
 type SendAndSaveMessageParams = {
   channel: MessageChannel;
@@ -50,6 +55,21 @@ export async function sendAndSaveMessage(
   });
   if (today) await incrementAgentMessageCount(rest.userId, today);
   return saved;
+}
+
+// Mensagem de comando: so grava; o trigger de INSERT entrega ao front pelo
+// Realtime. Sem envio pelo canal, sem activityId e fora da contagem diaria.
+export async function sendCommand(params: {
+  userId: string;
+  command: ClientCommand;
+}): Promise<Message> {
+  return saveMessage({
+    userId: params.userId,
+    role: "assistant",
+    content: "",
+    intent: CLIENT_COMMAND_INTENT,
+    metadata: buildClientCommandMetadata(params.command),
+  });
 }
 
 type WaitBeforeSendOptions = { typing?: boolean; replyToMessageId?: string };

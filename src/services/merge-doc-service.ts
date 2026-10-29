@@ -14,14 +14,10 @@ import {
   buildPreviousActivitySummary,
 } from "./activity-service";
 import { generateDocSections } from "../vendors/llm.vendor";
-import {
-  findUserById,
-  updateUserPendingIntent,
-} from "../repo/users.repo";
+import { findUserById } from "../repo/users.repo";
 import { MessageChannel } from "../types/message-channel";
 import { incrementDailyActivityCount } from "../repo/daily-usage.repo";
 import {
-  formatLevelQuestion,
   formatDocProcessed,
   formatDocProcessingFailed,
   formatDocNoQuestions,
@@ -79,20 +75,6 @@ export async function mergeDoc(
 
   const user = await findUserById(userId);
   if (!user) return;
-
-  if (user.level === null) {
-    await updateDoc(docId, userId, { rawContent: consolidatedRaw, docType });
-    await updateUserPendingIntent(userId, "waiting_set_level");
-    const msg = formatLevelQuestion();
-    await sendAndSaveMessage({
-      channel,
-      userId,
-      activityId: activeActivity?.id,
-      message: msg,
-      intent: "waiting_set_level",
-    });
-    return;
-  }
 
   try {
     const contentValidation = validateContent(consolidatedRaw);
@@ -196,7 +178,11 @@ export async function mergeDoc(
 
     if (docSectionResult.content.trim().length > 0) {
       const activityCount = await incrementDailyActivityCount(userId, date);
-      const msg = formatDocProcessed(false, MAX_ACTIVITIES_PER_DAY - activityCount);
+      const msg = formatDocProcessed(
+        false,
+        MAX_ACTIVITIES_PER_DAY - activityCount,
+        userLevel,
+      );
       const summary = currentActivity
         ? await buildPreviousActivitySummary(userId, {
             activityId: currentActivity.id,

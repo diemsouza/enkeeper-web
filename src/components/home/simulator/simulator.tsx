@@ -59,7 +59,7 @@ export default function Simulator() {
           <p className="text-muted-foreground">{t("differentiation_line")}</p>
           <HomeCTA
             waLabel={t("cta")}
-            buttonClassName="rounded-full px-8 h-11 font-semibold gap-2 text-sm"
+            buttonClassName="px-8 gap-2"
             isCtaAnchor
           />
         </div>

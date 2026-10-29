@@ -1,4 +1,5 @@
-import { DomainId, SubscriptionInterval } from "../lib/constants";
+import { SubscriptionInterval } from "../lib/constants";
+import type { ResolvedActivityRequest } from "../core/activity-request";
 
 export type PlanCode = "trial" | "pro";
 export type ChannelType = "whatsapp" | "web";
@@ -13,22 +14,13 @@ export type MessageIntent =
   | "confirm"
   | "cancel"
   | "cancel_no"
-  | "waiting_doc_replace"
-  | "waiting_set_level"
-  | "waiting_set_activity_domain"
-  | "waiting_set_activity_topic"
-  | "waiting_set_activity_focus"
   | "waiting_admin_send_message"
   | "set_level"
   | "new_activity"
   | "free_text"
   | "unknown_command"
   | "practice_now"
-  | "pause_practice"
-  | "image_blocked"
-  | "image_unreadable";
-
-export type FocusSuggestion = { key: string; label: string };
+  | "pause_practice";
 
 export type GeneratedDocMetadata = {
   domainKey: string;
@@ -40,17 +32,9 @@ export type GeneratedDocMetadata = {
   focus: string[];
 };
 
-export type NewActivityIntentData = {
-  flow: "new_activity";
-  domain?: DomainId;
-  topics?: string[];
-  topic?: string;
-  focusSuggestions?: FocusSuggestion[];
-  subtopics?: string[];
-};
-
-export type UserIntentMetadata = {
-  intent_data: NewActivityIntentData;
+export type UserActivityCreationMetadata = {
+  lastActivityRequest: ResolvedActivityRequest | null;
+  activityCreatingAt: string | null;
 };
 
 export type CheckoutData = {

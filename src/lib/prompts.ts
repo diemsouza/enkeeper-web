@@ -9,6 +9,7 @@ export const VOICE_PROMPT = read("voice.md");
 export const DOC_EXTRACTION_PROMPT = read("doc-extraction.md");
 export const GEN_CONTENT_PROMPT = read("gen-content.md");
 export const TOPIC_VALIDATION_PROMPT = read("topic-validation.md");
+export const ACTIVITY_REQUEST_PROMPT = read("activity-request.md");
 
 export const GEN_VOCABULARY_PROMPT = read("gen-vocabulary.md");
 

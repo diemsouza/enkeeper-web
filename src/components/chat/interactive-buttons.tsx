@@ -22,7 +22,7 @@ export function InteractiveButtonList({
     <div className="-mx-3 mt-2 border-t border-black/10 dark:border-white/10">
       {interactive.buttons.map((button, i) => {
         const rowClassName = cn(
-          "flex w-full items-center justify-center gap-1.5 px-3 py-2.5 text-[15px] md:text-[14px] font-medium text-primary transition-colors hover:bg-black/5 dark:hover:bg-white/5 min-h-11",
+          "flex w-full items-center justify-center gap-1.5 px-3 py-2.5 text-chat font-medium text-primary transition-colors hover:bg-black/5 dark:hover:bg-white/5 min-h-11",
           i > 0 && "border-t border-black/10 dark:border-white/10",
         );
         if (button.type === "link" && button.url) {
@@ -82,7 +82,7 @@ function OptionList({
             disabled={isDisabled}
             onClick={() => onButtonClick?.(button)}
             className={cn(
-              "flex min-h-11 w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-[15px] md:text-[14px] transition-colors",
+              "flex min-h-11 w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-chat transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
               !isDisabled &&
                 "border-border hover:border-primary dark:border-white/[0.03] dark:bg-white/[0.03] dark:hover:border-primary",
