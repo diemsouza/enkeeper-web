@@ -6,6 +6,83 @@ topo.
 
 ---
 
+## Formato `image_transcription` e fim do empurrão do `image_recognition`
+
+Data: 2026-10-31
+
+Contexto: a prática estava quase só em texto e áudio. O `image_recognition`
+raramente saía (poucos itens cabem numa imagem isolada) e, como o fallback não
+cria Question, ficava sempre "atrasado" na rotação balanceada e era tentado de
+novo a cada pergunta, só gastando geração. O novo formato mostra uma cena com o
+termo como elemento central e o usuário responde em inglês o que vê (ver
+Product-Rules Seção 4).
+
+Decisões:
+
+- **Molde do `image_recognition`.** Valor próprio no enum (migration só de
+  enum, sem coluna nova), bloco de exemplos `prompts/examples/image_transcription.md`,
+  mesma geração (`imageable` e `questionImageDescription` na própria chamada do
+  `gen-vocabulary`), mesma imagem (`storeQuestionImage`, `question-image/<mediaId>.jpg`,
+  `Question.questionImageMediaId`). `buildImageRecognitionQuestion` virou
+  `buildImageQuestion(format, ...)` para os dois. `formatQuestion` devolve em
+  `text` a instrução sorteada (`pickImageTranscriptionPrompt`, PT no básico, EN
+  pedindo frase completa do intermediário para cima) seguida da pergunta guia,
+  mais `imageMediaId`, sem `interactive`. A guia não repete "em inglês" nem pede
+  frase completa, porque a instrução já diz.
+- **Prompt de avaliação próprio.** `prompts/answer-evaluation-image.md`, porque
+  o compartilhado define o feedback como só a frase de uso e não sabe olhar
+  imagem. As regras de dica e tradução saíram para `prompts/answer-evaluation-tip.md`
+  e entram nos dois por `{tip}`, sem duplicar texto. Schema estendido
+  (`imageAnswerEvaluationSchema`) com `feedback_note`, `image_mismatch` e
+  `image_mismatch_reason`, usado só quando há imagem.
+- **Imagem em bytes, não por URL.** A primeira versão mandava URL assinada
+  curta. Os providers aceitam URL (`supportedUrls` para `image/*`), mas quem
+  baixa é o servidor do provider, que não alcança o storage local: a avaliação
+  falhava e voltava "Não foi possível avaliar essa resposta.". Agora
+  `loadQuestionImageForEval` (`question-image-service.ts`) baixa o arquivo com
+  `downloadFile` e passa `Buffer` + `mediaType` na parte `image`, igual em
+  local e produção. `imageDetail: "low"` vai em `providerOptions.openai` (o
+  Anthropic ignora). Os bytes não vão para o `llm_logs` (só `image: "attached"`).
+- **Cena neutra contra `moderation_blocked`.** O gerador de imagem recusa cenas
+  fotorrealistas sensíveis (medo, grito, cama, criança, álcool). Os blocos de
+  exemplo dos dois formatos pedem cena cotidiana e neutra, e tema sensível sem
+  cena neutra vira `imageable: false`. O erro da API passou a trazer só o código
+  (`Image API error 400 (moderation_blocked)`), e o fallback loga também a
+  descrição da cena.
+- **Feedback em duas partes.** `feedback_text` continua uma frase em inglês (a
+  do usuário corrigida, ou modelo no erro), então tradução e áudio de feedback
+  seguem iguais; correção e elogio aos extras vão em `feedback_note`, anexado
+  em nova linha por `formatFeedback`.
+- **`imageMismatch` só liga.** `applyImageMismatch` (`activity-score.ts`) grava
+  `imageMismatch: true` + `imageMismatchReason` em `Question.metadata`; a
+  revisão reavalia a mesma pergunta e nunca desliga a flag. O `omitZero` passou
+  a manter valores não numéricos, senão a razão sumia na regravação do score.
+- **Fallback conta como aparição.** `incrementActivityFormatFallback` grava
+  `Activity.metadata.formatFallbacks[formato]` quando um formato de mídia cai em
+  fallback; `generateQuestionIfPoolNotFull` soma isso às contagens de Question
+  (`mergeFormatCounts`) antes do `pickNextFormat`. A lógica do picker não
+  mudou. Sem coluna nova (flag pequena em metadata).
+- **Não repetir formato já existia.** `getExcludedFormats` sempre exclui o
+  formato anterior (ou a família). Entrou só a guarda para lista vazia, que
+  repete o anterior em vez de quebrar o sorteio.
+- **Rollout compartilhado.** Os dois formatos de imagem usam
+  `IMAGE_QUESTION_ROLLOUT_FRACTION` (`IMAGE_QUESTION_FORMATS` no picker).
+- **Alvo = núcleo visual do item.** Nos primeiros testes quase tudo dava
+  `imageable: false` (ex: "quiet morning"). O teste ignorava a pergunta guia
+  e os equivalentes de `answerKeys`, e o alvo era o item inteiro, que no
+  conteúdo gerado costuma ser frase com sujeito e verbo. Os blocos dos dois
+  formatos passaram a usar o núcleo visual como `answerKeys[0]` (`term` segue
+  o item original; exceção explícita no `gen-vocabulary.md`), e o teste da
+  transcrição considera pergunta guia e equivalentes. A seleção do item segue
+  por posição: buscar o próximo item ilustrável exigiria marcar itens no texto
+  do conteúdo, descartado por ora.
+- **`imageableReason`.** Campo novo em `sectionQuestionSchema`, sempre
+  preenchido nos formatos de imagem. O fallback `not_imageable` loga item,
+  núcleo e motivo, e o `parsedOutput` do `llm_logs` (stage `gen-vocabulary`)
+  guarda o mesmo.
+
+---
+
 ## Nova atividade em modal
 
 Data: 2026-10-28
@@ -135,7 +212,7 @@ Decisões:
 - **Fallback desliga as duas famílias de mídia.** Se imagem ou áudio falham, `buildQuestionData` re-sorteia com `canUseImage: false` e `canUseAudio: false`: no máximo uma tentativa de mídia por pergunta.
 - **Picker com família de áudio.** `AUDIO_QUESTION_FORMATS` (`constants.ts`) é a família; o picker a exclui inteira quando o último formato é de áudio (mesmo esquema do `CHOICE_FAMILY`) e quando o sorteio de `AUDIO_QUESTION_ROLLOUT_FRACTION` não permite. Fração separada da `AUDIO_ROLLOUT_FRACTION` do feedback.
 - **Dica filtrada por formato em código.** `EVAL_TIP_CLASSES_BY_FORMAT` (`constants.ts`) + `isEvalTipClassAllowed` (`core/eval-tip.ts`): a transcrição só envia `homophone` e `connected_speech`; a tradução só `calque`, `near_synonym`, `literal_idiom`, `register` e `structure` (collocation fora); os demais formatos não enviam as duas de escuta. `spelling`/`none` seguem silenciadas e a dica em acerto continua restrita a `EVAL_TIP_ALTERNATIVE_FORMATS`.
-- **Voz não avalia.** Nota de voz numa pergunta de áudio salva a mensagem, envia `formatAudioQuestionNeedsText` e retorna sem avaliar; a pergunta continua pendente. Vale também para a resposta por voz da web (ver "Resposta por voz na web").
+- **Voz não avalia na transcrição.** Nota de voz numa pergunta `audio_transcription` salva a mensagem, envia `formatAudioQuestionNeedsText` e retorna sem avaliar; a pergunta continua pendente. Vale também para a resposta por voz da web (ver "Resposta por voz na web"). Na `audio_translation` a voz passa: o usuário ouve inglês e fala em português, então não repete o áudio; o Whisper detecta o idioma sozinho e a avaliação semântica já ignora grafia e acento.
 - **WhatsApp sem mudança.** O canal envia só o áudio quando há `audioMediaId` (a instrução se perde); aceitável porque o canal não entrega prática.
 
 ---
@@ -455,6 +532,8 @@ Decisões:
   então o image_recognition atrasado tem prioridade nas perguntas seguintes.
   Custo aceito: em material quase todo abstrato, uma geração extra por
   pergunta até aparecer um item ilustrável (melhoria em Product-Backlog item 5).
+  Revisto em 2026-10-31: o fallback passou a contar como aparição e o
+  image_recognition perdeu a prioridade (ver "Formato `image_transcription`").
 - **Adjacência com `choice` imposta no picker.** `pickNextFormat` sorteia
   entre os formatos restantes, então a ordem do array sozinha
   não impediria a sequência. O picker exclui a família de escolha inteira

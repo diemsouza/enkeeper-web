@@ -123,6 +123,64 @@ describe("formatQuestion image_recognition", () => {
   });
 });
 
+describe("formatQuestion image_transcription", () => {
+  const question = {
+    question: "O que essas pessoas estão assistindo?",
+    questionFormat: QuestionFormat.image_transcription,
+    questionOptions: [],
+    questionImageMediaId: "01JIMAGE",
+  };
+
+  const ptPrompts = [
+    "Veja a imagem e responda em inglês",
+    "Observe a imagem e responda em inglês",
+    "Olhe a imagem e responda em inglês",
+    "Repare na imagem e responda em inglês",
+  ];
+  const enPrompts = [
+    "Look at the picture and answer with a full sentence",
+    "Look at the image and answer in a full sentence",
+    "Take a look at the picture and answer with a full sentence",
+    "Observe the image and answer with a full sentence",
+  ];
+  const ptTexts = ptPrompts.map(
+    (p) => `${p}: o que essas pessoas estão assistindo?`,
+  );
+
+  it("básico junta instrução em PT e pergunta guia, com a imagem e sem botões", () => {
+    const message = formatQuestion(question, { level: Level.basic });
+    expect(ptTexts).toContain(message.text);
+    expect(message.imageMediaId).toBe("01JIMAGE");
+    expect(message.interactive).toBeUndefined();
+  });
+
+  it("intermediário e avançado usam instrução em EN", () => {
+    const enQuestion = { ...question, question: "How is this person feeling?" };
+    const enTexts = enPrompts.map((p) => `${p}: how is this person feeling?`);
+    for (const level of [Level.intermediate, Level.advanced]) {
+      const { text } = formatQuestion(enQuestion, { level });
+      expect(enTexts).toContain(text);
+    }
+  });
+
+  it("sem pergunta guia, manda só a instrução", () => {
+    const { text } = formatQuestion(
+      { ...question, question: "" },
+      { level: Level.basic },
+    );
+    expect(ptPrompts.map((p) => `${p}.`)).toContain(text);
+  });
+
+  it("sem imagem, mantém o texto sem imageMediaId", () => {
+    const message = formatQuestion(
+      { ...question, questionImageMediaId: null },
+      { level: Level.basic },
+    );
+    expect(message.imageMediaId).toBeUndefined();
+    expect(ptTexts).toContain(message.text);
+  });
+});
+
 describe("formatQuestion choice", () => {
   const question = {
     question: "Which word means happy?",

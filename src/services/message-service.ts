@@ -104,9 +104,11 @@ import {
 } from "../core/eval-tip";
 import { calcSm2 } from "../core/sm2";
 import {
+  applyImageMismatch,
   updateScoreMetadata,
   computeQuestionScore,
 } from "../lib/activity-score";
+import { loadQuestionImageForEval } from "./question-image-service";
 import {
   findNextUnansweredQuestion,
   findNextGeneralQuestion,
@@ -773,9 +775,12 @@ export async function handleIncomingMessage(
               const isAudioQuestion =
                 !!pendingQuestion.questionFormat &&
                 AUDIO_QUESTION_FORMATS.includes(pendingQuestion.questionFormat);
-              // Nos formatos de audio a resposta e escrita: nota de voz nao avalia
-              // e a pergunta continua pendente.
-              if (isAudioQuestion && input.isVoiceNote) {
+              const isTranscriptionQuestion =
+                pendingQuestion.questionFormat ===
+                QuestionFormat.audio_transcription;
+              // Na transcricao a resposta e escrita: por voz seria so repetir o
+              // audio. Nota de voz nao avalia e a pergunta continua pendente.
+              if (isTranscriptionQuestion && input.isVoiceNote) {
                 await saveUserMsg({
                   userId: user.id,
                   content: text,
@@ -823,6 +828,15 @@ export async function handleIncomingMessage(
                   ? `${formattedQuestion.text}\nFrase do áudio: ${pendingQuestion.question}`
                   : formattedQuestion.text;
 
+              const evalImage =
+                pendingQuestion.questionFormat ===
+                QuestionFormat.image_transcription
+                  ? await loadQuestionImageForEval(
+                      pendingQuestion.questionImageMediaId,
+                      user.id,
+                    )
+                  : undefined;
+
               await channel.notifyTyping(user.id, {
                 replyToMessageId: messageId,
               });
@@ -839,6 +853,7 @@ export async function handleIncomingMessage(
                 userId: user.id,
                 docId: practiceDoc.id,
                 questionFormats,
+                image: evalImage,
               });
               const evalStatus = evaluation?.status ?? "wrong";
               const feedback = evaluation
@@ -908,11 +923,15 @@ export async function handleIncomingMessage(
               const eligibleBefore = await countSm2EligibleQuestionsByUser(
                 user.id,
               );
-              const scoreMetadata = updateScoreMetadata(
-                pendingQuestion,
-                evalStatus,
-                answerType,
-                isRealRevision,
+              const scoreMetadata = applyImageMismatch(
+                updateScoreMetadata(
+                  pendingQuestion,
+                  evalStatus,
+                  answerType,
+                  isRealRevision,
+                ),
+                !!evalImage && evaluation?.image_mismatch === true,
+                evaluation?.image_mismatch_reason,
               );
               await updateQuestion(pendingQuestion.id, {
                 answer: text,

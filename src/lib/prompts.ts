@@ -14,6 +14,8 @@ export const ACTIVITY_REQUEST_PROMPT = read("activity-request.md");
 export const GEN_VOCABULARY_PROMPT = read("gen-vocabulary.md");
 
 export const ANSWER_EVALUATION_PROMPT = read("answer-evaluation.md");
+export const ANSWER_EVALUATION_IMAGE_PROMPT = read("answer-evaluation-image.md");
+export const ANSWER_EVALUATION_TIP_PROMPT = read("answer-evaluation-tip.md");
 
 export const OCR_DOCUMENT_PROMPT = read("ocr-document.md");
 

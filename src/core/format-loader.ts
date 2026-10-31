@@ -18,6 +18,7 @@ const FORMAT_FILES: Record<QuestionFormat, string> = {
   [QuestionFormat.image_recognition]: read("image_recognition.md"),
   [QuestionFormat.audio_transcription]: read("audio_transcription.md"),
   [QuestionFormat.audio_translation]: read("audio_translation.md"),
+  [QuestionFormat.image_transcription]: read("image_transcription.md"),
 };
 
 function read(file: string): string {

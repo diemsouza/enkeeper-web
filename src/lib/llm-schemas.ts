@@ -99,6 +99,7 @@ export const sectionQuestionSchema = z.object({
   sourceContent: z.string().nullable(),
   warning: z.string().nullable(),
   imageable: z.boolean().nullable(),
+  imageableReason: z.string().nullable(),
   questionImageDescription: z.string().nullable(),
   questionAudioText: z.string().nullable(),
 });
@@ -132,3 +133,16 @@ export const answerEvaluationSchema = z.object({
 });
 
 export type AnswerEvaluationResult = z.infer<typeof answerEvaluationSchema>;
+
+export const imageAnswerEvaluationSchema = answerEvaluationSchema.extend({
+  feedback_note: z.string().nullable(),
+  image_mismatch: z.boolean().nullable(),
+  image_mismatch_reason: z.string().nullable(),
+});
+
+export type ImageAnswerEvaluationFields = Partial<
+  Pick<
+    z.infer<typeof imageAnswerEvaluationSchema>,
+    "feedback_note" | "image_mismatch" | "image_mismatch_reason"
+  >
+>;

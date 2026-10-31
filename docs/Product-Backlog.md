@@ -126,12 +126,13 @@ Nenhuma feature hoje consome essa informação para material de upload, é dado 
 
 **Contexto**
 
-Nos testes de `image_recognition` com rollout em 100%, várias rodadas passaram sem nenhuma pergunta com imagem. A rotação balanceada de formatos resolveu a frequência, mas a decisão de "dá para ilustrar" ainda acontece só depois que o formato já foi escolhido.
+Nos testes de `image_recognition` com rollout em 100%, várias rodadas passaram sem nenhuma pergunta com imagem. Hoje a tentativa que não gera imagem já conta como aparição na rotação, então o formato não é mais tentado em toda pergunta, e existe a transcrição de imagem, com critério mais amplo. Mas a decisão de "dá para ilustrar" ainda acontece só depois que o formato já foi escolhido.
 
 **Problema**
 
-O item da pergunta é fixo pela posição no material e só o LLM de geração diz se ele é ilustrável. Em material com muita expressão ou phrasal verb, a pergunta com imagem é tentada em quase toda rodada e cai para outro formato, gastando uma geração extra a cada tentativa.
-*Exemplo:* lista com "break the ice", "look forward to", "suitcase": a imagem é tentada nos dois primeiros, falha, e só sai no terceiro.
+O item da pergunta é fixo pela posição no material e só o LLM de geração diz se ele é ilustrável. Em material com muita expressão ou phrasal verb, cada tentativa de imagem que cai para outro formato ainda gasta uma geração extra.
+*Exemplo:* lista com "break the ice", "look forward to", "suitcase": a imagem pode cair na vez dos dois primeiros, falhar, e só sair numa rodada seguinte.
+*Dado de teste:* "happy" caiu em tradução de áudio enquanto "quiet morning" caiu em transcrição de imagem. Item e formato são escolhidos sem se conhecerem, então item ilustrável e formato de imagem raramente coincidem. O critério de imagem já foi afrouxado (núcleo visual, pergunta guia, equivalentes); falta a seleção do item, que hoje é por índice no texto do conteúdo.
 
 **Solução**
 

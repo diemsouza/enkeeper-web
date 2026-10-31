@@ -1,5 +1,6 @@
 import {
   findEligibleActivities,
+  incrementActivityFormatFallback,
   updateActivity,
 } from "../repo/activities.repo";
 import {
@@ -37,10 +38,16 @@ import {
   DOC_PENDING_TIMEOUT_MS,
   DEFAULT_MESSAGE_INTERVAL_SEC,
   AUDIO_QUESTION_FORMATS,
+  IMAGE_QUESTION_FORMATS,
 } from "../lib/constants";
 import { Activity, Question, QuestionFormat } from "../lib/prisma";
 import { splitContentIntoBlocks } from "../core/pool-size";
-import { FormatCounts, pickNextFormat } from "../core/question-format-picker";
+import {
+  FormatCounts,
+  mergeFormatCounts,
+  parseFormatFallbacks,
+  pickNextFormat,
+} from "../core/question-format-picker";
 import { generateNextQuestion } from "../vendors/llm.vendor";
 import { SectionQuestionResult } from "../lib/llm-schemas";
 import {
@@ -334,23 +341,33 @@ async function generateValidatedQuestion(
   return null;
 }
 
-async function buildImageRecognitionQuestion(
+async function buildImageQuestion(
+  format: QuestionFormat,
   baseParams: QuestionGenBaseParams,
   typing?: TypingTarget,
 ): Promise<MediaQuestionOutcome> {
-  const generated = await generateValidatedQuestion(
-    QuestionFormat.image_recognition,
-    baseParams,
-  );
+  const generated = await generateValidatedQuestion(format, baseParams);
   if (!generated) {
     return { status: "fallback", reason: "question_generation_failed" };
   }
   if (generated.imageable !== true) {
-    return { status: "fallback", reason: "not_imageable" };
+    return {
+      status: "fallback",
+      reason: `not_imageable: term="${generated.term ?? ""}" key="${generated.answerKeys[0] ?? ""}" reason="${generated.imageableReason ?? ""}"`,
+    };
   }
   const description = generated.questionImageDescription?.trim();
   if (!description) {
     return { status: "fallback", reason: "missing_image_description" };
+  }
+  const data = sanitizeQuestionData(generated);
+  if (data.answerKeys.length === 0) {
+    return { status: "fallback", reason: "missing_answer_keys" };
+  }
+  // No image_transcription a pergunta guia vem da geracao; no
+  // image_recognition o enunciado e aplicado no formatQuestion.
+  if (format === QuestionFormat.image_transcription && !data.question) {
+    return { status: "fallback", reason: "missing_question" };
   }
 
   const questionId = ulid();
@@ -367,13 +384,16 @@ async function buildImageRecognitionQuestion(
     docId: baseParams.docId,
   });
   if (image.status === "error") {
-    return { status: "fallback", reason: image.reason };
+    return {
+      status: "fallback",
+      reason: `${image.reason} description="${description}"`,
+    };
   }
 
   return {
     status: "success",
     data: {
-      ...sanitizeQuestionData(generated),
+      ...data,
       id: questionId,
       questionImageMediaId: image.mediaId,
       questionImageDescription: description,
@@ -437,8 +457,8 @@ function buildMediaQuestion(
   baseParams: QuestionGenBaseParams,
   typing?: TypingTarget,
 ): Promise<MediaQuestionOutcome> | null {
-  if (format === QuestionFormat.image_recognition) {
-    return buildImageRecognitionQuestion(baseParams, typing);
+  if (IMAGE_QUESTION_FORMATS.includes(format)) {
+    return buildImageQuestion(format, baseParams, typing);
   }
   if (AUDIO_QUESTION_FORMATS.includes(format)) {
     return buildAudioQuestion(format, baseParams, typing);
@@ -448,7 +468,10 @@ function buildMediaQuestion(
 
 // Formato de midia que falha (nao imageable, erro de geracao, TTS, vendor ou
 // upload) cai em outro formato sem midia para o mesmo item, sem aviso ao usuario.
+// A tentativa conta como aparicao (Activity.metadata.formatFallbacks), senao a
+// rotacao balanceada empurraria o mesmo formato de novo na proxima pergunta.
 async function buildQuestionData(
+  activity: Pick<Activity, "id" | "userId">,
   lastFormat: QuestionFormat | null,
   formatCounts: FormatCounts,
   baseParams: QuestionGenBaseParams,
@@ -466,6 +489,7 @@ async function buildQuestionData(
     console.warn(
       `[buildQuestionData] ${format} fallback: ${mediaOutcome.reason}`,
     );
+    await incrementActivityFormatFallback(activity.id, activity.userId, format);
     format = pickNextFormat(lastFormat, {
       canUseImage: false,
       canUseAudio: false,
@@ -506,12 +530,13 @@ export async function generateQuestionIfPoolNotFull(
     lastFormat = lastQuestion?.questionFormat ?? null;
   }
 
-  const formatCounts = await countQuestionFormatsByActivity(
-    activity.id,
-    activity.userId,
+  const formatCounts = mergeFormatCounts(
+    await countQuestionFormatsByActivity(activity.id, activity.userId),
+    parseFormatFallbacks(activity.metadata),
   );
   const blocks = splitContentIntoBlocks(doc.content);
   const questionData = await buildQuestionData(
+    activity,
     lastFormat,
     formatCounts,
     {

@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { QuestionFormat } from "../lib/prisma";
-import { FormatCounts, pickNextFormat } from "./question-format-picker";
+import {
+  FormatCounts,
+  mergeFormatCounts,
+  pickNextFormat,
+} from "./question-format-picker";
 
 // lib/prisma instancia o PrismaClient no import; os testes so precisam dos enums
 vi.mock("../lib/prisma", async () => import("../../prisma/generated/enums"));
@@ -63,6 +67,7 @@ describe("pickNextFormat", () => {
       image_recognition: 0,
       recall_inverted: 1,
       scenario: 0,
+      image_transcription: 1,
       choice: 2,
     });
     expect(picked).toEqual(
@@ -76,9 +81,43 @@ describe("pickNextFormat", () => {
       recall: 3,
       recall_inverted: 3,
       scenario: 3,
+      image_transcription: 3,
       choice: 3,
     });
     expect(picked).toEqual(new Set([QuestionFormat.image_recognition]));
+  });
+
+  it("tentativa de imagem que caiu em fallback tira a prioridade", () => {
+    const counts = mergeFormatCounts(
+      {
+        gap_fill: 3,
+        recall: 3,
+        recall_inverted: 3,
+        scenario: 3,
+        image_transcription: 3,
+        choice: 3,
+      },
+      { image_recognition: 3 },
+    );
+    const picked = pickMany(QuestionFormat.recall, true, counts);
+    expect(picked.size).toBeGreaterThan(1);
+  });
+
+  it("com rollout, image_transcription entra no sorteio", () => {
+    const picked = pickMany(QuestionFormat.gap_fill, true);
+    expect(picked.has(QuestionFormat.image_transcription)).toBe(true);
+  });
+
+  it("sem rollout, nunca sorteia image_transcription", () => {
+    const picked = pickMany(QuestionFormat.gap_fill, false);
+    expect(picked.has(QuestionFormat.image_transcription)).toBe(false);
+  });
+
+  it("nunca repete o formato anterior", () => {
+    for (const last of Object.values(QuestionFormat)) {
+      const picked = pickMany(last, true, {}, true);
+      expect(picked.has(last)).toBe(false);
+    }
   });
 
   it("image_recognition atrasado continua bloqueado depois de choice", () => {
@@ -87,6 +126,7 @@ describe("pickNextFormat", () => {
       recall: 3,
       recall_inverted: 3,
       scenario: 3,
+      image_transcription: 3,
       choice: 3,
     });
     expect(picked.has(QuestionFormat.image_recognition)).toBe(false);
@@ -125,7 +165,14 @@ describe("pickNextFormat", () => {
     const picked = pickMany(
       QuestionFormat.recall,
       false,
-      { gap_fill: 2, recall: 2, recall_inverted: 2, scenario: 2, choice: 2 },
+      {
+        gap_fill: 2,
+        recall: 2,
+        recall_inverted: 2,
+        scenario: 2,
+        image_transcription: 2,
+        choice: 2,
+      },
       true,
     );
     expect(picked).toEqual(

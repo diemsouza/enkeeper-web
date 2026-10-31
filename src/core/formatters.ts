@@ -18,7 +18,10 @@ import {
   sanitizeText,
   sanitizeWhatsappContent,
 } from "../lib/utils";
-import { AnswerEvaluationResult } from "../lib/llm-schemas";
+import {
+  AnswerEvaluationResult,
+  ImageAnswerEvaluationFields,
+} from "../lib/llm-schemas";
 import { COMMANDS, formatCommand, isAutoCompletable } from "../lib/commands";
 import { shuffle } from "lodash";
 import type {
@@ -781,7 +784,7 @@ export function getFeedbackOpening(
 }
 
 export function formatFeedback(
-  feedbackResult: AnswerEvaluationResult,
+  feedbackResult: AnswerEvaluationResult & ImageAnswerEvaluationFields,
   level?: Level,
   options: { format?: QuestionFormat | null } = {},
 ): FormattedMessage {
@@ -821,7 +824,10 @@ export function formatFeedback(
   if (feedback)
     result.push(feedback.indexOf('"') === -1 ? `"${feedback}"` : feedback);
 
-  return { text: result.join(" ") };
+  // image_transcription: correcao do resto da frase e elogio aos extras.
+  const note = sanitizeText(feedbackResult.feedback_note ?? "");
+  const text = result.join(" ");
+  return { text: note ? `${text}\n\n${note}` : text };
 }
 
 function stripWrappingQuotes(text: string): string {
@@ -939,6 +945,28 @@ function pickImageRecognitionPrompt(level: Level): string {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+const imageTranscriptionPtPrompts = [
+  "Veja a imagem e responda em inglês",
+  "Observe a imagem e responda em inglês",
+  "Olhe a imagem e responda em inglês",
+  "Repare na imagem e responda em inglês",
+];
+
+const imageTranscriptionEnPrompts = [
+  "Look at the picture and answer with a full sentence",
+  "Look at the image and answer in a full sentence",
+  "Take a look at the picture and answer with a full sentence",
+  "Observe the image and answer with a full sentence",
+];
+
+function pickImageTranscriptionPrompt(level: Level): string {
+  const pool =
+    level === Level.basic
+      ? imageTranscriptionPtPrompts
+      : imageTranscriptionEnPrompts;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 const audioTranscriptionPtPrompts = ["Transcreva o áudio em inglês."];
 
 const audioTranscriptionEnPrompts = ["Transcribe the audio in English."];
@@ -1007,6 +1035,20 @@ function formatImageRecognitionQuestion(
   };
 }
 
+function formatImageTranscriptionQuestion(
+  guide: string,
+  imageMediaId: string | null | undefined,
+  level: Level,
+): FormattedMessage {
+  const prompt = pickImageTranscriptionPrompt(level);
+  const trimmed = guide.trim();
+  const text = trimmed
+    ? `${prompt}: ${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)}`
+    : `${prompt}.`;
+  if (!imageMediaId) return { text };
+  return { text, imageMediaId };
+}
+
 export function formatQuestion(
   question: {
     question: string;
@@ -1032,6 +1074,14 @@ export function formatQuestion(
   if (question.questionFormat === QuestionFormat.image_recognition) {
     return formatImageRecognitionQuestion(
       question.questionOptions,
+      question.questionImageMediaId,
+      options.level,
+    );
+  }
+
+  if (question.questionFormat === QuestionFormat.image_transcription) {
+    return formatImageTranscriptionQuestion(
+      question.question,
       question.questionImageMediaId,
       options.level,
     );

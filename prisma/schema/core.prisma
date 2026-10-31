@@ -76,6 +76,7 @@ enum QuestionFormat {
     image_recognition // imagem gerada ilustra o termo, escolhe a opção que a imagem representa
     audio_transcription // ouve uma frase em inglês e escreve exatamente o que ouviu
     audio_translation // ouve uma frase em inglês e escreve em português o que ela quer dizer
+    image_transcription // cena gerada com o termo como elemento central, responde em inglês o que vê guiado por uma pergunta
 }
 
 enum EvalTipClass {

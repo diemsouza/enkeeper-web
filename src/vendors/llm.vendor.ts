@@ -1,4 +1,10 @@
-import { generateText, NoObjectGeneratedError, Output } from "ai";
+import {
+  generateText,
+  ModelMessage,
+  NoObjectGeneratedError,
+  Output,
+} from "ai";
+import { z } from "zod";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { extractText } from "unpdf";
@@ -11,6 +17,8 @@ import {
   SectionQuestionResult,
   answerEvaluationSchema,
   AnswerEvaluationResult,
+  imageAnswerEvaluationSchema,
+  ImageAnswerEvaluationFields,
   topicValidationSchema,
   TopicValidationResult,
   focusContentSchema,
@@ -25,6 +33,8 @@ import {
   VOICE_PROMPT,
   DOC_EXTRACTION_PROMPT,
   ANSWER_EVALUATION_PROMPT,
+  ANSWER_EVALUATION_IMAGE_PROMPT,
+  ANSWER_EVALUATION_TIP_PROMPT,
   GEN_VOCABULARY_PROMPT,
   GEN_CONTENT_PROMPT,
   TOPIC_VALIDATION_PROMPT,
@@ -572,10 +582,38 @@ Variação: {variation_seed}`
 
 // ─── Answer evaluation ────────────────────────────────────────────────────────
 
-type AnswerEvaluationResultWithProvider = AnswerEvaluationResult & {
+type EvaluationOutput = AnswerEvaluationResult & ImageAnswerEvaluationFields;
+
+type AnswerEvaluationResultWithProvider = EvaluationOutput & {
   provider: AiProvider;
   model: string;
 };
+
+type EvaluationImage = { data: Buffer; mediaType: string };
+
+// imageDetail so existe no OpenAI, o Anthropic ignora.
+function buildEvaluationInput(
+  userPrompt: string,
+  image: EvaluationImage | undefined,
+): { prompt: string } | { messages: ModelMessage[] } {
+  if (!image) return { prompt: userPrompt };
+  return {
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: userPrompt },
+          {
+            type: "image",
+            image: image.data,
+            mediaType: image.mediaType,
+            providerOptions: { openai: { imageDetail: "low" } },
+          },
+        ],
+      },
+    ],
+  };
+}
 
 export async function generateAnswerEvaluation(params: {
   question: string;
@@ -590,6 +628,7 @@ export async function generateAnswerEvaluation(params: {
   userId: string;
   docId: string;
   questionFormats: QuestionFormat[];
+  image?: EvaluationImage;
 }): Promise<AnswerEvaluationResultWithProvider | null> {
   const {
     question,
@@ -603,7 +642,11 @@ export async function generateAnswerEvaluation(params: {
     level,
     userId,
     docId,
+    image,
   } = params;
+  const evaluationSchema: z.ZodType<EvaluationOutput> = image
+    ? imageAnswerEvaluationSchema
+    : answerEvaluationSchema;
   let inputTokens = 0;
   let outputTokens = 0;
   let cachedTokens = 0;
@@ -612,7 +655,11 @@ export async function generateAnswerEvaluation(params: {
   let logError: string | null = null;
   const startTime = Date.now();
 
-  const systemPrompt = ANSWER_EVALUATION_PROMPT.replace("{voice}", VOICE_PROMPT)
+  const systemPrompt = (
+    image ? ANSWER_EVALUATION_IMAGE_PROMPT : ANSWER_EVALUATION_PROMPT
+  )
+    .replace("{voice}", VOICE_PROMPT)
+    .replace("{tip}", ANSWER_EVALUATION_TIP_PROMPT)
     .replace("{content_origin}", contentOrigin)
     .replace("{feedback_examples}", feedbackExamples);
 
@@ -637,7 +684,7 @@ Resposta do usuário: {user_answer}`
     const llmResult = await generateText({
       model: getStandardLanguageModel(),
       system: systemPrompt,
-      output: Output.object({ schema: answerEvaluationSchema }),
+      output: Output.object({ schema: evaluationSchema }),
       ...(isReasoningModel()
         ? {
             providerOptions: {
@@ -645,7 +692,7 @@ Resposta do usuário: {user_answer}`
             },
           }
         : { temperature: 0.3 }),
-      prompt: userPrompt,
+      ...buildEvaluationInput(userPrompt, image),
     });
     inputTokens += llmResult.usage?.inputTokens ?? 0;
     outputTokens += llmResult.usage?.outputTokens ?? 0;
@@ -661,7 +708,7 @@ Resposta do usuário: {user_answer}`
       rawOutput = err.text;
       try {
         result = {
-          ...(answerEvaluationSchema.parse(
+          ...(evaluationSchema.parse(
             parseJsonWithFallback(err.text.trim()),
           ) || {}),
           provider: PROVIDER_STANDARD,
@@ -692,7 +739,11 @@ Resposta do usuário: {user_answer}`
     stage: "answer-evaluation",
     provider: PROVIDER_STANDARD,
     model: getStandardModel(),
-    input: { system: systemPrompt, prompt: userPrompt },
+    input: {
+      system: systemPrompt,
+      prompt: userPrompt,
+      image: image ? "attached" : undefined,
+    },
     output: rawOutput,
     parsedOutput: result,
     success: result !== null,

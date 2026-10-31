@@ -117,7 +117,9 @@ export async function requestImage(
     return {
       result: {
         status: "error",
-        reason: `Image API error ${res.status}${code ? ` (${code})` : ""}: ${detail.slice(0, 300)}`,
+        reason: code
+          ? `Image API error ${res.status} (${code})`
+          : `Image API error ${res.status}: ${detail.slice(0, 300)}`,
       },
       usage: undefined,
     };

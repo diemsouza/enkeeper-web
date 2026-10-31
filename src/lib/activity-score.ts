@@ -10,6 +10,8 @@ export type ScoreMetadata = {
   audioWrongCount?: number;
   audioPartialCount?: number;
   audioPlayedCount?: number;
+  imageMismatch?: boolean;
+  imageMismatchReason?: string;
 };
 
 const W = { right: 4, partial: 2, wrong: 0 };
@@ -21,8 +23,26 @@ export const ACTIVITY_ELIGIBLE_SCORE = 7;
 
 function omitZero(metadata: ScoreMetadata): ScoreMetadata {
   return Object.fromEntries(
-    Object.entries(metadata).filter(([, value]) => (value ?? 0) > 0),
+    Object.entries(metadata).filter(
+      ([, value]) =>
+        value !== undefined && (typeof value !== "number" || value > 0),
+    ),
   ) as ScoreMetadata;
+}
+
+// Monitoramento do image_transcription: a flag so liga, nunca volta a false,
+// porque a mesma pergunta e avaliada de novo nas revisoes.
+export function applyImageMismatch(
+  metadata: ScoreMetadata,
+  isMismatch: boolean,
+  reason: string | null | undefined,
+): ScoreMetadata {
+  if (!isMismatch) return metadata;
+  return {
+    ...metadata,
+    imageMismatch: true,
+    imageMismatchReason: reason?.trim() || metadata.imageMismatchReason,
+  };
 }
 
 export function updateScoreMetadata(

@@ -1,4 +1,10 @@
-import { Activity, ActivityStatus, Level, Prisma } from "../lib/prisma";
+import {
+  Activity,
+  ActivityStatus,
+  Level,
+  Prisma,
+  QuestionFormat,
+} from "../lib/prisma";
 import { prisma } from "../lib/prisma";
 
 type CreateActivityData = {
@@ -124,6 +130,44 @@ export async function updateActivity(
   await prisma.activity.updateMany({
     where: { id, userId, deletedAt: null },
     data,
+  });
+}
+
+async function findActivityMetadata(
+  id: string,
+  userId: string,
+): Promise<Prisma.JsonObject> {
+  const activity = await prisma.activity.findFirst({
+    where: { id, userId, deletedAt: null },
+    select: { metadata: true },
+  });
+  const metadata = activity?.metadata;
+  return metadata && typeof metadata === "object" && !Array.isArray(metadata)
+    ? metadata
+    : {};
+}
+
+export async function incrementActivityFormatFallback(
+  id: string,
+  userId: string,
+  format: QuestionFormat,
+): Promise<void> {
+  const metadata = await findActivityMetadata(id, userId);
+  const current = metadata.formatFallbacks;
+  const fallbacks =
+    current && typeof current === "object" && !Array.isArray(current)
+      ? (current as Prisma.JsonObject)
+      : {};
+  const value = fallbacks[format];
+  const count = typeof value === "number" ? value : 0;
+  await prisma.activity.updateMany({
+    where: { id, userId, deletedAt: null },
+    data: {
+      metadata: {
+        ...metadata,
+        formatFallbacks: { ...fallbacks, [format]: count + 1 },
+      },
+    },
   });
 }
 

@@ -14,6 +14,11 @@ export const AUDIO_QUESTION_FORMATS: QuestionFormat[] = [
   "audio_translation",
 ];
 
+export const IMAGE_QUESTION_FORMATS: QuestionFormat[] = [
+  "image_recognition",
+  "image_transcription",
+];
+
 const TEXT_EVAL_TIP_CLASSES: EvalTipClass[] = [
   "calque",
   "near_synonym",
@@ -36,6 +41,7 @@ export const EVAL_TIP_CLASSES_BY_FORMAT: Record<
   scenario: TEXT_EVAL_TIP_CLASSES,
   choice: TEXT_EVAL_TIP_CLASSES,
   image_recognition: TEXT_EVAL_TIP_CLASSES,
+  image_transcription: TEXT_EVAL_TIP_CLASSES,
   open_text: TEXT_EVAL_TIP_CLASSES,
   open_question: TEXT_EVAL_TIP_CLASSES,
   audio_transcription: ["homophone", "connected_speech"],

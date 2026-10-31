@@ -1,7 +1,7 @@
 import { ulid } from "ulid";
 import { generateImage, GenerateImageResult } from "../vendors/image.vendor";
-import { uploadFile } from "../vendors/storage.vendor";
-import { createMedia } from "../repo/media.repo";
+import { downloadFile, uploadFile } from "../vendors/storage.vendor";
+import { createMedia, findUserMediaById } from "../repo/media.repo";
 import {
   MEDIA_PARENT_TYPE,
   MEDIA_SOURCE,
@@ -16,6 +16,26 @@ export type StoreQuestionImageResult =
 
 function describeError(err: unknown): string {
   return err instanceof Error ? err.message : "unknown";
+}
+
+export type EvalImage = { data: Buffer; mediaType: string };
+
+// Bytes em vez de URL: o provider baixaria a URL do lado dele e nao alcanca o
+// storage local. Sem midia, a avaliacao segue so com o texto.
+export async function loadQuestionImageForEval(
+  imageMediaId: string | null,
+  userId: string,
+): Promise<EvalImage | undefined> {
+  if (!imageMediaId) return undefined;
+  const media = await findUserMediaById(imageMediaId, userId);
+  if (!media) {
+    console.warn(
+      `[loadQuestionImageForEval] media ${imageMediaId} not found for user ${userId}`,
+    );
+    return undefined;
+  }
+  const data = await downloadFile({ filePath: media.mediaPath });
+  return { data, mediaType: media.contentType };
 }
 
 export async function storeQuestionImage(params: {

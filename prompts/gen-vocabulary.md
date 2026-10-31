@@ -32,13 +32,14 @@ Retorne APENAS UM JSON válido (objeto único). Sem markdown, sem cercas de cód
   "meaning": "",
   "warning": "",
   "imageable": null,
+  "imageableReason": null,
   "questionImageDescription": null,
   "questionAudioText": null
 }
 
 Regras do JSON:
 - answerKeys: array com pelo menos 1 item. A primeira chave é sempre a resposta principal, e é ela que o bloco de exemplos usa para construir a pergunta e o feedback. As demais são variações aceitas na avaliação e não influenciam a pergunta gerada.
-- Resposta principal: por padrão, é o termo exato do conteúdo. O bloco de exemplos define quando não é, e nesse caso a regra do bloco prevalece. answerKeys[0] é sempre igual a term ou a meaning, dependendo de qual lado o formato usa como resposta esperada.
+- Resposta principal: por padrão, é o termo exato do conteúdo. O bloco de exemplos define quando não é, e nesse caso a regra do bloco prevalece. answerKeys[0] é sempre igual a term ou a meaning, dependendo de qual lado o formato usa como resposta esperada, salvo nos formatos de imagem (image_recognition, image_transcription), em que answerKeys[0] é o núcleo visual do item definido no bloco de exemplos e term continua sendo o item original.
 - Variações aceitáveis são termos verdadeiramente intercambiáveis na mesma frase, sem mudar o sentido. Termos relacionados mas não intercambiáveis no contexto não entram. Quando a resposta esperada é o significado e o item tiver mais de uma tradução natural sem contexto que desambigue (ex: "get ready" como "se preparar" ou "se arrumar"), inclua todas as traduções válidas. Se o termo não tiver tradução no material original e a resposta esperada for o significado, inclua a tradução inferida como chave adicional. answerKeys contém apenas o idioma do lado da resposta: quando a resposta esperada é o termo, nenhuma forma de significado em português entra em answerKeys.
 - answerKeys nunca inclui o complemento do termo nem qualquer parte dele. Contém apenas o termo, expressão ou frase, na forma exata usada para resposta, sem explicação, sem complemento entre parênteses ou qualquer outra marcação.
 - questionOptions: quando o formato é choice ou image_recognition, contém a opção correta (primeiro item de answerKeys) mais os distratores definidos no bloco de exemplos, nunca apenas os distratores. Nos demais formatos, array vazio.
@@ -46,8 +47,9 @@ Regras do JSON:
 - meaning: forma canônica e limpa do significado em português, mesma lógica do term, um valor único, não lista. Quando houver mais de uma tradução válida para o mesmo sentido, escolha a mais natural para meaning e, quando o formato usa o significado como resposta, inclua as demais em answerKeys.
 - termHint: complemento extraído de qualquer posição do bloco do item (junto ao termo ou ao significado), se não houver, retorne vazio.
 - warning: string curta em português descrevendo a inconsistência. Omita o campo quando não houver inconsistência.
-- imageable: só no formato image_recognition, true ou false conforme o critério do bloco de exemplos. Nos demais formatos, null.
-- questionImageDescription: só no formato image_recognition com imageable true, descrição da cena em inglês conforme o bloco de exemplos. Nos demais casos, null.
+- imageable: só nos formatos de imagem (image_recognition, image_transcription), true ou false conforme o critério do bloco de exemplos. Nos demais formatos, null.
+- imageableReason: só nos formatos de imagem, sempre preenchido (com imageable true ou false), uma frase curta em português dizendo qual é o núcleo visual e por que a cena leva ou não a ele. Nos demais formatos, null.
+- questionImageDescription: só nos formatos de imagem (image_recognition, image_transcription) com imageable true, descrição da cena em inglês conforme o bloco de exemplos. Nos demais casos, null.
 - questionAudioText: só nos formatos de áudio (audio_transcription, audio_translation), a frase em inglês que será lida em voz alta, conforme o bloco de exemplos. Nos demais formatos, null.
 
 Formato desta pergunta: {format}
