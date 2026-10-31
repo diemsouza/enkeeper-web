@@ -852,6 +852,7 @@ export async function handleIncomingMessage(
                   ? await resolveFeedbackAudioMediaId(
                       evaluation,
                       pendingQuestion,
+                      activeActivity.userLevel,
                     )
                   : null;
               const feedbackSpeechText = evaluation

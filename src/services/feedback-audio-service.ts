@@ -1,6 +1,6 @@
 import { parseBuffer } from "music-metadata";
 import { ulid } from "ulid";
-import { Question } from "../lib/prisma";
+import { Level, Question } from "../lib/prisma";
 import { AnswerEvaluationResult } from "../lib/llm-schemas";
 import { generateSpeech, TTS_AUDIO_EXTENSION } from "../vendors/tts.vendor";
 import { uploadFile } from "../vendors/storage.vendor";
@@ -13,6 +13,7 @@ import {
 } from "../lib/constants";
 import { buildMediaPath } from "../lib/utils";
 import { formatFeedbackToSpeech } from "../core/formatters";
+import { getTtsPace } from "../core/tts-pace";
 
 const AUDIO_ROLLOUT_FRACTION = parseFloat(
   process.env.AUDIO_ROLLOUT_FRACTION ?? "0",
@@ -37,6 +38,7 @@ export async function resolveFeedbackAudioMediaId(
     Question,
     "id" | "userId" | "feedbackText" | "feedbackAudioMediaId"
   >,
+  level: Level,
 ): Promise<string | null> {
   const questionId = question.id;
   const random = Math.random();
@@ -58,7 +60,7 @@ export async function resolveFeedbackAudioMediaId(
       if (existingMedia) return existingMedia.id;
     }
 
-    const speech = await generateSpeech(speechText);
+    const speech = await generateSpeech(speechText, getTtsPace(level));
     if (speech.status === "error") {
       console.error(
         `[resolveFeedbackAudioMediaId] TTS failed for ${questionId}: ${speech.reason}`,

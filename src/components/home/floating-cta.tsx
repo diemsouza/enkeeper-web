@@ -41,7 +41,7 @@ export default function FloatingCta() {
 
   return (
     <div
-      aria-hidden={!visible}
+      inert={!visible}
       className={cn(
         "md:hidden fixed bottom-0 left-0 right-0 z-40 p-4 pb-safe",
         "bg-gradient-to-t from-background via-background/95 to-transparent",

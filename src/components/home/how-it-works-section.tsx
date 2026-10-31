@@ -13,6 +13,8 @@ import {
 } from "@/src/components/ui/carousel";
 
 const BLOCK_COUNT = 6;
+const IMAGE_WIDTH = 960;
+const IMAGE_HEIGHT = 540;
 
 export default function HowItWorksSection() {
   const t = useTranslations("home.how_it_works");
@@ -61,8 +63,12 @@ export default function HowItWorksSection() {
                     <div className="aspect-video w-full rounded-2xl overflow-hidden bg-muted">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`/images/how-it-works/${i}.jpg`}
+                        src={`/images/how-it-works/${i}.webp`}
                         alt={t(`blocks.${i}.image_alt`)}
+                        width={IMAGE_WIDTH}
+                        height={IMAGE_HEIGHT}
+                        loading={i === 0 ? "eager" : "lazy"}
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                     </div>

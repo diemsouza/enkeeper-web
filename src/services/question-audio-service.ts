@@ -13,6 +13,8 @@ import {
   QUESTION_AUDIO_FOLDER,
 } from "../lib/constants";
 import { buildMediaPath } from "../lib/utils";
+import { Level } from "../lib/prisma";
+import { getTtsPace, TtsPace } from "../core/tts-pace";
 import { readAudioDuration } from "./feedback-audio-service";
 
 export type StoreQuestionAudioResult =
@@ -22,9 +24,12 @@ function describeError(err: unknown): string {
   return err instanceof Error ? err.message : "unknown";
 }
 
-async function synthesize(text: string): Promise<GenerateSpeechResult> {
+async function synthesize(
+  text: string,
+  pace: TtsPace,
+): Promise<GenerateSpeechResult> {
   try {
-    return await generateSpeech(text);
+    return await generateSpeech(text, pace);
   } catch (err) {
     return { status: "error", reason: describeError(err) };
   }
@@ -34,10 +39,11 @@ export async function storeQuestionAudio(params: {
   questionId: string;
   text: string;
   userId: string;
+  level: Level;
 }): Promise<StoreQuestionAudioResult> {
-  const { questionId, text, userId } = params;
+  const { questionId, text, userId, level } = params;
 
-  const speech = await synthesize(text);
+  const speech = await synthesize(text, getTtsPace(level));
   if (speech.status === "error") {
     return { status: "error", reason: `tts_error: ${speech.reason}` };
   }

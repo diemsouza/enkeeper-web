@@ -405,6 +405,7 @@ async function buildAudioQuestion(
     questionId,
     text: sentence,
     userId: baseParams.userId,
+    level: baseParams.level,
   });
   if (audio.status === "error") {
     return { status: "fallback", reason: audio.reason };

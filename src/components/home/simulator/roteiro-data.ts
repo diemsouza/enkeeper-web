@@ -24,6 +24,8 @@ export type SimulatorImageItem = {
 };
 
 const SIMULATOR_IMAGE_VERSION = 3;
+const SIMULATOR_IMAGE_WIDTH = 840;
+const SIMULATOR_IMAGE_HEIGHT = 630;
 
 export function simulatorAudioUrl(domainId: DomainId, turn: number): string {
   return `/audio/simulator/${domainId}-${turn}.ogg`;
@@ -117,6 +119,8 @@ function buildQuestionMessage(spec: TurnSpec): Message {
     type: "image",
     imageUrl: simulatorImageUrl(spec.domainId),
     imageAlt: spec.imageAlt,
+    imageWidth: SIMULATOR_IMAGE_WIDTH,
+    imageHeight: SIMULATOR_IMAGE_HEIGHT,
     interactive,
   };
 }
