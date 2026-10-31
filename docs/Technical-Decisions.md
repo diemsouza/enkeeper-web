@@ -6,6 +6,29 @@ topo.
 
 ---
 
+## Voz mais lenta no nível básico
+
+Data: 2026-10-31
+
+Contexto: no básico, a frase das perguntas de escuta e o áudio de feedback
+saíam na velocidade natural, rápida demais para quem está começando.
+
+Decisões:
+
+- **Pace por nível em `src/core/tts-pace.ts`.** `getTtsPace(level)` devolve
+  `slow` no básico e `normal` no resto. O `level` chega explícito em
+  `storeQuestionAudio` e `resolveFeedbackAudioMediaId`, sem busca dentro do
+  serviço.
+- **Instrução, não parâmetro `speed`.** No `gpt-4o-mini-tts`, `slow` acrescenta
+  uma frase às `instructions` (falar um pouco abaixo da velocidade natural,
+  mantendo pronúncia e ritmo de nativo), sem mexer no parâmetro `speed`.
+- **Google ignora o pace.** A voz atual não aceita instructions; o parâmetro
+  existe na assinatura só para manter a interface igual.
+- **Sem backfill.** Áudios já gerados continuam como estão; o áudio de pergunta
+  é gerado uma vez e reaproveitado, então só perguntas novas saem mais lentas.
+
+---
+
 ## Formato `image_transcription` e fim do empurrão do `image_recognition`
 
 Data: 2026-10-31
