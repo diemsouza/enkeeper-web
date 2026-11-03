@@ -1,9 +1,11 @@
 import { SITE_URL, TRIAL_DAYS } from "@/src/lib/constants";
 import { getPricingDisplay } from "@/src/lib/pricing-display";
+import { BLOG_PATH, buildBlogPostPath } from "@/src/core/blog";
+import { listBlogPosts } from "@/src/services/blog-service";
 
 export const dynamic = "force-static";
 
-function buildLlmsTxt(): string {
+function buildLlmsTxt(blogLinks: string): string {
   const { monthly, yearly, yearlyPerMonth } = getPricingDisplay();
 
   return `# Fluizer
@@ -32,11 +34,23 @@ Para quem estuda inglês, em qualquer curso ou por conta própria, e quer pratic
 - [Home](${SITE_URL})
 - [Termos de uso](${SITE_URL}/terms)
 - [Política de privacidade](${SITE_URL}/privacy)
+
+## Blog
+
+- [Blog](${SITE_URL}${BLOG_PATH})
+${blogLinks}
 `;
 }
 
-export function GET(): Response {
-  return new Response(buildLlmsTxt(), {
+export async function GET(): Promise<Response> {
+  const posts = await listBlogPosts();
+  const blogLinks = posts
+    .map(
+      ({ frontmatter }) =>
+        `- [${frontmatter.title}](${SITE_URL}${buildBlogPostPath(frontmatter.slug)}): ${frontmatter.description}`,
+    )
+    .join("\n");
+  return new Response(buildLlmsTxt(blogLinks), {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });
 }

@@ -283,7 +283,8 @@
       "cta": "Quero praticar",
       "summary_chart_alt": "Gráfico de pentágono com a pontuação do dia nas cinco habilidades de inglês.",
       "scroll_left_aria": "Rolar para a esquerda",
-      "scroll_right_aria": "Rolar para a direita"
+      "scroll_right_aria": "Rolar para a direita",
+      "reply_in_app": "Responder no app..."
     },
     "waitlist_microcopy": "Garanta sua vaga · Comece grátis",
     "waitlist": {
@@ -453,7 +454,8 @@
       "copyright": "Copyright © 2026 Fluizer. Todos os direitos reservados.",
       "privacy": "Política de Privacidade",
       "terms": "Termos de Uso",
-      "company": "{brand} por Head Souza Serviços Digitais LTDA - CNPJ 49.481.141/0001-62"
+      "company": "{brand} por Head Souza Serviços Digitais LTDA - CNPJ 49.481.141/0001-62",
+      "blog": "Blog"
     }
   },
   "pricing": {
@@ -537,6 +539,26 @@
       "GOOGLE_EMAIL_UNVERIFIED": "Seu e-mail do Google não está verificado. Use outra conta ou entre com WhatsApp.",
       "GOOGLE_FAILED": "Não foi possível entrar com o Google. Tente de novo.",
       "generic": "Algo deu errado, tenta de novo."
+    }
+  },
+  "blog": {
+    "index": {
+      "title": "Blog Fluizer: inglês para situações reais",
+      "heading": "Blog",
+      "description": "Frases, expressões e exemplos de prática para usar inglês no trabalho, em viagens, no intercâmbio e no dia a dia."
+    },
+    "post": {
+      "published_at": "Publicado em {date}",
+      "updated_at": "Atualizado em {date}",
+      "faq_title": "Perguntas frequentes",
+      "next_read": "Próxima leitura",
+      "all_posts": "Ver todas as matérias",
+      "all_posts_description": "Mais frases e situações para praticar inglês.",
+      "back_to_blog": "Blog"
+    },
+    "cta": {
+      "inline_link": "Praticar isso no Fluizer",
+      "button": "Começar a praticar"
     }
   }
 }

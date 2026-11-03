@@ -136,6 +136,28 @@ export default {
         "message-in": "message-in 260ms ease-out",
         "typing-dot": "typing-dot 0.9s ease-in-out infinite",
       },
+      // `prose-fluizer`: as cores leem as variaveis do tema, entao claro e
+      // escuro saem do mesmo seletor, sem prose-invert.
+      typography: {
+        fluizer: {
+          css: {
+            "--tw-prose-body": "hsl(var(--foreground) / 0.85)",
+            "--tw-prose-headings": "hsl(var(--foreground))",
+            "--tw-prose-lead": "hsl(var(--muted-foreground))",
+            "--tw-prose-links": "hsl(var(--primary))",
+            "--tw-prose-bold": "hsl(var(--foreground))",
+            "--tw-prose-counters": "hsl(var(--muted-foreground))",
+            "--tw-prose-bullets": "hsl(var(--muted-foreground))",
+            "--tw-prose-hr": "hsl(var(--border))",
+            "--tw-prose-quotes": "hsl(var(--foreground))",
+            "--tw-prose-quote-borders": "hsl(var(--border))",
+            "--tw-prose-captions": "hsl(var(--muted-foreground))",
+            "--tw-prose-code": "hsl(var(--foreground))",
+            "--tw-prose-th-borders": "hsl(var(--border))",
+            "--tw-prose-td-borders": "hsl(var(--border))",
+          },
+        },
+      },
       minHeight: {
         "screen-dvh": "100dvh",
         touch: "44px",
@@ -143,5 +165,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;

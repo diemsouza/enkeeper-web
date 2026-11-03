@@ -52,7 +52,7 @@ function buildImageSize(orientation: ImageOrientation): string {
   return `${width}x${height}`;
 }
 
-function buildImagePrompt(
+export function buildImagePrompt(
   description: string,
   orientation: ImageOrientation,
 ): string {

@@ -8,6 +8,12 @@ import {
   DEFAULT_LOCALE,
 } from "@/src/lib/constants";
 import { getPricingDisplay } from "@/src/lib/pricing-display";
+import {
+  BLOG_PATH,
+  buildBlogPostPath,
+  getBlogModifiedDate,
+  type BlogFrontmatter,
+} from "@/src/core/blog";
 
 type Translate = (
   key: string,
@@ -62,5 +68,67 @@ export function buildHomeJsonLd(
         })),
       },
     ],
+  };
+}
+
+const ORGANIZATION = {
+  "@type": "Organization",
+  "@id": `${SITE_URL}/#organization`,
+  name: "Fluizer",
+  url: SITE_URL,
+  logo: `${SITE_URL}/web-app-manifest-512x512.png`,
+} as const;
+
+export function buildBlogPostJsonLd(post: BlogFrontmatter): Record<string, unknown> {
+  const url = `${SITE_URL}${buildBlogPostPath(post.slug)}`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "@id": `${url}#article`,
+        headline: post.title,
+        description: post.description,
+        image: `${SITE_URL}${post.cover}`,
+        datePublished: post.date,
+        dateModified: getBlogModifiedDate(post),
+        inLanguage: DEFAULT_LOCALE,
+        author: ORGANIZATION,
+        publisher: ORGANIZATION,
+        mainEntityOfPage: url,
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${url}#faq`,
+        mainEntity: post.faq.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: { "@type": "Answer", text: item.answer },
+        })),
+      },
+    ],
+  };
+}
+
+export function buildBlogIndexJsonLd(
+  posts: BlogFrontmatter[],
+  description: string,
+): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "@id": `${SITE_URL}${BLOG_PATH}#blog`,
+    name: "Blog Fluizer",
+    url: `${SITE_URL}${BLOG_PATH}`,
+    description,
+    inLanguage: DEFAULT_LOCALE,
+    publisher: ORGANIZATION,
+    blogPost: posts.map((post) => ({
+      "@type": "BlogPosting",
+      headline: post.title,
+      url: `${SITE_URL}${buildBlogPostPath(post.slug)}`,
+      datePublished: post.date,
+      image: `${SITE_URL}${post.cover}`,
+    })),
   };
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { DOMAINS, type DomainId } from "@/src/lib/constants";
 import { HomeCTA } from "@/src/components/home/home-cta";
+import { useHomeDomain } from "@/src/components/home/home-domain-provider";
 import { SIMULATOR_ROTEIROS } from "./roteiro-data";
 import { DomainSelector } from "./domain-selector";
 import { DesktopShell } from "./desktop-shell";
@@ -15,6 +16,7 @@ import { useInnerScrollGate } from "./use-inner-scroll-gate";
 export default function Simulator() {
   const t = useTranslations("home.simulator");
   const [activeDomain, setActiveDomain] = useState<DomainId>(DOMAINS[0].id);
+  const homeDomain = useHomeDomain();
   const roteiro = SIMULATOR_ROTEIROS[activeDomain];
   const { primaryRef, secondaryRef, onPrimaryScroll, onSecondaryScroll } =
     useSyncedScroll();
@@ -30,7 +32,13 @@ export default function Simulator() {
       className="section-light px-6 pb-24 overflow-x-hidden"
     >
       <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
-        <DomainSelector active={activeDomain} onChange={setActiveDomain} />
+        <DomainSelector
+          active={activeDomain}
+          onChange={(domain) => {
+            setActiveDomain(domain);
+            homeDomain?.selectDomain(domain);
+          }}
+        />
 
         <div ref={shellRef} className="relative w-full max-w-4xl mx-auto">
           <DesktopShell>

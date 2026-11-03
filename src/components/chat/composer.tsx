@@ -58,9 +58,6 @@ type ComposerProps = {
   // Linha da bandeja (aviso de revisao); fica montada para animar a saida.
   notice?: ReactNode;
   isNoticeVisible?: boolean;
-  // Simulador da home: composer em repouso como no app (mic no lugar do
-  // enviar), sem aparencia de desabilitado e sem interacao.
-  isPreview?: boolean;
 };
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(
@@ -74,7 +71,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
       isWaitingForResponse,
       notice,
       isNoticeVisible = false,
-      isPreview = false,
     },
     ref,
   ) {
@@ -166,7 +162,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
       ? "hold"
       : isRecording
         ? "locked"
-        : (canRecord || isPreview) && !text
+        : canRecord && !text
           ? "mic"
           : "send";
 
@@ -287,11 +283,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                 </div>
               </>
             )}
-            <div
-              ref={containerRef}
-              inert={isPreview}
-              className="relative w-full"
-            >
+            <div ref={containerRef} className="relative w-full">
               {showCommandMenu && (
                 <div className="pointer-events-auto absolute inset-x-0 bottom-full z-30 mb-2 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-md">
                   <ul
@@ -349,7 +341,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                   <>
                     <button
                       type="button"
-                      disabled={!isPreview && (disabled || !onAttachClick)}
+                      disabled={disabled || !onAttachClick}
                       onClick={onAttachClick}
                       aria-label={t("attach_file_aria")}
                       title={t("attach_file_title")}

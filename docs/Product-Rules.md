@@ -780,6 +780,8 @@ A modal só abre quando a resposta chega em retorno a uma mensagem enviada nesta
 
 O card "Crie sua primeira atividade..." / "Crie uma atividade..." com o botão "Criar atividade" existe só nas mensagens que o sistema inicia: o fim do onboarding e a conversa aberta sem nenhuma atividade. O toque no botão envia "Criar atividade" como mensagem do usuário, que segue o caminho acima.
 
+**Objetivo pela URL.** O `/app` aceita `?domain=` com o id de um dos 4 objetivos (`daily_life`, `travel`, `education`, `work`). Com um valor válido, a aba desse objetivo já abre selecionada na modal, por qualquer caminho de abertura (comando, botão do convite do onboarding, menu lateral), e o usuário continua podendo trocar. Valor inválido ou desconhecido é ignorado sem aviso. O parâmetro sobrevive ao login (telefone, link do WhatsApp e Google), porque vai inteiro no `redirect_to`. É de uso único: a primeira atividade criada, por tema ou material, descarta o parâmetro da URL e da memória da página, e as próximas aberturas voltam ao padrão. Na home, os botões de começar levam o objetivo da aba do simulador que o usuário tocou; sem toque, levam para `/app` puro. Os CTAs do blog levam o objetivo da matéria.
+
 Fechar ou cancelar a modal não gera nenhuma mensagem. A resposta visível ao pedido passa a ser o fluxo de criação ("Pronto", primeira pergunta), quando a atividade é criada. Não existe estado pendente de criação no chat.
 
 ### Tela principal

@@ -728,3 +728,23 @@ Data: 2026-10-15
   URL do `/login`, para a tag do GA4 atribuir a sessão.
 - `purchase` só dispara depois de o servidor consultar a sessão da Stripe
   (`findPaidPurchase`): paga, do usuário logado, em BRL.
+
+## Objetivo pela URL (`?domain=`)
+
+Data: 2026-11-03
+
+- `/app?domain=<DomainId>` pré-seleciona a aba da modal de nova atividade. Parse e montagem do link em `src/core/domain-param.ts`; valor inválido vira `null`, sem erro.
+- O login não precisou de mudança: o middleware põe `pathname + search` no `redirect_to`, o `sanitizeRedirectPath` mantém a query, o login por telefone e o `wa_token` fazem `replace` para ele e o Google leva o `redirect_to` dentro do JWT de estado (`fz_google_oauth`) até o `/login/google`.
+- Uso único sem persistência: o `NewActivityProvider` guarda o domain em estado (sobrevive a navegação interna) e, na primeira criação, limpa o estado e tira o parâmetro com `history.replaceState`, que o Next 15 sincroniza com `useSearchParams`. Nada vai para storage ou banco.
+
+## Blog em MDX
+
+Data: 2026-11-03
+
+- `@next/mdx` (recomendação da doc do Next 15 para arquivos locais) com `remark-gfm`, `remark-frontmatter` e `remark-mdx-frontmatter` (o `@next/mdx` não lê frontmatter sozinho). Os plugins são passados como função, o que só funciona em webpack; com Turbopack precisariam virar strings.
+- Matérias em `src/content/blog/<slug>.mdx`. A lista publicada e a ordem da "Próxima leitura" são uma constante só, `BLOG_POST_ORDER` (`src/core/blog.ts`). O `blog-service` carrega por import dinâmico, sem `fs`, e o frontmatter é validado por zod (slug diferente do nome do arquivo quebra a página).
+- O FAQ fica no frontmatter: o `<BlogFaq />` no MDX e o JSON-LD `FAQPage` leem a mesma lista.
+- Estático: `/blog/[slug]` tem `generateStaticParams` e `force-static`, mas o root layout é `force-dynamic` e lê `cookies()` (tema), então as páginas renderizam no servidor a cada request. O HTML sai completo, sem depender de JS. Para pré-renderizar de verdade seria preciso tirar o blog do root layout (route groups com layouts raiz separados).
+- Exemplo de prática ("Como é praticar isso"): `<BlogPractice />` renderiza os balões reais do chat (`MessageBubble`), sem print e sem composer. Pergunta, resposta, feedback, áudio e dica saem de `buildPracticeTurnMessages` (`src/components/chat/practice-turn.ts`), o mesmo construtor do simulador da home, para o formato não divergir. Os dados ficam em `src/content/blog/practice-examples.ts` (TS e não MDX, para o script de áudio ler a frase). O áudio é gerado como o da home, com `generateSpeech` em ritmo normal; a matéria de séries reaproveita o áudio do simulador.
+- Capas: fotos livres do Unsplash recortadas em 1200x630. O crédito fica num comentário YAML no frontmatter; a licença não exige crédito na página.
+- Tipografia: `@tailwindcss/typography` com o tema `prose-fluizer` (`tailwind.config.ts`), que lê as variáveis do tema; claro e escuro sem `prose-invert`.

@@ -24,6 +24,13 @@ export default function Footer() {
         </p>
       </div>
       <div className="flex items-center justify-center gap-2 pb-6 opacity-80 hover:opacity-100 transition text-sm text-muted-foreground">
+        <Link
+          href="/blog"
+          className="-my-3 inline-flex min-h-touch items-center px-1 hover:text-foreground transition-colors"
+        >
+          {t("blog")}
+        </Link>
+        •
         <Link href="/terms" className="-my-3 inline-flex min-h-touch items-center px-1 hover:text-foreground transition-colors">
           Termos de uso
         </Link>

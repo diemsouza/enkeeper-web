@@ -1,10 +1,27 @@
 import { NextConfig } from "next";
+import createMDX from "@next/mdx";
 import createNextIntlPlugin from "next-intl/plugin";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkGfm from "remark-gfm";
+import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 const withNextIntl = createNextIntlPlugin();
+
+// Plugins como funcao: o projeto roda em webpack (Turbopack exigiria strings).
+// O frontmatter vira o export `frontmatter` de cada .mdx.
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: [
+      remarkGfm,
+      remarkFrontmatter,
+      [remarkMdxFrontmatter, { name: "frontmatter" }],
+    ],
+  },
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -56,4 +73,4 @@ const nextConfig = {
   serverExternalPackages: ["@resvg/resvg-js"],
 } as NextConfig;
 
-export default withNextIntl(nextConfig);
+export default withNextIntl(withMDX(nextConfig));

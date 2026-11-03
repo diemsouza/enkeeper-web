@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown } from "lucide-react";
 import type { Level } from "@/src/lib/prisma";
@@ -39,12 +39,14 @@ type PickedSuggestion = { domainKey: DomainId; label: string };
 
 export function NewActivityMainStep({
   initialText,
+  initialDomain,
   level,
   onLevelChange,
   onUseMaterial,
   onCreated,
 }: {
   initialText: string;
+  initialDomain: DomainId | null;
   level: Level;
   onLevelChange: (level: Level) => void;
   onUseMaterial: () => void;
@@ -55,13 +57,19 @@ export function NewActivityMainStep({
     initialText.slice(0, ACTIVITY_TEXT_MAX_CHARS),
   );
   const [activeDomain, setActiveDomain] = useState<DomainId>(
-    DOMAIN_TAB_ORDER[0],
+    initialDomain ?? DOMAIN_TAB_ORDER[0],
   );
+  const activeTabRef = useRef<HTMLButtonElement>(null);
   const [picked, setPicked] = useState<PickedSuggestion | null>(null);
   const [focusKeys, setFocusKeys] = useState<string[]>([]);
   const [isFocusOpen, setIsFocusOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<NewActivityFeedback | null>(null);
+
+  // No mobile as abas rolam na horizontal: a pre-selecionada pode estar fora da tela.
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, []);
 
   const isPickedUnchanged = picked !== null && text.trim() === picked.label;
   const canSubmit = text.trim().length > 0 && !isSubmitting;
@@ -145,6 +153,7 @@ export function NewActivityMainStep({
           return (
             <button
               key={domainKey}
+              ref={isActive ? activeTabRef : undefined}
               type="button"
               role="tab"
               aria-selected={isActive}

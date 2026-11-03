@@ -1,4 +1,8 @@
 import type { Message } from "@/src/components/chat/types";
+import {
+  buildPracticeQuestionMessage,
+  buildPracticeTurnMessages,
+} from "@/src/components/chat/practice-turn";
 import { DOMAINS, type DomainId } from "@/src/lib/constants";
 import type { PentagonChartInput } from "@/src/core/pentagon-chart";
 
@@ -85,104 +89,43 @@ type TurnSpec = {
   tip?: string;
 };
 
-function buildOptionsInteractive(
-  spec: TurnSpec,
-  options: string[],
-): NonNullable<Message["interactive"]> {
-  const buttons = options.map((label, i) => ({
-    id: `${spec.domainId}_option_${spec.turn}_${i + 1}`,
-    label,
-  }));
-  return {
-    body: spec.question,
-    buttons,
-    isOptionList: true,
-    disabled: true,
-    selectedId: buttons.find((b) => b.label === spec.userAnswer)?.id,
-  };
-}
-
 function buildQuestionMessage(spec: TurnSpec): Message {
-  const base: Message = {
+  return buildPracticeQuestionMessage({
     id: `${spec.domainId}-q${spec.turn}`,
-    from: "bot",
     time: spec.baseTime,
     text: spec.question,
-  };
-  if (!spec.options) return base;
-
-  const interactive = buildOptionsInteractive(spec, spec.options);
-  if (!spec.imageDescription) return { ...base, interactive };
-
-  return {
-    ...base,
-    type: "image",
-    imageUrl: simulatorImageUrl(spec.domainId),
-    imageAlt: spec.imageAlt,
-    imageWidth: SIMULATOR_IMAGE_WIDTH,
-    imageHeight: SIMULATOR_IMAGE_HEIGHT,
-    interactive,
-  };
+    options: spec.options,
+    selectedOption: spec.userAnswer,
+    image: spec.imageDescription
+      ? {
+          url: simulatorImageUrl(spec.domainId),
+          alt: spec.imageAlt ?? "",
+          width: SIMULATOR_IMAGE_WIDTH,
+          height: SIMULATOR_IMAGE_HEIGHT,
+        }
+      : undefined,
+  });
 }
 
 function buildTurn(spec: TurnSpec): { messages: Message[]; audio: SimulatorAudioItem } {
-  const {
-    domainId,
-    turn,
-    userAnswer,
-    userTime,
-    status,
-    emoji,
-    opening,
-    rightAnswer,
-    feedbackSentence,
-    translation,
-    tip,
-  } = spec;
-
-  const feedbackParts = [emoji, opening];
-  if (status !== "right" && rightAnswer) {
-    feedbackParts.push(`"${rightAnswer}".`);
-  }
-  feedbackParts.push(`"${feedbackSentence}"`);
-
-  const messages: Message[] = [
-    buildQuestionMessage(spec),
-    {
-      id: `${domainId}-a${turn}`,
-      from: "user",
-      time: userTime,
-      text: userAnswer,
-    },
-    {
-      id: `${domainId}-f${turn}`,
-      from: "bot",
-      time: userTime,
-      text: feedbackParts.join(" "),
-    },
-    {
-      id: `${domainId}-audio${turn}`,
-      from: "bot",
-      time: userTime,
-      type: "audio",
-      audioUrl: simulatorAudioUrl(domainId, turn),
-      textFallback: feedbackSentence,
-      translation,
-    },
-  ];
-
-  if (tip) {
-    messages.push({
-      id: `${domainId}-tip${turn}`,
-      from: "bot",
-      time: userTime,
-      text: `💡 ${tip}`,
-    });
-  }
+  const { domainId, turn } = spec;
+  const turnMessages = buildPracticeTurnMessages({
+    idPrefix: `${domainId}-t${turn}`,
+    time: spec.userTime,
+    userAnswer: spec.userAnswer,
+    status: spec.status,
+    emoji: spec.emoji,
+    opening: spec.opening,
+    rightAnswer: spec.rightAnswer,
+    feedbackSentence: spec.feedbackSentence,
+    translation: spec.translation,
+    tip: spec.tip,
+    audioUrl: simulatorAudioUrl(domainId, turn),
+  });
 
   return {
-    messages,
-    audio: { domainId, turn, text: feedbackSentence },
+    messages: [buildQuestionMessage(spec), ...turnMessages],
+    audio: { domainId, turn, text: spec.feedbackSentence },
   };
 }
 

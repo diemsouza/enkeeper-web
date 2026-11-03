@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Level } from "@/src/lib/prisma";
+import type { DomainId } from "@/src/lib/constants";
 import { Dialog, DialogContent } from "@/src/components/ui/dialog";
 import { NewActivityMainStep } from "./new-activity-main-step";
 import { NewActivityMaterialStep } from "./new-activity-material-step";
@@ -16,6 +17,7 @@ export function NewActivityModal({
   initialStep,
   initialText,
   initialLevel,
+  initialDomain,
   onCreated,
 }: {
   open: boolean;
@@ -23,6 +25,7 @@ export function NewActivityModal({
   initialStep: NewActivityStep;
   initialText: string;
   initialLevel: Level;
+  initialDomain: DomainId | null;
   onCreated: (level: Level) => void;
 }) {
   const [step, setStep] = useState<NewActivityStep>(initialStep);
@@ -44,6 +47,7 @@ export function NewActivityModal({
         {step === "main" ? (
           <NewActivityMainStep
             initialText={initialText}
+            initialDomain={initialDomain}
             level={level}
             onLevelChange={setLevel}
             onUseMaterial={() => setStep("material")}

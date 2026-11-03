@@ -4,8 +4,8 @@ import { forwardRef } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/src/lib/utils";
 import { MessageBubble } from "@/src/components/chat/message-bubble";
-import { Composer } from "@/src/components/chat/composer";
 import type { Message } from "@/src/components/chat/types";
+import { SimulatorReplyLink } from "./simulator-reply-link";
 import {
   generatePentagonChartSvg,
   type PentagonChartInput,
@@ -86,7 +86,7 @@ export const SimulatorThreadPanel = forwardRef<
           </div>
         </div>
       </div>
-      <Composer onSend={() => {}} isPreview />
+      <SimulatorReplyLink />
     </div>
   );
 
