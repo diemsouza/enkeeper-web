@@ -125,7 +125,8 @@ Vercel Cron bate em `/api/cron/activity` a cada intervalo; `activity-cron.servic
 | `User`         | Conta e identidade; `phone` (unico, formato `normalizePhoneToWaId`), `email` (unico, minusculas), pelo menos um dos dois (CHECK no banco), `planCode`, `planStatus`, `planExpiresAt` |
 | `Subscription` | Pagamento (1:N com User, mais recente = atual); nunca lido para liberar acesso, que fica no `User` |
 | `Doc`          | Material enviado; `rawContent`, `content`, `docType`, `level`, `status`               |
-| `Question`     | Pergunta gerada; `questionFormat`, `answerKeys`, `questionOptions`, `status`, `revisionCount` |
+| `Question`     | Pergunta gerada, so o estado atual; `questionFormat`, `answerKeys`, `questionOptions`, `status`, `revisionCount`, `answeredAt`, `issueNotedAt`, `issueNote`, `regenerate` |
+| `QuestionSnapshot` | Tentativa encerrada de uma `Question`, gravada por `reopenQuestion` no reenvio; `questionId`, `userId`, `activityId`, `answeredAt`, `questionFormat`, `status`, `issueNotedAt`, `snapshotData` (linha inteira da epoca) |
 | `Activity`     | Sessao de pratica por `[userId, docId, date]`; `nextMessageAt`, cadencia              |
 | `WeeklyReport` | Relatorio semanal enviado aos domingos                                                |
 | `Message`      | Historico de mensagens WhatsApp; ligado a `Activity`                                 |

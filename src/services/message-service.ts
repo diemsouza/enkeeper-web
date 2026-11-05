@@ -114,6 +114,7 @@ import {
   findNextGeneralQuestion,
   findPendingQuestion,
   updateQuestion,
+  reopenQuestion,
   findSm2EligibleQuestion,
   countSm2EligibleQuestionsByUser,
 } from "../repo/questions.repo";
@@ -942,6 +943,7 @@ export async function handleIncomingMessage(
               );
               await updateQuestion(pendingQuestion.id, {
                 answer: text,
+                answeredAt: new Date(),
                 status: evalStatus,
                 attemptCount: pendingQuestion.attemptCount + 1,
                 answerType,
@@ -1498,8 +1500,9 @@ async function sendIntensiveQuestion(
     questionId: question.id,
     today,
   });
-  await updateQuestion(question.id, {
-    status: "pending",
+  await reopenQuestion({
+    id: question.id,
+    userId,
     activityId: activity.id,
   });
   await updateActivity(activity.id, userId, {

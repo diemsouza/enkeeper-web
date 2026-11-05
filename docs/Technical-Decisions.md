@@ -796,3 +796,15 @@ Data: 2026-11-03
 - Exemplo de prática ("Como é praticar isso"): `<BlogPractice />` renderiza os balões reais do chat (`MessageBubble`), sem print e sem composer. Pergunta, resposta, feedback, áudio e dica saem de `buildPracticeTurnMessages` (`src/components/chat/practice-turn.ts`), o mesmo construtor do simulador da home, para o formato não divergir. Os dados ficam em `src/content/blog/practice-examples.ts` (TS e não MDX, para o script de áudio ler a frase). O áudio é gerado como o da home, com `generateSpeech` em ritmo normal; a matéria de séries reaproveita o áudio do simulador.
 - Capas: fotos livres do Unsplash recortadas em 1200x630. O crédito fica num comentário YAML no frontmatter; a licença não exige crédito na página.
 - Tipografia: `@tailwindcss/typography` com o tema `prose-fluizer` (`tailwind.config.ts`), que lê as variáveis do tema; claro e escuro sem `prose-invert`.
+
+## Histórico de perguntas (`question_snapshots`)
+
+Data: 2026-11-05
+
+- **O que se perde é a tentativa, não a pergunta.** Toda geração cria linha nova (`createQuestions`) e o texto nunca é reescrito: em revisão volta a mesma linha. O que mudava sem registro era o resultado: status, resposta, feedback, dica, SM-2, score e metadata. A `Question` segue sendo só o estado atual e cada tentativa encerrada vira uma linha em `question_snapshots`.
+- **Arquiva no reenvio, não na avaliação.** Quando a pergunta volta, o `status` vira `pending`, então na avaliação o resultado anterior já não está na linha. `reopenQuestion` (`questions.repo.ts`) é o ponto único de reabertura, usado por `sendCadenceQuestion` e `sendIntensiveQuestion`. O tipo do `updateQuestion` não aceita `pending`, para ninguém reabrir sem passar por ali.
+- **`answeredAt` nulo significa que não há tentativa a arquivar.** Vale para pergunta nova e para pergunta reaberta, então reexibir uma pendente não duplica snapshot. A reabertura limpa `answeredAt`, `issueNotedAt` e `issueNote`, e mantém `answer`, `feedbackText`, `attemptCount` e o SM-2, usados no reuso de áudio e em `isRealRevision`.
+- **Campo da época vem do `snapshotData`.** O que não for coluna da snapshot é lido do jsonb, nunca pelo join com `Question`. As colunas `userId`, `activityId`, `answeredAt`, `questionFormat`, `status` e `issueNotedAt` existem porque são filtros frequentes. `activityId` é o da tentativa, lido antes do update.
+- **Transação com `connection_limit=1`.** A transação segura a única conexão: dentro do callback tudo usa `tx`, nunca o `prisma` global, que ficaria esperando essa conexão até o timeout. Sem chamada externa no callback.
+- **Backfill de `answeredAt`:** copia `updatedAt` só de `right`, `partial` e `wrong`. Pergunta `pending` em revisão guarda a resposta antiga, mas está reaberta e fica nula. É aproximado, porque áudio de feedback e reprodução também avançam o `updatedAt`, e a tentativa anterior das que estavam `pending` no deploy não virou snapshot.
+- **`regenerate`, `issueNotedAt` e `issueNote` ainda sem uso.** A próxima etapa liga o aviso de problema e a regeneração na reabertura.

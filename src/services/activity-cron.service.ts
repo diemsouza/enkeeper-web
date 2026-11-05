@@ -14,7 +14,7 @@ import {
   // cadência normal (§8). TODO: review
   // findNextGeneralQuestion,
   findSm2EligibleQuestion,
-  updateQuestion,
+  reopenQuestion,
   createQuestions,
   findQuestionById,
   countQuestionFormatsByActivity,
@@ -219,8 +219,9 @@ async function sendCadenceQuestion(
     questionId: question.id,
     today,
   });
-  await updateQuestion(question.id, {
-    status: "pending",
+  await reopenQuestion({
+    id: question.id,
+    userId: activity.userId,
     activityId: activity.id,
   });
   await updateActivity(activity.id, activity.userId, {

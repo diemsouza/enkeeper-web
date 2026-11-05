@@ -217,6 +217,7 @@ model Activity {
     doc       Doc        @relation(fields: [docId], references: [id])
     messages  Message[]
     questions Question[]
+    questionSnapshots QuestionSnapshot[]
     chartCompletedMedia Media? @relation("ActivityChartCompleted", fields: [chartCompletedMediaId], references: [id], onDelete: SetNull)
     chartRoundMedia     Media? @relation("ActivityChartRound", fields: [chartRoundMediaId], references: [id], onDelete: SetNull)
 
@@ -260,6 +261,10 @@ model Question {
     questionImageMediaId String?    @map("question_image_media_id")
     questionImageDescription String? @map("question_image_description") @db.Text
     metadata        Json?           @map("metadata")
+    answeredAt      DateTime?       @map("answered_at")
+    issueNotedAt    DateTime?       @map("issue_noted_at")
+    issueNote       String?         @map("issue_note") @db.Text
+    regenerate      Boolean         @default(false) @map("regenerate")
     createdAt       DateTime        @default(now()) @map("created_at")
     updatedAt       DateTime        @updatedAt @map("updated_at")
     deletedAt       DateTime?       @map("deleted_at")
@@ -270,10 +275,38 @@ model Question {
     feedbackAudioMedia Media?   @relation("FeedbackAudio", fields: [feedbackAudioMediaId], references: [id], onDelete: SetNull)
     answerAudioMedia   Media?   @relation("AnswerAudio", fields: [answerAudioMediaId], references: [id], onDelete: SetNull)
     questionImageMedia Media?   @relation("QuestionImage", fields: [questionImageMediaId], references: [id], onDelete: SetNull)
+    snapshots          QuestionSnapshot[]
 
     @@index([activityId, status])
     @@index([userId])
+    @@index([userId, answeredAt])
     @@map("questions")
+}
+
+// Guarda uma tentativa encerrada de uma Question. Campo da epoca que nao for coluna
+// aqui deve ser lido de snapshotData, nunca pelo join com Question, que so tem o estado atual.
+model QuestionSnapshot {
+    id             String          @id @default(ulid()) @map("id")
+    questionId     String          @map("question_id")
+    userId         String          @map("user_id")
+    activityId     String          @map("activity_id")
+    answeredAt     DateTime        @map("answered_at")
+    questionFormat QuestionFormat? @map("question_format")
+    status         QuestionStatus? @map("status")
+    issueNotedAt   DateTime?       @map("issue_noted_at")
+    snapshotData   Json            @map("snapshot_data")
+    createdAt      DateTime        @default(now()) @map("created_at")
+
+    question Question @relation(fields: [questionId], references: [id])
+    user     User     @relation(fields: [userId], references: [id])
+    activity Activity @relation(fields: [activityId], references: [id])
+
+    @@index([questionId])
+    @@index([userId, answeredAt])
+    @@index([activityId])
+    @@index([questionFormat, status])
+    @@index([issueNotedAt])
+    @@map("question_snapshots")
 }
 
 model Media {

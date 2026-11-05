@@ -71,6 +71,7 @@ model User {
     docItems      DocItem[]
     notifications Notification[]
     questions     Question[]
+    questionSnapshots QuestionSnapshot[]
     medias        Media[]
     subscriptions Subscription[]
 

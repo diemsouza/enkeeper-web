@@ -238,11 +238,11 @@ export async function findQuestionsEligibleForAudioCleanup(
 export async function updateQuestion(
   id: string,
   data: {
-    status?: QuestionStatus;
+    status?: Exclude<QuestionStatus, "pending">;
     answer?: string;
+    answeredAt?: Date;
     attemptCount?: number;
     revisionCount?: number;
-    activityId?: string;
     wrongCount?: number;
     answerType?: AnswerType | null;
     questionType?: QuestionType;
@@ -272,5 +272,44 @@ export async function updateQuestion(
           ? (data.metadata as Prisma.InputJsonObject)
           : undefined,
     },
+  });
+}
+
+// Com connection_limit=1 a transacao segura a unica conexao: dentro do callback
+// tudo usa tx, porque o prisma global ficaria esperando essa conexao ate o timeout.
+export async function reopenQuestion(params: {
+  id: string;
+  userId: string;
+  activityId: string;
+}): Promise<void> {
+  const { id, userId, activityId } = params;
+  await prisma.$transaction(async (tx) => {
+    const current = await tx.question.findFirst({ where: { id, userId } });
+    if (current?.answeredAt) {
+      await tx.questionSnapshot.create({
+        data: {
+          questionId: id,
+          userId,
+          activityId: current.activityId,
+          answeredAt: current.answeredAt,
+          questionFormat: current.questionFormat,
+          status: current.status,
+          issueNotedAt: current.issueNotedAt,
+          snapshotData: JSON.parse(
+            JSON.stringify(current),
+          ) as Prisma.InputJsonObject,
+        },
+      });
+    }
+    await tx.question.update({
+      where: { id },
+      data: {
+        status: "pending",
+        activityId,
+        answeredAt: null,
+        issueNotedAt: null,
+        issueNote: null,
+      },
+    });
   });
 }
