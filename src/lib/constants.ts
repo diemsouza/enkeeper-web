@@ -26,6 +26,7 @@ const TEXT_EVAL_TIP_CLASSES: EvalTipClass[] = [
   "collocation",
   "literal_idiom",
   "register",
+  "word_form",
   "alternative",
 ];
 

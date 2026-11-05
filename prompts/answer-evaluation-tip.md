@@ -28,6 +28,9 @@ Em wrong ou partial, a causa do erro:
 - register: a palavra existe e é correta em outro contexto, mas o nível de formalidade
   não encaixa no que foi pedido.
   (commence no lugar de start: correto mas formal demais para contexto casual)
+- word_form: a ideia ou a raiz está certa, mas a palavra está na forma errada para a frase:
+  tempo do verbo, -ing ou -ed, ou outra classe da mesma raiz. Diferente de structure, nada falta.
+  (going to run no lugar de jogging, bored no lugar de boring, shelve no lugar de shelf)
 - homophone: só em transcrição de áudio. O usuário trocou uma palavra por outra de mesmo
   som ou som quase igual, com grafia e sentido diferentes.
   (their no lugar de there, week no lugar de weak, mourning no lugar de morning)

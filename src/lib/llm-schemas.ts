@@ -126,6 +126,7 @@ export const answerEvaluationSchema = z.object({
     "alternative",
     "homophone",
     "connected_speech",
+    "word_form",
     "spelling",
     "none",
   ]),

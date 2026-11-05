@@ -20,6 +20,18 @@ describe("isEvalTipClassAllowed", () => {
     );
     expect(isEvalTipClassAllowed(QuestionFormat.recall, "calque")).toBe(true);
   });
+
+  it("word_form vale nos formatos de texto, nunca nos de áudio", () => {
+    expect(isEvalTipClassAllowed(QuestionFormat.recall, "word_form")).toBe(
+      true,
+    );
+    expect(
+      isEvalTipClassAllowed(QuestionFormat.audio_transcription, "word_form"),
+    ).toBe(false);
+    expect(
+      isEvalTipClassAllowed(QuestionFormat.audio_translation, "word_form"),
+    ).toBe(false);
+  });
 });
 
 describe("isEvalTipClassAllowed audio_translation", () => {

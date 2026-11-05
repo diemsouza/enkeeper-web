@@ -6,6 +6,25 @@ topo.
 
 ---
 
+## Classe de dica `word_form`
+
+Data: 2026-11-05
+
+- **Erro de forma não tinha classe.** "going to run" por "jogging", "bored" por
+  "boring" e "shelve" por "shelf" caíam em `none`, que obriga dica vazia. A nova
+  classe cobre palavra com a ideia ou a raiz certa na forma errada para a frase.
+  Diferente de `structure`, nada falta; "can not" segue em `structure`.
+- **Fora dos formatos de áudio.** Na transcrição só valem as classes de escuta. Na
+  tradução o usuário responde em português e a avaliação é pelo sentido, então
+  forma de palavra em inglês não se aplica, como `collocation`.
+- **Migration antes do deploy.** A classe é gravada em `Question.evalTipClass`, e
+  `npm run build` não roda migration: sem o valor no enum, o `updateQuestion` falha.
+- **Revisão de `none` por `llm_logs`.** `none` e `spelling` nunca são gravados na
+  `Question`, onde a dica silenciada fica nula. O valor cru está em
+  `parsed_output->>'eval_tip_class'`, e os dados da pergunta em `input->>'prompt'`.
+
+---
+
 ## Cena, feedback e enunciado das perguntas com imagem
 
 Data: 2026-11-05

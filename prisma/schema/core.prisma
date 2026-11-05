@@ -89,6 +89,7 @@ enum EvalTipClass {
     alternative
     homophone
     connected_speech
+    word_form
 }
 
 enum Level {
