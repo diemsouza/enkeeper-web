@@ -91,6 +91,16 @@ describe("formatQuestion image_recognition", () => {
     "Take a look at the image and pick the option that fits it.",
   ];
 
+  it("usa o enunciado salvo na pergunta", () => {
+    const statement = "Look at the image and choose the word that matches it best.";
+    const message = formatQuestion(
+      { ...question, question: statement },
+      { level: Level.basic },
+    );
+    expect(message.text).toBe(statement);
+    expect(message.interactive?.body).toBe(statement);
+  });
+
   it("básico usa enunciado em PT, sem lista de opções no text", () => {
     const { text } = formatQuestion(question, { level: Level.basic });
     expect(ptPrompts).toContain(text);

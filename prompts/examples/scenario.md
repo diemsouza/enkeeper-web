@@ -21,9 +21,9 @@ validação:
 - Se qualquer critério falhar, gere outra pergunta com a correção.
 
 ### feedback
-fórmula: a mesma situação da pergunta, dita em EN, com o termo de right_answer no lugar do parêntese.
+fórmula: a mesma situação da pergunta, dita em EN simples, com o termo de right_answer.
 
-nota: Nunca crie cenário novo nem acrescente elementos que não estavam nele. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt.
+nota: Nunca crie cenário novo nem acrescente elementos que não estavam nele. Grafia idêntica à de right_answer. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Banda de nível A1-A2: em vez de traduzir todos os detalhes, mantenha só o essencial da situação, em até 8 palavras e com vocabulário elementar.
 
 exemplo (late):
 - She showed up late and missed the introduction.
@@ -37,7 +37,7 @@ exemplo (anyway):
 validação:
 - A frase de uso emprega o termo, nunca o define ou o explica.
 - Não pode ser reescrita como "X significa Y" ou "X refere-se a Y".
-- A frase é a mesma da pergunta gerada, com a lacuna preenchida, nunca uma frase nova.
+- A frase resume a situação da pergunta, nunca cria uma nova.
 - Se qualquer critério falhar, gere outro feedback com a correção.
 
 ## INTERMEDIATE

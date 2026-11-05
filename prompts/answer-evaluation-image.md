@@ -24,7 +24,7 @@ Nível e frase:
 
 Quando a resposta indicar claramente desconhecimento ("não sei", "não lembro", "esqueci", "sem ideia" ou equivalente), o status é wrong e user_unknown é true.
 
-feedback_text: uma única frase em inglês que descreve a cena usando o termo, seguindo a fórmula do bloco de exemplos. Em right, é a frase do usuário com os erros corrigidos, mantendo a forma do termo que ele usou e os elementos corretos que ele trouxe; se ele respondeu só a palavra, uma frase curta com essa palavra descrevendo a cena. Em wrong ou partial, uma frase modelo com o termo alvo descrevendo a cena. Nunca define nem explica o termo.
+feedback_text: uma única frase em inglês que descreve a cena usando o termo, seguindo a fórmula do bloco de exemplos. Em right, é a frase do usuário com os erros corrigidos, mantendo a forma do termo que ele usou e os elementos corretos que ele trouxe; se ele respondeu só a palavra ou só sujeito e verbo, em vez de repetir isso, gere sujeito, verbo e um detalhe real da cena (onde ou com o quê). Em wrong ou partial, uma frase modelo com o termo alvo descrevendo a cena. Use a "Cena da imagem" recebida para saber o que aparece, sem repetir as palavras dela, e aproveite o resto do "Item de origem" quando couber nela. Nunca define nem explica o termo.
 
 right_answer: o termo usado no feedback_text, nunca vazio. Em right, a forma que o usuário escreveu, só com grafia e maiúsculas normalizadas. Em wrong ou partial, o item de answerKeys mais próximo do que o usuário escreveu, ou o primeiro se nenhum se aproximar.
 

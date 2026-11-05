@@ -26,7 +26,7 @@ validação:
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o primeiro termo de answerKeys. Sem explicação, sem tradução, sem exemplo adicional.
 
-nota: Grafia do termo idêntica à de right_answer. Vale mesmo quando a pergunta pede a opção errada ou identifica exceção. Na avaliação, aceita a opção que bate com o primeiro termo de answerKeys, por número, por letra ou por texto. Choice é binário, nunca usar partial. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o termo for curto, expanda contexto ao redor, mantendo o termo intacto (ex: "It's early to decide about marriage." em vez de "It's early."). Se o termo já for longo, não force expansão, mantém o tamanho natural.
+nota: Grafia do termo idêntica à de right_answer. Vale mesmo quando a pergunta pede a opção errada ou identifica exceção. Na avaliação, aceita a opção que bate com o primeiro termo de answerKeys, por número, por letra ou por texto. Choice é binário, nunca usar partial. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o termo for curto, expanda contexto ao redor, mantendo o termo intacto (ex: "It's early to decide about marriage." em vez de "It's early."). Se o termo já for longo, não force expansão, mantém o tamanho natural. Banda de nível A1-A2: em vez de frase elaborada, gere frase curta de até 8 palavras, com vocabulário elementar, estrutura simples e um só detalhe. Termo longo usa só as palavras necessárias.
 
 exemplo (early):
 - We arrived early today.

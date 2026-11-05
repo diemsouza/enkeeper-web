@@ -24,7 +24,7 @@ validação:
 ### feedback
 fórmula: uma única frase de uso real em EN contendo o termo de right_answer, empregado no sentido que a pergunta pediu.
 
-nota: A frase nunca nega, inverte ou contradiz o sentido do termo. Grafia idêntica à de right_answer. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o termo for curto, expanda contexto ao redor, mantendo o termo intacto (ex: "It's early to decide about marriage." em vez de "It's early."). Se o termo já for longo, não force expansão, mantém o tamanho natural.
+nota: A frase nunca nega, inverte ou contradiz o sentido do termo. Grafia idêntica à de right_answer. Sem explicação, sem tradução, sem exemplo adicional. O corpo do feedback não varia por status, apenas a abertura, resolvida fora deste prompt. Se o termo for curto, expanda contexto ao redor, mantendo o termo intacto (ex: "It's early to decide about marriage." em vez de "It's early."). Se o termo já for longo, não force expansão, mantém o tamanho natural. Banda de nível A1-A2: em vez de frase elaborada, gere frase curta de até 8 palavras, com vocabulário elementar, estrutura simples e um só detalhe. Termo longo usa só as palavras necessárias.
 
 exemplo (quiet):
 - The library was quiet all afternoon.

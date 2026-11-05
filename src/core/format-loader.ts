@@ -2,6 +2,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { shuffle } from "lodash";
 import { Level, QuestionFormat } from "../lib/prisma";
+import {
+  AUDIO_QUESTION_FORMATS,
+  IMAGE_QUESTION_FORMATS,
+} from "../lib/constants";
 import { SectionQuestionResult } from "../lib/llm-schemas";
 import { sanitizeText } from "../lib/utils";
 import { RetryContext } from "../types/retry-context";
@@ -192,6 +196,16 @@ export function validateGeneratedQuestion(
   if (question.warning) {
     console.warn(`[validateGeneratedQuestion] ${question.warning}`);
     return question.warning;
+  }
+
+  const format = question.questionFormat as QuestionFormat;
+  const isQuestionTextOptional =
+    IMAGE_QUESTION_FORMATS.includes(format) ||
+    AUDIO_QUESTION_FORMATS.includes(format);
+  if (!question.question.trim() && !isQuestionTextOptional) {
+    const warning = `Pergunta descartada por vir sem enunciado: formato ${question.questionFormat} A: ${question.answerKeys}`;
+    console.warn(`[validateGeneratedQuestion] ${warning}`);
+    return warning;
   }
 
   if (looksLikeManyQuestion(question.question)) {

@@ -854,6 +854,13 @@ export async function handleIncomingMessage(
                 docId: practiceDoc.id,
                 questionFormats,
                 image: evalImage,
+                imageContext: pendingQuestion.questionImageDescription
+                  ? {
+                      description: pendingQuestion.questionImageDescription,
+                      term: pendingQuestion.term,
+                      meaning: pendingQuestion.meaning,
+                    }
+                  : undefined,
               });
               const evalStatus = evaluation?.status ?? "wrong";
               const feedback = evaluation

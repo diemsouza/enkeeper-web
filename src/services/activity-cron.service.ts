@@ -28,6 +28,7 @@ import { MessageChannel, TypingTarget } from "../types/message-channel";
 import { sendAndSaveMessage, waitBeforeSend } from "./message-sender-service";
 import {
   formatQuestion,
+  pickImageRecognitionPrompt,
   formatActivityStart,
 } from "../core/formatters";
 import { canPractice } from "../core/access";
@@ -365,7 +366,7 @@ async function buildImageQuestion(
     return { status: "fallback", reason: "missing_answer_keys" };
   }
   // No image_transcription a pergunta guia vem da geracao; no
-  // image_recognition o enunciado e aplicado no formatQuestion.
+  // image_recognition o enunciado e sorteado aqui e salvo na pergunta.
   if (format === QuestionFormat.image_transcription && !data.question) {
     return { status: "fallback", reason: "missing_question" };
   }
@@ -395,6 +396,10 @@ async function buildImageQuestion(
     data: {
       ...data,
       id: questionId,
+      question:
+        format === QuestionFormat.image_recognition
+          ? pickImageRecognitionPrompt(baseParams.level)
+          : data.question,
       questionImageMediaId: image.mediaId,
       questionImageDescription: description,
     },

@@ -6,6 +6,54 @@ topo.
 
 ---
 
+## Cena, feedback e enunciado das perguntas com imagem
+
+Data: 2026-11-05
+
+Caso que motivou: item "I am waiting for an answer", alvo "waiting", distratores
+"cooking, writing, reading". A imagem mostrou uma pessoa olhando o celular à
+mesa, com caderno e caneta, e o feedback inventou uma frase fora da cena.
+
+Decisões:
+
+- **Ordem mantida.** Opções continuam antes da cena, para a descrição nascer
+  conhecendo os distratores. O que faltava eram duas regras: distrator de
+  situação distante da do termo e lugar cujos objetos típicos não sirvam a
+  nenhuma opção. Caderno, caneta e notebook não estavam na descrição: o gerador
+  de imagem completa o lugar por conta própria.
+- **Regras no bloco de cada formato.** Nada de bloco central em
+  `gen-vocabulary.md` nem em `answer-evaluation.md`: esses prompts valem para
+  todos os formatos, e regra de imagem ali gasta token e confunde os demais. O
+  bloco de exemplos só é carregado para o formato e nível da pergunta.
+- **`imageContext` no prompt do usuário.** Descrição da cena e item de origem
+  (`term`, `meaning`) entram na avaliação dos dois formatos de imagem, como dado
+  dinâmico. `sourceContent` não foi usado porque é o bloco cru do material.
+- **Cena prevalece sobre o item de origem.** O feedback descreve o que aparece
+  na imagem; o resto do item entra só se couber na cena.
+- **Enunciado do `image_recognition` salvo na geração.** Era o único formato com
+  `question` vazio, e o sorteio a cada `formatQuestion` fazia a reexibição e a
+  avaliação usarem texto diferente do que o usuário viu. Sem backfill: pergunta
+  antiga mantém `""` e sorteia na hora. Os demais formatos seguem como estão, e
+  o texto exato exibido fica em `Message.content`.
+- **Forma escrita com regra entra em `structure`.** `spelling` juntava digitação
+  ("recieve") e regra fixa do inglês ("can not" por "cannot"), e calava a dica nos
+  dois. Agora `spelling` é só digitação. Não criei classe nova porque exigiria
+  migration no enum `EvalTipClass` e `structure` já passa pelo filtro dos formatos
+  de texto. Em transcrição de áudio continua filtrada.
+- **Frase mínima ganha um detalhe da cena.** No `image_transcription`, resposta só
+  com a palavra ou só sujeito e verbo vira frase com um detalhe real da cena, sem
+  repetir as palavras da descrição, que é escrita para o gerador de imagem.
+- **Nível do feedback nos blocos do básico.** Nenhuma regra de feedback usava o
+  nível: a pergunta tinha banda A1-A2, o feedback não, e o modelo expandia a frase.
+  A banda (até 8 palavras, vocabulário elementar, um só detalhe) entrou no
+  `### feedback` do `## BASIC` de cada formato de frase livre e do `scenario`, que
+  só são carregados nesse nível. `gap_fill` e áudio repetem a frase da pergunta,
+  então dependem da geração.
+- **Enunciado vazio rejeitado.** `validateGeneratedQuestion` recusa `question`
+  vazio fora dos formatos de imagem e áudio, reaproveitando o retry existente.
+
+---
+
 ## Voz mais lenta no nível básico
 
 Data: 2026-10-31

@@ -591,6 +591,23 @@ type AnswerEvaluationResultWithProvider = EvaluationOutput & {
 
 type EvaluationImage = { data: Buffer; mediaType: string };
 
+type EvaluationImageContext = {
+  description: string;
+  term: string | null;
+  meaning: string | null;
+};
+
+function formatImageContext({
+  description,
+  term,
+  meaning,
+}: EvaluationImageContext): string {
+  const sourceItem = [term, meaning && `(${meaning})`]
+    .filter(Boolean)
+    .join(" ");
+  return `\nCena da imagem: ${description}\nItem de origem: ${sourceItem}`;
+}
+
 // imageDetail so existe no OpenAI, o Anthropic ignora.
 function buildEvaluationInput(
   userPrompt: string,
@@ -629,6 +646,7 @@ export async function generateAnswerEvaluation(params: {
   docId: string;
   questionFormats: QuestionFormat[];
   image?: EvaluationImage;
+  imageContext?: EvaluationImageContext;
 }): Promise<AnswerEvaluationResultWithProvider | null> {
   const {
     question,
@@ -643,6 +661,7 @@ export async function generateAnswerEvaluation(params: {
     userId,
     docId,
     image,
+    imageContext,
   } = params;
   const evaluationSchema: z.ZodType<EvaluationOutput> = image
     ? imageAnswerEvaluationSchema
@@ -679,6 +698,7 @@ Resposta do usuário: {user_answer}`
   userPrompt += questionFormat.includes("open_text")
     ? `Contexto do material:\n${docContent.slice(0, 1000)}`
     : "";
+  userPrompt += imageContext ? formatImageContext(imageContext) : "";
 
   try {
     const llmResult = await generateText({

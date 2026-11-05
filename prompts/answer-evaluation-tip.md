@@ -19,6 +19,7 @@ Em wrong ou partial, a causa do erro:
   em linguagem simples, sem termo técnico, dizendo qual elemento o inglês exige e por quê, 
   para o usuário aplicar em outros casos iguais.
   (hot lugar de warm-up não é structure, porque a palavra em si está errada, não a estrutura)
+  Inclui forma escrita que segue regra fixa do inglês, como junto ou separado e forma curta (can not no lugar de cannot, a lot escrito alot, dont no lugar de don't).
 - collocation: as palavras individualmente estão certas, mas a combinação não é usada 
   em inglês nativo. Erro de colocação, não de vocabulário.
   (do a mistake, make a research, assist to a meeting)
@@ -33,7 +34,7 @@ Em wrong ou partial, a causa do erro:
 - connected_speech: só em transcrição de áudio. O usuário omitiu uma forma fraca que some
   na fala rápida (to, of, a, have, the) ou não separou palavras que se ligam na fala.
   (going run no lugar de going to run, should of no lugar de should have, alot no lugar de a lot)
-- spelling: a intenção era o termo certo, só a grafia está errada. Obriga eval_tip vazia.
+- spelling: erro de digitação, sem regra a aprender (recieve, bellow por below). Obriga eval_tip vazia.
 - none: não é possível identificar o mecanismo do erro. Obriga eval_tip vazia.
 
 Em right:
@@ -53,7 +54,7 @@ Validação da dica:
 - Descreve, não instrui.
 - Não nomeia a classe no texto.
 - Não repete a frase do feedback_text.
-- Não compara com opção que o usuário não mencionou, exceto a alternativa vinda das answerKeys, citada literalmente.
+- Não compara com opção que o usuário não mencionou, exceto a alternativa vinda das answerKeys, citada literalmente, ou outra forma válida da mesma regra (cannot e can't).
 - Os usos em inglês nunca contêm o termo correto acrescido de uma única palavra.
 - Marcação permitida: *negrito* nas formas contrastadas, _itálico_ em termo ou expressão curta em inglês, "aspas duplas" em frase completa em inglês (com sujeito e verbo), ~riscado~ apenas na forma exata que não existe em inglês (palavra inventada ou combinação inexistente). Nunca risca palavra que existe com outro significado ou escopo. Na dúvida, não risca. Nenhuma outra marcação.
 - Nunca aplica itálico ou negrito dentro de trecho entre aspas.

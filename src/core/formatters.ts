@@ -937,7 +937,7 @@ const imageRecognitionPtPrompts = [
   "Olhe a imagem com atenção e selecione a opção em inglês que corresponde a ela.",
 ];
 
-function pickImageRecognitionPrompt(level: Level): string {
+export function pickImageRecognitionPrompt(level: Level): string {
   const pool =
     level === Level.basic
       ? imageRecognitionPtPrompts
@@ -1020,11 +1020,13 @@ function buildOptionsInteractive(
 }
 
 function formatImageRecognitionQuestion(
+  statement: string,
   options: string[],
   imageMediaId: string | null | undefined,
   level: Level,
 ): FormattedMessage {
-  const prompt = pickImageRecognitionPrompt(level);
+  // Perguntas antigas foram salvas sem enunciado.
+  const prompt = statement.trim() || pickImageRecognitionPrompt(level);
   const interactive = buildOptionsInteractive(prompt, options, "image_option");
   if (!imageMediaId) return { text: prompt, interactive };
 
@@ -1073,6 +1075,7 @@ export function formatQuestion(
 
   if (question.questionFormat === QuestionFormat.image_recognition) {
     return formatImageRecognitionQuestion(
+      question.question,
       question.questionOptions,
       question.questionImageMediaId,
       options.level,
