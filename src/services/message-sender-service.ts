@@ -49,6 +49,9 @@ export async function sendAndSaveMessage(
     ...resolveMessageMedia(message),
     role: "assistant",
     content: message.text,
+    metadata: message.activityReadyDomain
+      ? { activityReadyDomain: message.activityReadyDomain }
+      : undefined,
     templateName: message.templateName,
     interactive: message.interactive,
     externalId: result.externalId ?? undefined,

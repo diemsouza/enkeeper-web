@@ -4,9 +4,7 @@ import {
   baseMimeType,
   isAcceptedVoiceNote,
   isInaudibleTranscription,
-  normalizeVoiceCommandText,
 } from "./voice-note";
-import { resolveCommand } from "../lib/commands";
 
 describe("audioExtensionForMime", () => {
   it("mapeia AAC em MP4 para m4a", () => {
@@ -53,25 +51,5 @@ describe("isAcceptedVoiceNote", () => {
     expect(isAcceptedVoiceNote("audio/webm", 50_000)).toBe(false);
     expect(isAcceptedVoiceNote("audio/ogg", 0)).toBe(false);
     expect(isAcceptedVoiceNote("audio/ogg", 5 * 1024 * 1024)).toBe(false);
-  });
-});
-
-describe("normalizeVoiceCommandText", () => {
-  it("tira pontuacao das pontas e deixa minusculo", () => {
-    expect(normalizeVoiceCommandText("Menu.")).toBe("menu");
-    expect(normalizeVoiceCommandText("  Pausar 2!  ")).toBe("pausar 2");
-    expect(normalizeVoiceCommandText("¿Ajuda?")).toBe("ajuda");
-  });
-
-  it("preserva pontuacao do meio", () => {
-    expect(normalizeVoiceCommandText("I'm fine.")).toBe("i'm fine");
-  });
-
-  it("transcricao normalizada resolve o mesmo comando do digitado", () => {
-    expect(resolveCommand(normalizeVoiceCommandText("Menu."))).toBe("help");
-    expect(resolveCommand(normalizeVoiceCommandText("Praticar!"))).toBe(
-      "practice_now",
-    );
-    expect(resolveCommand("Menu.")).toBeNull();
   });
 });

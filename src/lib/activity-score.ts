@@ -45,6 +45,12 @@ export function applyImageMismatch(
   };
 }
 
+// A pergunta regenerada tem outra imagem: o aviso da imagem antiga nao vale mais.
+export function clearImageMismatch(metadata: ScoreMetadata): ScoreMetadata {
+  const { imageMismatch, imageMismatchReason, ...rest } = metadata;
+  return rest;
+}
+
 export function updateScoreMetadata(
   question: Pick<
     Question,

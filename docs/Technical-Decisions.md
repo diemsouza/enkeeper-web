@@ -241,7 +241,7 @@ Contexto: na web o usuário só respondia digitando. O pipeline de nota de voz d
 - **iOS.** `resume()` do `AudioContext` e `getUserMedia` saem síncronos no toque. A sessão de áudio, fixada em `playback` por `setupAudioUnlock`, vira `play-and-record` durante a gravação (`setRecordingAudioSession`) e volta no fim; a hipótese é que com `playback` o Safari não captura, ainda não confirmada em aparelho. `visibilitychange`, `stop`/`error` do `MediaRecorder` e `ended` da track encerram a gravação, e um timeout de segurança libera a UI se o `stop` nunca chegar. Todas as tracks param ao fim.
 - **AudioContext compartilhado.** `src/lib/shared-audio-context.ts` saiu de dentro do `OggAudioPlayer`; o medidor de nível da gravação usa o mesmo contexto. O `AnalyserNode` passa por um ganho zero ligado ao destino porque o Safari não atualiza analyser solto.
 - **Barras compartilhadas.** `WaveformBars` (`src/components/chat/waveform-bars.tsx`) é a marcação única das barras do `NativeAudioPlayer`, do `OggAudioPlayer` e da gravação ao vivo. O avatar do player (`AudioAvatar`) também é único; na bolha do usuário o anel do selo do microfone usa a cor da bolha (`isUserBubble`). Em erro o player mantém as cores e fica com transparência, em vez de mudar para a cor de erro, que sumia sobre a bolha azul.
-- **Comando por voz sem regra própria.** `normalizeVoiceCommandText` (`core/voice-note.ts`) só limpa as pontas da transcrição antes do `parseMessage`; a detecção (`resolveCommand`) e a regra de `waitingUser`/`PRACTICE_ANSWER_PASSTHROUGH_INTENTS` são as do texto digitado. O `text` original segue para avaliação e `Message.content`.
+- **Voz não é comando.** Decisão revista em "Comandos sempre com barra": a transcrição segue direto como texto, para avaliação e `Message.content`.
 - **Transcrição no INSERT.** A `Message` do usuário nasce depois da transcrição, então o primeiro broadcast já traz `content`; `map-messages` vira `transcription` (áudio do usuário, fora `isInaudibleTranscription`) e `mergeServerMessage` aplica na bolha otimista. O `refreshMessages` preenche `transcription` por `externalId` se o broadcast se perdeu. O bloco que abre e fecha é `AudioRevealText`, o mesmo do "Ver tradução".
 - **Segurar para falar.** `useHoldToRecord` (`src/hooks/use-hold-to-record.ts`): `pointerdown` captura o ponteiro e chama `start` sincrono; 300ms (`HOLD_THRESHOLD_MS`) com permissão `granted` entram no modo segurar; `pointerup`/`pointercancel` no modo segurar chamam `finish`. A permissão vem de `navigator.permissions.query("microphone")` (Firefox recusa o nome; ali vale a primeira gravação da sessão). O botão da direita é um elemento só (`ComposerActionButton`) em todos os papéis (mic, enviar texto, enviar áudio, "Solte para enviar"): se desmontasse no meio do toque, o iOS deixaria de entregar o `pointerup`. Pelo mesmo motivo ele não fica `disabled` em `requesting`. O `click` que sobra do toque é ignorado por 400ms (`shouldIgnoreClick`), e o click de teclado (`detail === 0`) grava no modo travado. No toque o `pointerdown` não é gesto de usuário pela especificação do HTML: o `resume()` do AudioContext é repetido quando a captura começa e no `pointerup`. `finish`/`cancel` em `requesting` descartam o pedido.
 - **Bolha otimista toca o blob local.** O broadcast do realtime não traz o content-type da mídia; `mergeServerMessage` (`live-thread-client.tsx`) mantém o `blob:` e o content-type da bolha otimista. O reenvio refaz o remux a partir da gravação original guardada em `pendingFilesRef`.
@@ -822,8 +822,42 @@ Data: 2026-11-05
 
 - **O que se perde é a tentativa, não a pergunta.** Toda geração cria linha nova (`createQuestions`) e o texto nunca é reescrito: em revisão volta a mesma linha. O que mudava sem registro era o resultado: status, resposta, feedback, dica, SM-2, score e metadata. A `Question` segue sendo só o estado atual e cada tentativa encerrada vira uma linha em `question_snapshots`.
 - **Arquiva no reenvio, não na avaliação.** Quando a pergunta volta, o `status` vira `pending`, então na avaliação o resultado anterior já não está na linha. `reopenQuestion` (`questions.repo.ts`) é o ponto único de reabertura, usado por `sendCadenceQuestion` e `sendIntensiveQuestion`. O tipo do `updateQuestion` não aceita `pending`, para ninguém reabrir sem passar por ali.
-- **`answeredAt` nulo significa que não há tentativa a arquivar.** Vale para pergunta nova e para pergunta reaberta, então reexibir uma pendente não duplica snapshot. A reabertura limpa `answeredAt`, `issueNotedAt` e `issueNote`, e mantém `answer`, `feedbackText`, `attemptCount` e o SM-2, usados no reuso de áudio e em `isRealRevision`.
-- **Campo da época vem do `snapshotData`.** O que não for coluna da snapshot é lido do jsonb, nunca pelo join com `Question`. As colunas `userId`, `activityId`, `answeredAt`, `questionFormat`, `status` e `issueNotedAt` existem porque são filtros frequentes. `activityId` é o da tentativa, lido antes do update.
+- **`answeredAt` nulo significa que não há tentativa a arquivar.** Vale para pergunta nova e para pergunta reaberta, então reexibir uma pendente não duplica snapshot. A reabertura limpa `answeredAt`, `ratedAt`, `rating`, `ratingKind` e `ratingNote`, e mantém `answer`, `feedbackText`, `attemptCount` e o SM-2, usados no reuso de áudio e em `isRealRevision`.
+- **Campo da época vem do `snapshotData`.** O que não for coluna da snapshot é lido do jsonb, nunca pelo join com `Question`. As colunas `userId`, `activityId`, `answeredAt`, `questionFormat`, `status` e `rating` existem porque são filtros frequentes. `activityId` é o da tentativa, lido antes do update.
 - **Transação com `connection_limit=1`.** A transação segura a única conexão: dentro do callback tudo usa `tx`, nunca o `prisma` global, que ficaria esperando essa conexão até o timeout. Sem chamada externa no callback.
 - **Backfill de `answeredAt`:** copia `updatedAt` só de `right`, `partial` e `wrong`. Pergunta `pending` em revisão guarda a resposta antiga, mas está reaberta e fica nula. É aproximado, porque áudio de feedback e reprodução também avançam o `updatedAt`, e a tentativa anterior das que estavam `pending` no deploy não virou snapshot.
-- **`regenerate`, `issueNotedAt` e `issueNote` ainda sem uso.** A próxima etapa liga o aviso de problema e a regeneração na reabertura.
+
+## Continuar, avaliação e pergunta nova na revisão
+
+Data: 2026-11-05
+
+- **`AUTO_QUESTION_ENABLED` em vez de feature flag.** `false` é o modo com Continuar, `true` volta o envio automático. A constante muda só o gatilho: `handleIntensiveNextQuestion` é a mesma função nos dois modos. O comentário dela lista o que rever se o automático voltar.
+- **Estado derivado na leitura, sem gravar em `Message.interactive`.** `findPracticeActions` olha atividade ativa, pergunta pendente e a última mensagem de estudo. Uma mensagem de controle ficaria desatualizada ao trocar de atividade, pausar ou virar o limite diário. Do padrão das opções ficou o cliente otimista com o servidor vencendo.
+- **Última respondida vem da última mensagem de estudo**, não de `lastQuestionId`, que `completeRoundZero` zera.
+- **Fim do turno.** O botão só pode aparecer depois do feedback, do áudio e da dica. `isTurnInProgress` usa `lastRequestAt` e `lastResponseAt` com teto próprio (`PRACTICE_TURN_MAX_SEC`), porque os 10s de `MESSAGE_SUPPRESSION_SEC` são menores que a sequência. `notifyTypingStop` passou a sair em todo fim de turno, para o cliente reconsultar o estado.
+- **Reabre antes de enviar.** O envio precisa do conteúdo novo, então `reopenForSending` (`activity-cron.service.ts`) roda antes de `formatQuestion` em `sendIntensiveQuestion` e `sendCadenceQuestion`. Efeito colateral aceito: se o envio falhar, fica pendente sem mensagem, e `/praticar` reexibe.
+- **Quem lê `regenerate` é o service.** O repo não chama geração. A geração fica fora da transação (LLM, TTS e imagem levam segundos e a conexão usa `connection_limit=1`), e `reopenQuestion` recebe o conteúdo pronto em `newContent`. Dentro da transação ficam só a snapshot e a regravação, com `tx`. `updateQuestion` continua sem aceitar campos de conteúdo: a regravação é `rewriteQuestionContent`.
+- **Sem loop na falha.** Tenta uma vez. Falhou, nada é escrito, `regenerate` continua `true` e sai outra elegível ou, sem outra, a mesma.
+- **Mídia nova com o id da pergunta existente.** `buildImageQuestion` e `buildAudioQuestion` aceitam `existingQuestionId`, para `Media.parentId` apontar para a pergunta certa. A mídia antiga fica: mensagens antigas e snapshot apontam para ela.
+- **Entrada da geração é a linha `term - meaning (termHint)`**, o formato de item que `gen-vocabulary.md` espera. `sourceContent` não serve porque a geração atual não o devolve.
+- **`imageMismatch` sai na regeneração** por `clearImageMismatch`: `applyImageMismatch` nunca desliga a flag, mas ela era da imagem antiga.
+- **Efeito conhecido:** "Ver tradução" do áudio de feedback antigo vem de `Question.feedbackTranslation`, que a regeneração limpa. O texto fica na snapshot.
+- **Migration com DROP + ADD:** o Prisma não detecta renomeação e as colunas estavam vazias em produção.
+
+## Comandos sempre com barra
+
+Data: 2026-11-05
+
+- **Problema:** com pergunta pendente, responder "ajuda" sem barra era lido como comando. Exigir `/` em `resolveCommand` resolve isso e evita conflito entre resposta e comando. O campo `strictMode` saiu.
+- **Voz deixou de ser comando:** a transcrição não traz barra. `normalizeVoiceCommandText` saiu.
+- **Botões do chat** enviam `/` + rótulo em minúsculas, e `/continuar` é parseado como `practice_now`, então reaproveita todo o caminho do Praticar.
+
+## Imagem da mensagem de nova atividade
+
+Data: 2026-11-06
+
+- **Asset estático por `Message.metadata`, sem `Media`.** `Media` é arquivo no Storage com dono, e aqui são 4 arquivos iguais para todos. A mensagem grava só `metadata.activityReadyDomain`, e `map-messages.ts` resolve a URL na leitura. Trocar o arquivo não quebra o histórico, e o trigger do Realtime já entrega `metadata`.
+- **WhatsApp fica só com o texto.** O canal não aceita WebP como imagem, e `sendAndSaveMessage` hoje vai para a web.
+- **Imagem direta de `public/`, sem `next/image`.** O projeto mantém `images.unoptimized` e usa `<img>` em todo lugar. São 4 arquivos leves em tamanho único (1280x720), sem otimizador nem cache de variantes, e trocar o arquivo vale no próximo refresh.
+- **Frase lida de `pt.json` direto em `formatters.ts`.** O envio roda em `after()` e na fila, sem contexto de request para o next-intl. Na home, o simulador lê as mesmas chaves com `useTranslations`, para não duplicar o JSON no bundle.
+- **Candidatas em WebP com compressão 100, não PNG.** A API de imagem recusa `output_compression` com PNG (`invalid_png_output_compression`), e `requestImage` sempre manda o campo.

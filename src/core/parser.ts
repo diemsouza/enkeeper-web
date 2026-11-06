@@ -108,6 +108,7 @@ export function parseMessage(
     case "cancel":
       return { intent: "cancel", raw };
     case "practice_now":
+    case "continue":
       return { intent: "practice_now", raw };
     case "pause":
       return {

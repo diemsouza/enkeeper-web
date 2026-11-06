@@ -19,12 +19,12 @@ describe("formatCreateActivityPrompt", () => {
     const message = formatCreateActivityPrompt(true);
     expect(message.text).toContain("primeira atividade");
     const [button] = message.interactive?.buttons ?? [];
-    expect(resolveCommand(button.label)).toBe("new_activity");
+    expect(resolveCommand(`/${button.label}`)).toBe("new_activity");
   });
 });
 
 describe("formatDocProcessed", () => {
-  it("mostra objetivo, assunto, nível e foco aplicados", () => {
+  it("mostra frase, objetivo, assunto e foco, com a imagem do objetivo", () => {
     const message = formatDocProcessed(false, 3, Level.advanced, {
       domainKey: "work",
       domain: "Mercado de Trabalho",
@@ -34,15 +34,21 @@ describe("formatDocProcessed", () => {
       focusKeys: ["modals", "future"],
       focus: ["Verbos modais", "Futuro"],
     });
-    expect(message.text).toContain("*Nível:* Avançado");
-    expect(message.text).toContain("*Foco:* Verbos modais, Futuro");
+    expect(message.text).toBe(
+      "*Tudo pronto!* Pratique o inglês que abre portas na sua carreira.\n\n*Objetivo:* Mercado de Trabalho\n*Assunto:* Pedir mais prazo\n*Foco:* Verbos modais, Futuro",
+    );
+    expect(message.activityReadyDomain).toBe("work");
   });
 
-  it("material sem metadata mostra só o nível", () => {
+  it("mantém o aviso de limite no fim da legenda", () => {
+    const message = formatDocProcessed(false, 0, Level.basic);
+    expect(message.text).toContain("_Essa é sua última atividade do dia._");
+  });
+
+  it("material sem metadata mostra só o nível, sem imagem", () => {
     const message = formatDocProcessed(false, 3, Level.basic);
-    expect(message.text).toBe(
-      "Pronto. A primeira pergunta chega em instantes.\n\n*Nível:* Básico",
-    );
+    expect(message.text).toBe("*Tudo pronto!*\n\n*Nível:* Básico");
+    expect(message.activityReadyDomain).toBeUndefined();
   });
 });
 

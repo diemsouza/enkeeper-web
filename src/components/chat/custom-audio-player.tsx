@@ -14,7 +14,7 @@ import { Spinner } from "@/src/components/ui/spinner";
 // a bolha nao cresce quando ele aparece.
 function AudioPlayerPlaceholder(): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-1 py-1 w-[260px] md:w-[320px]">
+    <div className="flex w-full flex-col gap-1 py-1">
       <div className="flex items-center gap-3">
         <span className="shrink-0 p-1">
           <span className="flex h-7 w-7 items-center justify-center">

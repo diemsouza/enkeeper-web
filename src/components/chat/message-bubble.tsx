@@ -11,9 +11,9 @@ import { TextBubble } from "./text-bubble";
 import type { FormattedMessageButton, Message } from "./types";
 import { VoiceNoteCard } from "./voice-note-card";
 
-// No mobile, bolha do sistema com a mesma largura do card de audio:
-// 260px do player (custom-audio-player) + 24px do px-3 da bolha.
-const BOT_BUBBLE_MOBILE_WIDTH = "w-[284px] max-w-full";
+// Largura do card de audio, acompanha a coluna. Abaixo de md a bolha do sistema
+// usa a mesma; o teto evita que o card encolha ao cruzar o md.
+const AUDIO_BUBBLE_WIDTH = "w-[clamp(284px,85%,344px)] max-w-full";
 
 export function MessageBubble({
   message,
@@ -23,7 +23,6 @@ export function MessageBubble({
   onButtonClick,
   zoomDisabled,
   wide,
-  fluidAudio,
 }: {
   message: Message;
   isNew?: boolean;
@@ -32,7 +31,6 @@ export function MessageBubble({
   onButtonClick?: (button: FormattedMessageButton, messageId: string) => void;
   zoomDisabled?: boolean;
   wide?: boolean;
-  fluidAudio?: boolean;
 }) {
   const isUser = message.from === "user";
   const [shouldAnimate] = useState(isNew);
@@ -69,12 +67,11 @@ export function MessageBubble({
             ? "bg-primary text-primary-foreground rounded-[10px_10px_2px_10px]"
             : "bg-white text-foreground dark:bg-[#252529] rounded-[10px_10px_10px_2px]",
           "px-3 pt-2 pb-1.5 text-chat",
-          isAudio && !fluidAudio && "shrink-0",
-          isAudio && fluidAudio && cn("w-full", maxWidth),
+          isAudio && (wide ? cn("w-full", maxWidth) : AUDIO_BUBBLE_WIDTH),
           !isAudio && cn("min-w-[80px]", maxWidth),
           message.type === "image" &&
             cn(imageWidth, maxWidth, "overflow-hidden"),
-          hasAudioWidth && BOT_BUBBLE_MOBILE_WIDTH,
+          hasAudioWidth && AUDIO_BUBBLE_WIDTH,
           hasAudioWidth && message.type !== "image" && "md:w-auto",
         )}
       >
@@ -108,7 +105,6 @@ export function MessageBubble({
               onPlay={onAudioPlay}
               translation={undefined}
               time={message.time}
-              fluid={fluidAudio}
               onExport={exportBubble}
             />
           </div>
@@ -122,7 +118,6 @@ export function MessageBubble({
             translation={isUser ? message.transcription : message.translation}
             revealLabel={isUser ? t("transcription_label") : undefined}
             time={message.time}
-            fluid={fluidAudio}
             isUserBubble={isUser}
             onExport={exportBubble}
           />

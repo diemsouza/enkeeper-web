@@ -1,6 +1,6 @@
 {
   "name": "fluizer-web",
-  "version": "0.43.1",
+  "version": "0.44.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -140,6 +140,7 @@
     "encoding": "^0.1.13",
     "eslint-config-prettier": "^10.1.8",
     "prisma": "^7.0.0",
+    "sharp": "^0.34.5",
     "supabase": "^2.118.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",

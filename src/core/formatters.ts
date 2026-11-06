@@ -30,6 +30,12 @@ import type {
 } from "../types/out-message";
 import type { GeneratedDocMetadata } from "../types/domain";
 import type { EngagementReminder } from "./engagement-reminder";
+import { buildActivityReadyText } from "./activity-ready";
+import { isDomainId } from "./activity-request";
+import ptMessages from "../locales/pt.json";
+
+// Envio roda fora do contexto de request (after, fila), sem next-intl.
+const ACTIVITY_READY_COPY = ptMessages.app.activity_ready;
 
 export function formatOnboardingMsg1(): FormattedMessage {
   return {
@@ -281,44 +287,35 @@ export function formatDocProcessed(
   level: Level,
   metadata?: GeneratedDocMetadata | null,
 ): FormattedMessage {
-  const levelLine = `*Nível:* ${findLevelLabel(level)}`;
-  const contextLines =
-    metadata?.domain && metadata?.topic && metadata?.focus?.length
-      ? [
-          `*Objetivo:* ${sanitizeWhatsappContent(metadata.domain)}`,
-          `*Assunto:* ${sanitizeWhatsappContent(metadata.topic)}`,
-          `*Foco:* ${sanitizeWhatsappContent(metadata.focus.join(", "))}`,
-          levelLine,
-        ]
-      : [levelLine];
+  const domainKey = metadata?.domainKey ?? null;
+  const activityReadyDomain = isDomainId(domainKey) ? domainKey : undefined;
   const lines = [
-    `Pronto. A primeira pergunta chega em instantes.\n\n${contextLines.join("\n")}`,
+    activityReadyDomain && metadata?.topic && metadata.focus?.length
+      ? buildActivityReadyText({
+          headline: ACTIVITY_READY_COPY.headline,
+          phrase: ACTIVITY_READY_COPY.phrases[activityReadyDomain],
+          domain: sanitizeWhatsappContent(metadata.domain),
+          topic: sanitizeWhatsappContent(metadata.topic),
+          focus: sanitizeWhatsappContent(metadata.focus.join(", ")),
+        })
+      : `*${ACTIVITY_READY_COPY.headline}*\n\n*Nível:* ${findLevelLabel(level)}`,
   ];
   if (hasWarning)
     lines.push("\nAlguns termos pareceram inconsistentes e foram ignorados.");
   if (remaining === 1)
     lines.push("\n_Você ainda pode enviar mais 1 atividade hoje._");
   if (remaining === 0) lines.push("\n_Essa é sua última atividade do dia._");
-  return { text: lines.join("") };
+  return { text: lines.join(""), activityReadyDomain };
 }
 
 function findLevelLabel(level: Level): string {
   return LEVEL_OPTIONS.find((option) => option.level === level)?.label ?? level;
 }
 
+// AUTO_QUESTION_ENABLED true: voltar a citar Praticar, com o botao na mensagem.
 export function formatGuideAfterFirstFeedback(): FormattedMessage {
   return {
-    text: `Você respondeu sua primeira pergunta dessa atividade. Use ${formatCommand("practice_now")} para receber as próximas agora, sem esperar.`,
-    interactive: {
-      body: `Você respondeu sua primeira pergunta dessa atividade. Toque em Praticar para receber as próximas agora, sem esperar.`,
-      buttons: [
-        {
-          id: "practice_now",
-          label: "Praticar",
-          type: "reply",
-        },
-      ],
-    },
+    text: `Você respondeu sua primeira pergunta dessa atividade. Toque em Continuar ou use ${formatCommand("continue")} para receber a próxima.`,
   };
 }
 
@@ -691,6 +688,13 @@ export function formatPracticeWaiting(): FormattedMessage {
       body: "Nenhuma pergunta em aberto. Toque em Praticar para continuar.",
       buttons: [{ id: "practice_now", label: "Praticar", type: "reply" }],
     },
+  };
+}
+
+// So com AUTO_QUESTION_ENABLED false: o Continuar ja esta no fim do chat.
+export function formatAwaitingContinue(): FormattedMessage {
+  return {
+    text: `Nenhuma pergunta em aberto. Toque em Continuar ou use ${formatCommand("continue")} para seguir.`,
   };
 }
 

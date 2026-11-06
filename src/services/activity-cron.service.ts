@@ -10,16 +10,15 @@ import {
 } from "../repo/docs.repo";
 import {
   findNextUnansweredQuestion,
-  // findNextGeneralQuestion: só usado por selectNextQuestion, pausado com a
-  // cadência normal (§8). TODO: review
-  // findNextGeneralQuestion,
   findSm2EligibleQuestion,
   reopenQuestion,
   createQuestions,
   findQuestionById,
   countQuestionFormatsByActivity,
   findLatestUnansweredQuestion,
+  findNextGeneralQuestion,
   CreateQuestionData,
+  RegeneratedQuestionContent,
 } from "../repo/questions.repo";
 import {
   findUserById,
@@ -61,6 +60,7 @@ import { ulid } from "ulid";
 import { storeQuestionImage } from "./question-image-service";
 import { storeQuestionAudio } from "./question-audio-service";
 import { buildRoundCompletedSummary } from "./activity-service";
+import { clearImageMismatch, ScoreMetadata } from "../lib/activity-score";
 
 const IMAGE_QUESTION_ROLLOUT_FRACTION = parseFloat(
   process.env.IMAGE_QUESTION_ROLLOUT_FRACTION ?? "0",
@@ -183,19 +183,13 @@ export async function processActivityCron(
 }
 
 async function sendCadenceQuestion(
-  question: {
-    id: string;
-    question: string;
-    questionFormat: QuestionFormat | null;
-    questionOptions: string[];
-    termHint: string | null;
-    questionImageMediaId: string | null;
-    questionAudioMediaId: string | null;
-  },
+  question: Question,
   activity: Activity,
   today: Date,
   channel: MessageChannel,
 ): Promise<void> {
+  const reopened = await reopenForSending(question, activity, { channel });
+
   if (activity.executionCount === 0) {
     const startMsg = formatActivityStart(activity.title);
     await sendAndSaveMessage({
@@ -208,7 +202,7 @@ async function sendCadenceQuestion(
     });
   }
 
-  const questionText = formatQuestion(question, { level: activity.userLevel });
+  const questionText = formatQuestion(reopened, { level: activity.userLevel });
 
   await sendAndSaveMessage({
     channel,
@@ -216,19 +210,14 @@ async function sendCadenceQuestion(
     activityId: activity.id,
     message: questionText,
     intent: "practice_question",
-    questionId: question.id,
+    questionId: reopened.id,
     today,
-  });
-  await reopenQuestion({
-    id: question.id,
-    userId: activity.userId,
-    activityId: activity.id,
   });
   await updateActivity(activity.id, activity.userId, {
     executionCount: activity.executionCount + 1,
     nextMessageAt: new Date(Date.now() + activity.intervalMinutes * 60 * 1000),
     waitingUser: true,
-    lastQuestionId: question.id,
+    lastQuestionId: reopened.id,
   });
 }
 
@@ -347,6 +336,7 @@ async function buildImageQuestion(
   format: QuestionFormat,
   baseParams: QuestionGenBaseParams,
   typing?: TypingTarget,
+  existingQuestionId?: string,
 ): Promise<MediaQuestionOutcome> {
   const generated = await generateValidatedQuestion(format, baseParams);
   if (!generated) {
@@ -372,7 +362,7 @@ async function buildImageQuestion(
     return { status: "fallback", reason: "missing_question" };
   }
 
-  const questionId = ulid();
+  const questionId = existingQuestionId ?? ulid();
   // Texto + imagem pode passar dos 25s do indicador: renova antes da imagem.
   if (typing) {
     await typing.channel.notifyTyping(baseParams.userId, {
@@ -411,6 +401,7 @@ async function buildAudioQuestion(
   format: QuestionFormat,
   baseParams: QuestionGenBaseParams,
   typing?: TypingTarget,
+  existingQuestionId?: string,
 ): Promise<MediaQuestionOutcome> {
   const generated = await generateValidatedQuestion(format, baseParams);
   if (!generated) {
@@ -421,7 +412,7 @@ async function buildAudioQuestion(
     return { status: "fallback", reason: "missing_audio_text" };
   }
 
-  const questionId = ulid();
+  const questionId = existingQuestionId ?? ulid();
   if (typing) {
     await typing.channel.notifyTyping(baseParams.userId, {
       replyToMessageId: typing.replyToMessageId,
@@ -462,12 +453,13 @@ function buildMediaQuestion(
   format: QuestionFormat,
   baseParams: QuestionGenBaseParams,
   typing?: TypingTarget,
+  existingQuestionId?: string,
 ): Promise<MediaQuestionOutcome> | null {
   if (IMAGE_QUESTION_FORMATS.includes(format)) {
-    return buildImageQuestion(format, baseParams, typing);
+    return buildImageQuestion(format, baseParams, typing, existingQuestionId);
   }
   if (AUDIO_QUESTION_FORMATS.includes(format)) {
-    return buildAudioQuestion(format, baseParams, typing);
+    return buildAudioQuestion(format, baseParams, typing, existingQuestionId);
   }
   return null;
 }
@@ -482,6 +474,7 @@ async function buildQuestionData(
   formatCounts: FormatCounts,
   baseParams: QuestionGenBaseParams,
   typing?: TypingTarget,
+  existingQuestionId?: string,
 ): Promise<CreateQuestionData | null> {
   let format = pickNextFormat(lastFormat, {
     canUseImage: Math.random() < IMAGE_QUESTION_ROLLOUT_FRACTION,
@@ -489,7 +482,12 @@ async function buildQuestionData(
     formatCounts,
   });
 
-  const mediaOutcome = await buildMediaQuestion(format, baseParams, typing);
+  const mediaOutcome = await buildMediaQuestion(
+    format,
+    baseParams,
+    typing,
+    existingQuestionId,
+  );
   if (mediaOutcome?.status === "success") return mediaOutcome.data;
   if (mediaOutcome) {
     console.warn(
@@ -510,6 +508,83 @@ async function buildQuestionData(
 
   const validated = await generateValidatedQuestion(format, baseParams);
   return validated ? sanitizeQuestionData(validated) : null;
+}
+
+async function loadFormatCounts(activity: Activity): Promise<FormatCounts> {
+  return mergeFormatCounts(
+    await countQuestionFormatsByActivity(activity.id, activity.userId),
+    parseFormatFallbacks(activity.metadata),
+  );
+}
+
+// Mesmo item, formato diferente do anterior: com o mesmo formato a pergunta
+// sairia quase igual.
+async function buildRegeneratedContent(
+  question: Question,
+  activity: Activity,
+  typing: TypingTarget,
+): Promise<RegeneratedQuestionContent | null> {
+  if (!question.term) return null;
+  try {
+    await typing.channel.notifyTyping(activity.userId, {
+      replyToMessageId: typing.replyToMessageId,
+    });
+    const doc = await findDocById(activity.docId, activity.userId);
+    const hint = question.termHint ? ` (${question.termHint})` : "";
+    const data = await buildQuestionData(
+      activity,
+      question.questionFormat,
+      await loadFormatCounts(activity),
+      {
+        sectionTitle: doc?.title ?? "",
+        sectionContent: `${question.term} - ${question.meaning ?? ""}${hint}`,
+        level: activity.userLevel,
+        userId: activity.userId,
+        docId: activity.docId,
+      },
+      typing,
+      question.id,
+    );
+    if (!data) return null;
+    return {
+      question: data.question,
+      answerKeys: data.answerKeys,
+      questionFormat: data.questionFormat,
+      questionOptions: data.questionOptions,
+      questionImageMediaId: data.questionImageMediaId,
+      questionImageDescription: data.questionImageDescription,
+      questionAudioMediaId: data.questionAudioMediaId,
+      metadata: clearImageMismatch(
+        (question.metadata as ScoreMetadata | null) ?? {},
+      ),
+    };
+  } catch (err) {
+    console.error(
+      `[buildRegeneratedContent] question ${question.id} failed:`,
+      err,
+    );
+    return null;
+  }
+}
+
+// O envio precisa do conteudo novo, por isso reabre antes de enviar. Falha na
+// geracao nao sobrescreve nada e regenerate continua true: segue com outra
+// pergunta elegivel ou, sem outra, com a mesma, sem nova tentativa em sequencia.
+export async function reopenForSending(
+  question: Question,
+  activity: Activity,
+  typing: TypingTarget,
+): Promise<Question> {
+  const reopenParams = { userId: activity.userId, activityId: activity.id };
+  if (!question.regenerate) {
+    return reopenQuestion({ ...reopenParams, id: question.id });
+  }
+  const newContent = await buildRegeneratedContent(question, activity, typing);
+  if (newContent) {
+    return reopenQuestion({ ...reopenParams, id: question.id, newContent });
+  }
+  const other = await findNextGeneralQuestion(activity.id, question.id);
+  return reopenQuestion({ ...reopenParams, id: (other ?? question).id });
 }
 
 export type GenerateOutcome =
@@ -536,10 +611,7 @@ export async function generateQuestionIfPoolNotFull(
     lastFormat = lastQuestion?.questionFormat ?? null;
   }
 
-  const formatCounts = mergeFormatCounts(
-    await countQuestionFormatsByActivity(activity.id, activity.userId),
-    parseFormatFallbacks(activity.metadata),
-  );
+  const formatCounts = await loadFormatCounts(activity);
   const blocks = splitContentIntoBlocks(doc.content);
   const questionData = await buildQuestionData(
     activity,

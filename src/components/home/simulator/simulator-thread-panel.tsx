@@ -66,7 +66,6 @@ export const SimulatorThreadPanel = forwardRef<
                 key={message.id}
                 message={message}
                 wide={compact}
-                fluidAudio
                 zoomDisabled
               />
             ))}

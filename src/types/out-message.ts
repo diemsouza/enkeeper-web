@@ -1,3 +1,5 @@
+import type { DomainId } from "../lib/constants";
+
 export type FormattedMessageButton = {
   id: string;
   label: string;
@@ -14,6 +16,8 @@ export type FormattedMessage = {
   text: string;
   audioMediaId?: string;
   imageMediaId?: string;
+  // Imagem fixa do objetivo: asset estatico, sem Media. So a web mostra.
+  activityReadyDomain?: DomainId;
   templateName?: string | null;
   templateBodyParams?: string[];
   templateButtonUrlParam?: string;

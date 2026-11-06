@@ -1,8 +1,8 @@
-const STUDY_MESSAGE_INTENTS = new Set([
+export const STUDY_MESSAGE_INTENTS = [
   "practice_question",
   "practice_feedback",
   "eval_tip",
-]);
+];
 
 // O questionId separa estudo de aviso: o limite diario sai com intent
 // practice_feedback, mas sem pergunta.
@@ -18,7 +18,7 @@ export function isStudyMessage({
   return (
     !isUser &&
     intent !== null &&
-    STUDY_MESSAGE_INTENTS.has(intent) &&
+    STUDY_MESSAGE_INTENTS.includes(intent) &&
     questionId !== null
   );
 }

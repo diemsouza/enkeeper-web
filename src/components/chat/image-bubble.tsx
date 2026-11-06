@@ -27,6 +27,7 @@ export function ImageBubble({
       alt={alt ?? t("image_alt")}
       width={width}
       height={height}
+      loading="lazy"
       style={width && height ? { aspectRatio: `${width} / ${height}` } : undefined}
       className="block -mx-3 -mt-2 h-auto w-[calc(100%_+_1.5rem)] max-w-none object-cover"
     />

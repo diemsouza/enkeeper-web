@@ -2,6 +2,12 @@ import { MEDIA_INLINE_PARAM } from "@/src/lib/constants";
 import { isStudyMessage } from "@/src/core/study-message";
 import { isInaudibleTranscription } from "@/src/core/voice-note";
 import { parseClientCommand } from "@/src/core/client-command";
+import {
+  ACTIVITY_READY_IMAGE_HEIGHT,
+  ACTIVITY_READY_IMAGE_WIDTH,
+  activityReadyImageUrl,
+  readActivityReadyDomain,
+} from "@/src/core/activity-ready";
 import { CLIENT_COMMAND_INTENT } from "@/src/types/client-command";
 import type { MessageWithMedia } from "@/src/repo/messages.repo";
 import type { FormattedMessage } from "@/src/types/out-message";
@@ -128,6 +134,22 @@ function buildMessage(
       time,
       date,
       command: parseClientCommand(row.metadata),
+    };
+  }
+
+  const activityReadyDomain = readActivityReadyDomain(row.metadata);
+  if (from === "bot" && activityReadyDomain) {
+    return {
+      id: row.id,
+      from,
+      time,
+      date,
+      type: "image",
+      imageUrl: activityReadyImageUrl(activityReadyDomain),
+      imageWidth: ACTIVITY_READY_IMAGE_WIDTH,
+      imageHeight: ACTIVITY_READY_IMAGE_HEIGHT,
+      caption: row.content,
+      externalId: row.externalId ?? undefined,
     };
   }
 

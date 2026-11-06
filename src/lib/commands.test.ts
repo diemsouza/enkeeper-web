@@ -2,56 +2,46 @@ import { describe, expect, it } from "vitest";
 import { CommandId, formatCommand, resolveCommand } from "./commands";
 
 describe("resolveCommand", () => {
-  it("resolve comando exato", () => {
-    expect(resolveCommand("ajuda")).toBe("help");
-  });
-
   it("resolve comando com barra", () => {
     expect(resolveCommand("/ajuda")).toBe("help");
+    expect(resolveCommand("/continuar")).toBe("continue");
   });
 
-  it("resolve comando sem barra igual ao com barra", () => {
-    expect(resolveCommand("praticar")).toBe(resolveCommand("/praticar"));
+  it("sem barra nunca e comando", () => {
+    expect(resolveCommand("ajuda")).toBeNull();
+    expect(resolveCommand("praticar")).toBeNull();
+    expect(resolveCommand("sim")).toBeNull();
+    expect(resolveCommand("continuar")).toBeNull();
   });
 
-  it("resolve com acento incorreto", () => {
-    expect(resolveCommand("nao")).toBe("confirm_no");
-  });
-
-  it("resolve com acento correto", () => {
-    expect(resolveCommand("não")).toBe("confirm_no");
+  it("resolve com e sem acento", () => {
+    expect(resolveCommand("/nao")).toBe("confirm_no");
+    expect(resolveCommand("/não")).toBe("confirm_no");
   });
 
   it("resolve com case misto", () => {
-    expect(resolveCommand("AJUDA")).toBe("help");
-    expect(resolveCommand("Nova Atividade")).toBe("new_activity");
+    expect(resolveCommand("/AJUDA")).toBe("help");
+    expect(resolveCommand("/Nova Atividade")).toBe("new_activity");
   });
 
   it("resolve alias alternativo", () => {
-    expect(resolveCommand("trocar atividade")).toBe("new_activity");
-    expect(resolveCommand("pause")).toBe("pause");
+    expect(resolveCommand("/trocar atividade")).toBe("new_activity");
+    expect(resolveCommand("/parar")).toBe("pause");
   });
 
   it("ignora espacos nas bordas", () => {
-    expect(resolveCommand("  cancelar  ")).toBe("cancel");
+    expect(resolveCommand("  /cancelar  ")).toBe("cancel");
   });
 
   it("retorna null quando nao corresponde a nada", () => {
-    expect(resolveCommand("blablabla")).toBeNull();
+    expect(resolveCommand("/blablabla")).toBeNull();
   });
 });
 
 describe("formatCommand", () => {
-  it("formata comando com prefixo", () => {
-    expect(formatCommand("help")).toBe("/`ajuda`");
-  });
-
-  it("formata comando sem prefixo", () => {
-    expect(formatCommand("confirm_yes")).toBe("`sim`");
-  });
-
-  it("aplica override strictMode: false", () => {
-    expect(formatCommand("cancel", { strictMode: false })).toBe("`cancelar`");
+  it("formata comando com barra", () => {
+    expect(formatCommand("help")).toBe("`/ajuda`");
+    expect(formatCommand("continue")).toBe("`/continuar`");
   });
 
   it("lanca erro para id inexistente", () => {

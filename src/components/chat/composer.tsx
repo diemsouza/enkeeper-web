@@ -150,11 +150,25 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
         document.removeEventListener("pointerdown", handlePointerDown);
     }, [showCommandMenu]);
 
+    // O campo na tela manda: teclado de celular pode mudar o valor sem o
+    // onChange chegar, e o botao mostraria mic com texto digitado.
+    function syncTextFromField(): string {
+      const value = textareaRef.current?.value ?? text;
+      if (value !== text) setText(value);
+      return value;
+    }
+
+    useEffect(() => {
+      syncTextFromField();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     async function handleSend() {
-      const trimmed = text.trim();
+      const trimmed = syncTextFromField().trim();
       if (!trimmed || disabled || isWaitingForResponse) return;
-      setText("");
+      // Blur antes de limpar: o sync do onBlur nao pode devolver o texto enviado.
       textareaRef.current?.blur();
+      setText("");
       await onSend(trimmed);
     }
 
@@ -174,16 +188,18 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
     function handleActionPointerDown(
       event: ReactPointerEvent<HTMLButtonElement>,
     ) {
-      if (actionRole === "mic" && !isActionDisabled) {
-        hold.handlers.onPointerDown(event);
-      }
+      if (actionRole !== "mic" || isActionDisabled) return;
+      if (syncTextFromField()) return;
+      hold.handlers.onPointerDown(event);
     }
 
     // Pelo ponteiro o mic ja comecou no pointerdown; o click sem ponteiro
     // (teclado, detail 0) grava no modo travado.
     function handleActionClick(event: ReactMouseEvent<HTMLButtonElement>) {
       if (hold.shouldIgnoreClick()) return;
-      if (actionRole === "mic" && event.detail === 0) recorder.start();
+      if (actionRole === "mic" && event.detail === 0 && !syncTextFromField()) {
+        recorder.start();
+      }
       if (actionRole === "locked") recorder.finish();
       if (actionRole === "send") void handleSend();
     }
@@ -355,6 +371,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(
                       rows={1}
                       value={text}
                       onChange={(e) => setText(e.target.value)}
+                      onCompositionEnd={syncTextFromField}
+                      onBlur={syncTextFromField}
                       onKeyDown={handleKeyDown}
                       disabled={disabled}
                       placeholder={

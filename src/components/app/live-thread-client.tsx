@@ -26,7 +26,11 @@ import { useReminderFlow } from "./reminder-flow-provider";
 import { useNewActivity } from "./new-activity-provider";
 import { useProfileLevel } from "./profile-level-provider";
 import { useSupportFlow } from "./support-flow-provider";
-import { RETRY_NEW_ACTIVITY_BUTTON_ID } from "@/src/lib/constants";
+import { PracticeActionsRow } from "./practice-actions-row";
+import {
+  REPLY_WAIT_TIMEOUT_MS,
+  RETRY_NEW_ACTIVITY_BUTTON_ID,
+} from "@/src/lib/constants";
 import {
   consumeSentInSession,
   markSentInSession,
@@ -42,9 +46,6 @@ type MessagesResponse = { messages: Message[]; hasMore: boolean };
 type OptimisticSelection = { buttonId: string; userExternalId: string };
 type OptimisticSelections = Record<string, OptimisticSelection>;
 
-// Trava do composer enquanto espera resposta (nao e o "digitando", que vem
-// do servidor): cobre avaliacao + intervalo pos-feedback + geracao de imagem.
-const REPLY_WAIT_TIMEOUT_MS = 45_000;
 // Failsafe do "digitando": typing:start perdido ou canal caido. Mesmo limite
 // do indicador nativo do WhatsApp.
 const TYPING_TTL_MS = 25_000;
@@ -187,7 +188,12 @@ export function LiveThreadClient({
   const t = useTranslations("app.onboarding");
   const tChat = useTranslations("app.chat");
   const router = useRouter();
-  const { registerSender, refresh: refreshPracticePill } = usePracticePill();
+  const {
+    registerSender,
+    refresh: refreshPracticePill,
+    practiceActions,
+    finishTurn,
+  } = usePracticePill();
   const { openReminder } = useReminderFlow();
   const { openNewActivity } = useNewActivity();
   const { openLevel } = useProfileLevel();
@@ -348,6 +354,7 @@ export function LiveThreadClient({
     stopTyping();
     setIsTurnActive(false);
     void refreshMessages();
+    void finishTurn();
   };
 
   useEffect(() => {
@@ -358,10 +365,13 @@ export function LiveThreadClient({
         setIsTurnActive(false);
         return;
       }
-      if (quietMs >= REALTIME_QUIET_REFRESH_MS) void refreshMessages();
+      if (quietMs >= REALTIME_QUIET_REFRESH_MS) {
+        void refreshMessages();
+        void refreshPracticePill();
+      }
     }, REALTIME_QUIET_REFRESH_MS);
     return () => clearInterval(timer);
-  }, [isTurnActive, refreshMessages]);
+  }, [isTurnActive, refreshMessages, refreshPracticePill]);
 
   // Imagem do broadcast vem sem dimensoes: pre-carrega para a bolha nascer
   // com a altura final. A fila mantem a ordem das mensagens seguintes.
@@ -557,7 +567,8 @@ export function LiveThreadClient({
     option?: { messageId: string; buttonId: string },
   ) {
     beginTurn();
-    if (showPendingReview && resolveCommand(text.trim()) === "practice_now") {
+    const command = resolveCommand(text);
+    if (showPendingReview && (command === "practice_now" || command === "continue")) {
       setShowPendingReview(false);
     }
     const externalId = ulid();
@@ -688,7 +699,7 @@ export function LiveThreadClient({
       return;
     }
     if (!target?.interactive?.isOptionList) {
-      void handleSend(button.label);
+      void handleSend(`/${button.label.toLowerCase()}`);
       return;
     }
     if (target.interactive.disabled || optimisticSelections[messageId]) return;
@@ -730,7 +741,12 @@ export function LiveThreadClient({
       isLoadingOlder={isLoadingOlder}
       showPendingReviewBanner={showPendingReview}
       pendingReviewCount={pendingReviewCount}
-      onPracticeClick={() => handleSend("praticar")}
+      onPracticeClick={() => handleSend("/praticar")}
+      actions={
+        practiceActions && !isWaitingForResponse ? (
+          <PracticeActionsRow onContinue={beginTurn} />
+        ) : null
+      }
     />
   );
 }

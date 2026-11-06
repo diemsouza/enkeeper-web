@@ -25,10 +25,6 @@ export function audioExtensionForMime(mimeType: string): string {
 
 // Construtor em vez de literal: o target do tsconfig (es5) nao aceita a flag u.
 const LETTER_PATTERN = new RegExp("\\p{L}", "u");
-const EDGE_PUNCTUATION_PATTERN = new RegExp(
-  "^[\\p{P}\\p{S}\\s]+|[\\p{P}\\p{S}\\s]+$",
-  "gu",
-);
 
 // Silencio ou ruido viram transcricao vazia ou so pontuacao: sem nenhuma
 // letra nao ha resposta para avaliar.
@@ -45,10 +41,4 @@ export function isAcceptedVoiceNote(
     sizeBytes > 0 &&
     sizeBytes <= VOICE_MAX_BYTES
   );
-}
-
-// O Whisper devolve "Menu." ou " Pausar 2!": sem as pontas a transcricao cai
-// na mesma deteccao de comando do texto digitado.
-export function normalizeVoiceCommandText(text: string): string {
-  return text.replace(EDGE_PUNCTUATION_PATTERN, "").toLowerCase().trim();
 }

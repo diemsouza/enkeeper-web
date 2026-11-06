@@ -5,6 +5,7 @@ import {
   Prisma,
 } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
+import { STUDY_MESSAGE_INTENTS } from "../core/study-message";
 import type { FormattedMessage } from "../types/out-message";
 
 type SaveMessageData = {
@@ -106,6 +107,23 @@ export async function findLastMessageByIntent(
   return prisma.message.findFirst({
     where: { activityId, intent },
     orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function findLastStudyMessage(
+  userId: string,
+  activityId: string,
+): Promise<Pick<Message, "intent" | "questionId"> | null> {
+  return prisma.message.findFirst({
+    where: {
+      userId,
+      activityId,
+      role: "assistant",
+      intent: { in: STUDY_MESSAGE_INTENTS },
+      questionId: { not: null },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { intent: true, questionId: true },
   });
 }
 

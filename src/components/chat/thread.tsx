@@ -9,6 +9,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 import { shouldShowDateSeparator } from "@/src/lib/datetime-utils";
 import { useScrollToBottom } from "@/src/hooks/use-scroll-to-bottom";
@@ -54,6 +55,7 @@ type ChatThreadProps = {
   showPendingReviewBanner?: boolean;
   pendingReviewCount?: number;
   onPracticeClick?: () => void;
+  actions?: ReactNode;
 };
 
 export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
@@ -77,6 +79,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
       showPendingReviewBanner,
       pendingReviewCount = 0,
       onPracticeClick,
+      actions,
     },
     ref,
   ) {
@@ -300,6 +303,7 @@ export const ChatThread = forwardRef<ComposerHandle, ChatThreadProps>(
                   </Fragment>
                 );
               })}
+              {actions}
               <TypingIndicatorSlot isVisible={Boolean(isTyping)} />
             </div>
           </div>

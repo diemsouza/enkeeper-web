@@ -155,9 +155,17 @@ Antes de reexibir, o estado da atividade é realinhado (pergunta pendente corren
 
 Vale para qualquer canal, não só WhatsApp. A avaliação da resposta dispara sempre que existe pergunta pendente de fato, mesmo que a marcação interna de aguardando resposta tenha ficado dessincronizada do status da pergunta (straggler de conclusão de rodada, duas perguntas pendentes).
 
+### Pergunta nova na revisão
+
+O dislike por um motivo do grupo Problema na pergunta (Seção 8.6) marca a pergunta para voltar nova. Na próxima vez que ela for enviada, em vez de voltar igual, sai uma pergunta nova sobre o mesmo termo, em formato diferente do anterior.
+
+- O enunciado, as respostas esperadas, as opções, o formato e as mídias são trocados. A resposta, o feedback, a dica e a avaliação da tentativa anterior saem da pergunta e ficam só no histórico da tentativa.
+- O progresso no SM-2, os contadores e a nota continuam, porque medem o domínio do termo, que não mudou.
+- Se a geração falhar, nada é trocado e a marcação continua. O usuário recebe outra pergunta elegível ou, sem outra, a mesma pergunta como está. Não há nova tentativa em sequência: ela volta a tentar só na próxima vez que a pergunta for escolhida. O usuário nunca fica sem como seguir.
+
 ### Resposta por voz
 
-Na web, o usuário pode responder por áudio gravado no próprio composer. Com o campo de texto vazio, o botão de enviar dá lugar ao microfone; com texto digitado, volta o enviar. O botão só aparece quando o navegador grava num formato que o player do produto toca.
+Na web, o usuário pode responder por áudio gravado no próprio composer. Com o campo de texto vazio, o botão de enviar dá lugar ao microfone; com texto digitado, volta o enviar. Havendo texto no campo, o botão nunca grava: antes de iniciar a gravação, o valor real do campo é conferido. O botão só aparece quando o navegador grava num formato que o player do produto toca.
 
 - **Dois modos no mesmo botão:** tocar e soltar rápido (menos de 300ms) grava no modo travado, com lixeira e enviar. Segurar 300ms ou mais grava no modo segurar: a barra mostra "Solte para enviar" no lugar da lixeira e do enviar, e soltar em qualquer lugar da tela envia. Não há gesto de cancelar no modo segurar. Enquanto o microfone ainda não foi liberado, o pedido do navegador interrompe o gesto e a gravação segue no modo travado. O gesto não rola a conversa nem abre menu ou seleção de texto.
 - **Gravação:** limite de 30 segundos. Aos 20 segundos o cronômetro muda de cor e aparece o aviso "Restam apenas 10s"; aos 30 a gravação para e é enviada sozinha. Gravação com menos de 1 segundo é descartada sem mensagem. A lixeira cancela e descarta. Não há tela de pré-ouvir: enviar é parar e enviar.
@@ -168,7 +176,7 @@ Na web, o usuário pode responder por áudio gravado no próprio composer. Com o
 - **Áudio sem fala:** transcrição sem nenhuma letra (silêncio, ruído) não chega à avaliação. A mensagem fica salva com o áudio, volta "Não deu para ouvir o áudio. Grave de novo ou responda digitando." e a pergunta continua pendente.
 - **Transcrição de áudio:** continua exigindo resposta digitada (Seção 4); voz nela não é avaliada. Tradução de áudio e transcrição de imagem aceitam voz normalmente.
 - Fora de uma pergunta pendente, a transcrição é tratada como texto digitado.
-- **Comandos por voz:** a transcrição passa pela mesma detecção de comandos do texto digitado, depois de tirar a pontuação das pontas, deixar minúsculo e cortar os espaços ("Menu." vale como "menu"). Com pergunta pendente vale a mesma regra do digitado: os comandos de navegação (ajuda/menu, atividades, suporte, pausar, retomar, cancelar, praticar, nível, nova atividade) são executados e a pergunta continua pendente; "sim" e "não" são avaliados como resposta.
+- **Voz nunca é comando:** comando exige a barra (Seção 9) e a transcrição não traz barra. Falar "ajuda" é resposta da pergunta, como digitar "ajuda" sem barra.
 - **Ver transcrição:** abaixo do áudio do usuário, no mesmo formato do "Ver tradução" (abre e fecha), mostra o texto transcrito. Só aparece quando a transcrição fica pronta, sem recarregar a página, e nunca em áudio sem fala.
 
 ---
@@ -333,7 +341,7 @@ Vale tanto para cadência quanto para sessão intensiva. Em sessão intensiva, a
 
 ### 6.3 Sugestão de troca de atividade
 
-Quando a atividade ativa já atingiu uma nota alta o suficiente, o feedback de uma resposta correta pode vir acompanhado da sugestão de trocar de atividade (🔄, ver vocabulário de emoji), com botão (ou o comando por extenso, dependendo do canal) para iniciar o fluxo de nova atividade. O fecho da mensagem depende do modo: no modo intensivo, sugere apenas aguardar a próxima pergunta; fora dele, como não há mais pergunta por cadência, sugere continuar praticando e traz também o botão Praticar, abaixo de Nova atividade. Se algo impedir a prática (limite do dia, conta expirada etc.), o Praticar segue o fluxo normal e recebe a resposta de bloqueio de sempre. Nunca acompanha feedback de erro ou parcial, para não soar como reação ao erro. A dica de alternativa em acerto (Seção 6.2) pode ser enviada na mesma resposta, como mensagem separada após o feedback, sem influenciar a nota.
+Quando a atividade ativa já atingiu uma nota alta o suficiente, o feedback de uma resposta correta pode vir acompanhado da sugestão de trocar de atividade (🔄, ver vocabulário de emoji), com botão (ou o comando por extenso, dependendo do canal) para iniciar o fluxo de nova atividade. O fecho da mensagem depende do modo: no modo intensivo, sugere apenas aguardar a próxima pergunta; fora dele, como não há mais pergunta por cadência, sugere continuar praticando e traz também o botão Praticar. O fecho do modo intensivo só vale se o envio automático voltar (Seção 8.5): com o Continuar, ninguém aguarda a próxima pergunta, abaixo de Nova atividade. Se algo impedir a prática (limite do dia, conta expirada etc.), o Praticar segue o fluxo normal e recebe a resposta de bloqueio de sempre. Nunca acompanha feedback de erro ou parcial, para não soar como reação ao erro. A dica de alternativa em acerto (Seção 6.2) pode ser enviada na mesma resposta, como mensagem separada após o feedback, sem influenciar a nota.
 
 Cada pergunta tem uma nota de 0 a 10, calculada a partir de dois eixos independentes.
 
@@ -401,7 +409,7 @@ Perguntas respondidas várias vezes no mesmo dia pelo fallback não recalculam o
 
 **Cadência automática pausada.** O envio automático de uma pergunta a cada intervalo fixo, pensado para quando a prática acontecia dentro do chat do WhatsApp, está pausado desde que a prática migrou para a superfície web. Não foi removido, pode voltar quando existir disparo equivalente do lado web. Enquanto isso, a sessão intensiva é o único canal ativo de entrega de pergunta, e o retorno do usuário é estimulado pelo lembrete diário e pelo reengajamento da Seção 12.
 
-**Sessão intensiva** (`praticar`): perguntas chegam em sequência imediata, uma após a outra. Não interfere no SM-2.
+**Sessão intensiva** (`/praticar`): perguntas chegam uma após a outra, e cada próxima sai quando o usuário toca em Continuar (Seção 8.5). Não interfere no SM-2.
 
 ### 8.1 Supressão de mensagens concorrentes
 
@@ -427,7 +435,7 @@ Controle de volume por custo.
 
 Os 15 minutos de inatividade são medidos a partir do envio de cada pergunta pelo sistema, não da última resposta do usuário. A cada pergunta enviada durante a sessão, o timer se reinicia. Enquanto o usuário responde ativamente, a sessão nunca expira por tempo. Na prática, o único controle efetivo é o volume diário.
 
-**Conclusão de rodada não encerra a sessão intensiva.** Quando todas as perguntas da primeira rodada são respondidas durante uma sessão intensiva, o usuário recebe a mensagem de conclusão de rodada seguida imediatamente pela primeira pergunta da próxima rodada, sem pausa na sessão.
+**Conclusão de rodada não encerra a sessão intensiva.** Quando todas as perguntas da primeira rodada são respondidas durante uma sessão intensiva, a mensagem de conclusão de rodada sai ao tocar em Continuar, seguida da primeira pergunta da próxima rodada, sem pausa na sessão. Quem não toca não recebe o resumo até voltar. Se o limite diário for atingido nessa resposta, a conclusão sai na hora, antes da mensagem de limite.
 
 **Geração de perguntas sob demanda:** quando o pool de perguntas não está completo, o sistema gera novas perguntas durante a sessão intensiva. Se a geração ainda estiver em processamento no momento em que o usuário responde, o sistema informa que a próxima pergunta está sendo preparada, em vez de aguardar a cadência normal.
 
@@ -452,8 +460,8 @@ Atalho fixo para o comando `praticar` (Seção 9), independente do banner da Se�
 
 - **Posição:** no mobile, à direita do header; na sidebar, logo abaixo da atividade ativa (inclusive com a sidebar aberta no mobile). Com a sidebar colapsada no desktop, vira um botão só com ícone de play e tooltip "Praticar". Texto fixo, sem variação de copy.
 - **Visibilidade:** só existe com atividade ativa. Sem atividade, não aparece em nenhum lugar.
-- **Estados:** inativa (desabilitada, visual neutro) enquanto a sessão intensiva está dentro da janela de 15 minutos desde a última pergunta enviada (Seção 8.2) ou quando o limite diário foi atingido, até o reset. Ativa em qualquer outro caso, incluindo pergunta pendente expirada e ausência de revisão elegível.
-- **Clique:** dispara exatamente o comando `praticar`, que reexibe a pergunta pendente se houver (Seção 2), senão segue a ordem normal de envio. Fora de `/app`, envia o comando e leva o usuário a `/app`.
+- **Estados:** inativa (desabilitada, visual neutro) enquanto a sessão intensiva está dentro da janela de 15 minutos desde a última pergunta enviada (Seção 8.2) ou quando o limite diário foi atingido, até o reset. Ativa em qualquer outro caso, incluindo pergunta pendente expirada e ausência de revisão elegível. Dentro da janela, fica inativa também aguardando Continuar, porque é o botão Continuar que segue a prática. Ao tocar em Continuar com a janela expirada, fica inativa até a próxima pergunta renovar a janela.
+- **Clique:** dispara exatamente o comando `/praticar`, que é idempotente: reexibe a pergunta pendente se houver (Seção 2), sem gerar outra; aguardando Continuar, faz o mesmo que ele; senão segue a ordem normal de envio. Fora de `/app`, envia o comando e leva o usuário a `/app`.
 - **Estado inicial:** calculado no servidor, no layout de `/app`, antes de renderizar (sem flash).
 - **Tempo real:** mensagem nova do sistema reconsulta o estado pelo mesmo canal realtime do indicador de digitando (Seção 19); um timer local reativa a pill na expiração da janela, sem depender de evento. O estado também é reconsultado ao voltar para a aba.
 
@@ -463,6 +471,40 @@ Ações do usuário em `/app` que dependem de uma chamada ao backend (hoje: salv
 
 O toast é renderizado acima de qualquer modal aberto no momento (z-index maior que o de Dialog/Sheet/Popover), para não ficar escondido atrás de fluxos que abrem modal.
 
+### 8.5 Continuar
+
+A próxima pergunta não chega sozinha depois do feedback. Assim o usuário absorve o feedback no próprio ritmo. O envio automático pode voltar (`AUTO_QUESTION_ENABLED`).
+
+- **Quando aparece:** no fim do chat, depois de todo o feedback (texto, áudio, dica e "Revisão em dia"), em todo ponto onde há próxima pergunta, nova ou de revisão, inclusive depois que a atividade atinge o limite e começam as revisões, e depois da primeira pergunta da atividade. Na dúvida, aparece: o usuário nunca pode ficar sem como seguir.
+- **Quando não aparece:** limite diário atingido ou nada elegível. A mensagem de fim continua a de sempre.
+- **Estado:** vem do servidor. Atividade ativa, nenhuma pergunta pendente e a última mensagem de estudo é feedback. Nada é salvo, então o botão continua lá ao recarregar ou voltar depois, e comandos no meio não o tiram do lugar. Pausar a atividade esconde, retomar devolve. Atividade nova ou troca de atividade tira o botão.
+- **Toque:** o botão some, aparece o digitando e sai a próxima pergunta, pelo mesmo caminho de sempre. Não aparece mensagem do usuário no chat. Se a rodada acabou, antes vem o resumo da conclusão. Em erro, o botão volta com o mesmo aviso de mensagem não enviada.
+- **Comando `/continuar`:** faz o mesmo, e o botão some como se tivesse sido tocado. `/praticar` também, quando está aguardando Continuar.
+- **Clique duplo:** travado nas duas pontas. O cliente desabilita no primeiro toque e o servidor só gera sem pergunta pendente.
+- **Texto solto aguardando Continuar:** não há pergunta para avaliar, então a resposta orienta tocar em Continuar. O botão fica.
+- **Janela de 15 minutos:** o Continuar não depende dela e renova a sessão ao enviar a pergunta.
+
+### 8.6 Avaliação da pergunta
+
+Dois ícones discretos, like e dislike, colados à direita do Continuar, porque o foco é seguir a prática. Valem só para a última pergunta respondida e só enquanto a próxima não aparece. Sem Continuar (fim do fluxo), ficam no mesmo lugar até a próxima pergunta surgir. Tocar abre uma modal, e o voto só é gravado ao enviar: cancelar ou fechar não grava nada.
+
+- **Like:** "Feedback positivo", com campo de detalhes opcional. Abaixo do campo, em texto menor, a nota de que o feedback ajuda a melhorar as próximas perguntas, sem citar IA. Enviar sempre habilitado.
+- **Dislike:** "Feedback negativo", com seleção obrigatória do motivo e campo de detalhes opcional. Abaixo do campo, em texto menor, a nota sobre erros da IA (Seção 16). Enviar só habilita com motivo.
+
+| Grupo | Motivo | Efeito |
+| ----- | ------ | ------ |
+| Problema na pergunta | Imagem não combina com a resposta | Pergunta nova na revisão (Seção 2) |
+| Problema na pergunta | Pergunta confusa | Pergunta nova na revisão |
+| Problema na pergunta | Minha resposta estava certa | Pergunta nova na revisão |
+| Problema na pergunta | Erro no áudio ou na explicação | Pergunta nova na revisão |
+| Problema na pergunta | Outro motivo | Pergunta nova na revisão |
+| Dificuldade | Fácil demais | Só registra |
+| Dificuldade | Difícil demais | Só registra |
+
+O like só registra. Não há texto de confirmação: o ícone preenchido é a confirmação.
+
+Depois de enviar, o ícone escolhido fica preenchido e os dois ficam desabilitados, sem nova avaliação, e o Continuar segue disponível. Ao tocar em Continuar, os ícones somem e aquela pergunta não pode mais ser avaliada. O servidor valida que é a última respondida, que ainda não foi avaliada e que a próxima não foi enviada. A avaliação não muda status, nota, contadores nem SM-2 da tentativa.
+
 ---
 
 ## 9. Comandos disponíveis
@@ -470,7 +512,8 @@ O toast é renderizado acima de qualquer modal aberto no momento (z-index maior 
 | Comando | O que faz |
 | ------- | --------- |
 | `ajuda` | Lista os comandos disponíveis |
-| `praticar` | Inicia sessão intensiva, perguntas chegam em sequência até o limite diário (ver Seção 8.2) |
+| `praticar` | Inicia sessão intensiva, perguntas chegam uma após a outra até o limite diário (ver Seção 8.2) |
+| `continuar` | Recebe a próxima pergunta, igual ao botão Continuar (ver Seção 8.5) |
 | `pausar` | Para o envio de perguntas |
 | `retomar` | Retoma após pausa |
 | `atividade` | Lista a atividade ativa e as anteriores |
@@ -479,11 +522,13 @@ O toast é renderizado acima de qualquer modal aberto no momento (z-index maior 
 | `cancelar` | Sai do fluxo ou ação em andamento |
 | `suporte` | Abre a modal de suporte (ver Seção 9.1). Nada aparece no chat |
 
+Todo comando começa com `/` (`/ajuda`, `/praticar`). Sem barra é texto comum: com pergunta pendente, "ajuda" é resposta. Vale também para `sim`, `não` e `cancelar`, e voz nunca é comando (Seção 2). Botões do chat enviam o comando com barra.
+
 Comandos não atualizam o histórico de prática nem contam como interação.
 
 ### 9.1 Suporte
 
-O pedido de suporte acontece só na modal de suporte, aberta pelo comando `suporte` (e aliases, texto ou voz, inclusive com plano vencido) ou direto pelo item "Suporte" do menu da conta. A modal tem um campo de texto e o botão Enviar, que só habilita com texto. O pedido vai para a equipe pelo mesmo canal de sempre (e-mail de suporte com os dados da conta) e nunca entra no histórico do chat nem passa pela avaliação de exercício. Ao enviar, a modal fecha e um toast diz por onde a resposta chega: WhatsApp para conta com número, e-mail para conta só com e-mail. Falha no envio aparece dentro da modal, com o texto mantido para tentar de novo. Fechar ou cancelar não gera mensagem.
+O pedido de suporte acontece só na modal de suporte, aberta pelo comando `/suporte` (e aliases, inclusive com plano vencido) ou direto pelo item "Suporte" do menu da conta. A modal tem um campo de texto e o botão Enviar, que só habilita com texto. O pedido vai para a equipe pelo mesmo canal de sempre (e-mail de suporte com os dados da conta) e nunca entra no histórico do chat nem passa pela avaliação de exercício. Ao enviar, a modal fecha e um toast diz por onde a resposta chega: WhatsApp para conta com número, e-mail para conta só com e-mail. Falha no envio aparece dentro da modal, com o texto mantido para tentar de novo. Fechar ou cancelar não gera mensagem.
 
 Usuário sem nenhuma atividade criada recebe, junto da resposta ao comando `ajuda`, orientação sobre como começar a praticar (ver Seção 10). É a mesma orientação usada no onboarding e no fallback de usuário sem atividade (ver Seção 10.1), com uma única fonte de conteúdo para as três situações, evitando que a mesma regra fique escrita de formas diferentes em pontos distintos do produto.
 
@@ -755,7 +800,7 @@ Texto solto enviado no chat nunca é interpretado como material. Só arquivo (im
 
 **Cap diário: 5 atividades por usuário por dia.** O cap conta atividades criadas, não arquivos enviados: até 3 arquivos enviados juntos pela modal formam um único material e consomem uma única vaga. A modal checa o cap antes de fechar e avisa ali mesmo quando ele já foi atingido. Modal fechada antes de continuar, ou pedido barrado na validação, não consome o cap.
 
-Após o processamento, a primeira pergunta é agendada com um atraso de 3 minutos, para garantir que o usuário receba a confirmação de processamento antes da primeira interação de prática. O mesmo atraso se aplica à primeira pergunta de uma atividade criada pelo fluxo de nova atividade.
+Após o processamento, a primeira pergunta sai sozinha logo depois da confirmação (e do resumo da atividade anterior, quando há), com a pausa normal entre mensagens e sem depender do Continuar. O mesmo vale para a primeira pergunta de uma atividade criada pelo fluxo de nova atividade.
 
 **Origem do material:** cada material grava sua origem, `upload` ou `generated` (ver Seção 15). Material com origem `generated` grava também o objetivo, o assunto, o(s) foco(s) e o subtópico que originaram aquele conteúdo, para rastreabilidade. Material com origem `upload` não grava esses dados por enquanto.
 
@@ -777,7 +822,7 @@ Toda atividade nasce numa modal única, por tema escrito ou escolhido, ou pelo m
 
 ### Abertura
 
-A modal abre pela resposta ao comando `nova atividade`, como qualquer comando do chat: digitado, pelo menu `/`, por voz, por qualquer alias, pelo botão "+ Nova atividade" do menu lateral, pelo botão "Criar atividade" do convite (Seção 10) ou pelo botão "Nova atividade" da sugestão de troca (Seção 6.3). O pedido fica no histórico como mensagem do usuário, e a resposta é uma mensagem de comando (Seção 19), que não aparece no chat e abre a modal direto. Assim o histórico sempre mostra quem pediu a atividade e como, sem balão repetido de resposta. A detecção é só pelo comando e seus aliases; texto livre ("quero praticar...") não abre a modal.
+A modal abre pela resposta ao comando `nova atividade`, como qualquer comando do chat: digitado, pelo menu `/`, por qualquer alias, pelo botão "+ Nova atividade" do menu lateral, pelo botão "Criar atividade" do convite (Seção 10) ou pelo botão "Nova atividade" da sugestão de troca (Seção 6.3). O pedido fica no histórico como mensagem do usuário, e a resposta é uma mensagem de comando (Seção 19), que não aparece no chat e abre a modal direto. Assim o histórico sempre mostra quem pediu a atividade e como, sem balão repetido de resposta. A detecção é só pelo comando e seus aliases; texto livre ("quero praticar...") não abre a modal.
 
 A modal só abre quando a resposta chega em retorno a uma mensagem enviada nesta aba. Recarregar a página, outra aba ou outro dispositivo nunca abrem a modal. O clipe do composer abre a modal direto na tela de material, sem mensagem.
 
@@ -785,7 +830,7 @@ O card "Crie sua primeira atividade..." / "Crie uma atividade..." com o botão "
 
 **Objetivo pela URL.** O `/app` aceita `?domain=` com o id de um dos 4 objetivos (`daily_life`, `travel`, `education`, `work`). Com um valor válido, a aba desse objetivo já abre selecionada na modal, por qualquer caminho de abertura (comando, botão do convite do onboarding, menu lateral), e o usuário continua podendo trocar. Valor inválido ou desconhecido é ignorado sem aviso. O parâmetro sobrevive ao login (telefone, link do WhatsApp e Google), porque vai inteiro no `redirect_to`. É de uso único: a primeira atividade criada, por tema ou material, descarta o parâmetro da URL e da memória da página, e as próximas aberturas voltam ao padrão. Na home, os botões de começar levam o objetivo da aba do simulador que o usuário tocou; sem toque, levam para `/app` puro. Os CTAs do blog levam o objetivo da matéria.
 
-Fechar ou cancelar a modal não gera nenhuma mensagem. A resposta visível ao pedido passa a ser o fluxo de criação ("Pronto", primeira pergunta), quando a atividade é criada. Não existe estado pendente de criação no chat.
+Fechar ou cancelar a modal não gera nenhuma mensagem. A resposta visível ao pedido passa a ser o fluxo de criação ("Tudo pronto!", primeira pergunta), quando a atividade é criada. Não existe estado pendente de criação no chat.
 
 ### Tela principal
 
@@ -812,11 +857,11 @@ Sem bloquear nem perguntar ao usuário:
 - Nível explícito no texto diferente do selecionado: o do texto vale para esta atividade; o perfil fica com o selecionado.
 - Objetivo: o que o texto indica; sem indicação, o da aba aberta.
 
-A mensagem "Pronto" no chat mostra objetivo, assunto, nível e foco aplicados.
+A mensagem "Tudo pronto!" no chat traz a imagem fixa do objetivo, a frase fixa do objetivo, e objetivo, assunto e foco aplicados. Não cita nível nem a primeira pergunta. Frases e imagens são uma por objetivo, sem LLM, iguais às do simulador da home. Os avisos de limite diário de atividades continuam no fim da legenda. No WhatsApp vai só o texto. Material enviado não tem objetivo, então a mensagem é "Tudo pronto!" com o nível, sem imagem e sem frase.
 
 ### Depois de validar
 
-A modal fecha e o chat segue com o fluxo de sempre: indicador de digitando durante a geração, "Pronto" com o que foi aplicado, resumo da atividade anterior (Seção 1) e primeira pergunta. Falha na geração aparece no chat com o botão "Tentar de novo". O toque vai pelo chat como mensagem do usuário e repete a geração com o mesmo pedido, sem reabrir a modal; sem pedido guardado, a resposta é a mesma do comando `nova atividade` (abre a modal). Com o cap diário atingido ou outra criação em andamento, a resposta avisa no chat.
+A modal fecha e o chat segue com o fluxo de sempre: indicador de digitando durante a geração, "Tudo pronto!" com o que foi aplicado, resumo da atividade anterior (Seção 1) e primeira pergunta. Falha na geração aparece no chat com o botão "Tentar de novo". O toque vai pelo chat como mensagem do usuário e repete a geração com o mesmo pedido, sem reabrir a modal; sem pedido guardado, a resposta é a mesma do comando `nova atividade` (abre a modal). Com o cap diário atingido ou outra criação em andamento, a resposta avisa no chat.
 
 ### Material
 
@@ -855,6 +900,7 @@ Atividade criada pela modal segue as mesmas regras de transição e visibilidade
 - Posicionamento de complemento, não compete com professor, trabalha com ele. Isso vale igualmente para o fluxo de nova atividade (Seção 15): nenhuma copy sugere módulo, nível desbloqueado ou etapa concluída, mesmo quando o conteúdo é gerado pelo sistema em vez de trazido pelo usuário.
 - Texto solto no chat nunca é interpretado como material de estudo (ver Seção 14). Só arquivo pode virar atividade, texto é sempre comando ou resposta.
 - O sistema orienta ativamente o usuário sobre o que fazer, seja no primeiro contato ou sempre que algo crítico de entendimento acontecer no meio do uso. Silêncio ou resposta genérica em ponto de ambiguidade real é falha de produto, não neutralidade. Onde já aplicado: mensagem que orienta o uso de um comando usa imperativo direto ("Use *praticar* para..."), nunca fraseado condicional ("se quiser", "quando quiser"), porque fraseado condicional convida resposta em linguagem natural que o sistema não reconhece como comando.
+- **Exceção registrada, sem virar precedente:** a nota abaixo do campo de detalhes do dislike (Seção 8.6), "A IA pode cometer erros. Seu feedback ajuda a melhorar as próximas perguntas.", usa linguagem de IA de forma consciente, para explicar por que o aviso existe. Não vale como modelo para outra copy.
 - **O sistema nunca se personifica.** Copy não usa framing de agente em primeira pessoa ("eu vou avaliar seu material", "eu te ajudo", "eu aviso"), nem trata o produto como personagem com vontade própria. Mensagens descrevem o que acontece, não o que "eu" faço. Essa regra já existia em relação a "eu paro", "eu pauso" no contexto de comandos, passa a cobrir qualquer construção de primeira pessoa em qualquer mensagem do sistema, não só as ligadas a comandos.
 - **Verbo padrão para envio de conteúdo é "enviar", não "mandar".** "Mandar" é registro mais informal e não é usado em nenhuma copy do produto. Vale para qualquer mensagem do sistema, onboarding, comandos ou fallback.
 - Emoji só é usado em mensagens formatadas diretamente no código, nunca em texto gerado por LLM (feedback de avaliação, resumo de atividade quando tiver componente gerado, qualquer resposta que passe por geração de texto livre). Dentro das mensagens de código, emoji é estratégico, não decorativo, cada um carrega um significado fixo e reconhecível. Vocabulário atual: 📘 início de atividade ou seção, 📊 resumo numérico, ⚠️ limite ou bloqueio, 🔄 sugestão de troca de atividade, ✅ fechamento positivo de ciclo de revisão. Novo emoji só entra no vocabulário quando resolve ambiguidade real de leitura rápida, não para variar visual ou suavizar tom. Isso não quer dizer que é rigorosamente proibido, só não pode ser usado como identidade de comunicação principal do produto. Marcações como acima são bem vindos quando realmente agregarem uma melhor leitura, também pra evitar só um monte de texto corrido.

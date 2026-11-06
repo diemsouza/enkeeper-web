@@ -25,7 +25,6 @@ export type AudioPlayerProps = {
   textFallback?: string;
   translation?: string;
   time?: string;
-  fluid?: boolean;
   isUserBubble?: boolean;
   revealLabel?: string;
   onExport?: (event: SyntheticEvent) => void;
@@ -122,7 +121,6 @@ export function NativeAudioPlayer({
   translation,
   time,
   onExport,
-  fluid,
   isUserBubble,
   revealLabel,
   onUnsupported,
@@ -324,7 +322,7 @@ export function NativeAudioPlayer({
   return (
     <div
       ref={rootRef}
-      className={`flex flex-col gap-1 py-1 ${fluid ? "w-full" : "w-[260px] md:w-[320px]"}`}
+      className="flex w-full flex-col gap-1 py-1"
     >
       <audio
         ref={audioRef}

@@ -7,7 +7,7 @@ import { AppHeader } from "@/src/components/app/app-header";
 import { AppSidebar } from "@/src/components/app/app-sidebar";
 import { AnalyticsIdentify } from "@/src/components/shared/AnalyticsIdentify";
 import { SidebarProvider } from "@/src/components/ui/sidebar";
-import { resolvePracticePillState } from "@/src/core/practice-pill";
+import { findPracticePillState } from "@/src/services/practice-pill-service";
 import { requireAuth } from "@/src/lib/auth/current-user";
 import {
   findActivitiesForList,
@@ -19,7 +19,6 @@ import { NewActivityProvider } from "@/src/components/app/new-activity-provider"
 import { ProfileLevelProvider } from "@/src/components/app/profile-level-provider";
 import { SupportFlowProvider } from "@/src/components/app/support-flow-provider";
 import type { SupportReplyChannel } from "@/src/components/app/support-modal";
-import { getTodayUsage } from "@/src/repo/daily-usage.repo";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -37,22 +36,16 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAuth();
-  const [activities, current, usage, cookieStore, locale, messages] =
+  const [activities, current, practicePillState, cookieStore, locale, messages] =
     await Promise.all([
       findActivitiesForList(user.id),
       findCurrentActivityByUser(user.id),
-      getTodayUsage(user.id, startOfDay(new Date())),
+      findPracticePillState(user.id),
       cookies(),
       getLocale(),
       getMessages(),
     ]);
 
-  const practicePillState = resolvePracticePillState({
-    hasActiveActivity: Boolean(current),
-    intensiveUntil: current?.intensiveUntil ?? null,
-    practiceCount: usage?.practiceCount ?? 0,
-    intensiveCount: usage?.intensiveCount ?? 0,
-  });
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
   const supportReplyChannel: SupportReplyChannel =
     !user.phone && user.email

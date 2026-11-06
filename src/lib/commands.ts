@@ -1,6 +1,7 @@
 export type CommandId =
   | "help"
   | "practice_now"
+  | "continue"
   | "pause"
   | "resume"
   | "list_activities"
@@ -16,7 +17,6 @@ export type Command = {
   id: CommandId;
   display: string;
   aliases: string[];
-  strictMode: boolean;
   description: string;
   // Ausente = true. false remove o comando do menu de ajuda e do autocomplete.
   autoComplete?: boolean;
@@ -27,7 +27,6 @@ export const COMMANDS: Command[] = [
     id: "help",
     display: "Ajuda",
     aliases: ["help", "menu"],
-    strictMode: true,
     description: "Ver essa lista de comandos",
     // Fora do autocomplete e da lista que ele mesmo gera.
     autoComplete: false,
@@ -36,28 +35,30 @@ export const COMMANDS: Command[] = [
     id: "practice_now",
     display: "Praticar",
     aliases: ["modo intensivo"],
-    strictMode: true,
     description: "Prática intensiva",
+  },
+  {
+    id: "continue",
+    display: "Continuar",
+    aliases: [],
+    description: "Receber a próxima pergunta",
   },
   {
     id: "pause",
     display: "Pausar",
     aliases: ["parar"],
-    strictMode: true,
     description: "Pausar atividade ou prática intensiva em andamento",
   },
   {
     id: "resume",
     display: "Retomar",
     aliases: ["retomar atividade", "voltar atividade"],
-    strictMode: true,
     description: "Retomar atividade pausada",
   },
   {
     id: "list_activities",
     display: "Atividade",
     aliases: ["atividades", "minha atividade", "minhas atividades", "status"],
-    strictMode: true,
     description: "Sua atividade atual",
   },
   {
@@ -71,7 +72,6 @@ export const COMMANDS: Command[] = [
       "criar atividade",
       "criar nova atividade",
     ],
-    strictMode: true,
     description: "Cria uma atividade com tema gerado por você",
   },
   {
@@ -83,7 +83,6 @@ export const COMMANDS: Command[] = [
       "trocar nivel",
       "trocar de nivel",
     ],
-    strictMode: true,
     // formatCommandList injeta o nível atual do usuário; esse texto é o fallback.
     description: "Define o nível do seu inglês",
   },
@@ -99,24 +98,19 @@ export const COMMANDS: Command[] = [
       "falar com suporte",
       "falar com suporte humano",
     ],
-    strictMode: true,
     description: "Fala com a equipe",
   },
   {
     id: "cancel",
     display: "Cancelar",
     aliases: ["sair"],
-    // Dentro de um fluxo de confirmacao (nova atividade, nivel) e exibido
-    // sem "/" -- usar formatCommand("cancel", { strictMode: false }) nesses casos.
-    strictMode: true,
     description: "Sai do fluxo ou ação em andamento",
     autoComplete: false,
   },
   {
     id: "confirm_yes",
     display: "Sim",
-    aliases: ["yes", "ok", "confirmar", "sim, continuar", "continuar"],
-    strictMode: false,
+    aliases: ["yes", "ok", "confirmar", "sim, continuar"],
     description: "Confirma a ação pendente",
     autoComplete: false,
   },
@@ -124,7 +118,6 @@ export const COMMANDS: Command[] = [
     id: "confirm_no",
     display: "Não",
     aliases: ["no", "negativo", "não, cancelar"],
-    strictMode: false,
     description: "Recusa a ação pendente",
     autoComplete: false,
   },
@@ -135,7 +128,6 @@ export const COMMANDS: Command[] = [
     // Subcomandos (help/users/upgrade/expire/extend/info) sao argumentos,
     // nao aliases -- ver admin-service.ts.
     aliases: [],
-    strictMode: true,
     description: "Comando interno de staff",
     autoComplete: false,
   },
@@ -146,9 +138,12 @@ function normalize(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
+// So vale como comando o que comeca com "/": sem barra, "ajuda" e resposta de
+// pergunta. Voz nunca e comando, porque a transcricao nao traz barra.
 export function resolveCommand(input: string): CommandId | null {
-  const stripped = input.trim().replace(/^\//, "");
-  const normalized = normalize(stripped);
+  const trimmed = input.trim();
+  if (!trimmed.startsWith("/")) return null;
+  const normalized = normalize(trimmed.slice(1));
   for (const command of COMMANDS) {
     if (normalize(command.display) === normalized) return command.id;
     if (command.aliases.some((alias) => normalize(alias) === normalized)) {
@@ -158,20 +153,14 @@ export function resolveCommand(input: string): CommandId | null {
   return null;
 }
 
-export function formatCommand(
-  id: CommandId,
-  opts?: { strictMode?: boolean },
-): string {
+export function formatCommand(id: CommandId): string {
   const command = COMMANDS.find((c) => c.id === id);
   if (!command) throw new Error(`Comando desconhecido: ${id}`);
-  const strict = opts?.strictMode ?? command.strictMode;
-  return strict
-    ? `\`/${command.display?.toLocaleLowerCase()}\``
-    : `\`${command.display?.toLocaleLowerCase()}\``;
+  return `\`/${command.display?.toLocaleLowerCase()}\``;
 }
 
 export function isAutoCompletable(command: Command): boolean {
-  return command.strictMode && command.autoComplete !== false;
+  return command.autoComplete !== false;
 }
 
 type CommandMatch = { command: Command; rank: number };

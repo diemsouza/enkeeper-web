@@ -100,6 +100,15 @@ export class PhoneTakenError extends SafeError {
   }
 }
 
+export class QuestionRatingConflictError extends SafeError {
+  code = "QUESTION_RATING_CONFLICT";
+
+  constructor(message = "Essa pergunta nao pode mais ser avaliada.") {
+    super(message);
+    this.name = "QuestionRatingConflictError";
+  }
+}
+
 export class SupportDeliveryError extends SafeError {
   code = "SUPPORT_DELIVERY_FAILED";
 

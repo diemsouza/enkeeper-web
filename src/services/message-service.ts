@@ -3,6 +3,7 @@ import {
   EvalTipClass,
   Message,
   Prisma,
+  Question,
   QuestionFormat,
   User,
 } from "../lib/prisma";
@@ -38,6 +39,7 @@ import {
   formatAudioQuestionNeedsText,
   formatVoiceNoteInaudible,
   formatPracticeWaiting,
+  formatAwaitingContinue,
   formatDailyPracticeLimitReached,
   formatReviewUpToDate,
   formatIntensiveDailyLimitReached,
@@ -83,10 +85,7 @@ import {
 } from "./activity-service";
 import { resolveFeedbackAudioMediaId } from "./feedback-audio-service";
 import { linkAnswerAudio } from "./answer-audio-service";
-import {
-  isInaudibleTranscription,
-  normalizeVoiceCommandText,
-} from "../core/voice-note";
+import { isInaudibleTranscription } from "../core/voice-note";
 import {
   getTodayUsage,
   incrementUserMessageCount,
@@ -114,7 +113,6 @@ import {
   findNextGeneralQuestion,
   findPendingQuestion,
   updateQuestion,
-  reopenQuestion,
   findSm2EligibleQuestion,
   countSm2EligibleQuestionsByUser,
 } from "../repo/questions.repo";
@@ -125,6 +123,8 @@ import {
   formatActivityStart,
 } from "../core/formatters";
 import {
+  AUTO_QUESTION_ENABLED,
+  CONTINUE_PRACTICE_BUTTON_ID,
   INTENSIVE_UNTIL_MIN,
   AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC,
   MESSAGE_SUPPRESSION_SEC,
@@ -154,7 +154,9 @@ import {
   completeRoundZero,
   generateQuestionIfPoolNotFull,
   isRoundPoolExhausted,
+  reopenForSending,
 } from "./activity-cron.service";
+import { findPracticeActions } from "./practice-pill-service";
 import {
   handleAdminCommand,
   handleAdminPendingSendMessage,
@@ -205,6 +207,7 @@ export async function handleIncomingMessage(
     Date.now() - user.lastRequestAt.getTime() < MESSAGE_SUPPRESSION_SEC * 1000;
 
   if (isLocked) {
+    if (input.buttonId === CONTINUE_PRACTICE_BUTTON_ID) return;
     await saveMessage({
       id: input.messageId,
       userId: user.id,
@@ -291,12 +294,7 @@ export async function handleIncomingMessage(
       user.planStatus = "expired";
     }
 
-    // Mesma deteccao de comando do texto digitado; na voz so as pontas da
-    // transcricao saem antes. O text original segue para avaliacao e historico.
-    const parsed = parseMessage(
-      input.isVoiceNote ? normalizeVoiceCommandText(text) : text,
-      { isIntensiveMode },
-    );
+    const parsed = parseMessage(text, { isIntensiveMode });
     const pendingIntent = user.pendingIntent as MessageIntent | undefined;
 
     // ─── Verificação de plano expirado ───────────────────────────────────────
@@ -444,6 +442,19 @@ export async function handleIncomingMessage(
         channel,
         activityId: activeActivity?.id,
       });
+      return;
+    }
+
+    if (input.buttonId === CONTINUE_PRACTICE_BUTTON_ID) {
+      if (activeActivity) {
+        await handleContinueButton({
+          activity: activeActivity,
+          userId: user.id,
+          today,
+          channel,
+          replyToMessageId: messageId,
+        });
+      }
       return;
     }
 
@@ -596,10 +607,9 @@ export async function handleIncomingMessage(
             true,
           )
         ) {
-          const limitMsg =
-            (practiceNowUsage?.practiceCount ?? 0) >= DAILY_PRACTICE_LIMIT
-              ? formatDailyPracticeLimitReached()
-              : formatIntensiveDailyLimitReached();
+          const limitMsg = formatPracticeLimit(
+            practiceNowUsage?.practiceCount ?? 0,
+          );
           await saveUserMsg({
             userId: user.id,
             activityId: activeActivity.id,
@@ -670,6 +680,29 @@ export async function handleIncomingMessage(
             intent: "practice_question",
             questionId: alreadyPending.id,
             today,
+          });
+          return;
+        }
+
+        const practiceActions = await findPracticeActions(
+          activeActivity,
+          user.id,
+        );
+        if (practiceActions?.canContinue) {
+          await saveUserMsg({
+            userId: user.id,
+            activityId: activeActivity.id,
+            content: text,
+            intent: "practice_now",
+            input,
+            today,
+          });
+          await continuePractice({
+            activity: activeActivity,
+            userId: user.id,
+            today,
+            channel,
+            replyToMessageId: messageId,
           });
           return;
         }
@@ -1065,10 +1098,9 @@ export async function handleIncomingMessage(
               }
 
               if (isIntensiveMode && !canContinueIntensive) {
-                const limitMsg =
-                  updatedCounts.practiceCount >= DAILY_PRACTICE_LIMIT
-                    ? formatDailyPracticeLimitReached()
-                    : formatIntensiveDailyLimitReached();
+                const limitMsg = formatPracticeLimit(
+                  updatedCounts.practiceCount,
+                );
                 await updateActivity(activeActivity.id, user.id, {
                   intensiveUntil: null,
                 });
@@ -1144,12 +1176,16 @@ export async function handleIncomingMessage(
               }
 
               if (isPracticingSessionActive) {
-                await waitBeforeSend(
-                  channel,
-                  user.id,
-                  AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
-                  { replyToMessageId: messageId },
-                );
+                // AUTO_QUESTION_ENABLED false: sem proxima pergunta, as pausas
+                // so existem entre mensagens que realmente saem.
+                if (AUTO_QUESTION_ENABLED || tipMsg || hasClearedReviewQueue) {
+                  await waitBeforeSend(
+                    channel,
+                    user.id,
+                    AFTER_FEEDBACK_MESSAGE_INTERVAL_SEC * 1000,
+                    { replyToMessageId: messageId },
+                  );
+                }
                 if (tipMsg) {
                   tipSent = true;
                   await sendAndSaveMessage({
@@ -1161,22 +1197,29 @@ export async function handleIncomingMessage(
                     questionId: pendingQuestion.id,
                     today,
                   });
-                  await waitBeforeSend(
-                    channel,
-                    user.id,
-                    DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
-                    { replyToMessageId: messageId },
-                  );
+                  if (AUTO_QUESTION_ENABLED || hasClearedReviewQueue) {
+                    await waitBeforeSend(
+                      channel,
+                      user.id,
+                      DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+                      { replyToMessageId: messageId },
+                    );
+                  }
                 }
                 if (hasClearedReviewQueue) {
                   await sendAndSaveMessage(reviewUpToDateParams);
-                  await waitBeforeSend(
-                    channel,
-                    user.id,
-                    DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
-                    { replyToMessageId: messageId },
-                  );
+                  if (AUTO_QUESTION_ENABLED) {
+                    await waitBeforeSend(
+                      channel,
+                      user.id,
+                      DEFAULT_MESSAGE_INTERVAL_SEC * 1000,
+                      { replyToMessageId: messageId },
+                    );
+                  }
                 }
+                // AUTO_QUESTION_ENABLED false: quem dispara a proxima pergunta
+                // e o Continuar, que chama esta mesma funcao em continuePractice.
+                if (!AUTO_QUESTION_ENABLED) return;
                 const sent = await handleIntensiveNextQuestion(
                   activeActivity,
                   user.id,
@@ -1278,7 +1321,13 @@ export async function handleIncomingMessage(
           }
         }
 
-        reply = formatPracticeWaiting();
+        const waitingActions = await findPracticeActions(
+          activeActivity,
+          user.id,
+        );
+        reply = waitingActions?.canContinue
+          ? formatAwaitingContinue()
+          : formatPracticeWaiting();
         break;
       }
     }
@@ -1321,10 +1370,59 @@ export async function handleIncomingMessage(
     }
   } finally {
     await updateUserLastResponse(user.id, messageId);
-    // Processamento que terminou sem enviar nada (erro ou caminho mudo) pode
-    // ter acendido o "digitando": apaga aqui, num ponto so.
-    if (!hasSent()) await channel.notifyTypingStop(user.id);
+    // Fim do turno: apaga o "digitando" e avisa o cliente que o Continuar ja
+    // pode aparecer, depois do feedback, do audio e da dica.
+    await channel.notifyTypingStop(user.id);
   }
+}
+
+function formatPracticeLimit(practiceCount: number): FormattedMessage {
+  return practiceCount >= DAILY_PRACTICE_LIMIT
+    ? formatDailyPracticeLimitReached()
+    : formatIntensiveDailyLimitReached();
+}
+
+type ContinuePracticeParams = {
+  activity: Activity;
+  userId: string;
+  today: Date;
+  channel: MessageChannel;
+  replyToMessageId: string;
+};
+
+async function continuePractice(params: ContinuePracticeParams): Promise<void> {
+  const { activity, userId, today, channel, replyToMessageId } = params;
+  await channel.notifyTyping(userId, { replyToMessageId });
+  await handleIntensiveNextQuestion(
+    activity,
+    userId,
+    today,
+    channel,
+    false,
+    replyToMessageId,
+  );
+}
+
+// Sem pergunta pendente de novo: canContinue so e true sem pendencia, o que
+// trava o clique duplo tambem no servidor.
+async function handleContinueButton(
+  params: ContinuePracticeParams,
+): Promise<void> {
+  const { activity, userId, today, channel } = params;
+  const usage = await getTodayUsage(userId, today);
+  const practiceCount = usage?.practiceCount ?? 0;
+  if (!canPracticeToday(practiceCount, usage?.intensiveCount ?? 0, true)) {
+    await sendAndSaveMessage({
+      channel,
+      userId,
+      activityId: activity.id,
+      message: formatPracticeLimit(practiceCount),
+      today,
+    });
+    return;
+  }
+  const actions = await findPracticeActions(activity, userId);
+  if (actions?.canContinue) await continuePractice(params);
 }
 
 async function handleIntensiveNextQuestion(
@@ -1457,15 +1555,7 @@ async function handleIntensiveNextQuestion(
 }
 
 async function sendIntensiveQuestion(
-  question: {
-    id: string;
-    question: string;
-    questionFormat: QuestionFormat | null;
-    questionOptions: string[];
-    termHint?: string | null;
-    questionImageMediaId?: string | null;
-    questionAudioMediaId?: string | null;
-  },
+  question: Question,
   activity: Activity,
   userId: string,
   executionCount: number,
@@ -1474,6 +1564,11 @@ async function sendIntensiveQuestion(
   channel: MessageChannel,
   replyToMessageId?: string,
 ): Promise<void> {
+  const reopened = await reopenForSending(question, activity, {
+    channel,
+    replyToMessageId,
+  });
+
   if (executionCount === 0) {
     const startMsg = formatActivityStart(activity.title);
     await sendAndSaveMessage({
@@ -1489,7 +1584,7 @@ async function sendIntensiveQuestion(
     });
   }
 
-  const questionText = formatQuestion(question, { level: activity.userLevel });
+  const questionText = formatQuestion(reopened, { level: activity.userLevel });
 
   await sendAndSaveMessage({
     channel,
@@ -1497,18 +1592,13 @@ async function sendIntensiveQuestion(
     activityId: activity.id,
     message: questionText,
     intent: "practice_question",
-    questionId: question.id,
+    questionId: reopened.id,
     today,
-  });
-  await reopenQuestion({
-    id: question.id,
-    userId,
-    activityId: activity.id,
   });
   await updateActivity(activity.id, userId, {
     waitingUser: true,
     executionCount: executionCount + 1,
-    lastQuestionId: question.id,
+    lastQuestionId: reopened.id,
     nextMessageAt: new Date(Date.now() + intervalMinutes * 60 * 1000),
     intensiveUntil: new Date(Date.now() + INTENSIVE_UNTIL_MIN * 60 * 1000),
   });

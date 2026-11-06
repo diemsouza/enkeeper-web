@@ -6,6 +6,7 @@ import {
   QuestionType,
   AiProvider,
   EvalTipClass,
+  QuestionRatingKind,
   Prisma,
 } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
@@ -26,6 +27,17 @@ export type CreateQuestionData = {
   questionImageDescription?: string;
   questionAudioMediaId?: string;
 };
+
+export type RegeneratedQuestionContent = Pick<
+  CreateQuestionData,
+  | "question"
+  | "answerKeys"
+  | "questionFormat"
+  | "questionOptions"
+  | "questionImageMediaId"
+  | "questionImageDescription"
+  | "questionAudioMediaId"
+> & { metadata: Record<string, unknown> };
 
 export async function createQuestions(
   activity: { id: string; userId: string },
@@ -183,6 +195,32 @@ export async function findLatestUnansweredQuestion(
   });
 }
 
+export async function findUserQuestionById(
+  id: string,
+  userId: string,
+): Promise<Pick<Question, "id" | "answeredAt" | "rating"> | null> {
+  return prisma.question.findFirst({
+    where: { id, userId, deletedAt: null },
+    select: { id: true, answeredAt: true, rating: true },
+  });
+}
+
+export async function saveQuestionRating(params: {
+  id: string;
+  userId: string;
+  rating: boolean;
+  ratingKind: QuestionRatingKind | null;
+  ratingNote: string | null;
+  regenerate: boolean;
+}): Promise<boolean> {
+  const { id, userId, ...data } = params;
+  const { count } = await prisma.question.updateMany({
+    where: { id, userId, ratedAt: null, deletedAt: null },
+    data: { ...data, ratedAt: new Date() },
+  });
+  return count > 0;
+}
+
 export async function findFeedbackTranslationsByIds(
   ids: string[],
 ): Promise<Pick<Question, "id" | "feedbackTranslation">[]> {
@@ -275,15 +313,60 @@ export async function updateQuestion(
   });
 }
 
+const CLEARED_RATING = {
+  ratedAt: null,
+  rating: null,
+  ratingKind: null,
+  ratingNote: null,
+};
+
+function rewriteQuestionContent(
+  tx: Prisma.TransactionClient,
+  id: string,
+  activityId: string,
+  content: RegeneratedQuestionContent,
+): Promise<Question> {
+  return tx.question.update({
+    where: { id },
+    data: {
+      status: "pending",
+      activityId,
+      question: content.question,
+      answerKeys: content.answerKeys,
+      questionFormat: content.questionFormat,
+      questionOptions: content.questionOptions ?? [],
+      questionImageMediaId: content.questionImageMediaId ?? null,
+      questionImageDescription: content.questionImageDescription ?? null,
+      questionAudioMediaId: content.questionAudioMediaId ?? null,
+      metadata: content.metadata as Prisma.InputJsonObject,
+      answer: null,
+      answerType: null,
+      answeredAt: null,
+      provider: null,
+      model: null,
+      evalTip: null,
+      evalTipClass: null,
+      feedbackText: null,
+      feedbackTranslation: null,
+      feedbackAudioMediaId: null,
+      answerAudioMediaId: null,
+      ...CLEARED_RATING,
+      regenerate: false,
+    },
+  });
+}
+
 // Com connection_limit=1 a transacao segura a unica conexao: dentro do callback
 // tudo usa tx, porque o prisma global ficaria esperando essa conexao ate o timeout.
+// Por isso o conteudo novo chega pronto: a geracao leva segundos e fica fora.
 export async function reopenQuestion(params: {
   id: string;
   userId: string;
   activityId: string;
-}): Promise<void> {
-  const { id, userId, activityId } = params;
-  await prisma.$transaction(async (tx) => {
+  newContent?: RegeneratedQuestionContent;
+}): Promise<Question> {
+  const { id, userId, activityId, newContent } = params;
+  return prisma.$transaction(async (tx) => {
     const current = await tx.question.findFirst({ where: { id, userId } });
     if (current?.answeredAt) {
       await tx.questionSnapshot.create({
@@ -294,21 +377,23 @@ export async function reopenQuestion(params: {
           answeredAt: current.answeredAt,
           questionFormat: current.questionFormat,
           status: current.status,
-          issueNotedAt: current.issueNotedAt,
+          rating: current.rating,
           snapshotData: JSON.parse(
             JSON.stringify(current),
           ) as Prisma.InputJsonObject,
         },
       });
     }
-    await tx.question.update({
+    if (newContent) {
+      return rewriteQuestionContent(tx, id, activityId, newContent);
+    }
+    return tx.question.update({
       where: { id },
       data: {
         status: "pending",
         activityId,
         answeredAt: null,
-        issueNotedAt: null,
-        issueNote: null,
+        ...CLEARED_RATING,
       },
     });
   });

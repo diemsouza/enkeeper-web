@@ -67,6 +67,20 @@ export const DEFAULT_LOCALE = "pt-BR";
 export const DEFAULT_CURRENCY = "BRL";
 export const DEFAULT_CHANNEL_TYPE: ChannelType = "web";
 export const INTENSIVE_UNTIL_MIN = 15;
+// false: a proxima pergunta depende do Continuar. true: volta o modo antigo, com
+// a pergunta chegando sozinha depois do feedback. Pode ser removida no futuro.
+// Ao voltar para true, rever os pontos que citam esta constante:
+// - message-service.ts: parada depois do feedback e pausas antes dela
+// - formatters.ts: formatGuideAfterFirstFeedback volta a citar Praticar
+// - practice-pill.ts: canContinue fica sempre false, so os icones aparecem
+export const AUTO_QUESTION_ENABLED = false;
+export const CONTINUE_PRACTICE_BUTTON_ID = "continue_practice";
+// Teto do turno em andamento: se o fim do turno se perder, o Continuar volta.
+export const PRACTICE_TURN_MAX_SEC = 60;
+// Trava do cliente enquanto espera resposta (nao e o "digitando", que vem do
+// servidor): cobre avaliacao + intervalo pos-feedback + geracao de imagem.
+export const REPLY_WAIT_TIMEOUT_MS = 45_000;
+export const QUESTION_RATING_NOTE_MAX_LENGTH = 1000;
 export const DAILY_PRACTICE_LIMIT = 60;
 export const CADENCE_RESERVE = 24;
 export const INTENSIVE_LIMIT = 60 - 24; // 36

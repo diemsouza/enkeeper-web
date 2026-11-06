@@ -109,7 +109,6 @@ export function OggAudioPlayer({
   translation,
   time,
   onExport,
-  fluid,
   isUserBubble,
   revealLabel,
 }: AudioPlayerProps) {
@@ -434,7 +433,7 @@ export function OggAudioPlayer({
 
   return (
     <div
-      className={`flex flex-col gap-1 py-1 ${fluid ? "w-full" : "w-[260px] md:w-[320px]"}`}
+      className="flex w-full flex-col gap-1 py-1"
     >
       <div className={`flex items-center gap-3${isError ? " opacity-50" : ""}`}>
         <button

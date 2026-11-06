@@ -38,6 +38,21 @@
     }
   },
   "app": {
+    "activity_ready": {
+      "headline": "Tudo pronto!",
+      "phrases": {
+        "daily_life": "Pratique o inglês das conversas, séries e momentos que você mais curte.",
+        "travel": "Pratique o inglês que você vai usar na sua próxima viagem.",
+        "education": "Pratique o inglês para estudar lá fora sem travar.",
+        "work": "Pratique o inglês que abre portas na sua carreira."
+      },
+      "image_alts": {
+        "daily_life": "Casal sentado na grama de um parque, de fones de ouvido, rindo enquanto olha o celular.",
+        "travel": "Duas mulheres conversando numa mesa de trem, com um vale e montanhas pela janela.",
+        "education": "Dois estudantes conversando enquanto caminham por um campus com prédios de pedra.",
+        "work": "Profissional explicando algo a dois colegas numa mesa de reunião, com a cidade ao fundo."
+      }
+    },
     "common": {
       "activity_untitled": "Atividade sem título",
       "cancel": "Cancelar",
@@ -186,6 +201,33 @@
           "note": ""
         }
       }
+    },
+    "practice_actions": {
+      "continue": "Continuar",
+      "like_aria": "Curti esta pergunta",
+      "dislike_aria": "Não curti esta pergunta",
+      "like_title": "Feedback positivo",
+      "like_placeholder": "O que funcionou bem nesta pergunta?",
+      "dislike_title": "Feedback negativo",
+      "dislike_placeholder": "O que não funcionou nesta pergunta?",
+      "like_disclaimer": "Seu feedback ajuda a melhorar as próximas perguntas.",
+      "dislike_disclaimer": "A IA pode cometer erros. Seu feedback ajuda a melhorar as próximas perguntas.",
+      "note_label": "Conte os detalhes (opcional)",
+      "kind_label": "O que aconteceu?",
+      "kind_placeholder": "Selecione...",
+      "group_problem": "Problema na pergunta",
+      "group_level": "Dificuldade",
+      "kind_image_mismatch": "Imagem não combina com a resposta",
+      "kind_confusing_question": "Pergunta confusa",
+      "kind_answer_was_right": "Minha resposta estava certa",
+      "kind_audio_or_explanation": "Erro no áudio ou na explicação",
+      "kind_other": "Outro motivo",
+      "kind_too_easy": "Fácil demais",
+      "kind_too_hard": "Difícil demais",
+      "cancel": "Cancelar",
+      "send": "Enviar",
+      "sending": "Enviando...",
+      "send_error": "Não foi possível enviar. Tente de novo."
     },
     "errors": {
       "message_failed": "Mensagem não enviada.",

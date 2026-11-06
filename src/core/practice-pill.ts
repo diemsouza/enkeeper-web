@@ -1,26 +1,65 @@
+import { AUTO_QUESTION_ENABLED, PRACTICE_TURN_MAX_SEC } from "../lib/constants";
 import { canPracticeToday } from "./limits";
+
+export type PracticeActions = {
+  questionId: string;
+  rating: boolean | null;
+  canContinue: boolean;
+};
 
 export type PracticePillState = {
   isVisible: boolean;
   intensiveUntil: string | null;
   isLimitReached: boolean;
+  practiceActions: PracticeActions | null;
 };
+
+// O turno so termina depois do feedback, do audio e da dica: antes disso o
+// Continuar apareceria no meio da sequencia.
+export function isTurnInProgress(
+  user: { lastRequestAt: Date | null; lastResponseAt: Date | null },
+  now: number,
+): boolean {
+  const { lastRequestAt, lastResponseAt } = user;
+  if (!lastRequestAt) return false;
+  if (lastResponseAt && lastResponseAt >= lastRequestAt) return false;
+  return now - lastRequestAt.getTime() < PRACTICE_TURN_MAX_SEC * 1000;
+}
+
+// AUTO_QUESTION_ENABLED true: a proxima pergunta chega sozinha, entao o
+// Continuar nunca aparece.
+export function resolvePracticeActions(input: {
+  question: { id: string; rating: boolean | null };
+  isLimitReached: boolean;
+  hasNextQuestion: boolean;
+}): PracticeActions {
+  const { question, isLimitReached, hasNextQuestion } = input;
+  return {
+    questionId: question.id,
+    rating: question.rating,
+    canContinue: !AUTO_QUESTION_ENABLED && !isLimitReached && hasNextQuestion,
+  };
+}
 
 export function resolvePracticePillState(input: {
   hasActiveActivity: boolean;
   intensiveUntil: Date | null;
-  practiceCount: number;
-  intensiveCount: number;
+  isLimitReached: boolean;
+  practiceActions: PracticeActions | null;
 }): PracticePillState {
   return {
     isVisible: input.hasActiveActivity,
     intensiveUntil: input.intensiveUntil?.toISOString() ?? null,
-    isLimitReached: !canPracticeToday(
-      input.practiceCount,
-      input.intensiveCount,
-      true,
-    ),
+    isLimitReached: input.isLimitReached,
+    practiceActions: input.practiceActions,
   };
+}
+
+export function isPracticeLimitReached(
+  practiceCount: number,
+  intensiveCount: number,
+): boolean {
+  return !canPracticeToday(practiceCount, intensiveCount, true);
 }
 
 export function isPracticePillActive(

@@ -86,11 +86,13 @@ A sessão intensiva acelera a exposição sem interferir no algoritmo. O SM-2 op
 
 ### Modo sessão (praticar)
 
-Usuário pode iniciar sessão ativa - perguntas chegam em sequência, uma após a outra. Sessão dura 15 minutos de inatividade. Com a cadência automática de perguntas pausada, é hoje o único canal de entrega de pergunta.
+Usuário pode iniciar sessão ativa - perguntas chegam uma após a outra. Depois de cada feedback, o usuário toca em Continuar para receber a próxima, no próprio ritmo, sem pressão para seguir sem absorver o feedback. Sessão dura 15 minutos de inatividade. Com a cadência automática de perguntas pausada, é hoje o único canal de entrega de pergunta.
+
+Ao lado do Continuar, like e dislike avaliam a última pergunta respondida. O dislike por um problema na pergunta faz ela voltar nova na próxima revisão, sobre o mesmo conteúdo, sem perder o progresso do termo. O dislike por fácil ou difícil demais só registra a opinião.
 
 ### Nova atividade por tema
 
-Toda atividade nasce numa modal única, aberta pelo botão "+ Nova atividade", pelo comando `nova atividade` ou pelo botão "Criar atividade" do onboarding. O usuário escreve o que quer praticar (até 200 caracteres) ou toca numa das 20 sugestões de cada um dos 4 objetivos (Dia a Dia e Lazer, Viagens Internacionais, Educação e Intercâmbio, Mercado de Trabalho), ajusta nível e até 3 focos, e continua. A modal modera o pedido, completa o que falta com exemplos clicáveis e só fecha quando dá para gerar a atividade; o chat recebe só o resultado. "Usar meu material" troca a modal para o envio de até 3 arquivos. O conteúdo é gerado individualmente para aquele usuário, e a atividade segue o mesmo ciclo de sempre a partir daí.
+Toda atividade nasce numa modal única, aberta pelo botão "+ Nova atividade", pelo comando `nova atividade` ou pelo botão "Criar atividade" do onboarding. O usuário escreve o que quer praticar (até 200 caracteres) ou toca numa das 20 sugestões de cada um dos 4 objetivos (Dia a Dia e Lazer, Viagens Internacionais, Educação e Intercâmbio, Mercado de Trabalho), ajusta nível e até 3 focos, e continua. A modal modera o pedido, completa o que falta com exemplos clicáveis e só fecha quando dá para gerar a atividade; o chat recebe só o resultado: uma mensagem "Tudo pronto!" com a imagem e a frase daquele objetivo, que mostram o resultado de saber inglês, e o objetivo, assunto e foco aplicados. A mesma mensagem abre o simulador da home, em cada aba de objetivo. "Usar meu material" troca a modal para o envio de até 3 arquivos. O conteúdo é gerado individualmente para aquele usuário, e a atividade segue o mesmo ciclo de sempre a partir daí.
 
 Ponto representa o aspecto da língua a praticar dentro do assunto escolhido, vocabulário geral, um tempo verbal, uma estrutura gramatical, entre outros, e pode combinar até 2 pontos numa mesma geração quando informado por texto livre.
 

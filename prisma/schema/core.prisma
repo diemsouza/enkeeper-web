@@ -55,6 +55,16 @@ enum QuestionStatus {
     wrong
 }
 
+enum QuestionRatingKind {
+    image_mismatch
+    confusing_question
+    answer_was_right
+    audio_or_explanation
+    too_easy
+    too_hard
+    other
+}
+
 enum QuestionType {
     text
     audio
@@ -263,8 +273,10 @@ model Question {
     questionImageDescription String? @map("question_image_description") @db.Text
     metadata        Json?           @map("metadata")
     answeredAt      DateTime?       @map("answered_at")
-    issueNotedAt    DateTime?       @map("issue_noted_at")
-    issueNote       String?         @map("issue_note") @db.Text
+    ratedAt         DateTime?       @map("rated_at")
+    rating          Boolean?        @map("rating")
+    ratingKind      QuestionRatingKind? @map("rating_kind")
+    ratingNote      String?         @map("rating_note") @db.Text
     regenerate      Boolean         @default(false) @map("regenerate")
     createdAt       DateTime        @default(now()) @map("created_at")
     updatedAt       DateTime        @updatedAt @map("updated_at")
@@ -294,7 +306,7 @@ model QuestionSnapshot {
     answeredAt     DateTime        @map("answered_at")
     questionFormat QuestionFormat? @map("question_format")
     status         QuestionStatus? @map("status")
-    issueNotedAt   DateTime?       @map("issue_noted_at")
+    rating         Boolean?        @map("rating")
     snapshotData   Json            @map("snapshot_data")
     createdAt      DateTime        @default(now()) @map("created_at")
 
@@ -306,7 +318,7 @@ model QuestionSnapshot {
     @@index([userId, answeredAt])
     @@index([activityId])
     @@index([questionFormat, status])
-    @@index([issueNotedAt])
+    @@index([rating])
     @@map("question_snapshots")
 }
 

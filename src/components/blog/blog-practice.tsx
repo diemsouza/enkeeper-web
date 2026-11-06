@@ -36,7 +36,6 @@ export function BlogPractice({ slug }: { slug: string }) {
           <MessageBubble
             key={message.id}
             message={message}
-            fluidAudio
             zoomDisabled
           />
         ))}

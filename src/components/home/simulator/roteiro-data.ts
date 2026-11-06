@@ -6,9 +6,16 @@ import {
 import { DOMAINS, type DomainId } from "@/src/lib/constants";
 import type { PentagonChartInput } from "@/src/core/pentagon-chart";
 
+export type SimulatorConfirmation = {
+  time: string;
+  domainLabel: string;
+  focus: string;
+};
+
 export type DomainRoteiro = {
   domainId: DomainId;
   activityTitle: string;
+  confirmation: SimulatorConfirmation;
   messages: Message[];
   summaryText: string;
   summaryTime: string;
@@ -65,10 +72,6 @@ function summaryFor(title: string): string {
 }
 
 const DEFAULT_FOCUS = "Vocabulário geral";
-
-function confirmationFor(domainLabel: string, activityTitle: string, focus: string): string {
-  return `Pronto. A primeira pergunta chega em instantes.\n\n*Objetivo:* ${domainLabel}\n*Assunto:* ${activityTitle}\n*Foco:* ${focus}`;
-}
 
 type TurnSpec = {
   domainId: DomainId;
@@ -143,24 +146,15 @@ function buildRoteiro(
   const domainLabel = DOMAINS.find((d) => d.id === domainId)?.label ?? domainId;
   const built = turns.map(buildTurn);
 
-  const messages: Message[] = [
-    {
-      id: `${domainId}-confirmation`,
-      from: "bot",
-      time: turns[0].baseTime,
-      text: confirmationFor(domainLabel, activityTitle, focus),
-    },
-    ...built.flatMap((b) => b.messages),
-  ];
-
   return {
     roteiro: {
       domainId,
       activityTitle,
+      confirmation: { time: turns[0].baseTime, domainLabel, focus },
       summaryTime,
       summaryText: summaryFor(activityTitle),
       pentagon: samplePentagon(8.4),
-      messages,
+      messages: built.flatMap((b) => b.messages),
     },
     audioItems: built.map((b) => b.audio),
     imageItems: turns.flatMap((t) =>
