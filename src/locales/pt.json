@@ -227,7 +227,9 @@
       "cancel": "Cancelar",
       "send": "Enviar",
       "sending": "Enviando...",
-      "send_error": "Não foi possível enviar. Tente de novo."
+      "send_error": "Não foi possível enviar. Tente de novo.",
+      "rating_thanks": "Obrigado pelo feedback!",
+      "rating_sent": "Feedback enviado"
     },
     "errors": {
       "message_failed": "Mensagem não enviada.",

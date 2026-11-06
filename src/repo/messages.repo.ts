@@ -113,7 +113,7 @@ export async function findLastMessageByIntent(
 export async function findLastStudyMessage(
   userId: string,
   activityId: string,
-): Promise<Pick<Message, "intent" | "questionId"> | null> {
+): Promise<Pick<Message, "id" | "intent" | "questionId"> | null> {
   return prisma.message.findFirst({
     where: {
       userId,
@@ -123,7 +123,7 @@ export async function findLastStudyMessage(
       questionId: { not: null },
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    select: { intent: true, questionId: true },
+    select: { id: true, intent: true, questionId: true },
   });
 }
 

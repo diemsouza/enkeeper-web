@@ -2,6 +2,7 @@ import { MEDIA_INLINE_PARAM } from "@/src/lib/constants";
 import { isStudyMessage } from "@/src/core/study-message";
 import { isInaudibleTranscription } from "@/src/core/voice-note";
 import { parseClientCommand } from "@/src/core/client-command";
+import { readQuestionRating } from "@/src/core/question-rating";
 import {
   ACTIVITY_READY_IMAGE_HEIGHT,
   ACTIVITY_READY_IMAGE_WIDTH,
@@ -101,7 +102,8 @@ function toMessage(
     intent: row.intent,
     questionId: row.questionId,
   });
-  return { ...message, isStudy };
+  const questionRating = readQuestionRating(row.metadata)?.rating;
+  return { ...message, isStudy, questionRating };
 }
 
 // Card do antigo passo de captura (nivel no chat): o nivel agora e trocado na

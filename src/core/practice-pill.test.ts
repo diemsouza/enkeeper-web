@@ -45,6 +45,7 @@ describe("resolvePracticeActions", () => {
     expect(
       resolvePracticeActions({
         question,
+        messageId: "m1",
         isLimitReached: false,
         hasNextQuestion: true,
       }).canContinue,
@@ -54,13 +55,20 @@ describe("resolvePracticeActions", () => {
   it("fim do fluxo mantem os icones, sem Continuar", () => {
     const limit = resolvePracticeActions({
       question,
+      messageId: "m1",
       isLimitReached: true,
       hasNextQuestion: true,
     });
-    expect(limit).toEqual({ questionId: "q1", rating: null, canContinue: false });
+    expect(limit).toEqual({
+      questionId: "q1",
+      messageId: "m1",
+      rating: null,
+      canContinue: false,
+    });
     expect(
       resolvePracticeActions({
         question,
+        messageId: "m1",
         isLimitReached: false,
         hasNextQuestion: false,
       }).canContinue,
@@ -74,7 +82,12 @@ describe("isPracticePillActive", () => {
     expect(
       isPracticePillActive(
         buildState({
-          practiceActions: { questionId: "q1", rating: null, canContinue: true },
+          practiceActions: {
+            questionId: "q1",
+            messageId: "m1",
+            rating: null,
+            canContinue: true,
+          },
         }),
         NOW,
       ),
@@ -86,7 +99,12 @@ describe("isPracticePillActive", () => {
       isPracticePillActive(
         buildState({
           intensiveUntil: new Date(NOW - 60_000).toISOString(),
-          practiceActions: { questionId: "q1", rating: null, canContinue: true },
+          practiceActions: {
+            questionId: "q1",
+            messageId: "m1",
+            rating: null,
+            canContinue: true,
+          },
         }),
         NOW,
       ),
@@ -98,7 +116,12 @@ describe("isPracticePillActive", () => {
       isPracticePillActive(
         buildState({
           isLimitReached: true,
-          practiceActions: { questionId: "q1", rating: null, canContinue: true },
+          practiceActions: {
+            questionId: "q1",
+            messageId: "m1",
+            rating: null,
+            canContinue: true,
+          },
         }),
         NOW,
       ),

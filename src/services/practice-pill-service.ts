@@ -50,6 +50,7 @@ export async function findPracticeActions(
     !!(await findNextGeneralQuestion(activity.id, activity.lastQuestionId));
   return resolvePracticeActions({
     question,
+    messageId: lastStudy.id,
     isLimitReached: await findTodayLimitReached(userId),
     hasNextQuestion,
   });

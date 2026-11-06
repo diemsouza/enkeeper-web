@@ -53,6 +53,10 @@
 @layer base {
   :root {
     color-scheme: light;
+    --vv-top: 0px;
+    --vv-height: 100dvh;
+    --modal-center-y: calc(var(--vv-top) + (var(--vv-height) + env(safe-area-inset-top)) / 2);
+    --modal-max-h: min(90dvh, calc(var(--vv-height) - env(safe-area-inset-top) - 1rem));
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 

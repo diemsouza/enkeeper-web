@@ -93,7 +93,7 @@ export function SidebarFooterMenu({
   return (
     <SidebarFooter className="pb-[max(0.75rem,calc(env(safe-area-inset-bottom)-0.75rem))]">
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger className="flex h-11 w-full items-center gap-2 rounded-md px-1.5 text-left hover:bg-sidebar-accent">
+        <DropdownMenuTrigger className="flex h-11 w-full items-center gap-2 rounded-control px-1.5 text-left hover:bg-sidebar-accent">
           <Avatar className="h-8 w-8 shrink-0">
             <AvatarFallback>
               {initial ?? <UserIcon className="h-4 w-4" />}
@@ -114,49 +114,39 @@ export function SidebarFooterMenu({
           <DropdownMenuLabel>{t("theme_label")}</DropdownMenuLabel>
           <ThemeMenuItems />
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onSelect={openReminder}
-            className="gap-2"
-          >
+          <DropdownMenuItem onSelect={openReminder}>
             <CalendarPlus className="h-4 w-4" />
             {t("add_to_calendar")}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={openLevel} className="gap-2">
+          <DropdownMenuItem onSelect={openLevel}>
             <GraduationCap className="h-4 w-4" />
             {t("level")}
             {level && (
-              <span className="ml-auto text-xs text-muted-foreground">
+              <span className="ml-auto text-caption text-muted-foreground">
                 {tLevels(level)}
               </span>
             )}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            onSelect={() => setOpenMobile(false)}
-            className="gap-2"
-          >
+          <DropdownMenuItem asChild onSelect={() => setOpenMobile(false)}>
             <Link href={PLANS_PATH}>
               <CreditCard className="h-4 w-4" />
               {t("subscription")}
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={openSupport} className="gap-2">
+          <DropdownMenuItem onSelect={openSupport}>
             <LifeBuoy className="h-4 w-4" />
             {t("support")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {login && (
-            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+            <div className="px-3 py-1.5 text-caption text-muted-foreground">
               <p>{login.method}</p>
               <p className="truncate font-medium text-foreground">
                 {login.account}
               </p>
             </div>
           )}
-          <DropdownMenuItem
-            onSelect={() => setConfirmOpen(true)}
-            className="gap-2"
-          >
+          <DropdownMenuItem onSelect={() => setConfirmOpen(true)}>
             <LogOut className="h-4 w-4" />
             {t("logout")}
           </DropdownMenuItem>

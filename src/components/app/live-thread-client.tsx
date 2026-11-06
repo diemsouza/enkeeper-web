@@ -130,6 +130,17 @@ function mergeServerInteractive(prev: Message[], server: Message): Message[] {
   return next;
 }
 
+function mergeServerRating(prev: Message[], server: Message): Message[] {
+  if (server.questionRating === undefined) return prev;
+  const idx = prev.findIndex((m) => m.id === server.id);
+  if (idx === -1 || prev[idx].questionRating === server.questionRating) {
+    return prev;
+  }
+  const next = [...prev];
+  next[idx] = { ...next[idx], questionRating: server.questionRating };
+  return next;
+}
+
 // Servidor vence: a selecao local so vale enquanto a mensagem nao veio
 // travada do servidor.
 function applyOptimisticSelections(
@@ -303,6 +314,13 @@ export function LiveThreadClient({
             return { ...m, translation: server.translation };
           }
         }
+        if (m.from === "bot" && m.questionRating === undefined) {
+          const server = body.messages.find((s) => s.id === m.id);
+          if (server?.questionRating !== undefined) {
+            changed = true;
+            return { ...m, questionRating: server.questionRating };
+          }
+        }
         // Transcricao chega no INSERT do broadcast; se ele se perdeu, a bolha
         // otimista (ja "sent") so e achada pelo externalId.
         if (m.from === "user" && m.type === "audio" && !m.transcription) {
@@ -422,7 +440,9 @@ export function LiveThreadClient({
     }
 
     if (messagesRef.current.some((m) => sameMessage(m, key))) {
-      setMessages((prev) => mergeServerInteractive(prev, mapped));
+      setMessages((prev) =>
+        mergeServerRating(mergeServerInteractive(prev, mapped), mapped),
+      );
       return;
     }
 
@@ -713,13 +733,17 @@ export function LiveThreadClient({
     return () => registerSender(null);
   }, [registerSender]);
 
+  // Enquanto a linha de acoes esta aberta, o voto aparece nela, nao na mensagem.
+  const openRatingMessageId = practiceActions?.messageId;
   const displayedMessages = useMemo(
     () =>
       applyOptimisticSelections(
         messages.filter((m) => m.command === undefined),
         optimisticSelections,
+      ).map((m) =>
+        m.id === openRatingMessageId ? { ...m, questionRating: undefined } : m,
       ),
-    [messages, optimisticSelections],
+    [messages, optimisticSelections, openRatingMessageId],
   );
 
   return (

@@ -10,6 +10,10 @@ import {
   Prisma,
 } from "../lib/prisma";
 import { prisma } from "../lib/prisma";
+import {
+  readQuestionRating,
+  type QuestionRatingMark,
+} from "../core/question-rating";
 
 export type CreateQuestionData = {
   id?: string;
@@ -205,20 +209,45 @@ export async function findUserQuestionById(
   });
 }
 
+async function writeMessageRating(
+  tx: Prisma.TransactionClient,
+  message: { id: string; userId: string; metadata: Prisma.JsonValue },
+  questionRating: QuestionRatingMark,
+): Promise<void> {
+  const { id, userId, metadata } = message;
+  await tx.message.updateMany({
+    where: { id, userId },
+    data: {
+      metadata: { ...(metadata as Prisma.JsonObject), questionRating },
+    },
+  });
+}
+
 export async function saveQuestionRating(params: {
   id: string;
   userId: string;
+  messageId: string;
   rating: boolean;
   ratingKind: QuestionRatingKind | null;
   ratingNote: string | null;
   regenerate: boolean;
 }): Promise<boolean> {
-  const { id, userId, ...data } = params;
-  const { count } = await prisma.question.updateMany({
-    where: { id, userId, ratedAt: null, deletedAt: null },
-    data: { ...data, ratedAt: new Date() },
+  const { id, userId, messageId, ...data } = params;
+  return prisma.$transaction(async (tx) => {
+    const { count } = await tx.question.updateMany({
+      where: { id, userId, ratedAt: null, deletedAt: null },
+      data: { ...data, ratedAt: new Date() },
+    });
+    if (count === 0) return false;
+    const message = await tx.message.findFirst({
+      where: { id: messageId, userId },
+      select: { id: true, userId: true, metadata: true },
+    });
+    if (message) {
+      await writeMessageRating(tx, message, { rating: data.rating });
+    }
+    return true;
   });
-  return count > 0;
 }
 
 export async function findFeedbackTranslationsByIds(
@@ -356,6 +385,32 @@ function rewriteQuestionContent(
   });
 }
 
+// O snapshot so nasce no reenvio. Mensagem que ja tem snapshot e de tentativa
+// anterior: voto dado antes desta marca nao tem mensagem para ligar.
+async function linkRatingSnapshot(
+  tx: Prisma.TransactionClient,
+  params: {
+    questionId: string;
+    userId: string;
+    rating: boolean;
+    snapshotId: string;
+  },
+): Promise<void> {
+  const { questionId, userId, rating, snapshotId } = params;
+  const message = await tx.message.findFirst({
+    where: {
+      userId,
+      questionId,
+      metadata: { path: ["questionRating", "rating"], equals: rating },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { id: true, userId: true, metadata: true },
+  });
+  const mark = readQuestionRating(message?.metadata);
+  if (!message || !mark || mark.snapshotId) return;
+  await writeMessageRating(tx, message, { ...mark, snapshotId });
+}
+
 // Com connection_limit=1 a transacao segura a unica conexao: dentro do callback
 // tudo usa tx, porque o prisma global ficaria esperando essa conexao ate o timeout.
 // Por isso o conteudo novo chega pronto: a geracao leva segundos e fica fora.
@@ -369,7 +424,7 @@ export async function reopenQuestion(params: {
   return prisma.$transaction(async (tx) => {
     const current = await tx.question.findFirst({ where: { id, userId } });
     if (current?.answeredAt) {
-      await tx.questionSnapshot.create({
+      const snapshot = await tx.questionSnapshot.create({
         data: {
           questionId: id,
           userId,
@@ -383,6 +438,14 @@ export async function reopenQuestion(params: {
           ) as Prisma.InputJsonObject,
         },
       });
+      if (current.rating !== null) {
+        await linkRatingSnapshot(tx, {
+          questionId: id,
+          userId,
+          rating: current.rating,
+          snapshotId: snapshot.id,
+        });
+      }
     }
     if (newContent) {
       return rewriteQuestionContent(tx, id, activityId, newContent);

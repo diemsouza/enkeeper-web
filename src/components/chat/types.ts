@@ -44,6 +44,8 @@ export interface Message {
   isFirstFeedbackGuide?: boolean;
   // Mensagem de comando (null = action desconhecida): nunca vira balao.
   command?: ClientCommand | null;
+  // Voto gravado nesta mensagem: true like, false dislike.
+  questionRating?: boolean;
   // Pergunta, feedback ou dica (isStudyMessage): decide o auto scroll.
   isStudy?: boolean;
 }

@@ -7,6 +7,7 @@ import { CustomAudioPlayer } from "./custom-audio-player";
 import { FileCard } from "./file-card";
 import { ImageBubble } from "./image-bubble";
 import { InteractiveButtonList } from "./interactive-buttons";
+import { QuestionRatingBadge } from "./question-rating-badge";
 import { TextBubble } from "./text-bubble";
 import type { FormattedMessageButton, Message } from "./types";
 import { VoiceNoteCard } from "./voice-note-card";
@@ -189,6 +190,9 @@ export function MessageBubble({
             {tErrors("resend")}
           </button>
         </div>
+      )}
+      {message.questionRating !== undefined && (
+        <QuestionRatingBadge rating={message.questionRating} />
       )}
     </div>
   );

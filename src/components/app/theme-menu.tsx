@@ -18,11 +18,7 @@ export function ThemeMenuItems() {
   return (
     <>
       {THEME_OPTIONS.map(({ value, labelKey, icon: Icon }) => (
-        <DropdownMenuItem
-          key={value}
-          onClick={() => setTheme(value)}
-          className="gap-2"
-        >
+        <DropdownMenuItem key={value} onClick={() => setTheme(value)}>
           <Icon className="h-4 w-4" />
           <span className="flex-1">{t(labelKey)}</span>
           {theme === value && <Check className="h-4 w-4" />}

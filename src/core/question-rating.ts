@@ -26,3 +26,18 @@ export function shouldRegenerateQuestion(
 ): boolean {
   return !rating && !!ratingKind && PROBLEM_KINDS.includes(ratingKind);
 }
+
+export type QuestionRatingMark = {
+  rating: boolean;
+  snapshotId?: string;
+};
+
+// Gravado em Message.metadata: a Question perde o voto quando volta na revisao.
+export function readQuestionRating(metadata: unknown): QuestionRatingMark | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const { questionRating } = metadata as Record<string, unknown>;
+  if (!questionRating || typeof questionRating !== "object") return null;
+  const { rating, snapshotId } = questionRating as Record<string, unknown>;
+  if (typeof rating !== "boolean") return null;
+  return typeof snapshotId === "string" ? { rating, snapshotId } : { rating };
+}

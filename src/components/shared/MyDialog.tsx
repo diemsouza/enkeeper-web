@@ -38,7 +38,7 @@ function MyDialogContent({
   return (
     <DialogContent
       className={cn(
-        "w-[94vw] max-h-[90dvh] p-0 overflow-hidden flex flex-col gap-0",
+        "w-[94vw] max-h-[var(--modal-max-h)] p-0 overflow-hidden flex flex-col gap-0",
         sizeMap[size],
         className,
       )}

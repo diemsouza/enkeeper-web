@@ -23,6 +23,7 @@ export async function rateQuestion(params: {
   const isSaved = await saveQuestionRating({
     id: questionId,
     userId,
+    messageId: actions.messageId,
     rating,
     ratingKind,
     ratingNote,

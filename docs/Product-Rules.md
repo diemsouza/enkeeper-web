@@ -501,9 +501,9 @@ Dois ícones discretos, like e dislike, colados à direita do Continuar, porque 
 | Dificuldade | Fácil demais | Só registra |
 | Dificuldade | Difícil demais | Só registra |
 
-O like só registra. Não há texto de confirmação: o ícone preenchido é a confirmação.
+O like só registra. Ao enviar, like ou dislike, um toast agradece pelo feedback e o ícone fica preenchido.
 
-Depois de enviar, o ícone escolhido fica preenchido e os dois ficam desabilitados, sem nova avaliação, e o Continuar segue disponível. Ao tocar em Continuar, os ícones somem e aquela pergunta não pode mais ser avaliada. O servidor valida que é a última respondida, que ainda não foi avaliada e que a próxima não foi enviada. A avaliação não muda status, nota, contadores nem SM-2 da tentativa.
+Depois de enviar, o ícone escolhido fica preenchido e os dois ficam desabilitados, sem nova avaliação, e o Continuar segue disponível. Ao tocar em Continuar, os ícones somem e aquela pergunta não pode mais ser avaliada. Se houve voto, a mensagem avaliada, a última do feedback, passa a mostrar só o ícone escolhido, menor e em cinza, com "Feedback enviado" ao lado, colado à mensagem e só para leitura. Sem voto, nada aparece. O voto fica gravado na própria mensagem, então recarregar ou reconectar mostra o mesmo resultado, e ele continua ali quando a pergunta volta na revisão. O servidor valida que é a última respondida, que ainda não foi avaliada e que a próxima não foi enviada. A avaliação não muda status, nota, contadores nem SM-2 da tentativa.
 
 ---
 

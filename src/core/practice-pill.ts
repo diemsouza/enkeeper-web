@@ -3,6 +3,7 @@ import { canPracticeToday } from "./limits";
 
 export type PracticeActions = {
   questionId: string;
+  messageId: string;
   rating: boolean | null;
   canContinue: boolean;
 };
@@ -30,12 +31,14 @@ export function isTurnInProgress(
 // Continuar nunca aparece.
 export function resolvePracticeActions(input: {
   question: { id: string; rating: boolean | null };
+  messageId: string;
   isLimitReached: boolean;
   hasNextQuestion: boolean;
 }): PracticeActions {
-  const { question, isLimitReached, hasNextQuestion } = input;
+  const { question, messageId, isLimitReached, hasNextQuestion } = input;
   return {
     questionId: question.id,
+    messageId,
     rating: question.rating,
     canContinue: !AUTO_QUESTION_ENABLED && !isLimitReached && hasNextQuestion,
   };

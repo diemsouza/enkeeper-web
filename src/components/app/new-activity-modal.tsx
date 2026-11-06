@@ -42,7 +42,7 @@ export function NewActivityModal({
       <DialogContent
         onOpenAutoFocus={(e) => e.preventDefault()}
         isFullScreenOnMobile
-        className="flex h-[min(820px,90dvh)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl"
+        className="flex h-[min(820px,var(--modal-max-h))] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl"
       >
         {step === "main" ? (
           <NewActivityMainStep

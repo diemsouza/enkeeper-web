@@ -14,6 +14,7 @@ import {
 } from "@/src/lib/constants";
 import ClientToaster from "../components/shared/client-toaster";
 import { ThemeColorSync } from "../components/shared/ThemeColorSync";
+import { VisualViewportSync } from "../components/shared/visual-viewport-sync";
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -129,6 +130,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe>`,
             storageKey="theme"
           >
             <ThemeColorSync />
+            <VisualViewportSync />
             <QueryProvider>
               <ClientToaster />
               {children}

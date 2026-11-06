@@ -20,6 +20,7 @@ import {
 } from "@/src/components/ui/select";
 import { Button } from "@/src/components/ui/button";
 import { Spinner } from "@/src/components/ui/spinner";
+import { useToast } from "@/src/hooks/use-toast";
 import { postJson } from "@/src/lib/api-client";
 import { QUESTION_RATING_NOTE_MAX_LENGTH } from "@/src/lib/constants";
 import {
@@ -53,6 +54,7 @@ export function QuestionRatingModal({
   onRated: (rating: boolean) => void;
 }) {
   const t = useTranslations("app.practice_actions");
+  const { toast } = useToast();
   const [kind, setKind] = useState<DislikeKind | null>(null);
   const [note, setNote] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -84,6 +86,7 @@ export function QuestionRatingModal({
       return;
     }
     onRated(rating);
+    toast({ description: t("rating_thanks") });
     onClose();
   }
 
@@ -94,7 +97,7 @@ export function QuestionRatingModal({
         if (!open) onClose();
       }}
     >
-      <DialogContent>
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{t(isLike ? "like_title" : "dislike_title")}</DialogTitle>
         </DialogHeader>
